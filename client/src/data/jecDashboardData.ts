@@ -9,7 +9,8 @@ export const jecDashboardData = {
     "definicaoTempo": "Dias corridos entre a data de ajuizamento e a data do último movimento público disponível no registro DataJud.",
     "alertaTempo": "Tempo observado não é duração definitiva nem tempo até sentença. Processos sem último movimento válido são excluídos da média.",
     "alerta2026": "2026 é parcial até 26/08/2026.",
-    "alertaTimeline": "A série mensal é extraída da amostra ordenada por data de ajuizamento e dos movimentos de baixa observados; não corresponde a censo mensal.",
+    "alertaTimeline": "A série mensal apresenta censo territorial de distribuições e baixas definitivas do coorte de processos ajuizados entre 01/01/2025 e 26/08/2026. Os filtros de assunto e órgão não recalculam o censo mensal.",
+    "definicaoBaixaCenso": "Baixa definitiva: processos do coorte de ajuizamento 2025-2026 com movimento público “Baixa Definitiva” no mês, contados uma vez por mês.",
     "fonte": "API Pública DataJud/CNJ — índice TJMG",
     "hashBaseProcessos": "6b2e4af8e8fe7a135e56a91bed12447bee4f9afee76c902ea70e9cc1afa4deff"
   },
@@ -23787,6 +23788,328 @@ export const jecDashboardData = {
       "mesDistribuicao": "2026-06",
       "mesBaixa": "",
       "fonteStatus": "movimento_observado"
+    }
+  ],
+  "timelineCensus": [
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-01",
+      "distribuicoesCenso": 3289,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-02",
+      "distribuicoesCenso": 4034,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-03",
+      "distribuicoesCenso": 3700,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-04",
+      "distribuicoesCenso": 4113,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-05",
+      "distribuicoesCenso": 4500,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-06",
+      "distribuicoesCenso": 4228,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-07",
+      "distribuicoesCenso": 4916,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-08",
+      "distribuicoesCenso": 4202,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-09",
+      "distribuicoesCenso": 4469,
+      "baixasCensoProcessos": 4,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-10",
+      "distribuicoesCenso": 5052,
+      "baixasCensoProcessos": 95,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-11",
+      "distribuicoesCenso": 4268,
+      "baixasCensoProcessos": 199,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2025-12",
+      "distribuicoesCenso": 3655,
+      "baixasCensoProcessos": 274,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2026-01",
+      "distribuicoesCenso": 4017,
+      "baixasCensoProcessos": 221,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2026-02",
+      "distribuicoesCenso": 4590,
+      "baixasCensoProcessos": 871,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2026-03",
+      "distribuicoesCenso": 6086,
+      "baixasCensoProcessos": 1403,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2026-04",
+      "distribuicoesCenso": 5300,
+      "baixasCensoProcessos": 1587,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2026-05",
+      "distribuicoesCenso": 4996,
+      "baixasCensoProcessos": 2149,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2026-06",
+      "distribuicoesCenso": 3747,
+      "baixasCensoProcessos": 1656,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2026-07",
+      "distribuicoesCenso": 621,
+      "baixasCensoProcessos": 553,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Belo Horizonte",
+      "mes": "2026-08",
+      "distribuicoesCenso": 0,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-01",
+      "distribuicoesCenso": 291,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-02",
+      "distribuicoesCenso": 305,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-03",
+      "distribuicoesCenso": 331,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-04",
+      "distribuicoesCenso": 272,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-05",
+      "distribuicoesCenso": 398,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-06",
+      "distribuicoesCenso": 390,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-07",
+      "distribuicoesCenso": 427,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-08",
+      "distribuicoesCenso": 385,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-09",
+      "distribuicoesCenso": 379,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-10",
+      "distribuicoesCenso": 493,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-11",
+      "distribuicoesCenso": 377,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2025-12",
+      "distribuicoesCenso": 328,
+      "baixasCensoProcessos": 1,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2026-01",
+      "distribuicoesCenso": 426,
+      "baixasCensoProcessos": 1,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2026-02",
+      "distribuicoesCenso": 350,
+      "baixasCensoProcessos": 29,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2026-03",
+      "distribuicoesCenso": 541,
+      "baixasCensoProcessos": 24,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2026-04",
+      "distribuicoesCenso": 502,
+      "baixasCensoProcessos": 55,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2026-05",
+      "distribuicoesCenso": 498,
+      "baixasCensoProcessos": 49,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2026-06",
+      "distribuicoesCenso": 384,
+      "baixasCensoProcessos": 38,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2026-07",
+      "distribuicoesCenso": 75,
+      "baixasCensoProcessos": 21,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
+    },
+    {
+      "municipio": "Betim",
+      "mes": "2026-08",
+      "distribuicoesCenso": 0,
+      "baixasCensoProcessos": 0,
+      "fonteStatus": "oficial_confirmado",
+      "nota": "Distribuições: processos ajuizados no mês. Baixas: processos do recorte com movimento Baixa Definitiva no mês; um processo conta uma vez por mês."
     }
   ]
 } as const;
