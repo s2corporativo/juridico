@@ -13,3 +13,16 @@
 - [x] Implementar seleção inicial e final de datas nos filtros do painel.
 - [x] Aplicar o período aos gráficos, comparações, CSV e relatório PDF.
 - [x] Validar os limites, mensagens metodológicas e responsividade do seletor.
+- [x] Atualizar a habilidade de jurimetria com o fluxo de painel censitário e recorte temporal.
+- [x] Validar e entregar a versão atualizada da habilidade reutilizável.
+- [ ] Confirmar aliases, cobertura e comparabilidade nacional do JEC no DataJud.
+- [ ] Extrair e validar censo mensal nacional por tribunal e unidade federativa.
+- [ ] Consolidar causas e órgãos comparáveis para a visão nacional.
+- [ ] Adaptar painel, filtros, exportações e relatório para recorte Brasil.
+- [ ] Validar e entregar a versão nacional do Atlas Forense.
+- [x] Inspecionar o ZIP jurisprudencial, inventariar formatos e identificar riscos de dados pessoais.
+- [x] Definir modelo de taxonomia, evidência, tese e vínculo de julgados do Compêndio Nacional.
+- [x] Habilitar infraestrutura de dados e autenticação para o acervo jurídico.
+- [x] Implementar navegação de compêndio, busca jurisprudencial e fichas de tese.
+- [x] Importar apenas metadados públicos validados do acervo anexado com trilha de auditoria.
+- [x] Validar privacidade, pesquisa e apresentação do Compêndio Nacional.

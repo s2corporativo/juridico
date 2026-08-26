@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { jecDashboardData } from "@/data/jecDashboardData";
 import { AdvancedEvidencePanel } from "@/components/AdvancedEvidencePanel";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 type CityFilter = "Todos" | "Belo Horizonte" | "Betim";
 type YearFilter = "Todos" | "2025" | "2026";
@@ -140,6 +141,13 @@ function PartialRuler({ compact = false }: { compact?: boolean }) {
 }
 
 export default function Home() {
+  // The useAuth hook provides authentication state.
+  // To implement login/logout, call logout(), or start login from an event
+  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
+  // startLogin() during render (no href={startLogin()}) — it mints a one-time
+  // nonce cookie and must run only at the moment of navigation.
+  let { user, loading, error, isAuthenticated, logout } = useAuth();
+
   const [city, setCity] = useState<CityFilter>("Todos");
   const [year, setYear] = useState<YearFilter>("Todos");
   const [dateStart, setDateStart] = useState(MIN_DATE);
@@ -292,7 +300,7 @@ export default function Home() {
       <main className="atlas-main">
         <header className="topbar">
           <div className="breadcrumb"><Landmark size={16} /> Ecossistema Jurídico Clovis <ChevronRight size={15} /> Jurimetria pública</div>
-          <button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button>
+          <div className="topbar-actions"><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Abrir Compêndio</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
         </header>
 
         <section className="hero-panel" id="visao">

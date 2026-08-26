@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1787767732492,
+      "tag": "0000_melodic_lilandra",
+      "breakpoints": true
+    }
+  ]
+}

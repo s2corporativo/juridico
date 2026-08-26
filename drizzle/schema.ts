@@ -1,0 +1,151 @@
+import { index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+
+/**
+ * Core user table backing auth flow.
+ * Extend this file with additional tables as your product grows.
+ * Columns use camelCase to match both database fields and generated types.
+ */
+export const users = mysqlTable("users", {
+  /**
+   * Surrogate primary key. Auto-incremented numeric value managed by the database.
+   * Use this for relations between tables.
+   */
+  id: int("id").autoincrement().primaryKey(),
+  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  name: text("name"),
+  email: varchar("email", { length: 320 }),
+  loginMethod: varchar("loginMethod", { length: 64 }),
+  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+
+export const legalTopics = mysqlTable("legal_topics", {
+  id: int("id").autoincrement().primaryKey(),
+  parentId: int("parentId"),
+  kind: mysqlEnum("kind", ["area", "subarea", "instituto", "tema", "subtema", "questao"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 191 }).notNull(),
+  pathKey: varchar("pathKey", { length: 767 }).notNull().unique(),
+  summary: text("summary"),
+  synonyms: text("synonyms"),
+  cnjCodes: text("cnjCodes"),
+  sourceStatus: mysqlEnum("sourceStatus", ["official_confirmed", "attachment_reviewed", "editorial_review", "secondary_pending"]).default("editorial_review").notNull(),
+  version: int("version").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("legal_topics_parent_slug_unique").on(table.parentId, table.slug),
+  index("legal_topics_kind_idx").on(table.kind),
+]);
+
+export const evidenceSources = mysqlTable("evidence_sources", {
+  id: int("id").autoincrement().primaryKey(),
+  label: varchar("label", { length: 255 }).notNull(),
+  sourceType: mysqlEnum("sourceType", ["official_document", "official_url", "attachment", "secondary", "manual"]).notNull(),
+  sourceUrl: varchar("sourceUrl", { length: 1024 }),
+  hashSha256: varchar("hashSha256", { length: 64 }),
+  publicStatus: mysqlEnum("publicStatus", ["official_confirmed", "official_without_number", "attachment_reviewed", "secondary_pending", "not_for_use"]).notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("evidence_sources_status_idx").on(table.publicStatus)]);
+
+export const legalTheses = mysqlTable("legal_theses", {
+  id: int("id").autoincrement().primaryKey(),
+  topicId: int("topicId").notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  position: mysqlEnum("position", ["favoravel", "contraria", "condicionada", "em_debate"]).notNull(),
+  description: text("description").notNull(),
+  legalBasis: text("legalBasis"),
+  proofNotes: text("proofNotes"),
+  adverseFacts: text("adverseFacts"),
+  sourceStatus: mysqlEnum("sourceStatus", ["official_confirmed", "attachment_reviewed", "editorial_review", "secondary_pending"]).default("editorial_review").notNull(),
+  lastReviewedAt: timestamp("lastReviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("legal_theses_topic_idx").on(table.topicId), index("legal_theses_position_idx").on(table.position)]);
+
+export const ingestionBatches = mysqlTable("ingestion_batches", {
+  id: int("id").autoincrement().primaryKey(),
+  batchKey: varchar("batchKey", { length: 191 }).notNull().unique(),
+  sourceLabel: varchar("sourceLabel", { length: 255 }).notNull(),
+  sourceHash: varchar("sourceHash", { length: 64 }),
+  status: mysqlEnum("status", ["planned", "reviewed", "imported", "partial", "rejected"]).notNull(),
+  itemsDiscovered: int("itemsDiscovered").default(0).notNull(),
+  itemsImported: int("itemsImported").default(0).notNull(),
+  itemsExcluded: int("itemsExcluded").default(0).notNull(),
+  method: text("method").notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("ingestion_batches_status_idx").on(table.status)]);
+
+export const jurisprudenceRecords = mysqlTable("jurisprudence_records", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 191 }).notNull().unique(),
+  batchId: int("batchId").notNull(),
+  sourceId: int("sourceId").notNull(),
+  cnjNumber: varchar("cnjNumber", { length: 80 }),
+  tribunal: varchar("tribunal", { length: 64 }).notNull(),
+  justice: varchar("justice", { length: 64 }).notNull(),
+  city: varchar("city", { length: 128 }),
+  comarca: varchar("comarca", { length: 128 }),
+  court: varchar("court", { length: 255 }),
+  judgingBody: varchar("judgingBody", { length: 255 }),
+  decisionType: varchar("decisionType", { length: 64 }).notNull(),
+  decisionDate: timestamp("decisionDate"),
+  publicationDate: timestamp("publicationDate"),
+  legalArea: varchar("legalArea", { length: 255 }),
+  theme: varchar("theme", { length: 500 }),
+  outcomeOrigin: varchar("outcomeOrigin", { length: 255 }),
+  outcomeAppeal: varchar("outcomeAppeal", { length: 255 }),
+  dispositionType: varchar("dispositionType", { length: 255 }),
+  moralDamageValue: varchar("moralDamageValue", { length: 64 }),
+  reasoningSummary: text("reasoningSummary"),
+  validationNote: text("validationNote"),
+  sourceStatus: mysqlEnum("sourceStatus", ["official_confirmed", "official_without_number", "attachment_reviewed", "secondary_pending", "movement_observed", "search_thematic"]).notNull(),
+  recordVersion: int("recordVersion").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("jurisprudence_tribunal_idx").on(table.tribunal),
+  index("jurisprudence_city_idx").on(table.city),
+  index("jurisprudence_theme_idx").on(table.theme),
+  index("jurisprudence_status_idx").on(table.sourceStatus),
+]);
+
+export const jurisprudenceTopics = mysqlTable("jurisprudence_topics", {
+  id: int("id").autoincrement().primaryKey(),
+  jurisprudenceId: int("jurisprudenceId").notNull(),
+  topicId: int("topicId").notNull(),
+  relevance: mysqlEnum("relevance", ["primary", "secondary"]).default("primary").notNull(),
+}, table => [
+  uniqueIndex("jurisprudence_topics_unique").on(table.jurisprudenceId, table.topicId),
+  index("jurisprudence_topics_topic_idx").on(table.topicId),
+]);
+
+export const thesisAuthorities = mysqlTable("thesis_authorities", {
+  id: int("id").autoincrement().primaryKey(),
+  thesisId: int("thesisId").notNull(),
+  jurisprudenceId: int("jurisprudenceId").notNull(),
+  stance: mysqlEnum("stance", ["supports", "opposes", "context"]).notNull(),
+  note: text("note"),
+}, table => [
+  uniqueIndex("thesis_authorities_unique").on(table.thesisId, table.jurisprudenceId),
+  index("thesis_authorities_thesis_idx").on(table.thesisId),
+]);
+
+export const auditEvents = mysqlTable("audit_events", {
+  id: int("id").autoincrement().primaryKey(),
+  entityType: varchar("entityType", { length: 64 }).notNull(),
+  entityKey: varchar("entityKey", { length: 191 }).notNull(),
+  action: varchar("action", { length: 128 }).notNull(),
+  sourceStatus: varchar("sourceStatus", { length: 64 }),
+  actorLabel: varchar("actorLabel", { length: 128 }).notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("audit_events_entity_idx").on(table.entityType, table.entityKey)]);
