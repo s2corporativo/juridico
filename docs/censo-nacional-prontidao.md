@@ -12,3 +12,7 @@ O Atlas Forense passou a possuir uma camada persistente para executar e auditar 
 | Conector DataJud | Preparado e protegido; chave ainda ausente. | Ativação somente com credencial temporária em ambiente seguro e revisão de cobertura. |
 
 > A inexistência de linhas nacionais é uma condição metodológica visível, e não uma lacuna preenchida por estimativa. O núcleo local do Atlas continua distinto do censo Brasil.
+
+## Execução planejada
+
+Foi persistida a execução `datajud-jec-nacional-2025-2026-v1`, com escopo de **JEC estadual — distribuições e baixas mensais agregadas**, período de **2025-01 a 2026-08**, expectativa de 27 tribunais e cobertura inicial de **0 de 27**. Ela não contém métricas, corpo de consulta ou credenciais; seu único propósito é preservar a trilha de preparação e impedir que o estado de ausência seja ocultado.
