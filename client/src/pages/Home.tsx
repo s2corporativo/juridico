@@ -6,6 +6,8 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -21,12 +23,14 @@ import {
   ChevronRight,
   CircleHelp,
   Database,
+  FileText,
   Filter,
   Landmark,
   Scale,
   ShieldCheck,
 } from "lucide-react";
 import { jecDashboardData } from "@/data/jecDashboardData";
+import { AdvancedEvidencePanel } from "@/components/AdvancedEvidencePanel";
 
 type CityFilter = "Todos" | "Belo Horizonte" | "Betim";
 type YearFilter = "Todos" | "2025" | "2026";
@@ -52,6 +56,20 @@ type UnitStat = {
   tempoMedianoDias: number | null;
 };
 type DurationRow = { municipio: string; ano: string; faixa: string; processos: number };
+type ProcessRow = {
+  municipio: string;
+  ano: string;
+  orgaoCodigo: string;
+  unidade: string;
+  assuntos: string[];
+  dataAjuizamento: string;
+  ultimoMovimento: string;
+  ultimoMovimentoData: string;
+  tempoObservadoDias: number | null;
+  temBaixaObservada: boolean;
+  fonteStatus: string;
+};
+type TimelineEvent = { municipio: string; ano: string; orgaoCodigo: string; assuntos: string[]; mesDistribuicao: string; mesBaixa: string; fonteStatus: string };
 
 const data = jecDashboardData as unknown as {
   meta: Record<string, string>;
@@ -59,6 +77,8 @@ const data = jecDashboardData as unknown as {
   causeStats: CauseStat[];
   unitStats: UnitStat[];
   durationDistribution: DurationRow[];
+  processRows: ProcessRow[];
+  timelineEvents: TimelineEvent[];
 };
 
 const CITY_COLOR: Record<string, string> = {
@@ -284,6 +304,8 @@ export default function Home() {
           <label className="year-select"><span>Ano</span><select value={year} onChange={(event) => setYear(event.target.value as YearFilter)}><option value="Todos">2025 + 2026*</option><option value="2025">2025</option><option value="2026">2026*</option></select></label>
           <div className="filter-note"><CircleHelp size={15} /> O filtro atualiza toda a amostra; o censo permanece em série separada.</div>
         </section>
+
+        <AdvancedEvidencePanel city={city} year={year} />
 
         {activeYears.includes("2026") && <div className="partial-alert"><CalendarClock size={17} /><span><strong>2026 é parcial:</strong> a comparação anual deve considerar que os processos foram coletados até 26/08/2026.</span></div>}
 
