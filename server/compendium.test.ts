@@ -6,5 +6,7 @@ describe("compendium privacy contract", () => {
     expect(PUBLIC_JURISPRUDENCE_FIELDS).toContain("sourceStatus");
     expect(isSafePublicMetadata({ tribunal: "TJMG", theme: "Tarifas bancárias" })).toBe(true);
     expect(isSafePublicMetadata({ cpfParte: "000.000.000-00" })).toBe(false);
+    expect(isSafePublicMetadata({ nota: "CPF 000.000.000-00" })).toBe(false);
+    expect(isSafePublicMetadata({ contato: { email: "pessoa@exemplo.com" } })).toBe(false);
   });
 });

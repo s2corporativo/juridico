@@ -45,3 +45,10 @@
 - [x] Implementar contrato tipado de ponte de autenticação futura, com integração externa desativada e teste de isolamento.
 - [x] Criar modelo auditável para execuções e séries mensais do censo nacional DataJud.
 - [x] Exibir painel de prontidão e cobertura nacional sem simular estatísticas inexistentes.
+- [x] Inventariar rotas, contratos, tabelas, migrações e documentação do Atlas Forense.
+- [x] Auditar privacidade, permissões, conectores públicos e inconsistências metodológicas.
+- [x] Reconciliar o histórico de migrações com o banco aplicado e eliminar alertas técnicos objetivos.
+- [x] Validar todas as rotas principais em desktop e móvel, incluindo estados vazios e acesso restrito.
+- [x] Consolidar o relatório de revisão e registrar bloqueios externos remanescentes.
+- [x] Resolver ou documentar tecnicamente a incompatibilidade do plugin de localização JSX com Vite 7.
+- [x] Eliminar o aviso de build do selo Atlas servido por storage persistente.

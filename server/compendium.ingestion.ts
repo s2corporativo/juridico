@@ -42,6 +42,7 @@ export function previewControlledIngestion(batchKey: string, candidates: Ingesti
     if (cnjNumber) {
       if (cnjNumbers.has(cnjNumber)) reasons.push("Número CNJ duplicado no lote.");
       cnjNumbers.add(cnjNumber);
+      if (cnjNumber.replace(/\D/g, "").length !== 20) reasons.push("Número CNJ deve conter 20 dígitos quando informado.");
     }
 
     if (!candidate.tribunal.trim() || !candidate.justice.trim() || !candidate.decisionType.trim()) {

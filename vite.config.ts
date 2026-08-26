@@ -1,4 +1,4 @@
-import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
+import { redactDebugEntries } from "./shared/log-redaction";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
@@ -107,13 +107,13 @@ function vitePluginManusDebugCollector(): Plugin {
         const handlePayload = (payload: any) => {
           // Write logs directly to files
           if (payload.consoleLogs?.length > 0) {
-            writeToLogFile("browserConsole", payload.consoleLogs);
+            writeToLogFile("browserConsole", redactDebugEntries(payload.consoleLogs));
           }
           if (payload.networkRequests?.length > 0) {
-            writeToLogFile("networkRequests", payload.networkRequests);
+            writeToLogFile("networkRequests", redactDebugEntries(payload.networkRequests));
           }
           if (payload.sessionEvents?.length > 0) {
-            writeToLogFile("sessionReplay", payload.sessionEvents);
+            writeToLogFile("sessionReplay", redactDebugEntries(payload.sessionEvents));
           }
 
           res.writeHead(200, { "Content-Type": "application/json" });
@@ -150,7 +150,7 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const plugins = [react(), tailwindcss(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
 export default defineConfig({
   plugins,
@@ -167,6 +167,18 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("/recharts/") || id.includes("/d3-")) return "charts";
+          if (id.includes("/lucide-react/")) return "icons";
+          if (id.includes("/@radix-ui/") || id.includes("/framer-motion/")) return "ui";
+          if (id.includes("/react/") || id.includes("/react-dom/")) return "react-runtime";
+          if (id.includes("/@tanstack/") || id.includes("/@trpc/")) return "data-runtime";
+        },
+      },
+    },
   },
   server: {
     host: true,

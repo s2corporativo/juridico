@@ -11,7 +11,7 @@ button, select { font: inherit; }
 button { cursor: pointer; }
 
 .atlas-shell { min-height: 100vh; display: grid; grid-template-columns: 272px minmax(0, 1fr); background: var(--paper); }
-.atlas-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 26px 20px 22px; color: #e9efe8; background: #193c3b url('/manus-storage/atlas-forense-seal_5486fb91.jpg') bottom -64px right -72px/230px no-repeat; border-right: 1px solid rgba(255,255,255,.08); }
+.atlas-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 26px 20px 22px; color: #e9efe8; background-color: #193c3b; background-position: bottom -64px right -72px; background-size: 230px; background-repeat: no-repeat; border-right: 1px solid rgba(255,255,255,.08); }
 .atlas-sidebar:before { content:""; position:absolute; inset:0; pointer-events:none; background: linear-gradient(180deg, rgba(13,42,41,.96), rgba(22,57,55,.92)); }
 .atlas-sidebar > * { position: relative; }
 .brand-block { display:flex; align-items:center; gap:12px; padding-bottom:24px; border-bottom:1px solid rgba(255,255,255,.16); }

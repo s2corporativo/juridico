@@ -4,6 +4,9 @@ import {
   Database, FileSearch, Landmark, Scale, Search, ShieldCheck, Sparkles,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { buildTopicLabels } from "@shared/compendium-presentation";
+
+const COMPENDIUM_PAGE_SIZE = 12;
 
 const sourceStatuses = ["official_confirmed", "official_without_number", "attachment_reviewed", "secondary_pending", "movement_observed", "search_thematic"] as const;
 type SourceStatus = (typeof sourceStatuses)[number];
@@ -39,7 +42,7 @@ export default function CompendiumPage() {
     legalArea: area === "Todas" ? undefined : area,
     sourceStatus: sourceStatus === "Todas" ? undefined : sourceStatus,
     page,
-    pageSize: 12,
+    pageSize: COMPENDIUM_PAGE_SIZE,
   }), [query, tribunal, city, area, sourceStatus, page]);
   const search = trpc.compendium.search.useQuery(searchInput);
   const areas = useMemo(
@@ -59,9 +62,9 @@ export default function CompendiumPage() {
     return <main className="compendium-loading error"><CircleAlert size={24} /><p>O Compêndio não pôde carregar a base auditável.</p></main>;
   }
 
-  const selectedTopics = new Map((search.data?.topicLinks ?? []).map(link => [link.jurisprudenceId, topicMap.get(link.topicId)?.title ?? "Tema não classificado"]));
+  const selectedTopics = buildTopicLabels(search.data?.topicLinks ?? [], new Map((snapshot?.topics ?? []).map(topic => [topic.id, topic.title])));
   const totalResults = search.data?.total ?? 0;
-  const pageCount = Math.max(1, Math.ceil(totalResults / 12));
+  const pageCount = Math.max(1, Math.ceil(totalResults / COMPENDIUM_PAGE_SIZE));
 
   const resetPage = () => setPage(0);
 
@@ -129,7 +132,7 @@ export default function CompendiumPage() {
             <span>{search.isFetching ? "atualizando…" : `${totalResults} ${totalResults === 1 ? "resultado" : "resultados"}`}</span>
           </div>
           <div className="decision-grid">
-            {decisions.map(decision => {
+            {search.isError ? <div className="compendium-empty error"><CircleAlert size={18} /> A busca não pôde ser concluída. Tente novamente; nenhum dado foi alterado.</div> : decisions.map(decision => {
               const source = sourcesById.get(decision.sourceId);
               return <article className="decision-card" key={decision.id}>
                 <div className="decision-meta"><span>{decision.tribunal} · {decision.city ?? "Origem não informada"}</span><i className={decision.sourceStatus === "official_confirmed" ? "official" : "review"}>{sourceLabel[decision.sourceStatus] ?? decision.sourceStatus}</i></div>
@@ -143,9 +146,9 @@ export default function CompendiumPage() {
                 <div className="decision-foot"><code>{decision.cnjNumber ?? decision.externalId}</code>{source?.sourceUrl && <a href={source.sourceUrl} target="_blank" rel="noreferrer">Fonte oficial <ArrowUpRight size={14} /></a>}</div>
               </article>;
             })}
-            {decisions.length === 0 && <div className="compendium-empty">Nenhum registro corresponde aos filtros. Remova um termo ou selecione outra área.</div>}
+            {!search.isError && decisions.length === 0 && <div className="compendium-empty">Nenhum registro corresponde aos filtros. Remova um termo ou selecione outra área.</div>}
           </div>
-          {totalResults > 12 && <div className="compendium-pagination"><button disabled={page === 0} onClick={() => setPage(current => Math.max(0, current - 1))}>Anterior</button><span>Página {page + 1} de {pageCount}</span><button disabled={page + 1 >= pageCount} onClick={() => setPage(current => current + 1)}>Próxima</button></div>}
+          {!search.isError && totalResults > COMPENDIUM_PAGE_SIZE && <div className="compendium-pagination"><button disabled={page === 0} onClick={() => setPage(current => Math.max(0, current - 1))}>Anterior</button><span>Página {page + 1} de {pageCount}</span><button disabled={page + 1 >= pageCount} onClick={() => setPage(current => current + 1)}>Próxima</button></div>}
         </section>
 
         <section className="compendium-columns" id="teses">

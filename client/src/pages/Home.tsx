@@ -90,6 +90,7 @@ const CITY_SOFT: Record<string, string> = {
   "Belo Horizonte": "#a9cbc4",
   Betim: "#e2b47a",
 };
+const ATLAS_SEAL_URL = "/manus-storage/atlas-forense-seal_7ca15135.jpg";
 const fmt = new Intl.NumberFormat("pt-BR");
 const fmtOne = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 const durationOrder = ["0–30 dias", "31–90 dias", "91–180 dias", "181–365 dias", "Mais de 365 dias"];
@@ -271,7 +272,7 @@ export default function Home() {
 
   return (
     <div className="atlas-shell">
-      <aside className="atlas-sidebar">
+      <aside className="atlas-sidebar" style={{ backgroundImage: `url(${ATLAS_SEAL_URL})` }}>
         <div className="brand-block">
           <img className="brand-mark" src="/manus-storage/atlas-forense-logo_bb6317e2.png" alt="Marca gráfica Atlas Forense" />
           <div><span>Atlas Forense</span><strong>JEC comparado</strong><small>duas comarcas · uma linha de prova</small></div>

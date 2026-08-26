@@ -45,4 +45,14 @@ describe("controlled compendium ingestion", () => {
     await expect(userCaller.compendium.ingestion.preview({ batchKey: "lote-admin", candidates: [candidate] })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(adminCaller.compendium.ingestion.preview({ batchKey: "lote-admin", candidates: [candidate] })).resolves.toMatchObject({ accepted: 1, rejected: 0 });
   });
+
+  it("rejects personal identifiers in metadata values and malformed CNJ numbers", () => {
+    const preview = previewControlledIngestion("lote-privacidade", [
+      { externalId: "tjmg-004", cnjNumber: "123", tribunal: "TJMG", justice: "Estadual", decisionType: "Acórdão", sourceStatus: "attachment_reviewed", metadata: { observacao: "Contato: pessoa@exemplo.com" } },
+    ]);
+    expect(preview.items[0]?.reasons).toEqual(expect.arrayContaining([
+      "Metadados contêm campo incompatível com a camada pública.",
+      "Número CNJ deve conter 20 dígitos quando informado.",
+    ]));
+  });
 });
