@@ -81,3 +81,6 @@
 - [x] Validar de modo seguro a chave pública encontrada, sem registrá-la em arquivos, logs ou banco.
 - [x] Atualizar a documentação operacional com requisitos DataJud confirmados e limites de cobertura.
 - [x] Refazer a validação pública do DataJud sem usar arquivo temporário, mantendo a chave somente em memória.
+- [x] Mapear plataformas comparáveis de jurimetria, pesquisa jurídica e inteligência de precedentes.
+- [x] Avaliar funcionalidades, governança, evidências e limites das referências encontradas.
+- [x] Priorizar melhorias aplicáveis ao Atlas Forense com estimativa de valor, risco e esforço.
