@@ -35,3 +35,16 @@ export type FacetCollectionSnapshot = {
 export function hasCompleteNationalFacetCollection(snapshot: FacetCollectionSnapshot) {
   return snapshot.aliases > 0 && snapshot.successfulAliases === snapshot.aliases && snapshot.errors.length === 0 && snapshot.pages.subject > 0 && snapshot.pages.judging_body > 0;
 }
+
+export type NationalCensusFilter = { from?: string; to?: string; tribunalAlias?: string };
+
+export function normalizeNationalCensusFilter(input: NationalCensusFilter) {
+  const validMonth = (value?: string) => value && /^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? value : undefined;
+  const from = validMonth(input.from);
+  const to = validMonth(input.to);
+  return {
+    from: from && to && from > to ? to : from,
+    to: from && to && from > to ? from : to,
+    tribunalAlias: input.tribunalAlias?.trim().toLowerCase() || undefined,
+  };
+}

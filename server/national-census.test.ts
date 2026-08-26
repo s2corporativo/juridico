@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getNationalDistributionStatus, hasCompleteNationalFacetCollection, summarizeNationalCensusReadiness } from "./national-census";
+import { getNationalDistributionStatus, hasCompleteNationalFacetCollection, normalizeNationalCensusFilter, summarizeNationalCensusReadiness } from "./national-census";
 
 describe("national census readiness", () => {
   it("does not represent a censo as available without a persisted run", () => {
@@ -24,5 +24,10 @@ describe("national census readiness", () => {
   it("requires complete alias and page coverage before calling facets consolidated", () => {
     expect(hasCompleteNationalFacetCollection({ aliases: 27, successfulAliases: 27, errors: [], pages: { subject: 88, judging_body: 59 } })).toBe(true);
     expect(hasCompleteNationalFacetCollection({ aliases: 27, successfulAliases: 26, errors: [{ alias: "tjmg" }], pages: { subject: 88, judging_body: 59 } })).toBe(false);
+  });
+
+  it("normalizes valid national period and tribunal filters without accepting invalid months", () => {
+    expect(normalizeNationalCensusFilter({ from: "2026-08", to: "2025-01", tribunalAlias: " TJMG " })).toEqual({ from: "2025-01", to: "2026-08", tribunalAlias: "tjmg" });
+    expect(normalizeNationalCensusFilter({ from: "2026-99", tribunalAlias: "" })).toEqual({ from: undefined, to: undefined, tribunalAlias: undefined });
   });
 });

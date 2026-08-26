@@ -18,7 +18,18 @@
 - [ ] Confirmar aliases, cobertura e comparabilidade nacional do JEC no DataJud.
 - [ ] Extrair e validar censo mensal nacional por tribunal e unidade federativa.
 - [ ] Consolidar causas e órgãos comparáveis para a visão nacional.
-- [ ] Adaptar painel, filtros, exportações e relatório para recorte Brasil.
+- [x] Adaptar painel, filtros, exportações e relatório para recorte Brasil.
+- [x] Implementar filtros nacionais por período e tribunal sobre métricas agregadas reais.
+- [x] Implementar exportação CSV nacional com fonte, escopo, cobertura e limitações metodológicas.
+- [x] Implementar relatório imprimível do recorte nacional sem taxas ou baixas inexistentes.
+- [x] Separar visualmente as facetas de período integral do recorte filtrado na rota nacional.
+- [x] Incluir cobertura e estado de execução como metadados explícitos no CSV nacional.
+- [x] Validar recorte filtrado, CSV e impressão com consistência de filtros e limitações.
+- [x] Confirmar no arquivo CSV baixado os metadados de cobertura, estado, escopo e ausência de baixas.
+- [x] Confirmar em visualização de impressão a ocultação de controles e as limitações do recorte nacional.
+- [x] Validar em pré-visualização ou impressão nativa que o relatório preserva filtro, cobertura e ressalvas metodológicas.
+- [x] Extrair do PDF nacional evidência textual de filtro, cobertura, estado e ressalvas metodológicas.
+- [x] Formalizar a decisão de manter facetas integrais fora do recorte ativo e validar a sinalização correspondente.
 - [ ] Validar e entregar a versão nacional do Atlas Forense.
 - [x] Inspecionar o ZIP jurisprudencial, inventariar formatos e identificar riscos de dados pessoais.
 - [x] Definir modelo de taxonomia, evidência, tese e vínculo de julgados do Compêndio Nacional.

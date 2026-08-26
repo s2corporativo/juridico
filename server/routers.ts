@@ -38,7 +38,7 @@ export const appRouter = router({
   }),
   nationalCensus: router({
     readiness: publicProcedure.query(() => getNationalCensusReadiness()),
-    overview: publicProcedure.query(() => getNationalCensusOverview()),
+    overview: publicProcedure.input(z.object({ from: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(), to: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(), tribunalAlias: z.string().trim().max(64).optional() }).optional()).query(({ input }) => getNationalCensusOverview(input)),
   }),
   compendium: router({
     overview: publicProcedure.query(() => getCompendiumOverview()),

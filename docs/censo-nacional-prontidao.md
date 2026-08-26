@@ -44,6 +44,18 @@ A soma de assuntos é superior ao total de distribuições porque a classificaç
 
 A rota `/nacional` foi revisada em desktop e em viewport móvel de **375 × 812 px** após a importação integral. A série mensal, os maiores volumes, os 12 assuntos e os 12 órgãos mais frequentes mantiveram leitura, sem dados pessoais, com as ressalvas de parcialidade, sobreposição de assuntos e ausência de baixas visíveis no próprio painel.
 
+Os filtros do painel foram testados com o recorte **TJMG, 2026-01 a 2026-08**, retornando somente as oito células mensais do tribunal e o total correspondente. A exportação CSV do mesmo recorte é gerada no navegador com fonte, escopo, parcialidade de 2026, ausência de baixas e cinco colunas estritamente agregadas: tribunal, UF, mês, métrica e quantidade. O relatório de impressão usa o mesmo estado de filtro, omitindo navegação e controles no papel.
+
+Após a revisão final, o CSV passou a declarar também **cobertura de 100% (27/27 TJs)** e estado **cobertura parcial**. O contrato de exportação tem teste automatizado. As facetas de assunto e órgão aparecem em bloco próprio, rotulado como **“Facetas nacionais integrais · fora do recorte ativo”**, para não sugerir que os filtros de período ou tribunal as alteram. A página foi verificada em desktop e em tela móvel após essa separação visual.
+
+**Decisão de escopo:** enquanto não houver facetas mensais por tribunal na base, assuntos e órgãos permanecem deliberadamente fora do recorte ativo. O rótulo e a nota explicam que se referem ao período-base completo de 2025-01 a 2026-08; não se deve ler seus valores como resultado do filtro selecionado.
+
+O acionamento de **Relatório / imprimir** abriu o diálogo nativo do navegador, que não pôde ser inspecionado pela automação por depender da interface local de impressão. Em substituição à inspeção visual do diálogo, há teste automatizado do contrato de impressão: ele verifica que a folha oculta trilho, barra superior e controles de filtro, preserva os blocos nacionais e evita quebra interna desses blocos. A confirmação material em impressora ou pré-visualização do sistema continua como validação operacional a ser feita pelo usuário antes do uso externo.
+
+Posteriormente, a rota `/nacional` foi renderizada por Chromium headless com tempo de hidratação de 12 segundos. O PDF resultante usou **cinco páginas A4**: a primeira preservou título, estado **Cobertura Parcial**, 100% de cobertura e período; a segunda preservou o recorte ativo, a série mensal e a ressalva de ausência de baixas, sem trilho, barra de navegação, campos de seleção ou botões. Essa renderização confirma o contrato de impressão sem depender do diálogo nativo.
+
+A extração textual do mesmo PDF confirmou as expressões **“Cobertura Parcial”**, **“100%”**, **“Filtro ativo: 2025-01 — 2026-08 · Brasil”**, a indicação de que **“Baixas não foram coletadas”** e a ressalva de que taxas e rankings comparativos permanecem indisponíveis. A busca não encontrou textos dos controles interativos (`CSV do recorte`, `Relatório / imprimir`, `Início` ou seletor de tribunal), corroborando sua ocultação na saída impressa.
+
 ## Diagnóstico para baixas
 
 O alias TJMG aceitou agregação de nomes de movimentos para o mesmo recorte JEC, o que confirma disponibilidade técnica inicial do campo. Contudo, a série de baixa exige correlacionar **nome exato “Baixa Definitiva”**, data do respectivo movimento e número de processo para deduplicação por processo/mês. Uma agregação simples de campos de movimento pode misturar datas de atos distintos; por isso, o Atlas não a utilizará como série de baixa. A próxima etapa requer extração paginada e minimizada do coorte, deduplicação local e auditoria do total percorrido antes de qualquer publicação.
