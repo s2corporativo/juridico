@@ -115,6 +115,20 @@ export const nationalCensusMetrics = mysqlTable("national_census_metrics", {
   index("national_census_metrics_tribunal_idx").on(table.tribunalAlias),
 ]);
 
+/** Facetas nacionais agregadas do recorte, sem processos concretos ou dados de partes. */
+export const nationalCensusFacets = mysqlTable("national_census_facets", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  kind: mysqlEnum("kind", ["subject", "judging_body"]).notNull(),
+  code: varchar("code", { length: 64 }).notNull(),
+  label: varchar("label", { length: 500 }).notNull(),
+  amount: int("amount").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("national_census_facets_unique").on(table.runId, table.kind, table.code),
+  index("national_census_facets_kind_idx").on(table.kind),
+]);
+
 export const legalTheses = mysqlTable("legal_theses", {
   id: int("id").autoincrement().primaryKey(),
   topicId: int("topicId").notNull(),

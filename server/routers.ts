@@ -1,8 +1,8 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
-import { getCompendiumOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
+import { getCompendiumOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
 import { previewControlledIngestion } from "./compendium.ingestion";
-import { DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess } from "./datajud";
+import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
 import { getEjcIntegrationStatus } from "@shared/ejc-integration";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -31,12 +31,14 @@ export const appRouter = router({
   datajud: router({
     status: publicProcedure.query(() => getDataJudConnectionStatus()),
     lookup: adminProcedure.input(z.object({ tribunalAlias: z.enum(DATAJUD_ALIASES), processNumber: z.string().trim().min(1).max(80) })).mutation(({ input }) => lookupDataJudByProcess(input.tribunalAlias, input.processNumber)),
+    coverage: adminProcedure.input(z.object({ aliases: z.array(z.enum(NATIONAL_DATAJUD_ALIASES)).min(1).max(NATIONAL_DATAJUD_ALIASES.length).optional() })).mutation(({ input }) => checkDataJudCoverage(input.aliases)),
   }),
   integration: router({
     ejcStatus: publicProcedure.query(() => getEjcIntegrationStatus()),
   }),
   nationalCensus: router({
     readiness: publicProcedure.query(() => getNationalCensusReadiness()),
+    overview: publicProcedure.query(() => getNationalCensusOverview()),
   }),
   compendium: router({
     overview: publicProcedure.query(() => getCompendiumOverview()),

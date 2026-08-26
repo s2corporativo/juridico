@@ -35,7 +35,17 @@
 - [x] Validar documentação, disponibilidade e licença das APIs públicas DataJud, STJ Dados Abertos e LexML.
 - [x] Criar catálogo auditável de fontes públicas, com cobertura, autenticação, termos e nível de integração.
 - [x] Implementar conector seguro para o catálogo aberto do STJ, sem persistir arquivos ou texto integral sem revisão.
-- [ ] Preparar conector DataJud com chave temporária, citação obrigatória e controles de cobertura.
+- [x] Formalizar a política de credencial temporária do DataJud e aprovar ou restringir a resolução dinâmica pública.
+- [x] Implementar e validar status de cobertura por tribunal e alias antes da coleta nacional.
+- [x] Registrar em teste e rota administrativa a política final de credencial, alias e cobertura do DataJud.
+- [x] Executar coleta mensal agregada de distribuições JEC nos 27 TJs, com confirmação de total exato e sem dados pessoais.
+- [x] Persistir somente métricas agregadas e manifesto de execução, mantendo baixas como camada separada até validação específica.
+- [x] Expor na prontidão nacional as distribuições reais agregadas, mantendo baixas e conclusões comparativas explicitamente indisponíveis.
+- [ ] Coletar e validar baixas definitivas do coorte nacional sem transformar a série em estoque ou taxa de clearance.
+- [ ] Projetar e validar uma extração paginada de baixas com correlação exata de movimento, processo e mês antes da coleta nacional completa.
+- [x] Coletar e consolidar assuntos CNJ e órgãos julgadores nacionais como facetas agregadas, sem processos individuais.
+- [x] Paginar as facetas DataJud por alias e validar que não há truncamento silencioso de buckets.
+- [x] Documentar e testar a completude operacional das facetas agregadas antes de apresentá-las como consolidadas.
 - [x] Registrar como consulta manual as fontes sem API documentada, sem scraping ou contorno de controles.
 - [x] Exibir na interface as fontes integradas, seu escopo probatório e suas limitações de uso.
 - [x] Confirmar em fonte oficial os termos ou a licença aplicável ao Webservice LexML.
@@ -52,3 +62,7 @@
 - [x] Consolidar o relatório de revisão e registrar bloqueios externos remanescentes.
 - [x] Resolver ou documentar tecnicamente a incompatibilidade do plugin de localização JSX com Vite 7.
 - [x] Eliminar o aviso de build do selo Atlas servido por storage persistente.
+- [x] Pesquisar amplamente em fontes oficiais os requisitos públicos, aliases e regras de uso do DataJud.
+- [x] Validar de modo seguro a chave pública encontrada, sem registrá-la em arquivos, logs ou banco.
+- [x] Atualizar a documentação operacional com requisitos DataJud confirmados e limites de cobertura.
+- [x] Refazer a validação pública do DataJud sem usar arquivo temporário, mantendo a chave somente em memória.

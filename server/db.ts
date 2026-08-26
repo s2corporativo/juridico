@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusMetrics, nationalCensusRuns, publicDataSources, users } from "../drizzle/schema";
-import { summarizeNationalCensusReadiness } from "./national-census";
+import { evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, users } from "../drizzle/schema";
+import { getNationalDistributionStatus, summarizeNationalCensusReadiness } from "./national-census";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -104,6 +104,29 @@ export async function getNationalCensusReadiness() {
     db.select({ count: sql<number>`count(*)` }).from(nationalCensusMetrics),
   ]);
   return summarizeNationalCensusReadiness(runs, Number(metricCount[0]?.count ?? 0));
+}
+
+export async function getNationalCensusOverview() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const readiness = await getNationalCensusReadiness();
+  const runId = readiness.latest?.id;
+  if (!runId) return { readiness, distributionStatus: getNationalDistributionStatus(readiness), monthly: [], tribunals: [], subjects: [], judgingBodies: [] };
+  const condition = and(eq(nationalCensusMetrics.runId, runId), eq(nationalCensusMetrics.metric, "distribution"));
+  const [monthly, tribunals, subjects, judgingBodies] = await Promise.all([
+    db.select({ month: nationalCensusMetrics.month, amount: sql<number>`sum(${nationalCensusMetrics.amount})` }).from(nationalCensusMetrics).where(condition).groupBy(nationalCensusMetrics.month).orderBy(asc(nationalCensusMetrics.month)),
+    db.select({ alias: nationalCensusMetrics.tribunalAlias, uf: nationalCensusMetrics.uf, amount: sql<number>`sum(${nationalCensusMetrics.amount})` }).from(nationalCensusMetrics).where(condition).groupBy(nationalCensusMetrics.tribunalAlias, nationalCensusMetrics.uf).orderBy(desc(sql`sum(${nationalCensusMetrics.amount})`)).limit(10),
+    db.select({ code: nationalCensusFacets.code, label: nationalCensusFacets.label, amount: nationalCensusFacets.amount }).from(nationalCensusFacets).where(and(eq(nationalCensusFacets.runId, runId), eq(nationalCensusFacets.kind, "subject"))).orderBy(desc(nationalCensusFacets.amount)).limit(12),
+    db.select({ code: nationalCensusFacets.code, label: nationalCensusFacets.label, amount: nationalCensusFacets.amount }).from(nationalCensusFacets).where(and(eq(nationalCensusFacets.runId, runId), eq(nationalCensusFacets.kind, "judging_body"))).orderBy(desc(nationalCensusFacets.amount)).limit(12),
+  ]);
+  return {
+    readiness,
+    distributionStatus: getNationalDistributionStatus(readiness),
+    monthly: monthly.map(row => ({ month: row.month, amount: Number(row.amount ?? 0) })),
+    tribunals: tribunals.map(row => ({ alias: row.alias, uf: row.uf, amount: Number(row.amount ?? 0) })),
+    subjects: subjects.map(row => ({ code: row.code, label: row.label, amount: Number(row.amount ?? 0) })),
+    judgingBodies: judgingBodies.map(row => ({ code: row.code, label: row.label, amount: Number(row.amount ?? 0) })),
+  };
 }
 
 export async function getCompendiumOverview() {
