@@ -12,6 +12,10 @@ Data da validação: **26/08/2026**.
 
 > A matriz de fontes apresenta situação de integração, autenticação, cobertura, limite de uso e links de documentação. Nenhuma decisão, PDF, recurso do STJ ou dado do DataJud foi importado por essa etapa.
 
+## Evidência de indisponibilidade do SRU LexML
+
+Em **26/08/2026**, uma consulta mínima ao endereço SRU divulgado pelo portal LexML foi realizada sem qualquer técnica de contorno. Após a verificação de conexão do próprio Senado Federal, o servidor oficial retornou **HTTP 404 — “The requested resource [/busca/SRU] is not available”**. Por esse motivo, o conector permanece classificado como **consulta manual**. A plataforma não fará nova automação desse endpoint sem documentação atualizada ou resposta funcional oficial.
+
 ## Referências
 
 [1] [CNJ — API Pública DataJud](https://datajud-wiki.cnj.jus.br/api-publica/)

@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, publicDataSources, users } from "../drizzle/schema";
+import { evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusMetrics, nationalCensusRuns, publicDataSources, users } from "../drizzle/schema";
+import { summarizeNationalCensusReadiness } from "./national-census";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -93,6 +94,16 @@ export async function getPublicDataSources() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   return db.select().from(publicDataSources).orderBy(asc(publicDataSources.label));
+}
+
+export async function getNationalCensusReadiness() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [runs, metricCount] = await Promise.all([
+    db.select().from(nationalCensusRuns).orderBy(desc(nationalCensusRuns.createdAt)),
+    db.select({ count: sql<number>`count(*)` }).from(nationalCensusMetrics),
+  ]);
+  return summarizeNationalCensusReadiness(runs, Number(metricCount[0]?.count ?? 0));
 }
 
 export async function getCompendiumOverview() {

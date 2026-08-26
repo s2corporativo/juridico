@@ -1,8 +1,10 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
-import { getCompendiumOverview, getPublicDataSources, searchCompendium } from "./db";
+import { getCompendiumOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
 import { previewControlledIngestion } from "./compendium.ingestion";
+import { DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
+import { getEjcIntegrationStatus } from "@shared/ejc-integration";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
@@ -25,6 +27,16 @@ export const appRouter = router({
   sources: router({
     list: publicProcedure.query(() => getPublicDataSources()),
     stjCatalog: publicProcedure.input(z.object({ query: z.string().trim().max(120).optional() })).query(({ input }) => fetchStjJurisprudenceCatalog(input.query)),
+  }),
+  datajud: router({
+    status: publicProcedure.query(() => getDataJudConnectionStatus()),
+    lookup: adminProcedure.input(z.object({ tribunalAlias: z.enum(DATAJUD_ALIASES), processNumber: z.string().trim().min(1).max(80) })).mutation(({ input }) => lookupDataJudByProcess(input.tribunalAlias, input.processNumber)),
+  }),
+  integration: router({
+    ejcStatus: publicProcedure.query(() => getEjcIntegrationStatus()),
+  }),
+  nationalCensus: router({
+    readiness: publicProcedure.query(() => getNationalCensusReadiness()),
   }),
   compendium: router({
     overview: publicProcedure.query(() => getCompendiumOverview()),

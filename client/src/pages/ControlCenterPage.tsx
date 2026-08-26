@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { AlertTriangle, ArrowLeft, CheckCircle2, FileCheck2, FileLock2, KeyRound, Scale, ShieldCheck, Upload, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Database, FileCheck2, FileLock2, KeyRound, Scale, Search, ShieldCheck, Upload, XCircle } from "lucide-react";
 import { useState } from "react";
 
 type CandidateInput = {
@@ -20,7 +20,11 @@ export default function ControlCenterPage() {
   const [batchKey, setBatchKey] = useState("");
   const [rawCandidates, setRawCandidates] = useState("[]");
   const [parseError, setParseError] = useState<string | null>(null);
+  const [tribunalAlias, setTribunalAlias] = useState<"tjmg" | "trt3" | "trf6" | "tre-mg" | "tjmmg">("tjmg");
+  const [processNumber, setProcessNumber] = useState("");
   const preview = trpc.compendium.ingestion.preview.useMutation();
+  const dataJudStatus = trpc.datajud.status.useQuery();
+  const dataJudLookup = trpc.datajud.lookup.useMutation();
 
   const runPreview = () => {
     setParseError(null);
@@ -37,6 +41,11 @@ export default function ControlCenterPage() {
   };
 
   const isAdmin = user?.role === "admin";
+
+  const runDataJudLookup = () => {
+    dataJudLookup.reset();
+    dataJudLookup.mutate({ tribunalAlias, processNumber });
+  };
 
   return (
     <div className="control-shell">
@@ -59,6 +68,7 @@ export default function ControlCenterPage() {
           {preview.error && <p className="preflight-error"><XCircle size={16} /> {preview.error.message}</p>}
           <button className="preflight-button" disabled={preview.isPending || !batchKey.trim()} onClick={runPreview}>{preview.isPending ? "Validando…" : "Executar pré-validação"}</button>
           {preview.data && <div className="preflight-result"><div><span>ACEITOS</span><strong>{preview.data.accepted}</strong></div><div><span>REJEITADOS</span><strong>{preview.data.rejected}</strong></div><div className="preflight-items">{preview.data.items.map(item => <article key={item.externalId}><span>{item.accepted ? <CheckCircle2 size={16} /> : <XCircle size={16} />}</span><code>{item.externalId}</code><p>{item.accepted ? "Elegível para revisão humana posterior." : item.reasons.join(" ")}</p></article>)}</div></div>}
+          <section className="datajud-admin-panel"><div className="preflight-heading"><Database size={21} /><div><span>CONSULTA PONTUAL · DATAJUD</span><h2>Consultar metadados públicos com controle.</h2></div></div><p className="datajud-admin-note">{dataJudStatus.data?.label ?? "Verificando disponibilidade do conector…"}. A consulta retorna apenas metadados públicos mínimos e não grava nenhum resultado no acervo.</p><div className="datajud-form"><label className="preflight-field"><span>Tribunal</span><select value={tribunalAlias} onChange={event => setTribunalAlias(event.target.value as typeof tribunalAlias)}><option value="tjmg">TJMG</option><option value="trt3">TRT 3ª Região</option><option value="trf6">TRF 6ª Região</option><option value="tre-mg">TRE-MG</option><option value="tjmmg">TJM-MG</option></select></label><label className="preflight-field"><span>Número CNJ</span><input value={processNumber} onChange={event => setProcessNumber(event.target.value)} placeholder="0000000-00.0000.0.00.0000" /></label><button className="preflight-button" disabled={dataJudLookup.isPending || !processNumber.trim() || !dataJudStatus.data?.configured} onClick={runDataJudLookup}><Search size={15} /> {dataJudLookup.isPending ? "Consultando…" : "Consultar DataJud"}</button></div>{!dataJudStatus.data?.configured && <p className="preflight-warning"><KeyRound size={16} /> A chave não está configurada neste ambiente. Nenhuma credencial é exibida ou armazenada por esta tela.</p>}{dataJudLookup.error && <p className="preflight-error"><XCircle size={16} /> {dataJudLookup.error.message}</p>}{dataJudLookup.data && <div className="datajud-result"><span>{dataJudLookup.data.found ? "METADADO ENCONTRADO" : "SEM RESULTADO"}</span>{dataJudLookup.data.record ? <dl><div><dt>Número</dt><dd>{dataJudLookup.data.record.numeroProcesso ?? "Não informado"}</dd></div><div><dt>Órgão</dt><dd>{dataJudLookup.data.record.orgaoJulgador ?? "Não informado"}</dd></div><div><dt>Classe</dt><dd>{dataJudLookup.data.record.classe ?? "Não informada"}</dd></div><div><dt>Atualização</dt><dd>{dataJudLookup.data.record.updatedAt ?? "Não informada"}</dd></div></dl> : <p>Não houve registro retornado pela fonte selecionada.</p>}<small>{dataJudLookup.data.citation}</small></div>}</section>
         </section>}
       </main>
     </div>

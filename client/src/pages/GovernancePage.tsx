@@ -1,10 +1,13 @@
 import { COMPENDIUM_MODULES, EVIDENCE_FLOW, GOVERNANCE_GUARDRAILS, GOVERNANCE_LANES } from "@shared/compendium-governance";
+import { ejcIntegrationManifest } from "@shared/ejc-integration";
+import { trpc } from "@/lib/trpc";
 import { ArrowLeft, ArrowUpRight, BookOpenCheck, Database, FileLock2, Landmark, Network, Scale, ShieldCheck, UserRoundCheck, Workflow } from "lucide-react";
 
 const icons = [Landmark, BookOpenCheck, Scale, FileLock2] as const;
 const laneIcons = [UserRoundCheck, ShieldCheck, Workflow] as const;
 
 export default function GovernancePage() {
+  const ejcStatus = trpc.integration.ejcStatus.useQuery();
   return (
     <div className="governance-shell">
       <aside className="governance-rail">
@@ -23,12 +26,14 @@ export default function GovernancePage() {
       </aside>
 
       <main className="governance-main">
-        <header className="governance-topbar"><a href="/" className="back-to-atlas"><ArrowLeft size={16} /> Atlas JEC</a><div className="governance-header-actions"><a href="/fontes">Fontes públicas</a><a href="/controle">Central de controle</a><a href="/compendio" className="governance-compendium-link">Abrir Compêndio <ArrowUpRight size={15} /></a></div></header>
+        <header className="governance-topbar"><a href="/" className="back-to-atlas"><ArrowLeft size={16} /> Atlas JEC</a><div className="governance-header-actions"><a href="/nacional">Prontidão nacional</a><a href="/fontes">Fontes públicas</a><a href="/controle">Central de controle</a><a href="/compendio" className="governance-compendium-link">Abrir Compêndio <ArrowUpRight size={15} /></a></div></header>
 
         <section className="governance-hero">
           <div><span className="eyebrow">ATLAS FORENSE · ORGANIZAÇÃO INTERNA</span><h1>Uma base jurídica só escala quando cada camada sabe <em>o que prova</em> e quem a governa.</h1><p>O Atlas Forense passa a operar por módulos independentes e conectados: censo, pesquisa, teses, taxonomia e auditoria. O vínculo com o EJC será uma integração posterior, sobre esta estrutura já controlada.</p></div>
           <div className="governance-mark"><Network size={24} /><span>ARQUITETURA<br />PRIMEIRO</span><b>01</b></div>
         </section>
+
+        <section className="ejc-bridge-status"><div><span className="eyebrow">PONTE EJC · NÃO ATIVA</span><h2>Rotas e identidade estão prontas para a decisão de vínculo.</h2><p>{ejcStatus.data?.activationRule ?? "Verificando o contrato de integração…"}</p></div><div>{ejcIntegrationManifest.modules.map(module => <p key={module.key}><b>{module.label}</b><code>{module.route}</code><small>{module.access}</small></p>)}</div></section>
 
         <section className="governance-modules" id="modulos">
           <div className="governance-section-heading"><Database size={20} /><div><span>MAPA DE MÓDULOS</span><h2>Camadas que não se confundem.</h2></div></div>

@@ -76,6 +76,45 @@ export const publicDataSources = mysqlTable("public_data_sources", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [index("public_data_sources_status_idx").on(table.integrationStatus)]);
 
+/** Execuções rastreáveis de censo DataJud; a chave e o corpo de consulta não são armazenados. */
+export const nationalCensusRuns = mysqlTable("national_census_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  runKey: varchar("runKey", { length: 191 }).notNull().unique(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull(),
+  status: mysqlEnum("status", ["planned", "running", "partial", "completed", "failed", "rejected"]).notNull(),
+  scope: varchar("scope", { length: 128 }).notNull(),
+  periodStart: varchar("periodStart", { length: 7 }).notNull(),
+  periodEnd: varchar("periodEnd", { length: 7 }).notNull(),
+  expectedTribunals: int("expectedTribunals").notNull(),
+  respondedTribunals: int("respondedTribunals").default(0).notNull(),
+  methodologyVersion: varchar("methodologyVersion", { length: 64 }).notNull(),
+  queryFingerprint: varchar("queryFingerprint", { length: 64 }),
+  coverageNote: text("coverageNote").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("national_census_runs_status_idx").on(table.status)]);
+
+/** Série agregada mensal por tribunal, sem números de processos ou dados pessoais. */
+export const nationalCensusMetrics = mysqlTable("national_census_metrics", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  tribunalAlias: varchar("tribunalAlias", { length: 64 }).notNull(),
+  tribunal: varchar("tribunal", { length: 128 }).notNull(),
+  uf: varchar("uf", { length: 2 }).notNull(),
+  month: varchar("month", { length: 7 }).notNull(),
+  metric: mysqlEnum("metric", ["distribution", "baixa"]).notNull(),
+  classCode: varchar("classCode", { length: 32 }).notNull().default(""),
+  subjectCode: varchar("subjectCode", { length: 32 }).notNull().default(""),
+  judgingBodyCode: varchar("judgingBodyCode", { length: 64 }).notNull().default(""),
+  amount: int("amount").notNull(),
+  sourceObservedAt: timestamp("sourceObservedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("national_census_metric_unique").on(table.runId, table.tribunalAlias, table.month, table.metric, table.classCode, table.subjectCode, table.judgingBodyCode),
+  index("national_census_metrics_month_idx").on(table.month),
+  index("national_census_metrics_tribunal_idx").on(table.tribunalAlias),
+]);
+
 export const legalTheses = mysqlTable("legal_theses", {
   id: int("id").autoincrement().primaryKey(),
   topicId: int("topicId").notNull(),

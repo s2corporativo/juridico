@@ -39,4 +39,9 @@
 - [x] Registrar como consulta manual as fontes sem API documentada, sem scraping ou contorno de controles.
 - [x] Exibir na interface as fontes integradas, seu escopo probatório e suas limitações de uso.
 - [x] Confirmar em fonte oficial os termos ou a licença aplicável ao Webservice LexML.
-- [ ] Executar consulta SRU LexML bem-sucedida ou registrar evidência oficial do bloqueio técnico antes de automatizar a fonte.
+- [x] Executar consulta SRU LexML bem-sucedida ou registrar evidência oficial do bloqueio técnico antes de automatizar a fonte.
+- [x] Criar manifesto técnico de integração com o EJC, incluindo rotas, módulos, papéis e limites de sigilo.
+- [x] Consumir o manifesto do EJC na navegação e expor status técnico sem ativar vínculo externo.
+- [x] Implementar contrato tipado de ponte de autenticação futura, com integração externa desativada e teste de isolamento.
+- [x] Criar modelo auditável para execuções e séries mensais do censo nacional DataJud.
+- [x] Exibir painel de prontidão e cobertura nacional sem simular estatísticas inexistentes.
