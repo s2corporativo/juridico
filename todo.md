@@ -53,7 +53,11 @@
 - [x] Persistir somente métricas agregadas e manifesto de execução, mantendo baixas como camada separada até validação específica.
 - [x] Expor na prontidão nacional as distribuições reais agregadas, mantendo baixas e conclusões comparativas explicitamente indisponíveis.
 - [ ] Coletar e validar baixas definitivas do coorte nacional sem transformar a série em estoque ou taxa de clearance.
-- [ ] Projetar e validar uma extração paginada de baixas com correlação exata de movimento, processo e mês antes da coleta nacional completa.
+- [x] Projetar e validar uma extração paginada de baixas com correlação exata de movimento, processo e mês antes da coleta nacional completa.
+- [x] Implementar coletor controlado de baixas com paginação por alias, descarte de identificadores e manifesto sem dados individuais.
+- [x] Cobrir em testes a parada de paginação, falhas por alias, cobertura parcial e descarte após agregação.
+- [x] Executar somente um dry-run de estrutura da paginação, sem processos, antes de solicitar autorização para a coleta completa.
+- [ ] Executar o coletor autorizado e validar no manifesto real os contadores por alias, páginas e cobertura, sem placeholders.
 - [x] Coletar e consolidar assuntos CNJ e órgãos julgadores nacionais como facetas agregadas, sem processos individuais.
 - [x] Paginar as facetas DataJud por alias e validar que não há truncamento silencioso de buckets.
 - [x] Documentar e testar a completude operacional das facetas agregadas antes de apresentá-las como consolidadas.
