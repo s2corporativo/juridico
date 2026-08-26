@@ -92,6 +92,8 @@ const CITY_SOFT: Record<string, string> = {
 const fmt = new Intl.NumberFormat("pt-BR");
 const fmtOne = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 const durationOrder = ["0–30 dias", "31–90 dias", "91–180 dias", "181–365 dias", "Mais de 365 dias"];
+const MIN_DATE = "2025-01-01";
+const MAX_DATE = "2026-08-26";
 
 function Pill({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "city" | "alert" }) {
   return <span className={`evidence-pill ${tone}`}>{children}</span>;
@@ -140,6 +142,17 @@ function PartialRuler({ compact = false }: { compact?: boolean }) {
 export default function Home() {
   const [city, setCity] = useState<CityFilter>("Todos");
   const [year, setYear] = useState<YearFilter>("Todos");
+  const [dateStart, setDateStart] = useState(MIN_DATE);
+  const [dateEnd, setDateEnd] = useState(MAX_DATE);
+
+  const setQuickYear = (nextYear: YearFilter) => {
+    setYear(nextYear);
+    if (nextYear === "2025") { setDateStart("2025-01-01"); setDateEnd("2025-12-31"); }
+    if (nextYear === "2026") { setDateStart("2026-01-01"); setDateEnd(MAX_DATE); }
+    if (nextYear === "Todos") { setDateStart(MIN_DATE); setDateEnd(MAX_DATE); }
+  };
+  const updateStart = (value: string) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return; setDateStart(value); if (value > dateEnd) setDateEnd(value); setYear("Todos"); };
+  const updateEnd = (value: string) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return; setDateEnd(value); if (value < dateStart) setDateStart(value); setYear("Todos"); };
 
   const includes = (item: { municipio: string; ano: string }) =>
     (city === "Todos" || item.municipio === city) && (year === "Todos" || item.ano === year);
@@ -301,11 +314,12 @@ export default function Home() {
               {(["Todos", "Belo Horizonte", "Betim"] as CityFilter[]).map((option) => <button key={option} onClick={() => setCity(option)} className={city === option ? "active" : ""}>{option === "Belo Horizonte" ? "BH" : option}</button>)}
             </div>
           </div>
-          <label className="year-select"><span>Ano</span><select value={year} onChange={(event) => setYear(event.target.value as YearFilter)}><option value="Todos">2025 + 2026*</option><option value="2025">2025</option><option value="2026">2026*</option></select></label>
-          <div className="filter-note"><CircleHelp size={15} /> O filtro atualiza toda a amostra; o censo permanece em série separada.</div>
+          <label className="year-select"><span>Atalho anual</span><select value={year} onChange={(event) => setQuickYear(event.target.value as YearFilter)}><option value="Todos">2025 + 2026*</option><option value="2025">2025</option><option value="2026">2026*</option></select></label>
+          <div className="date-range" aria-label="Período personalizado"><label><span>Data inicial</span><input type="date" min={MIN_DATE} max={MAX_DATE} value={dateStart} onChange={(event) => updateStart(event.target.value)} /></label><i>até</i><label><span>Data final</span><input type="date" min={MIN_DATE} max={MAX_DATE} value={dateEnd} onChange={(event) => updateEnd(event.target.value)} /></label></div>
+          <div className="filter-note"><CircleHelp size={15} /> O período personalizado atualiza o dossiê, o gráfico mensal, a comparação de órgãos e as exportações.</div>
         </section>
 
-        <AdvancedEvidencePanel city={city} year={year} />
+        <AdvancedEvidencePanel city={city} year={year} startDate={dateStart} endDate={dateEnd} />
 
         {activeYears.includes("2026") && <div className="partial-alert"><CalendarClock size={17} /><span><strong>2026 é parcial:</strong> a comparação anual deve considerar que os processos foram coletados até 26/08/2026.</span></div>}
 

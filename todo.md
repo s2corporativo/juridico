@@ -9,3 +9,7 @@
 - [x] Implementar seleção múltipla de assuntos CNJ e comparação de até três órgãos.
 - [x] Criar um modo de relatório para impressão PDF com capa, filtros e anexos metodológicos.
 - [x] Validar a atualização completa do painel e as exportações finais.
+- [x] Mapear limites de data e regras de cobertura para o recorte personalizado.
+- [x] Implementar seleção inicial e final de datas nos filtros do painel.
+- [x] Aplicar o período aos gráficos, comparações, CSV e relatório PDF.
+- [x] Validar os limites, mensagens metodológicas e responsividade do seletor.

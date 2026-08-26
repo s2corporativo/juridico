@@ -12,8 +12,17 @@ type TimelineCensus = { municipio: string; mes: string; distribuicoesCenso: numb
 const data = jecDashboardData as unknown as { meta: Record<string, string>; processRows: ProcessRow[]; timelineCensus: TimelineCensus[] };
 const fmt = new Intl.NumberFormat("pt-BR");
 const months = ["2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08"];
+const filingIso = (value: string) => {
+  const [date] = value.split(" ");
+  const [day, month, year] = date.split("/");
+  return `${year}-${month}-${day}`;
+};
+const displayDate = (value: string) => {
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? "—" : new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(parsed);
+};
 
-export function AdvancedEvidencePanel({ city, year }: { city: CityFilter; year: YearFilter }) {
+export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city: CityFilter; year: YearFilter; startDate: string; endDate: string }) {
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [orgaoDraft, setOrgaoDraft] = useState("");
@@ -23,12 +32,13 @@ export function AdvancedEvidencePanel({ city, year }: { city: CityFilter; year: 
   const includes = (item: ProcessRow) =>
     (city === "Todos" || item.municipio === city) &&
     (year === "Todos" || item.ano === year) &&
+    filingIso(item.dataAjuizamento) >= startDate && filingIso(item.dataAjuizamento) <= endDate &&
     (!selectedSubjects.length || selectedSubjects.some((subject) => item.assuntos.includes(subject))) &&
     (!selectedOrgaos.length || selectedOrgaos.includes(item.orgaoCodigo));
-  const rows = useMemo(() => data.processRows.filter(includes), [city, year, selectedSubjects, selectedOrgaos]);
+  const rows = useMemo(() => data.processRows.filter(includes), [city, year, startDate, endDate, selectedSubjects, selectedOrgaos]);
 
   const timeline = useMemo(() => months
-    .filter((month) => (year === "Todos" || month.startsWith(year)))
+    .filter((month) => (year === "Todos" || month.startsWith(year)) && month >= startDate.slice(0, 7) && month <= endDate.slice(0, 7))
     .map((month) => {
       const bh = data.timelineCensus.find((row) => row.municipio === "Belo Horizonte" && row.mes === month);
       const betim = data.timelineCensus.find((row) => row.municipio === "Betim" && row.mes === month);
@@ -39,7 +49,7 @@ export function AdvancedEvidencePanel({ city, year }: { city: CityFilter; year: 
         betimDistribuicoes: city === "Belo Horizonte" ? null : betim?.distribuicoesCenso ?? 0,
         betimBaixas: city === "Belo Horizonte" ? null : betim?.baixasCensoProcessos ?? 0,
       };
-    }), [city, year]);
+    }), [city, year, startDate, endDate]);
 
   const comparison = useMemo(() => {
     const grouped = new Map<string, { codigo: string; unidade: string; municipio: string; processos: number; tempos: number[] }>();
@@ -58,6 +68,7 @@ export function AdvancedEvidencePanel({ city, year }: { city: CityFilter; year: 
   const activeFilters = [
     city === "Todos" ? "Belo Horizonte e Betim" : city,
     year === "Todos" ? "2025 e 2026 parcial" : year === "2026" ? "2026 parcial" : "2025",
+    `${displayDate(startDate)} — ${displayDate(endDate)}`,
     selectedSubjects.length ? `${selectedSubjects.length} assunto(s) CNJ` : "Todos os assuntos",
     selectedOrgaos.length ? `${selectedOrgaos.length} órgão(s) selecionado(s)` : "Órgãos comparados por volume",
   ];
@@ -92,7 +103,7 @@ export function AdvancedEvidencePanel({ city, year }: { city: CityFilter; year: 
       </article>
 
       <div className="advanced-heading">
-        <div><span className="eyebrow">DOSSÊ FILTRÁVEL</span><h2>Assunto CNJ, órgãos e série censitária</h2><p>O detalhe usa os 800 processos concretos sem dados pessoais. A linha temporal apresenta o censo territorial de distribuições e as baixas definitivas do coorte 2025–2026.</p></div>
+        <div><span className="eyebrow">DOSSÊ FILTRÁVEL</span><h2>Assunto CNJ, órgãos e série censitária</h2><p>O detalhe aplica o período escolhido aos processos concretos sem dados pessoais. A linha temporal preserva o censo por meses alcançados pelo intervalo.</p></div>
         <div className="advanced-actions"><button onClick={exportCsv}><ArrowDownToLine size={15} /> CSV filtrado</button><button onClick={() => window.print()}><FileText size={15} /> PDF / imprimir</button></div>
       </div>
 
@@ -107,7 +118,7 @@ export function AdvancedEvidencePanel({ city, year }: { city: CityFilter; year: 
         <article className="timeline-card" data-evidence="FICHA 01A · CENSO MENSAL">
           <div className="timeline-title"><ArrowUpRight size={17} /><div><span>EVOLUÇÃO MENSAL</span><h3>Distribuições e baixas do coorte</h3></div></div>
           <div className="timeline-chart"><ResponsiveContainer width="100%" height="100%"><LineChart data={timeline} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}><CartesianGrid vertical={false} stroke="#d8d2c6" strokeDasharray="2 6" /><XAxis dataKey="mes" tickLine={false} axisLine={false} tick={{ fill: "#665b50", fontSize: 10 }} interval={1} /><YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "#665b50", fontSize: 10 }} /><Tooltip contentStyle={{ borderRadius: 2, border: "1px solid #d8d2c6", background: "#fffdf8" }} /><Legend iconType="plainline" wrapperStyle={{ fontSize: 11 }} />{city !== "Betim" && <Line type="monotone" dataKey="bhDistribuicoes" name="BH · distribuições" stroke="#154b4a" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />}{city !== "Betim" && <Line type="monotone" dataKey="bhBaixas" name="BH · baixas definitivas" stroke="#75a39b" strokeWidth={2} strokeDasharray="5 4" dot={false} activeDot={{ r: 4 }} />}{city !== "Belo Horizonte" && <Line type="monotone" dataKey="betimDistribuicoes" name="Betim · distribuições" stroke="#b56f2c" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />}{city !== "Belo Horizonte" && <Line type="monotone" dataKey="betimBaixas" name="Betim · baixas definitivas" stroke="#e2ac6f" strokeWidth={2} strokeDasharray="5 4" dot={false} activeDot={{ r: 4 }} />}</LineChart></ResponsiveContainer></div>
-          <p className="timeline-note"><Printer size={13} /> Para gerar PDF, use o botão e selecione “Salvar como PDF” no diálogo do navegador. <strong>{data.meta.alertaTimeline} {data.meta.definicaoBaixaCenso}</strong></p>
+          <p className="timeline-note"><Printer size={13} /> Para gerar PDF, use o botão e selecione “Salvar como PDF” no diálogo do navegador. <strong>O censo tem granularidade mensal: meses parcialmente alcançados pelo intervalo são exibidos por inteiro. {data.meta.definicaoBaixaCenso}</strong></p>
         </article>
         <aside className="advanced-note"><span className="eyebrow">LEITURA RESPONSÁVEL</span><h3>O censo permanece territorial; os filtros aprofundam o dossiê.</h3><p>Assuntos e órgãos filtram os processos detalhados, a comparação e o CSV. A série censitária mensal é deliberadamente preservada como referência ampla do território.</p><div><span>Fonte</span><b>DataJud · TJMG</b></div><div><span>Exportação</span><b>CSV e impressão PDF</b></div></aside>
       </div>
