@@ -5,6 +5,9 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+const sourceStatuses = ["official_confirmed", "official_without_number", "attachment_reviewed", "secondary_pending", "movement_observed", "search_thematic"] as const;
+type SourceStatus = (typeof sourceStatuses)[number];
+
 const sourceLabel: Record<string, string> = {
   official_confirmed: "Fonte oficial confirmada",
   official_without_number: "Fonte oficial sem número CNJ",
@@ -23,21 +26,30 @@ export default function CompendiumPage() {
   const overview = trpc.compendium.overview.useQuery();
   const [query, setQuery] = useState("");
   const [area, setArea] = useState("Todas");
+  const [tribunal, setTribunal] = useState("Todos");
+  const [city, setCity] = useState("Todas");
+  const [sourceStatus, setSourceStatus] = useState<SourceStatus | "Todas">("Todas");
+  const [page, setPage] = useState(0);
 
   const snapshot = overview.data;
+  const searchInput = useMemo(() => ({
+    query: query.trim() || undefined,
+    tribunal: tribunal === "Todos" ? undefined : tribunal,
+    city: city === "Todas" ? undefined : city,
+    legalArea: area === "Todas" ? undefined : area,
+    sourceStatus: sourceStatus === "Todas" ? undefined : sourceStatus,
+    page,
+    pageSize: 12,
+  }), [query, tribunal, city, area, sourceStatus, page]);
+  const search = trpc.compendium.search.useQuery(searchInput);
   const areas = useMemo(
-    () => ["Todas", ...Array.from(new Set(snapshot?.decisions.map(item => item.legalArea).filter((value): value is string => Boolean(value)) ?? []))],
+    () => ["Todas", ...(snapshot?.facets.legalAreas ?? [])],
     [snapshot],
   );
-  const decisions = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase("pt-BR");
-    return (snapshot?.decisions ?? []).filter(item => {
-      const matchesArea = area === "Todas" || item.legalArea === area;
-      const haystack = [item.theme, item.reasoningSummary, item.tribunal, item.city, item.cnjNumber, item.legalArea].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
-      return matchesArea && (!q || haystack.includes(q));
-    });
-  }, [snapshot, query, area]);
-  const sourcesById = useMemo(() => new Map((snapshot?.sources ?? []).map(source => [source.id, source])), [snapshot]);
+  const tribunals = useMemo(() => ["Todos", ...(snapshot?.facets.tribunals ?? [])], [snapshot]);
+  const cities = useMemo(() => ["Todas", ...(snapshot?.facets.cities ?? [])], [snapshot]);
+  const decisions = search.data?.decisions ?? [];
+  const sourcesById = useMemo(() => new Map((search.data?.sources ?? []).map(source => [source.id, source])), [search.data]);
   const topicMap = useMemo(() => new Map((snapshot?.topics ?? []).map(topic => [topic.id, topic])), [snapshot]);
 
   if (overview.isLoading) {
@@ -47,9 +59,11 @@ export default function CompendiumPage() {
     return <main className="compendium-loading error"><CircleAlert size={24} /><p>O Compêndio não pôde carregar a base auditável.</p></main>;
   }
 
-  const officialCount = snapshot.decisions.filter(item => item.sourceStatus === "official_confirmed").length;
-  const sourceCount = snapshot.sources.length;
-  const selectedTopics = new Map(snapshot.topicLinks.map(link => [link.jurisprudenceId, topicMap.get(link.topicId)?.title ?? "Tema não classificado"]));
+  const selectedTopics = new Map((search.data?.topicLinks ?? []).map(link => [link.jurisprudenceId, topicMap.get(link.topicId)?.title ?? "Tema não classificado"]));
+  const totalResults = search.data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalResults / 12));
+
+  const resetPage = () => setPage(0);
 
   return (
     <div className="compendium-shell">
@@ -75,7 +89,7 @@ export default function CompendiumPage() {
       <main className="compendium-main">
         <header className="compendium-topbar">
           <a href="/" className="back-to-atlas"><ArrowLeft size={16} /> Atlas JEC</a>
-          <div className="topbar-proof"><CheckCircle2 size={15} /> lote com proveniência registrada</div>
+          <div className="compendium-header-actions"><a href="/fontes">Fontes públicas <ArrowUpRight size={14} /></a><a href="/estrutura">Estrutura interna <ArrowUpRight size={14} /></a><div className="topbar-proof"><CheckCircle2 size={15} /> lote com proveniência registrada</div></div>
         </header>
 
         <section className="compendium-hero" id="panorama">
@@ -89,8 +103,8 @@ export default function CompendiumPage() {
         </section>
 
         <section className="compendium-metrics" aria-label="Indicadores do acervo">
-          <article><span>Julgados no lote</span><strong>{snapshot.decisions.length}</strong><small>Metadados públicos importados</small></article>
-          <article><span>Fontes oficiais</span><strong>{officialCount}/{sourceCount}</strong><small>URLs de origem registradas</small></article>
+          <article><span>Julgados no lote</span><strong>{snapshot.metrics.decisionCount}</strong><small>Metadados públicos importados</small></article>
+          <article><span>Fontes oficiais</span><strong>{snapshot.metrics.officialSourceCount}/{snapshot.metrics.sourceCount}</strong><small>URLs de origem registradas</small></article>
           <article><span>Temas mapeados</span><strong>{snapshot.topics.length}</strong><small>Taxonomia inicial versionada</small></article>
           <article><span>Teses estruturadas</span><strong>{snapshot.theses.length}</strong><small>Leitura condicionada à prova</small></article>
         </section>
@@ -98,11 +112,21 @@ export default function CompendiumPage() {
         <section className="compendium-search-panel" id="jurisprudencia">
           <div className="search-heading"><FileSearch size={20} /><div><span>JURISPRUDÊNCIA · FONTE PRIMÁRIA</span><h2>Pesquise o acervo validado</h2><small>Tipo de evidência: julgados com metadados públicos e vínculo de proveniência.</small></div></div>
           <div className="compendium-search-controls">
-            <label><Search size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tema, tribunal, cidade ou número CNJ" aria-label="Pesquisar no acervo" /></label>
-            <select value={area} onChange={event => setArea(event.target.value)} aria-label="Filtrar área jurídica">
+            <label><Search size={17} /><input value={query} onChange={event => { setQuery(event.target.value); resetPage(); }} placeholder="Tema, tribunal, cidade ou número CNJ" aria-label="Pesquisar no acervo" /></label>
+            <select value={tribunal} onChange={event => { setTribunal(event.target.value); resetPage(); }} aria-label="Filtrar tribunal">
+              {tribunals.map(item => <option key={item} value={item}>{item}</option>)}
+            </select>
+            <select value={city} onChange={event => { setCity(event.target.value); resetPage(); }} aria-label="Filtrar cidade">
+              {cities.map(item => <option key={item} value={item}>{item}</option>)}
+            </select>
+            <select value={area} onChange={event => { setArea(event.target.value); resetPage(); }} aria-label="Filtrar área jurídica">
               {areas.map(item => <option key={item} value={item}>{item}</option>)}
             </select>
-            <span>{decisions.length} {decisions.length === 1 ? "resultado" : "resultados"}</span>
+            <select value={sourceStatus} onChange={event => { setSourceStatus(event.target.value as SourceStatus | "Todas"); resetPage(); }} aria-label="Filtrar situação da fonte">
+              <option value="Todas">Todas as fontes</option>
+              {sourceStatuses.map(item => <option key={item} value={item}>{sourceLabel[item]}</option>)}
+            </select>
+            <span>{search.isFetching ? "atualizando…" : `${totalResults} ${totalResults === 1 ? "resultado" : "resultados"}`}</span>
           </div>
           <div className="decision-grid">
             {decisions.map(decision => {
@@ -121,6 +145,7 @@ export default function CompendiumPage() {
             })}
             {decisions.length === 0 && <div className="compendium-empty">Nenhum registro corresponde aos filtros. Remova um termo ou selecione outra área.</div>}
           </div>
+          {totalResults > 12 && <div className="compendium-pagination"><button disabled={page === 0} onClick={() => setPage(current => Math.max(0, current - 1))}>Anterior</button><span>Página {page + 1} de {pageCount}</span><button disabled={page + 1 >= pageCount} onClick={() => setPage(current => current + 1)}>Próxima</button></div>}
         </section>
 
         <section className="compendium-columns" id="teses">

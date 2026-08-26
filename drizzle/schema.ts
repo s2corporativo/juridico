@@ -55,6 +55,27 @@ export const evidenceSources = mysqlTable("evidence_sources", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, table => [index("evidence_sources_status_idx").on(table.publicStatus)]);
 
+/** Catálogo institucional de APIs, dados abertos e fontes de consulta aprovadas. */
+export const publicDataSources = mysqlTable("public_data_sources", {
+  id: int("id").autoincrement().primaryKey(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull().unique(),
+  label: varchar("label", { length: 255 }).notNull(),
+  maintainer: varchar("maintainer", { length: 255 }).notNull(),
+  sourceType: mysqlEnum("sourceType", ["api", "catalog", "webservice", "manual"]).notNull(),
+  baseUrl: varchar("baseUrl", { length: 1024 }).notNull(),
+  documentationUrl: varchar("documentationUrl", { length: 1024 }).notNull(),
+  authentication: mysqlEnum("authentication", ["none", "api_key", "manual"]).notNull(),
+  integrationStatus: mysqlEnum("integrationStatus", ["integrated", "ready", "credential_required", "manual_only", "not_integrated"]).notNull(),
+  coverage: text("coverage").notNull(),
+  contentScope: text("contentScope").notNull(),
+  usageNote: text("usageNote").notNull(),
+  citationText: varchar("citationText", { length: 500 }).notNull(),
+  privacyNote: text("privacyNote").notNull(),
+  lastVerifiedAt: timestamp("lastVerifiedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("public_data_sources_status_idx").on(table.integrationStatus)]);
+
 export const legalTheses = mysqlTable("legal_theses", {
   id: int("id").autoincrement().primaryKey(),
   topicId: int("topicId").notNull(),

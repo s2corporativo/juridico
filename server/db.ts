@@ -1,6 +1,6 @@
-import { asc, desc, eq, like, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, users } from "../drizzle/schema";
+import { evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, publicDataSources, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,30 +89,80 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getPublicDataSources() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  return db.select().from(publicDataSources).orderBy(asc(publicDataSources.label));
+}
+
 export async function getCompendiumOverview() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const [topics, theses, decisions, sources, batches] = await Promise.all([
+  const [topics, theses, batches, decisionCounts, officialSourceCounts, sourceCounts, tribunals, cities, legalAreas, sourceStatuses] = await Promise.all([
     db.select().from(legalTopics).orderBy(asc(legalTopics.pathKey)),
     db.select().from(legalTheses).orderBy(desc(legalTheses.updatedAt)),
-    db.select().from(jurisprudenceRecords).orderBy(desc(jurisprudenceRecords.decisionDate)),
-    db.select().from(evidenceSources).orderBy(desc(evidenceSources.createdAt)),
     db.select().from(ingestionBatches).orderBy(desc(ingestionBatches.createdAt)),
+    db.select({ count: sql<number>`count(*)` }).from(jurisprudenceRecords),
+    db.select({ count: sql<number>`count(*)` }).from(evidenceSources).where(eq(evidenceSources.publicStatus, "official_confirmed")),
+    db.select({ count: sql<number>`count(*)` }).from(evidenceSources),
+    db.select({ value: jurisprudenceRecords.tribunal }).from(jurisprudenceRecords).groupBy(jurisprudenceRecords.tribunal),
+    db.select({ value: jurisprudenceRecords.city }).from(jurisprudenceRecords).where(sql`${jurisprudenceRecords.city} is not null`).groupBy(jurisprudenceRecords.city),
+    db.select({ value: jurisprudenceRecords.legalArea }).from(jurisprudenceRecords).where(sql`${jurisprudenceRecords.legalArea} is not null`).groupBy(jurisprudenceRecords.legalArea),
+    db.select({ value: jurisprudenceRecords.sourceStatus }).from(jurisprudenceRecords).groupBy(jurisprudenceRecords.sourceStatus),
   ]);
-  const topicLinks = await db.select().from(jurisprudenceTopics);
-  return { topics, theses, decisions, sources, batches, topicLinks };
+  return {
+    topics,
+    theses,
+    batches,
+    metrics: {
+      decisionCount: Number(decisionCounts[0]?.count ?? 0),
+      officialSourceCount: Number(officialSourceCounts[0]?.count ?? 0),
+      sourceCount: Number(sourceCounts[0]?.count ?? 0),
+    },
+    facets: {
+      tribunals: tribunals.map(row => row.value).filter((value): value is string => Boolean(value)),
+      cities: cities.map(row => row.value).filter((value): value is string => Boolean(value)),
+      legalAreas: legalAreas.map(row => row.value).filter((value): value is string => Boolean(value)),
+      sourceStatuses: sourceStatuses.map(row => row.value),
+    },
+  };
 }
 
-export async function searchCompendium(rawQuery: string) {
+export type CompendiumSearchInput = {
+  query?: string;
+  tribunal?: string;
+  city?: string;
+  legalArea?: string;
+  sourceStatus?: "official_confirmed" | "official_without_number" | "attachment_reviewed" | "secondary_pending" | "movement_observed" | "search_thematic";
+  page?: number;
+  pageSize?: number;
+};
+
+export async function searchCompendium(input: CompendiumSearchInput) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const query = rawQuery.trim();
-  if (!query) return { topics: [], decisions: [], theses: [] };
-  const pattern = `%${query}%`;
-  const [topics, decisions, theses] = await Promise.all([
-    db.select().from(legalTopics).where(or(like(legalTopics.title, pattern), like(legalTopics.summary, pattern))).limit(30),
-    db.select().from(jurisprudenceRecords).where(or(like(jurisprudenceRecords.theme, pattern), like(jurisprudenceRecords.reasoningSummary, pattern), like(jurisprudenceRecords.tribunal, pattern))).limit(30),
-    db.select().from(legalTheses).where(or(like(legalTheses.title, pattern), like(legalTheses.description, pattern))).limit(30),
+  const query = input.query?.trim() ?? "";
+  const page = Math.max(0, input.page ?? 0);
+  const pageSize = Math.min(50, Math.max(1, input.pageSize ?? 12));
+  const conditions = [];
+  if (query) {
+    const pattern = `%${query}%`;
+    conditions.push(or(like(jurisprudenceRecords.theme, pattern), like(jurisprudenceRecords.reasoningSummary, pattern), like(jurisprudenceRecords.tribunal, pattern), like(jurisprudenceRecords.city, pattern), like(jurisprudenceRecords.cnjNumber, pattern)));
+  }
+  if (input.tribunal) conditions.push(eq(jurisprudenceRecords.tribunal, input.tribunal));
+  if (input.city) conditions.push(eq(jurisprudenceRecords.city, input.city));
+  if (input.legalArea) conditions.push(eq(jurisprudenceRecords.legalArea, input.legalArea));
+  if (input.sourceStatus) conditions.push(eq(jurisprudenceRecords.sourceStatus, input.sourceStatus));
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  const [totalRows, decisions] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(jurisprudenceRecords).where(whereClause),
+    db.select().from(jurisprudenceRecords).where(whereClause).orderBy(desc(jurisprudenceRecords.decisionDate)).limit(pageSize).offset(page * pageSize),
   ]);
-  return { topics, decisions, theses };
+  const decisionIds = decisions.map(decision => decision.id);
+  const sourceIds = Array.from(new Set(decisions.map(decision => decision.sourceId)));
+  const [sources, topicLinks] = await Promise.all([
+    sourceIds.length > 0 ? db.select().from(evidenceSources).where(inArray(evidenceSources.id, sourceIds)) : Promise.resolve([]),
+    decisionIds.length > 0 ? db.select().from(jurisprudenceTopics).where(inArray(jurisprudenceTopics.jurisprudenceId, decisionIds)) : Promise.resolve([]),
+  ]);
+  return { decisions, sources, topicLinks, total: Number(totalRows[0]?.count ?? 0), page, pageSize };
 }

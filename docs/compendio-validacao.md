@@ -13,6 +13,9 @@ Data da validação: **26/08/2026**.
 | Privacidade | A interface informa a vedação de nomes de partes, CPF, endereço e outros dados pessoais. |
 | Desktop (1280 px) | Hierarquia visual, fichas de julgamento, taxonomia, teses e cadeia de custódia renderizaram sem sobreposição. |
 | Móvel (375 px) | Navegação, busca, métricas, fichas e blocos metodológicos permanecem legíveis em coluna única. |
+| Pesquisa no servidor | A consulta inicial retornou os seis julgados sem transferir o snapshot integral de fontes e julgados para o filtro local. |
+| Filtros estruturados | Tribunal, cidade, área jurídica e situação da fonte foram carregados a partir das facetas persistidas no banco. |
+| Combinação de filtros | Cidade `Contagem` combinada com `Fonte oficial confirmada` retornou os dois acórdãos TJMG compatíveis, após a atualização da consulta no servidor. |
 
 > O lote continua explicitamente classificado como **piloto local** de Betim, Contagem e Belo Horizonte. Ele não representa censo nacional, nem permite inferência estatística nacional ou por estrato inferior a dez registros.
 

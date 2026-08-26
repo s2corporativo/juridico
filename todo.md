@@ -26,3 +26,17 @@
 - [x] Implementar navegação de compêndio, busca jurisprudencial e fichas de tese.
 - [x] Importar apenas metadados públicos validados do acervo anexado com trilha de auditoria.
 - [x] Validar privacidade, pesquisa e apresentação do Compêndio Nacional.
+- [x] Definir a arquitetura interna de módulos do Atlas Forense e do Compêndio Jurídico.
+- [x] Criar uma navegação estruturada com áreas de panorama, pesquisa, teses, taxonomia e auditoria.
+- [x] Definir controles de acesso e política de papéis para ingestão, revisão e consulta do acervo.
+- [x] Implementar fluxo de ingestão controlada com validação, deduplicação, rejeição de dados pessoais e revisão humana.
+- [x] Evoluir a pesquisa do Compêndio para consulta escalável no servidor, preservando filtros e trilha de evidência.
+- [x] Consolidar documentação operacional, limites metodológicos e critérios de expansão nacional.
+- [x] Validar documentação, disponibilidade e licença das APIs públicas DataJud, STJ Dados Abertos e LexML.
+- [x] Criar catálogo auditável de fontes públicas, com cobertura, autenticação, termos e nível de integração.
+- [x] Implementar conector seguro para o catálogo aberto do STJ, sem persistir arquivos ou texto integral sem revisão.
+- [ ] Preparar conector DataJud com chave temporária, citação obrigatória e controles de cobertura.
+- [x] Registrar como consulta manual as fontes sem API documentada, sem scraping ou contorno de controles.
+- [x] Exibir na interface as fontes integradas, seu escopo probatório e suas limitações de uso.
+- [x] Confirmar em fonte oficial os termos ou a licença aplicável ao Webservice LexML.
+- [ ] Executar consulta SRU LexML bem-sucedida ou registrar evidência oficial do bloqueio técnico antes de automatizar a fonte.

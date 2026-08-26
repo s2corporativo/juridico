@@ -300,7 +300,7 @@ export default function Home() {
       <main className="atlas-main">
         <header className="topbar">
           <div className="breadcrumb"><Landmark size={16} /> Ecossistema Jurídico Clovis <ChevronRight size={15} /> Jurimetria pública</div>
-          <div className="topbar-actions"><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Abrir Compêndio</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
+          <div className="topbar-actions"><a className="structure-link" href="/estrutura"><Landmark size={16} /> Estrutura</a><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Abrir Compêndio</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
         </header>
 
         <section className="hero-panel" id="visao">
