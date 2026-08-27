@@ -121,3 +121,4 @@
 - [ ] Remover a dependência de runtime do Vite em produção e validar instalação exclusiva de dependências de produção na VPS.
 - [ ] Reconciliar cautelosamente o histórico de migrações Drizzle já aplicadas no MariaDB isolado, sem executar DDL duplicado.
 - [ ] Rotacionar o token de Cloudflare enviado em conversa e manter somente token de escopo mínimo fora do projeto e da VPS.
+- [ ] Reduzir a exposição residual da unidade systemd Atlas sem impedir rede local, MariaDB, logs ou reinicialização automática.
