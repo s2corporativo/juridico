@@ -139,3 +139,4 @@
 - [x] Validar por contratos e navegação pública que as áreas administrativas permanecem inacessíveis sem OAuth/SSO e sem expor registros de revisão.
 - [x] Consolidar documento operacional com critérios explícitos de retomada para token Cloudflare, chave DataJud e administrador real.
 - [x] Registrar e validar no domínio publicado o estado consolidado de segurança, dados públicos e bloqueios externos.
+- [ ] Revalidar a disponibilidade da página oficial de chave pública DataJud a partir da VPS antes de repetir o piloto TJMG limitado.
