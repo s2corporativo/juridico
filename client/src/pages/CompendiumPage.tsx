@@ -164,7 +164,7 @@ export default function CompendiumPage() {
             <h2>Teses não são atalhos. São hipóteses com condições explícitas.</h2>
             <p className="method-subheader">Tipo de evidência: síntese temática condicionada à prova e à leitura do inteiro teor.</p>
             <div className="thesis-list">
-              {snapshot.theses.map(thesis => <div key={thesis.id} className="thesis-row"><span className={`position ${thesis.position}`}>{thesis.position.replace("_", " ")}</span><h3>{thesis.title}</h3><p>{thesis.description}</p><small><b>Prova:</b> {thesis.proofNotes ?? "A conferir"}</small><small><b>Fator adverso:</b> {thesis.adverseFacts ?? "A conferir"}</small></div>)}
+              {snapshot.theses.map(thesis => <div key={thesis.id} className="thesis-row"><span className={`position ${thesis.position}`}>{thesis.position.replace("_", " ")}</span>{thesis.quality && <span className={`thesis-quality quality-${thesis.quality.level}`}>{thesis.quality.score}/100 · {thesis.quality.level}</span>}<h3>{thesis.title}</h3><p>{thesis.description}</p><small><b>Prova:</b> {thesis.proofNotes ?? "A conferir"}</small><small><b>Fator adverso:</b> {thesis.adverseFacts ?? "A conferir"}</small></div>)}
             </div>
           </article>
           <article className="taxonomy-card" id="taxonomia">

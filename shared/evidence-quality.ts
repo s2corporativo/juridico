@@ -60,6 +60,39 @@ export function calculateAverageEvidenceScore(items: ReadonlyArray<Pick<Evidence
   return Math.round(items.reduce((sum, item) => sum + item.score, 0) / items.length);
 }
 
+export type ThesisQualityInput = {
+  sourceStatus: "official_confirmed" | "attachment_reviewed" | "editorial_review" | "secondary_pending";
+  title?: string | null;
+  description?: string | null;
+  position?: string | null;
+  legalBasis?: string | null;
+  proofNotes?: string | null;
+  adverseFacts?: string | null;
+  topicId?: number | null;
+  authorityCount: number;
+  lastReviewedAt?: Date | string | null;
+};
+
+export function calculateThesisQuality(input: ThesisQualityInput): EvidenceQuality {
+  const earned: string[] = [];
+  const missing: string[] = [];
+  let score = 0;
+  const add = (condition: boolean, points: number, label: string) => {
+    if (condition) { score += points; earned.push(label); } else missing.push(label);
+  };
+  add(input.sourceStatus === "official_confirmed", 15, "fonte oficial confirmada");
+  add(hasText(input.title) && hasText(input.description), 20, "tese descrita");
+  add(hasText(input.position), 10, "posição declarada");
+  add(hasText(input.legalBasis), 15, "fundamentação registrada");
+  add(hasText(input.proofNotes), 10, "requisitos de prova");
+  add(hasText(input.adverseFacts), 10, "fatores adversos");
+  add(Boolean(input.topicId), 5, "vínculo taxonômico");
+  add(input.authorityCount > 0, 10, "autoridade relacionada");
+  add(Boolean(input.lastReviewedAt), 5, "revisão datada");
+  const level = score >= 85 ? "robusta" : score >= 65 ? "suficiente" : "incompleta";
+  return { score, level, earned, missing, disclaimer: "O score da tese mede completude de redação, rastreabilidade e vínculos documentais; não mede correção jurídica, força persuasiva, vigência ou probabilidade de êxito." };
+}
+
 export type EvidenceCoverageItem = {
   sourceLabel: string;
   sourceStatus: string;

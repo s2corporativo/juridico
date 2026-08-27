@@ -25,6 +25,12 @@ Os testes automatizados cobrem resultados de **100 pontos/robusta**, **70 pontos
 
 Nesta versão, o score é atribuído aos **julgados**. A pontuação autônoma de teses permanece pendente de critérios próprios, para evitar uma equivalência imprópria entre completude da evidência e qualidade da formulação jurídica.
 
+## Score autônomo de teses
+
+As teses passaram a receber avaliação independente: fonte (15), redação de título/descrição (20), posição declarada (10), fundamentação (15), requisitos de prova (10), fatores adversos (10), vínculo taxonômico (5), autoridade relacionada (10) e revisão datada (5). A escala totaliza 100 pontos e mantém os níveis robusta, suficiente e incompleta, mas sua ressalva é própria: mede a completude de redação e dos vínculos documentais, jamais correção jurídica, força persuasiva, vigência ou prognóstico.
+
+O cálculo foi validado com tese integral (100 pontos, nível robusta) e tese sem metadados (nível incompleta), dentro da bateria de testes. Os cartões de tese passaram a exibir o score separado dos julgados e foram verificados em desktop e em viewport móvel de **375 × 812 px**, sem truncamento do selo ou da ressalva metodológica.
+
 ## Validação da apresentação
 
 Em **27/08/2026**, o procedimento de qualidade respondeu ao acervo piloto com média documental de **88/100**, cartões por julgado e cobertura por fonte/tribunal. O painel preservou a advertência de que a métrica descreve **completude e rastreabilidade**, não mérito, vigência ou prognóstico. A seção foi verificada em desktop e em viewport móvel de **375 × 812 px**, sem expor identificadores pessoais. Nesta versão, o score é atribuído aos **julgados**; a pontuação autônoma de teses continua pendente de critérios próprios.

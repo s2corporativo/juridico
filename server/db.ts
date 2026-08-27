@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
 import { getNationalDistributionStatus, normalizeNationalCensusFilter, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
 import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
-import { calculateAverageEvidenceScore, calculateEvidenceQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
+import { calculateAverageEvidenceScore, calculateEvidenceQuality, calculateThesisQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -145,9 +145,10 @@ export async function getNationalCensusOverview(input: NationalCensusFilter = {}
 export async function getCompendiumOverview() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const [topics, theses, batches, decisionCounts, officialSourceCounts, sourceCounts, tribunals, cities, legalAreas, sourceStatuses] = await Promise.all([
+  const [topics, theses, thesisAuthorityCounts, batches, decisionCounts, officialSourceCounts, sourceCounts, tribunals, cities, legalAreas, sourceStatuses] = await Promise.all([
     db.select().from(legalTopics).orderBy(asc(legalTopics.pathKey)),
     db.select().from(legalTheses).orderBy(desc(legalTheses.updatedAt)),
+    db.select({ thesisId: thesisAuthorities.thesisId, count: sql<number>`count(*)` }).from(thesisAuthorities).groupBy(thesisAuthorities.thesisId),
     db.select().from(ingestionBatches).orderBy(desc(ingestionBatches.createdAt)),
     db.select({ count: sql<number>`count(*)` }).from(jurisprudenceRecords),
     db.select({ count: sql<number>`count(*)` }).from(evidenceSources).where(eq(evidenceSources.publicStatus, "official_confirmed")),
@@ -157,9 +158,10 @@ export async function getCompendiumOverview() {
     db.select({ value: jurisprudenceRecords.legalArea }).from(jurisprudenceRecords).where(sql`${jurisprudenceRecords.legalArea} is not null`).groupBy(jurisprudenceRecords.legalArea),
     db.select({ value: jurisprudenceRecords.sourceStatus }).from(jurisprudenceRecords).groupBy(jurisprudenceRecords.sourceStatus),
   ]);
+  const authorityCount = new Map(thesisAuthorityCounts.map(row => [row.thesisId, Number(row.count ?? 0)]));
   return {
     topics,
-    theses,
+    theses: theses.map(thesis => ({ ...thesis, quality: calculateThesisQuality({ ...thesis, authorityCount: authorityCount.get(thesis.id) ?? 0 }) })),
     batches,
     metrics: {
       decisionCount: Number(decisionCounts[0]?.count ?? 0),

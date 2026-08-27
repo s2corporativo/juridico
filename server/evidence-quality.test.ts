@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateAverageEvidenceScore, calculateEvidenceQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
+import { calculateAverageEvidenceScore, calculateEvidenceQuality, calculateThesisQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
 
 describe("qualidade documental", () => {
   it("mede completude sem atribuir força jurídica", () => {
@@ -43,5 +43,12 @@ describe("qualidade documental", () => {
   it("calcula a média agregada com arredondamento explícito e conjunto vazio", () => {
     expect(calculateAverageEvidenceScore([{ score: 90 }, { score: 85 }, { score: 90 }])).toBe(88);
     expect(calculateAverageEvidenceScore([])).toBe(0);
+  });
+
+  it("atribui à tese somente um score de completude documental", () => {
+    const thesis = calculateThesisQuality({ sourceStatus: "official_confirmed", title: "Tese", description: "Descrição", position: "condicionada", legalBasis: "Base", proofNotes: "Prova", adverseFacts: "Exceção", topicId: 4, authorityCount: 2, lastReviewedAt: new Date("2026-01-01") });
+    expect(thesis).toMatchObject({ score: 100, level: "robusta" });
+    expect(thesis.disclaimer).toContain("não mede correção jurídica");
+    expect(calculateThesisQuality({ sourceStatus: "editorial_review", authorityCount: 0 }).level).toBe("incompleta");
   });
 });
