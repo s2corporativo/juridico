@@ -108,7 +108,7 @@
 - [x] Validar saúde, acesso externo, logs sanitizados e retorno seguro após a publicação.
 - [x] Configurar o domínio atlas.depaulateixeira.adv.br para o proxy HTTPS da VPS autorizada.
 - [x] Criar banco, usuário de aplicação e variáveis de produção isolados para o Atlas.
-- [ ] Carregar na VPS somente metadados jurídicos auditados e séries nacionais agregadas, sem respostas brutas ou identificadores temporários.
+- [x] Carregar na VPS somente metadados jurídicos auditados e séries nacionais agregadas, sem respostas brutas ou identificadores temporários.
 - [x] Instalar serviço systemd e proxy reverso exclusivos do Atlas, com inicialização automática e rollback documentado.
 - [x] Localizar a zona DNS de depaulateixeira.adv.br em integração configurada e criar o registro A de atlas.
 - [x] Instalar e configurar proxy HTTPS persistente para atlas.depaulateixeira.adv.br com upstream exclusivo do Atlas.
@@ -116,9 +116,9 @@
 - [x] Extrair a média agregada para helper puro e testar o resultado esperado com dataset controlado.
 - [x] Definir critérios autônomos de qualidade documental para teses antes de atribuir-lhes pontuação.
 - [x] Implementar e exibir score de completude documental próprio para as teses, separado do score de julgados.
-- [ ] Completar seed idempotente dos metadados públicos do Compêndio na VPS, incluindo taxonomia, teses, vínculos e auditoria sanitizada.
-- [ ] Restringir explicitamente o servidor de produção do Atlas a 127.0.0.1 e confirmar que a porta 3010 não é exposta.
-- [ ] Remover a dependência de runtime do Vite em produção e validar instalação exclusiva de dependências de produção na VPS.
-- [ ] Reconciliar cautelosamente o histórico de migrações Drizzle já aplicadas no MariaDB isolado, sem executar DDL duplicado.
+- [x] Completar seed idempotente dos metadados públicos do Compêndio na VPS, incluindo taxonomia, teses, vínculos e auditoria sanitizada.
+- [x] Restringir explicitamente o servidor de produção do Atlas a 127.0.0.1 e confirmar que a porta 3010 não é exposta.
+- [x] Remover a dependência de runtime do Vite em produção e validar instalação exclusiva de dependências de produção na VPS.
+- [x] Reconciliar cautelosamente o histórico de migrações Drizzle já aplicadas no MariaDB isolado, sem executar DDL duplicado.
 - [ ] Rotacionar o token de Cloudflare enviado em conversa e manter somente token de escopo mínimo fora do projeto e da VPS.
-- [ ] Reduzir a exposição residual da unidade systemd Atlas sem impedir rede local, MariaDB, logs ou reinicialização automática.
+- [x] Reduzir a exposição residual da unidade systemd Atlas sem impedir rede local, MariaDB, logs ou reinicialização automática.
