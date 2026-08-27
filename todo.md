@@ -125,4 +125,4 @@
 - [x] Parametrizar o coletor de baixas para saída controlada, pausa entre páginas, teto por execução e encerramento seguro em falha.
 - [x] Reconciliar a documentação da coleta de baixas com a paginação efetivamente usada e os limites do piloto.
 - [ ] Executar na VPS um único piloto TJMG de baixas, com poucas páginas, telemetria sanitizada e sem persistir identificadores.
-- [ ] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.
+- [x] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.

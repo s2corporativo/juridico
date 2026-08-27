@@ -29,6 +29,10 @@ O modo de execução possui agora telemetria por alias: páginas percorridas, re
 
 Em **27/08/2026**, houve uma única execução limitada no alias `tjmg`, com teto de **3 páginas**. O manifesto sanitizado registrou **750 registros processados**, **806 movimentos elegíveis** e **756 pares processo-mês deduplicados**, resultando em **10 células mensais agregadas**. Como o teto foi alcançado, o estado permaneceu `partial`, a cobertura nacional foi **0%** e nenhum total foi importado no painel. Os identificadores, HMACs efêmeros, cursor, chave e respostas foram descartados ao fim da execução.
 
+## Tentativa posterior na VPS
+
+Também em **27/08/2026**, um novo piloto TJMG de 3 páginas foi preparado na VPS com saída isolada, pausa de 750 ms e autorização transitória. A execução foi interrompida antes de obter chave, abrir cursor ou consultar processo porque o endpoint público de acesso `datajud-wiki.cnj.jus.br/api-publica/acesso/` excedeu o tempo de conexão a partir da VPS. A API principal respondeu sem credencial, mas essa resposta não substitui a obtenção válida da chave pública. Não foi gravado qualquer identificador, HMAC, resposta bruta, chave ou agregado; a execução nacional permanece bloqueada até nova validação do acesso.
+
 ## Referência
 
 [1] [Skill Jurimetria de Juizados Públicos — consultas DataJud](../skills/jurimetria-juizados-publicos/references/datajud_queries.md)
