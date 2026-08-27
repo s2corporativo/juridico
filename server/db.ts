@@ -114,20 +114,21 @@ export async function getNationalCensusOverview(input: NationalCensusFilter = {}
   const readiness = await getNationalCensusReadiness();
   const filter = normalizeNationalCensusFilter(input);
   const runId = readiness.latest?.id;
-  if (!runId) return { readiness, filter, distributionStatus: getNationalDistributionStatus(readiness), monthly: [], tribunals: [], availableTribunals: [], rows: [], subjects: [], judgingBodies: [] };
+  if (!runId) return { readiness, filter, distributionStatus: getNationalDistributionStatus(readiness), monthly: [], tribunals: [], availableTribunals: [], rows: [], subjects: [], judgingBodies: [], comarcaHighlights: [] };
   const conditions = [eq(nationalCensusMetrics.runId, runId), eq(nationalCensusMetrics.metric, "distribution")];
   if (filter.from) conditions.push(gte(nationalCensusMetrics.month, filter.from));
   if (filter.to) conditions.push(lte(nationalCensusMetrics.month, filter.to));
   if (filter.tribunalAlias) conditions.push(eq(nationalCensusMetrics.tribunalAlias, filter.tribunalAlias));
   const condition = and(...conditions);
   const baseCondition = and(eq(nationalCensusMetrics.runId, runId), eq(nationalCensusMetrics.metric, "distribution"));
-  const [monthly, tribunals, availableTribunals, rows, subjects, judgingBodies] = await Promise.all([
+  const [monthly, tribunals, availableTribunals, rows, subjects, judgingBodies, comarcaHighlights] = await Promise.all([
     db.select({ month: nationalCensusMetrics.month, amount: sql<number>`sum(${nationalCensusMetrics.amount})` }).from(nationalCensusMetrics).where(condition).groupBy(nationalCensusMetrics.month).orderBy(asc(nationalCensusMetrics.month)),
     db.select({ alias: nationalCensusMetrics.tribunalAlias, uf: nationalCensusMetrics.uf, amount: sql<number>`sum(${nationalCensusMetrics.amount})` }).from(nationalCensusMetrics).where(condition).groupBy(nationalCensusMetrics.tribunalAlias, nationalCensusMetrics.uf).orderBy(desc(sql`sum(${nationalCensusMetrics.amount})`)).limit(10),
     db.select({ alias: nationalCensusMetrics.tribunalAlias, uf: nationalCensusMetrics.uf }).from(nationalCensusMetrics).where(baseCondition).groupBy(nationalCensusMetrics.tribunalAlias, nationalCensusMetrics.uf).orderBy(asc(nationalCensusMetrics.tribunalAlias)),
     db.select({ alias: nationalCensusMetrics.tribunalAlias, uf: nationalCensusMetrics.uf, month: nationalCensusMetrics.month, amount: nationalCensusMetrics.amount }).from(nationalCensusMetrics).where(condition).orderBy(asc(nationalCensusMetrics.month), asc(nationalCensusMetrics.tribunalAlias)),
     db.select({ code: nationalCensusFacets.code, label: nationalCensusFacets.label, amount: nationalCensusFacets.amount }).from(nationalCensusFacets).where(and(eq(nationalCensusFacets.runId, runId), eq(nationalCensusFacets.kind, "subject"))).orderBy(desc(nationalCensusFacets.amount)).limit(12),
     db.select({ code: nationalCensusFacets.code, label: nationalCensusFacets.label, amount: nationalCensusFacets.amount }).from(nationalCensusFacets).where(and(eq(nationalCensusFacets.runId, runId), eq(nationalCensusFacets.kind, "judging_body"))).orderBy(desc(nationalCensusFacets.amount)).limit(12),
+    db.select({ code: nationalCensusFacets.code, label: nationalCensusFacets.label, amount: nationalCensusFacets.amount }).from(nationalCensusFacets).where(and(eq(nationalCensusFacets.runId, runId), eq(nationalCensusFacets.kind, "judging_body"), inArray(nationalCensusFacets.code, ["40011", "8161"]))).orderBy(desc(nationalCensusFacets.amount)),
   ]);
   return {
     readiness,
@@ -139,6 +140,7 @@ export async function getNationalCensusOverview(input: NationalCensusFilter = {}
     rows: rows.map(row => ({ alias: row.alias, uf: row.uf, month: row.month, amount: Number(row.amount ?? 0) })),
     subjects: subjects.map(row => ({ code: row.code, label: row.label, amount: Number(row.amount ?? 0) })),
     judgingBodies: judgingBodies.map(row => ({ code: row.code, label: row.label, amount: Number(row.amount ?? 0) })),
+    comarcaHighlights: comarcaHighlights.map(row => ({ code: row.code, label: row.label, amount: Number(row.amount ?? 0) })),
   };
 }
 

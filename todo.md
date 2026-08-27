@@ -135,3 +135,4 @@
 - [x] Inspecionar as capturas desktop e móvel da Home e registrar que o painel do Compêndio, Betim/MG e Igarapé/MG renderizam corretamente.
 - [x] Validar a Home hidratada no domínio publicado, incluindo os cartões novos e a ausência de PII exposta.
 - [x] Eliminar a dependência circular entre os bundles de gráficos e React que impede a hidratação da Home em produção.
+- [ ] Integrar ao painel inicial os órgãos JEC de Betim/MG e Igarapé/MG disponíveis nas facetas agregadas oficiais, sem somar órgãos não equivalentes nem inferir censo completo.

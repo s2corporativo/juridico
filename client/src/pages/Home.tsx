@@ -127,12 +127,14 @@ function MetricCard({
 
 function CompendiumHomePanel() {
   const overview = trpc.compendium.overview.useQuery();
+  const nationalCensus = trpc.nationalCensus.overview.useQuery();
   const snapshot = overview.data;
   const stats = snapshot ? buildCompendiumHomeStats({
     topics: snapshot.topics,
     theses: snapshot.theses,
     metrics: snapshot.metrics,
     cityCoverage: snapshot.facets.cityCoverage,
+    comarcaFacets: nationalCensus.data?.comarcaHighlights,
   }) : null;
 
   return (
@@ -158,13 +160,15 @@ function CompendiumHomePanel() {
         <div className="comarca-coverage" aria-label="Comarcas incluídas na camada de acervo">
           {stats.comarcas.map(comarca => <article key={comarca.label} className={comarca.catalogued ? "catalogued" : "pending"}>
             <span>COMARCA DO RECORTE</span><h3>{comarca.label}</h3>
-            {comarca.catalogued
-              ? <p><strong>{fmt.format(comarca.decisionCount)}</strong> julgado(s) catalogado(s) no acervo público.</p>
-              : <p><strong>Sem acervo confirmado</strong> no catálogo atual; inclusão territorial registrada sem estimar volume.</p>}
+            {comarca.facet
+              ? <p><strong>{fmt.format(comarca.facet.amount)}</strong> registros no recorte DataJud do órgão JEC identificado.<small>{comarca.facet.label}</small></p>
+              : comarca.catalogued
+                ? <p><strong>{fmt.format(comarca.decisionCount)}</strong> julgado(s) catalogado(s) no acervo público.</p>
+                : <p><strong>Sem acervo confirmado</strong> no catálogo atual; inclusão territorial registrada sem estimar volume.</p>}
           </article>)}
         </div>
       </>}
-      <div className="compendium-home-foot"><ShieldCheck size={16} /><span>Escopo do acervo: piloto local TJMG. Não usar estas contagens como censo, taxa de êxito ou comparação nacional.</span></div>
+      <div className="compendium-home-foot"><ShieldCheck size={16} /><span>Os cartões territoriais usam facetas oficiais integrais do DataJud; não são série mensal, taxa de êxito nem censo completo por comarca.</span></div>
     </section>
   );
 }
