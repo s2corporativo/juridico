@@ -147,3 +147,9 @@
 - [ ] Validar com usuário administrativo real a sessão, os filtros, a fila, as decisões e a auditoria antes de liberar a Central de Controle.
 - [x] Sanitizar o status público EJC/SSO para não expor nomes de variáveis, requisitos de segredo ou detalhes de configuração.
 - [x] Revalidar externamente o status público EJC/SSO com somente estado abstrato de prontidão e sem nomes de variáveis.
+- [x] Documentar o procedimento seguro de inclusão e validação das credenciais EJC/SSO no ambiente protegido da VPS.
+- [ ] Confirmar no domínio publicado que o painel inicial apresenta as estatísticas do Compêndio e as facetas oficiais de Betim e Igarapé.
+- [ ] Adaptar o coletor de baixas TJMG para receber uma lista limitada de códigos de órgão julgador, mantendo o recorte e a telemetria sanitizados.
+- [ ] Cobrir em teste a serialização do filtro territorial, a rejeição de códigos não permitidos e a ausência de identificadores em erros e manifestos.
+- [x] Corrigir o helper de filtro territorial para receber explicitamente o tamanho de página, preservando seu uso isolado nos testes.
+- [ ] Executar somente o pré-teste TJMG para os órgãos oficiais de Betim e Igarapé, com até três páginas e sem persistir processos individuais.

@@ -25,6 +25,35 @@ export function retryDelayMs(baseDelayMs, retryAttempt) {
   return Math.min(30_000, baseDelayMs * 2 ** Math.max(0, retryAttempt - 1));
 }
 
+export function parseJudgingBodyCodes(value) {
+  if (!value?.trim()) return [];
+  const codes = [...new Set(value.split(",").map(code => code.trim()).filter(Boolean))];
+  if (codes.length === 0 || codes.length > 3 || codes.some(code => !/^\d{1,12}$/.test(code))) {
+    throw new Error("Os códigos de órgão devem conter de 1 a 3 números CNJ válidos.");
+  }
+  return codes;
+}
+
+export function buildLowerQuery({ judgingBodyCodes = [], pageSize = 250 } = {}) {
+  const filters = [
+    { match: { grau: "JE" } },
+    { terms: { "classe.codigo": [436] } },
+    { range: { dataAjuizamento: { gte: "20250101000000", lt: "20260901000000" } } },
+    { match: { "movimentos.nome": "Baixa Definitiva" } },
+  ];
+  if (judgingBodyCodes.length > 0) filters.push({ terms: { "orgaoJulgador.codigo": judgingBodyCodes } });
+
+  return {
+    size: pageSize,
+    track_total_hits: true,
+    _source: judgingBodyCodes.length > 0
+      ? ["numeroProcesso", "movimentos.nome", "movimentos.dataHora", "orgaoJulgador.codigo"]
+      : ["numeroProcesso", "movimentos.nome", "movimentos.dataHora"],
+    sort: ["_doc"],
+    query: { bool: { filter: filters } },
+  };
+}
+
 export function isRetryableDataJudError(error) {
   const message = error instanceof Error ? error.message : String(error ?? "");
   const status = Number(message.match(/HTTP\s+(\d{3})/)?.[1] ?? 0);

@@ -62,4 +62,18 @@ describe("national lower run telemetry", () => {
     expect(delays).toEqual([1_500, 3_000]);
     expect(JSON.stringify(summary)).not.toContain("123456789");
   });
+
+  it("builds a limited territorial query only for valid official judging-body codes", () => {
+    const codes = runtime.parseJudgingBodyCodes("40011,8161");
+    const query = runtime.buildLowerQuery({ judgingBodyCodes: codes });
+    const serialized = JSON.stringify(query);
+
+    expect(codes).toEqual(["40011", "8161"]);
+    expect(serialized).toContain('"orgaoJulgador.codigo":["40011","8161"]');
+    expect(query._source).toContain("orgaoJulgador.codigo");
+    expect(serialized).not.toContain("parte");
+    expect(serialized).not.toContain("cpf");
+    expect(() => runtime.parseJudgingBodyCodes("40011,abc")).toThrow("códigos de órgão");
+    expect(() => runtime.parseJudgingBodyCodes("1,2,3,4")).toThrow("códigos de órgão");
+  });
 });

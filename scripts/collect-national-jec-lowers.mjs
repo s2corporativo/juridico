@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   createAliasTelemetry,
+  buildLowerQuery,
   failAlias,
   finishAlias,
   isRetryableDataJudError,
@@ -11,6 +12,7 @@ import {
   recordRetry,
   retryDataJudRequest,
   retryDelayMs,
+  parseJudgingBodyCodes,
   sanitizeDataJudError,
   summarizeLowerRun,
 } from "./national-lower-runtime.mjs";
@@ -27,6 +29,7 @@ const maxPagesOption = Number(readOption("--max-pages=") ?? "0");
 const pageDelayMs = Number(readOption("--page-delay-ms=") ?? "750");
 const maxRetries = Number(readOption("--max-retries=") ?? "2");
 const retryBaseDelayMs = Number(readOption("--retry-base-delay-ms=") ?? "1500");
+const judgingBodyCodes = parseJudgingBodyCodes(readOption("--orgao-codes="));
 const outputDir = process.env.NATIONAL_LOWER_OUTPUT_DIR ?? new URL("../../juizados_pesquisa/output_nacional_jec/", import.meta.url).pathname;
 const selectedAliases = aliasOption ? aliases.filter(([alias]) => alias === aliasOption) : aliases;
 
@@ -36,17 +39,11 @@ if (!Number.isInteger(pageDelayMs) || pageDelayMs < 250 || pageDelayMs > 30_000)
 if (!Number.isInteger(maxRetries) || maxRetries < 0 || maxRetries > 4) throw new Error("O limite de retentativas deve estar entre 0 e 4.");
 if (!Number.isInteger(retryBaseDelayMs) || retryBaseDelayMs < 250 || retryBaseDelayMs > 10_000) throw new Error("A pausa-base de retentativa deve estar entre 250 e 10000 ms.");
 
-const isLimitedPilot = Boolean(aliasOption || maxPagesOption > 0);
+const isLimitedPilot = Boolean(aliasOption || maxPagesOption > 0 || judgingBodyCodes.length > 0);
 const sleep = delay => new Promise(resolve => setTimeout(resolve, delay));
 
 function query() {
-  return {
-    size: PAGE_SIZE,
-    track_total_hits: true,
-    _source: ["numeroProcesso", "movimentos.nome", "movimentos.dataHora"],
-    sort: ["_doc"],
-    query: { bool: { filter: [{ match: { grau: "JE" } }, { terms: { "classe.codigo": [436] } }, { range: { dataAjuizamento: { gte: "20250101000000", lt: "20260901000000" } } }, { match: { "movimentos.nome": "Baixa Definitiva" } }] } },
-  };
+  return buildLowerQuery({ judgingBodyCodes, pageSize: PAGE_SIZE });
 }
 
 function month(value) {
@@ -144,13 +141,13 @@ async function main() {
     executedAt: startedAt,
     mode,
     expectedTribunals: selectedAliases.length,
-    scope: { degree: "JE", classCode: 436, cohort: "2025-01 a 2026-08", exactMovement: "Baixa Definitiva" },
+    scope: { degree: "JE", classCode: 436, cohort: "2025-01 a 2026-08", exactMovement: "Baixa Definitiva", judgingBodyCodes: judgingBodyCodes.length > 0 ? judgingBodyCodes : undefined },
     pageSize: PAGE_SIZE,
     pageDelayMs,
     retryPolicy: { maxRetries, retryBaseDelayMs, maximumDelayMs: 30_000 },
-    pilot: isLimitedPilot ? { alias: aliasOption ?? "todos", maxPagesPerAlias: maxPagesOption || null } : null,
+    pilot: isLimitedPilot ? { alias: aliasOption ?? "todos", maxPagesPerAlias: maxPagesOption || null, judgingBodyCodes: judgingBodyCodes.length > 0 ? judgingBodyCodes : undefined } : null,
     queryFingerprint: fingerprint,
-    dataPolicy: "Somente numeroProcesso e movimentos mínimos em memória; HMAC efêmero por processo+mês; não persistir identificadores, hashes, respostas ou chave.",
+    dataPolicy: "Somente numeroProcesso, movimentos mínimos e, quando filtrado, código de órgão em memória; HMAC efêmero por processo+mês; não persistir identificadores, hashes, respostas ou chave.",
     authorization: EXECUTE && AUTHORIZED ? "approved" : "required_for_execution",
   };
   if (!(EXECUTE && AUTHORIZED)) {
@@ -197,6 +194,8 @@ async function main() {
         let pageDeduplicated = 0;
         for (const hit of hits) {
           const source = hit?._source ?? {};
+          const judgingBodyCode = judgingBodyCodes.length > 0 ? String(source?.orgaoJulgador?.codigo ?? "") : null;
+          if (judgingBodyCodes.length > 0 && !judgingBodyCodes.includes(judgingBodyCode)) continue;
           const processKey = createHmac("sha256", runSecret).update(String(source.numeroProcesso ?? "")).digest("hex");
           for (const movement of Array.isArray(source.movimentos) ? source.movimentos : []) {
             if (!isFinalLower(movement.nome)) continue;
@@ -220,7 +219,11 @@ async function main() {
         body = await nextScroll(key, scrollId, aliasTelemetry);
         scrollId = body?._scroll_id ?? scrollId;
       }
-      for (const [movementMonth, amount] of months.entries()) results.push({ alias, uf, month: movementMonth, amount });
+      for (const [movementMonth, amount] of months.entries()) {
+        const result = { alias, uf, month: movementMonth, amount };
+        if (judgingBodyCodes.length > 0) result.judgingBodyCodes = judgingBodyCodes;
+        results.push(result);
+      }
       telemetry.push(limited ? limitAlias(aliasTelemetry) : finishAlias(aliasTelemetry));
     } catch (error) {
       telemetry.push(failAlias(aliasTelemetry, error));

@@ -21,6 +21,31 @@ O Atlas será um *Relying Party* OIDC. A ativação futura usará **Authorizatio
 4. Implementar e testar login, callback, PKCE, validação de assinatura/JWKS, `state`, `nonce` e *logout* em homologação.
 5. Promover um **usuário real** para `admin` após a primeira sessão válida e validar fila, decisão e auditoria com registro já existente. Não criar usuário, lote ou decisão fictícia.
 
+## Configuração das variáveis na VPS
+
+O arquivo protegido já existe em `/etc/atlas-ejc/atlas.env`, é lido apenas pela unidade `atlas-ejc.service` e deve permanecer `root:atlas` com modo `0640`. Não crie arquivo `.env` no projeto, não use `VITE_` para esses valores e não os envie por chat.
+
+```bash
+# 1. Abrir o ambiente protegido diretamente na VPS.
+sudoedit /etc/atlas-ejc/atlas.env
+
+# 2. Acrescentar os três valores entregues pelo administrador do EJC:
+EJC_OIDC_ISSUER=https://sso.seu-dominio.example
+EJC_OIDC_CLIENT_ID=valor-fornecido-pelo-ejc
+EJC_OIDC_CLIENT_SECRET=valor-confidencial-fornecido-pelo-ejc
+
+# 3. Restaurar permissões e reiniciar apenas o Atlas.
+sudo chown root:atlas /etc/atlas-ejc/atlas.env
+sudo chmod 0640 /etc/atlas-ejc/atlas.env
+sudo systemctl restart atlas-ejc
+
+# 4. Confirmar disponibilidade, sem imprimir o arquivo de ambiente.
+curl -fsS http://127.0.0.1:3010/healthz
+sudo systemctl is-active atlas-ejc
+```
+
+Após essa inclusão, a API poderá indicar `configured_not_activated`, mas a Central de Controle **continuará bloqueada** até a implementação do callback, PKCE, validação de token e teste com administrador real. Para reverter a configuração, remova somente as três linhas `EJC_OIDC_*`, preserve as permissões e reinicie o serviço.
+
 > Até a etapa 5, a Central de Controle permanece bloqueada. A preparação atual não transmite nem solicita dados de casos, partes, documentos ou credenciais de usuários.
 
 ## Referências
