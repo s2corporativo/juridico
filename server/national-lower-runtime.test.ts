@@ -12,4 +12,11 @@ describe("national lower run telemetry", () => {
     expect(summary).toMatchObject({ state: "partial", respondedTribunals: 1, failedTribunals: 1, coveragePct: 50, pagesProcessed: 2, processedRecords: 270, eligibleMovements: 21, deduplicatedProcessMonths: 19 });
     expect(JSON.stringify(summary)).not.toContain("numeroProcesso");
   });
+
+  it("preserves a limited pilot as partial instead of completed coverage", () => {
+    const pilot = runtime.createAliasTelemetry("tjmg", "MG");
+    runtime.recordLowerPage(pilot, { processedRecords: 250, eligibleMovements: 4, deduplicatedProcessMonths: 4 });
+    const summary = runtime.summarizeLowerRun({ aliases: 1, telemetry: [runtime.limitAlias(pilot)], metricRows: 1, queryFingerprint: "fingerprint", startedAt: "start", completedAt: "end" });
+    expect(summary).toMatchObject({ state: "partial", respondedTribunals: 0, limitedTribunals: 1, coveragePct: 0, pagesProcessed: 1, processedRecords: 250, deduplicatedProcessMonths: 4 });
+  });
 });

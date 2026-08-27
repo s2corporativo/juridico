@@ -58,6 +58,8 @@
 - [x] Cobrir em testes a parada de paginação, falhas por alias, cobertura parcial e descarte após agregação.
 - [x] Executar somente um dry-run de estrutura da paginação, sem processos, antes de solicitar autorização para a coleta completa.
 - [ ] Executar o coletor autorizado e validar no manifesto real os contadores por alias, páginas e cobertura, sem placeholders.
+- [ ] Persistir apenas as baixas nacionais agregadas após validar o manifesto autorizado e a deduplicação por processo+mês.
+- [ ] Executar piloto limitado de um alias e poucas páginas para validar scroll, deduplicação e descarte antes de escalar a coleta.
 - [x] Coletar e consolidar assuntos CNJ e órgãos julgadores nacionais como facetas agregadas, sem processos individuais.
 - [x] Paginar as facetas DataJud por alias e validar que não há truncamento silencioso de buckets.
 - [x] Documentar e testar a completude operacional das facetas agregadas antes de apresentá-las como consolidadas.
@@ -90,6 +92,7 @@
 - [x] Criar dossiê de citação exportável por julgado, com fontes, teses, taxonomia e ressalvas metodológicas.
 - [ ] Validar papéis, auditoria, exportação e responsividade dos novos módulos.
 - [ ] Executar validação operacional autenticada da fila com um administrador, sem criar conteúdo fictício.
+- [ ] Validar em perfil admin os filtros, enfileiramento, decisão e eventos de auditoria usando somente registro real já catalogado.
 - [x] Adicionar filtros da fila por status, prioridade e tribunal, sem expor dados pessoais.
 - [x] Validar a exportação Markdown e a impressão do dossiê com registro real já catalogado.
 - [x] Definir score documental objetivo com critérios visíveis e sem inferência de mérito jurídico.
@@ -98,6 +101,17 @@
 - [x] Exibir score e cobertura na consulta do Compêndio, com limites metodológicos explícitos.
 - [x] Validar cálculos, responsividade e ausência de dados pessoais no módulo de qualidade documental.
 - [x] Executar e registrar testes explícitos de score, média, níveis, cobertura e resposta pública sem dados pessoais.
+- [ ] Inspecionar a VPS, serviços existentes e recursos antes da publicação externa.
+- [ ] Preparar configuração de produção e estratégia de reversão sem registrar segredos no repositório.
+- [ ] Criar ou sincronizar o repositório privado ATLAS-EJC no GitHub.
+- [ ] Implantar o Atlas na VPS com serviço de processo, proxy reverso e firewall mínimo.
+- [ ] Validar saúde, acesso externo, logs sanitizados e retorno seguro após a publicação.
+- [ ] Configurar o domínio atlas.depaulateixeira.adv.br para o proxy HTTPS da VPS autorizada.
+- [ ] Criar banco, usuário de aplicação e variáveis de produção isolados para o Atlas.
+- [ ] Instalar serviço systemd e proxy reverso exclusivos do Atlas, com inicialização automática e rollback documentado.
+- [x] Localizar a zona DNS de depaulateixeira.adv.br em integração configurada e criar o registro A de atlas.
+- [ ] Instalar e configurar proxy HTTPS persistente para atlas.depaulateixeira.adv.br com upstream exclusivo do Atlas.
+- [ ] Abrir e validar somente as portas 80/443, emitir TLS e testar acesso externo com logs sanitizados.
 - [x] Extrair a média agregada para helper puro e testar o resultado esperado com dataset controlado.
 - [x] Definir critérios autônomos de qualidade documental para teses antes de atribuir-lhes pontuação.
 - [x] Implementar e exibir score de completude documental próprio para as teses, separado do score de julgados.

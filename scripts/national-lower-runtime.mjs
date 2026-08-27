@@ -11,21 +11,26 @@ export function recordLowerPage(telemetry, { processedRecords, eligibleMovements
 
 export function finishAlias(telemetry) { telemetry.state = "completed"; return telemetry; }
 
+export function limitAlias(telemetry) { telemetry.state = "limited"; return telemetry; }
+
 export function failAlias(telemetry, error) { telemetry.state = "failed"; telemetry.error = error; return telemetry; }
 
 export function summarizeLowerRun({ aliases, telemetry, metricRows, queryFingerprint, startedAt, completedAt }) {
   const completed = telemetry.filter(row => row.state === "completed");
   const failed = telemetry.filter(row => row.state === "failed");
+  const limited = telemetry.filter(row => row.state === "limited");
+  const measured = [...completed, ...limited];
   return {
     expectedTribunals: aliases,
     respondedTribunals: completed.length,
     failedTribunals: failed.length,
+    limitedTribunals: limited.length,
     coveragePct: aliases === 0 ? 0 : Math.round((completed.length / aliases) * 10000) / 100,
-    state: failed.length === 0 && completed.length === aliases ? "completed" : "partial",
-    pagesProcessed: completed.reduce((sum, row) => sum + row.pages, 0),
-    processedRecords: completed.reduce((sum, row) => sum + row.processedRecords, 0),
-    eligibleMovements: completed.reduce((sum, row) => sum + row.eligibleMovements, 0),
-    deduplicatedProcessMonths: completed.reduce((sum, row) => sum + row.deduplicatedProcessMonths, 0),
+    state: failed.length === 0 && limited.length === 0 && completed.length === aliases ? "completed" : "partial",
+    pagesProcessed: measured.reduce((sum, row) => sum + row.pages, 0),
+    processedRecords: measured.reduce((sum, row) => sum + row.processedRecords, 0),
+    eligibleMovements: measured.reduce((sum, row) => sum + row.eligibleMovements, 0),
+    deduplicatedProcessMonths: measured.reduce((sum, row) => sum + row.deduplicatedProcessMonths, 0),
     metricRows,
     queryFingerprint,
     startedAt,
