@@ -21,3 +21,13 @@ Em **27/08/2026**, o dossiê de um registro real do lote piloto foi renderizado 
 Na mesma data, a ação **“Baixar Markdown”** foi acionada em navegador automatizado sobre esse mesmo dossiê real. O navegador confirmou a criação e o download do arquivo com identificador público do registro. Assim, a exportação foi validada em ponta a ponta; o conteúdo continua coberto pelo teste de contrato de proveniência, classificação e ressalva profissional.
 
 > Antes do uso profissional, confirme a URL de origem, o inteiro teor, a aderência ao caso concreto e a atualidade da fonte.
+
+## Fila e filtros de curadoria
+
+A Central de Controle oferece filtros simultâneos de **situação**, **prioridade** e **tribunal**. Eles são enviados a procedimento administrativo tipado e aplicados no servidor antes do retorno da fila; a tela mostra o estado vazio quando não houver item compatível. Os filtros não alteram o julgado, a tese ou os eventos e não incluem campos de parte, contato ou documento pessoal.
+
+| Filtro | Valores permitidos | Finalidade |
+|---|---|---|
+| Situação | pendente, aprovado, rejeitado, devolvido | Separar trabalho aberto de decisões concluídas. |
+| Prioridade | rotina, elevada, urgente | Ordenar a curadoria sem gerar análise de mérito. |
+| Tribunal | valores já presentes no acervo | Delimitar a origem institucional do item. |
