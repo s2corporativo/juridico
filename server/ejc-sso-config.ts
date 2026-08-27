@@ -8,11 +8,11 @@ export function getEjcSsoReadiness(env: EnvSource = process.env) {
   return {
     enabled: false,
     status: missingConfiguration.length === 0 ? "configured_not_activated" : "configuration_required",
+    configurationComplete: missingConfiguration.length === 0,
     protocol: "oidc_authorization_code" as const,
     callbackPath: "/api/ejc-sso/callback",
     requiredClaims: ["iss", "sub", "aud", "exp"] as const,
     roleClaim: "role",
-    missingConfiguration,
-    activationRule: "Exige issuer HTTPS, discovery OIDC validado, client registrado, mapeamento de papéis aprovado e usuário administrativo real.",
+    activationRule: "Exige validação externa e administrador real antes da ativação.",
   };
 }
