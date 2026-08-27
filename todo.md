@@ -15,9 +15,9 @@
 - [x] Validar os limites, mensagens metodológicas e responsividade do seletor.
 - [x] Atualizar a habilidade de jurimetria com o fluxo de painel censitário e recorte temporal.
 - [x] Validar e entregar a versão atualizada da habilidade reutilizável.
-- [ ] Confirmar aliases, cobertura e comparabilidade nacional do JEC no DataJud.
-- [ ] Extrair e validar censo mensal nacional por tribunal e unidade federativa.
-- [ ] Consolidar causas e órgãos comparáveis para a visão nacional.
+- [x] Confirmar aliases, cobertura e comparabilidade nacional do JEC no DataJud.
+- [x] Extrair e validar censo mensal nacional por tribunal e unidade federativa.
+- [x] Consolidar causas e órgãos comparáveis para a visão nacional.
 - [x] Adaptar painel, filtros, exportações e relatório para recorte Brasil.
 - [x] Implementar filtros nacionais por período e tribunal sobre métricas agregadas reais.
 - [x] Implementar exportação CSV nacional com fonte, escopo, cobertura e limitações metodológicas.
@@ -30,7 +30,7 @@
 - [x] Validar em pré-visualização ou impressão nativa que o relatório preserva filtro, cobertura e ressalvas metodológicas.
 - [x] Extrair do PDF nacional evidência textual de filtro, cobertura, estado e ressalvas metodológicas.
 - [x] Formalizar a decisão de manter facetas integrais fora do recorte ativo e validar a sinalização correspondente.
-- [ ] Validar e entregar a versão nacional do Atlas Forense.
+- [x] Validar e entregar a versão nacional do Atlas Forense.
 - [x] Inspecionar o ZIP jurisprudencial, inventariar formatos e identificar riscos de dados pessoais.
 - [x] Definir modelo de taxonomia, evidência, tese e vínculo de julgados do Compêndio Nacional.
 - [x] Habilitar infraestrutura de dados e autenticação para o acervo jurídico.
@@ -125,7 +125,7 @@
 - [x] Parametrizar o coletor de baixas para saída controlada, pausa entre páginas, teto por execução e encerramento seguro em falha.
 - [x] Reconciliar a documentação da coleta de baixas com a paginação efetivamente usada e os limites do piloto.
 - [ ] Executar na VPS um único piloto TJMG de baixas, com poucas páginas, telemetria sanitizada e sem persistir identificadores.
-- [ ] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.
+- [x] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.
 - [x] Adicionar retentativas exponenciais limitadas, erro sanitizado e telemetria de tentativas ao coletor DataJud de baixas TJMG.
 - [x] Cobrir em teste o cálculo de retentativa, a parada após o limite e a ausência de dados de processos nos erros registrados.
 - [x] Validar no fluxo do coletor que falhas repetidas encerram no limite de retentativas sem expor identificadores no manifesto.
