@@ -131,4 +131,7 @@
 - [x] Validar no fluxo do coletor que falhas repetidas encerram no limite de retentativas sem expor identificadores no manifesto.
 - [x] Criar painel editorial na página inicial com estatísticas reais de temas, teses, autoridades e julgados do Compêndio.
 - [x] Exibir Betim/MG e Igarapé/MG como comarcas do recorte, distinguindo evidência catalogada de ausência de acervo confirmado.
-- [ ] Validar a nova página inicial em desktop e móvel, dados reais, privacidade e publicação externa.
+- [x] Validar a nova página inicial em desktop e móvel, dados reais, privacidade e publicação externa.
+- [ ] Inspecionar as capturas desktop e móvel da Home e registrar que o painel do Compêndio, Betim/MG e Igarapé/MG renderizam corretamente.
+- [ ] Validar a Home hidratada no domínio publicado, incluindo os cartões novos e a ausência de PII exposta.
+- [ ] Eliminar a dependência circular entre os bundles de gráficos e React que impede a hidratação da Home em produção.
