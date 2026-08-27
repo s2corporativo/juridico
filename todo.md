@@ -145,5 +145,5 @@
 - [x] Criar configuração externa versionada e reversível para OAuth/SSO, sem credenciais no repositório ou na interface pública.
 - [x] Preparar a unidade VPS e a documentação para receber segredos OAuth/SSO exclusivamente por ambiente protegido.
 - [ ] Validar com usuário administrativo real a sessão, os filtros, a fila, as decisões e a auditoria antes de liberar a Central de Controle.
-- [ ] Sanitizar o status público EJC/SSO para não expor nomes de variáveis, requisitos de segredo ou detalhes de configuração.
-- [ ] Revalidar externamente o status público EJC/SSO com somente estado abstrato de prontidão e sem nomes de variáveis.
+- [x] Sanitizar o status público EJC/SSO para não expor nomes de variáveis, requisitos de segredo ou detalhes de configuração.
+- [x] Revalidar externamente o status público EJC/SSO com somente estado abstrato de prontidão e sem nomes de variáveis.
