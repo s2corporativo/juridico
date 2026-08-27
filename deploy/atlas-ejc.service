@@ -9,6 +9,7 @@ User=atlas
 Group=atlas
 WorkingDirectory=/opt/atlas-ejc/current
 EnvironmentFile=/etc/atlas-ejc/atlas.env
+Environment=HOST=127.0.0.1
 ExecStart=/usr/bin/node dist/index.js
 Restart=on-failure
 RestartSec=5
