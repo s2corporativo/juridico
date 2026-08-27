@@ -4,6 +4,9 @@ export const PUBLIC_JURISPRUDENCE_FIELDS = [
   "outcomeAppeal", "dispositionType", "moralDamageValue", "reasoningSummary", "validationNote", "sourceStatus",
 ] as const;
 
+/** Apenas eventos de importação do acervo passam pela rota pública de citação. */
+export const PUBLIC_CITATION_AUDIT_ENTITY_TYPE = "jurisprudence_record";
+
 export function isSafePublicMetadata(record: Record<string, unknown>) {
   const forbidden = ["party", "parte", "cpf", "address", "endereco", "telefone", "phone", "email", "documento", "autor", "reu", "réu"];
   const personalValue = /\b\d{3}[.\s-]?\d{3}[.\s-]?\d{3}[-\s]?\d{2}\b|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?9?\d{4}[-\s]?\d{4}/i;
@@ -19,4 +22,8 @@ export function isSafePublicMetadata(record: Record<string, unknown>) {
 /** Notas de revisão entram em eventos auditáveis; identificadores pessoais continuam vedados. */
 export function isSafeReviewNote(note: string) {
   return note.trim().length > 0 && isSafePublicMetadata({ reviewNote: note });
+}
+
+export function isSafePublicCitationAuditEvent(event: { entityType: string; note: string | null }) {
+  return event.entityType === PUBLIC_CITATION_AUDIT_ENTITY_TYPE && isSafePublicMetadata({ auditNote: event.note ?? "" });
 }

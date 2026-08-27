@@ -4,6 +4,7 @@ import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, In
 import { getNationalDistributionStatus, normalizeNationalCensusFilter, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
 import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
 import { calculateAverageEvidenceScore, calculateEvidenceQuality, calculateThesisQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
+import { isSafePublicCitationAuditEvent, PUBLIC_CITATION_AUDIT_ENTITY_TYPE } from "./compendium.utils";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -331,7 +332,7 @@ export async function getCitationDossier(externalId: string) {
   const theses = topicIds.length > 0 ? await db.select().from(legalTheses).where(inArray(legalTheses.topicId, topicIds)) : [];
   const [review, events] = await Promise.all([
     db.select().from(evidenceReviewItems).where(eq(evidenceReviewItems.jurisprudenceId, record.record.id)).limit(1),
-    db.select().from(auditEvents).where(and(eq(auditEvents.entityType, "evidence_review"), eq(auditEvents.entityKey, externalId))).orderBy(desc(auditEvents.createdAt)),
+    db.select().from(auditEvents).where(and(eq(auditEvents.entityType, PUBLIC_CITATION_AUDIT_ENTITY_TYPE), eq(auditEvents.entityKey, externalId))).orderBy(desc(auditEvents.createdAt)),
   ]);
-  return { ...record, topics, theses, review: review[0] ?? null, events };
+  return { ...record, topics, theses, review: review[0] ?? null, events: events.filter(isSafePublicCitationAuditEvent) };
 }

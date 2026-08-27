@@ -90,7 +90,7 @@
 - [x] Implementar procedimentos administrativos protegidos para aprovar, rejeitar ou devolver evidências à revisão.
 - [x] Criar fila administrativa de revisão com filtros, evidência mínima e estado vazio seguro.
 - [x] Criar dossiê de citação exportável por julgado, com fontes, teses, taxonomia e ressalvas metodológicas.
-- [ ] Validar papéis, auditoria, exportação e responsividade dos novos módulos.
+- [ ] Validar publicamente auditoria, exportação e responsividade dos novos módulos, mantendo a validação de papel admin no teste autenticado separado.
 - [ ] Executar validação operacional autenticada da fila com um administrador, sem criar conteúdo fictício.
 - [ ] Validar em perfil admin os filtros, enfileiramento, decisão e eventos de auditoria usando somente registro real já catalogado.
 - [x] Adicionar filtros da fila por status, prioridade e tribunal, sem expor dados pessoais.
@@ -140,3 +140,4 @@
 - [x] Consolidar documento operacional com critérios explícitos de retomada para token Cloudflare, chave DataJud e administrador real.
 - [x] Registrar e validar no domínio publicado o estado consolidado de segurança, dados públicos e bloqueios externos.
 - [ ] Revalidar a disponibilidade da página oficial de chave pública DataJud a partir da VPS antes de repetir o piloto TJMG limitado.
+- [ ] Validar explicitamente no dossiê público a renderização dos eventos de auditoria com registros já catalogados, sem dados pessoais.
