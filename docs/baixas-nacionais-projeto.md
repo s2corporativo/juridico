@@ -33,6 +33,17 @@ Em **27/08/2026**, houve uma única execução limitada no alias `tjmg`, com tet
 
 Também em **27/08/2026**, um novo piloto TJMG de 3 páginas foi preparado na VPS com saída isolada, pausa de 750 ms e autorização transitória. A execução foi interrompida antes de obter chave, abrir cursor ou consultar processo porque o endpoint público de acesso `datajud-wiki.cnj.jus.br/api-publica/acesso/` excedeu o tempo de conexão a partir da VPS. A API principal respondeu sem credencial, mas essa resposta não substitui a obtenção válida da chave pública. Não foi gravado qualquer identificador, HMAC, resposta bruta, chave ou agregado; a execução nacional permanece bloqueada até nova validação do acesso.
 
+## Piloto territorial TJMG — Betim e Igarapé
+
+Em **27/08/2026**, a pré-validação voltou a concluir e foi executado um único piloto no alias `tjmg`, limitado a **3 páginas**, para os órgãos julgadores oficiais `40011` (Unidade Jurisdicional Única — 1º JD da Comarca de Betim) e `8161` (Juizado Especial Cível da Comarca de Igarapé). A consulta encerrou em 2 páginas, com 283 registros processados, 283 movimentos `Baixa Definitiva` elegíveis e 283 pares processo-mês deduplicados apenas em memória. Não houve retentativa, falha de alias ou corte por limite.
+
+| Órgão / comarca | Código | Baixas agregadas no piloto | Meses com retorno |
+| --- | ---: | ---: | --- |
+| Betim/MG | 40011 | 218 | 12/2025; 01–07/2026, exceto 08/2026 |
+| Igarapé/MG | 8161 | 65 | 03–07/2026 |
+
+Foram persistidas somente 13 células agregadas por `alias`, `UF`, `mês`, `código do órgão` e quantidade. Não foram persistidos números de processo, HMACs, respostas brutas, nomes de partes, documentos ou chave DataJud. O manifesto registrou estado `completed`, mas isto significa apenas que o **piloto limitado** encontrou o fim do retorno dentro do teto configurado; não o converte em censo nacional, taxa de baixa, estoque, produtividade ou taxa de êxito.
+
 ## Referência
 
 [1] [Skill Jurimetria de Juizados Públicos — consultas DataJud](../skills/jurimetria-juizados-publicos/references/datajud_queries.md)

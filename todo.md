@@ -139,7 +139,7 @@
 - [x] Validar por contratos e navegação pública que as áreas administrativas permanecem inacessíveis sem OAuth/SSO e sem expor registros de revisão.
 - [x] Consolidar documento operacional com critérios explícitos de retomada para token Cloudflare, chave DataJud e administrador real.
 - [x] Registrar e validar no domínio publicado o estado consolidado de segurança, dados públicos e bloqueios externos.
-- [ ] Revalidar a disponibilidade da página oficial de chave pública DataJud a partir da VPS antes de repetir o piloto TJMG limitado.
+- [x] Revalidar a disponibilidade da página oficial de chave pública DataJud a partir da VPS antes de repetir o piloto TJMG limitado.
 - [x] Validar explicitamente no dossiê público a renderização dos eventos de auditoria com registros já catalogados, sem dados pessoais.
 - [x] Mapear o contrato atual de autenticação, papéis, callbacks e variáveis do Atlas para a ponte EJC/SSO.
 - [x] Criar configuração externa versionada e reversível para OAuth/SSO, sem credenciais no repositório ou na interface pública.
@@ -148,10 +148,11 @@
 - [x] Sanitizar o status público EJC/SSO para não expor nomes de variáveis, requisitos de segredo ou detalhes de configuração.
 - [x] Revalidar externamente o status público EJC/SSO com somente estado abstrato de prontidão e sem nomes de variáveis.
 - [x] Documentar o procedimento seguro de inclusão e validação das credenciais EJC/SSO no ambiente protegido da VPS.
-- [ ] Confirmar no domínio publicado que o painel inicial apresenta as estatísticas do Compêndio e as facetas oficiais de Betim e Igarapé.
-- [ ] Adaptar o coletor de baixas TJMG para receber uma lista limitada de códigos de órgão julgador, mantendo o recorte e a telemetria sanitizados.
-- [ ] Cobrir em teste a serialização do filtro territorial, a rejeição de códigos não permitidos e a ausência de identificadores em erros e manifestos.
+- [x] Confirmar no domínio publicado que o painel inicial apresenta as estatísticas do Compêndio e as facetas oficiais de Betim e Igarapé.
+- [x] Adaptar o coletor de baixas TJMG para receber uma lista limitada de códigos de órgão julgador, mantendo o recorte e a telemetria sanitizados.
+- [x] Cobrir em teste a serialização do filtro territorial, a rejeição de códigos não permitidos e a ausência de identificadores em erros e manifestos.
 - [x] Corrigir o helper de filtro territorial para receber explicitamente o tamanho de página, preservando seu uso isolado nos testes.
-- [ ] Executar somente o pré-teste TJMG para os órgãos oficiais de Betim e Igarapé, com até três páginas e sem persistir processos individuais.
-- [ ] Segregar os totais de baixas por órgão julgador e mês, evitando apresentar Betim e Igarapé como uma única contagem territorial.
-- [ ] Corrigir a verificação de privacidade na VPS para ler arquivos do diretório restrito com privilégio e confirmar que somente agregados foram persistidos.
+- [x] Executar somente o pré-teste TJMG para os órgãos oficiais de Betim e Igarapé, com até três páginas e sem persistir processos individuais.
+- [x] Segregar os totais de baixas por órgão julgador e mês, evitando apresentar Betim e Igarapé como uma única contagem territorial.
+- [x] Corrigir a verificação de privacidade na VPS para ler arquivos do diretório restrito com privilégio e confirmar que somente agregados foram persistidos.
+- [x] Adicionar teste automatizado do manifesto territorial que comprove a ausência de números de processo, PII, HMACs e respostas brutas persistidas.

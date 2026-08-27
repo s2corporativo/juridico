@@ -149,7 +149,7 @@ async function main() {
     retryPolicy: { maxRetries, retryBaseDelayMs, maximumDelayMs: 30_000 },
     pilot: isLimitedPilot ? { alias: aliasOption ?? "todos", maxPagesPerAlias: maxPagesOption || null, judgingBodyCodes: judgingBodyCodes.length > 0 ? judgingBodyCodes : undefined } : null,
     queryFingerprint: fingerprint,
-    dataPolicy: "Somente numeroProcesso, movimentos mínimos e, quando filtrado, código de órgão em memória; HMAC efêmero por processo+mês; não persistir identificadores, hashes, respostas ou chave.",
+    dataPolicy: "Dados de identificação transitórios somente em memória; persistência limitada a parâmetros de recorte, telemetria e totais agregados.",
     authorization: EXECUTE && AUTHORIZED ? "approved" : "required_for_execution",
   };
   if (!(EXECUTE && AUTHORIZED)) {
@@ -170,7 +170,7 @@ async function main() {
       ...baseline,
       ...summarizeLowerRun({ aliases: selectedAliases.length, telemetry: [], metricRows: 0, queryFingerprint: fingerprint, startedAt, completedAt: new Date().toISOString() }),
       preflight,
-      privacy: "A falha ocorreu antes da consulta de processos; nenhum identificador, HMAC, resposta, agregado ou chave foi persistido.",
+      privacy: "A falha ocorreu antes da consulta de processos; nenhum dado transitório, resposta ou credencial foi persistido.",
     };
     await writeJson(`manifesto_baixas_nacionais_${isLimitedPilot ? "piloto" : "execucao"}.json`, manifest);
     console.log(`BAIXAS_NACIONAIS_INTERROMPIDA: acesso DataJud indisponível após ${preflight.attempts} tentativa(s).`);
@@ -236,7 +236,7 @@ async function main() {
     ...baseline,
     ...summarizeLowerRun({ aliases: selectedAliases.length, telemetry, metricRows: results.length, queryFingerprint: fingerprint, startedAt, completedAt: new Date().toISOString() }),
     preflight,
-    privacy: "Resultados persistíveis contêm apenas alias, UF, mês e quantidade; identificadores, HMACs, respostas e chave foram descartados ao fim da execução.",
+    privacy: "Resultados persistíveis contêm apenas alias, UF, mês, código de órgão e quantidade; dados transitórios, respostas e credenciais foram descartados ao fim da execução.",
   };
   const suffix = isLimitedPilot ? "piloto" : "execucao";
   await writeJson(`manifesto_baixas_nacionais_${suffix}.json`, manifest);
