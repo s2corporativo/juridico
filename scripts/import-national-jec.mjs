@@ -2,8 +2,9 @@ import { readFile } from "node:fs/promises";
 import mysql from "mysql2/promise";
 
 const RUN_KEY = "datajud-jec-nacional-2025-2026-v1";
-const inputPath = "/home/ubuntu/juizados_pesquisa/output_nacional_jec/censo_nacional_jec_distribuicoes_2025_2026.csv";
-const manifestPath = "/home/ubuntu/juizados_pesquisa/output_nacional_jec/manifesto_censo_nacional_jec_distribuicoes.json";
+const outputDir = process.env.NATIONAL_OUTPUT_DIR ?? "/home/ubuntu/juizados_pesquisa/output_nacional_jec";
+const inputPath = `${outputDir}/censo_nacional_jec_distribuicoes_2025_2026.csv`;
+const manifestPath = `${outputDir}/manifesto_censo_nacional_jec_distribuicoes.json`;
 
 function parseCsv(text) {
   const [header, ...lines] = text.trim().split(/\r?\n/);

@@ -2,8 +2,9 @@ import { readFile } from "node:fs/promises";
 import mysql from "mysql2/promise";
 
 const RUN_KEY = "datajud-jec-nacional-2025-2026-v1";
-const csvPath = "/home/ubuntu/juizados_pesquisa/output_nacional_jec/facetas_nacionais_jec_2025_2026.csv";
-const manifestPath = "/home/ubuntu/juizados_pesquisa/output_nacional_jec/manifesto_facetas_nacionais_jec.json";
+const outputDir = process.env.NATIONAL_OUTPUT_DIR ?? "/home/ubuntu/juizados_pesquisa/output_nacional_jec";
+const csvPath = `${outputDir}/facetas_nacionais_jec_2025_2026.csv`;
+const manifestPath = `${outputDir}/manifesto_facetas_nacionais_jec.json`;
 
 function parseLine(line) {
   const values = []; let value = ""; let quoted = false;

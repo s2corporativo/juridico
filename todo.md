@@ -101,17 +101,23 @@
 - [x] Exibir score e cobertura na consulta do Compêndio, com limites metodológicos explícitos.
 - [x] Validar cálculos, responsividade e ausência de dados pessoais no módulo de qualidade documental.
 - [x] Executar e registrar testes explícitos de score, média, níveis, cobertura e resposta pública sem dados pessoais.
-- [ ] Inspecionar a VPS, serviços existentes e recursos antes da publicação externa.
-- [ ] Preparar configuração de produção e estratégia de reversão sem registrar segredos no repositório.
-- [ ] Criar ou sincronizar o repositório privado ATLAS-EJC no GitHub.
-- [ ] Implantar o Atlas na VPS com serviço de processo, proxy reverso e firewall mínimo.
-- [ ] Validar saúde, acesso externo, logs sanitizados e retorno seguro após a publicação.
-- [ ] Configurar o domínio atlas.depaulateixeira.adv.br para o proxy HTTPS da VPS autorizada.
-- [ ] Criar banco, usuário de aplicação e variáveis de produção isolados para o Atlas.
-- [ ] Instalar serviço systemd e proxy reverso exclusivos do Atlas, com inicialização automática e rollback documentado.
+- [x] Inspecionar a VPS, serviços existentes e recursos antes da publicação externa.
+- [x] Preparar configuração de produção e estratégia de reversão sem registrar segredos no repositório.
+- [x] Criar ou sincronizar o repositório privado ATLAS-EJC no GitHub.
+- [x] Implantar o Atlas na VPS com serviço de processo, proxy reverso e firewall mínimo.
+- [x] Validar saúde, acesso externo, logs sanitizados e retorno seguro após a publicação.
+- [x] Configurar o domínio atlas.depaulateixeira.adv.br para o proxy HTTPS da VPS autorizada.
+- [x] Criar banco, usuário de aplicação e variáveis de produção isolados para o Atlas.
+- [ ] Carregar na VPS somente metadados jurídicos auditados e séries nacionais agregadas, sem respostas brutas ou identificadores temporários.
+- [x] Instalar serviço systemd e proxy reverso exclusivos do Atlas, com inicialização automática e rollback documentado.
 - [x] Localizar a zona DNS de depaulateixeira.adv.br em integração configurada e criar o registro A de atlas.
-- [ ] Instalar e configurar proxy HTTPS persistente para atlas.depaulateixeira.adv.br com upstream exclusivo do Atlas.
-- [ ] Abrir e validar somente as portas 80/443, emitir TLS e testar acesso externo com logs sanitizados.
+- [x] Instalar e configurar proxy HTTPS persistente para atlas.depaulateixeira.adv.br com upstream exclusivo do Atlas.
+- [x] Abrir e validar somente as portas 80/443, emitir TLS e testar acesso externo com logs sanitizados.
 - [x] Extrair a média agregada para helper puro e testar o resultado esperado com dataset controlado.
 - [x] Definir critérios autônomos de qualidade documental para teses antes de atribuir-lhes pontuação.
 - [x] Implementar e exibir score de completude documental próprio para as teses, separado do score de julgados.
+- [ ] Completar seed idempotente dos metadados públicos do Compêndio na VPS, incluindo taxonomia, teses, vínculos e auditoria sanitizada.
+- [ ] Restringir explicitamente o servidor de produção do Atlas a 127.0.0.1 e confirmar que a porta 3010 não é exposta.
+- [ ] Remover a dependência de runtime do Vite em produção e validar instalação exclusiva de dependências de produção na VPS.
+- [ ] Reconciliar cautelosamente o histórico de migrações Drizzle já aplicadas no MariaDB isolado, sem executar DDL duplicado.
+- [ ] Rotacionar o token de Cloudflare enviado em conversa e manter somente token de escopo mínimo fora do projeto e da VPS.

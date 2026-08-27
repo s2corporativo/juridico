@@ -19,3 +19,7 @@ O arquivo `/etc/atlas-ejc/atlas.env` terá permissão `0640`, proprietário `roo
 ## Reversão
 
 Cada release será copiada para `/opt/atlas-ejc/releases/<identificador>` e `current` apontará para a release ativa. Caso a validação de saúde falhe, o `current` retornará para a release anterior e o serviço será reiniciado. Não haverá sobrescrita destrutiva do release validado.
+
+## Repositório GitHub
+
+O repositório privado `s2corporativo/ATLAS-EJC` já possuía uma linha principal com arquivos de outro escopo. Para preservar esse conteúdo, o Atlas foi publicado na branch **`atlas-forense`**, baseada no estado validado do projeto local. A branch `main` remota não foi reescrita, mesclada à força ou alterada. A integração definitiva ao ramo principal deverá ocorrer por revisão de diferenças ou pull request.
