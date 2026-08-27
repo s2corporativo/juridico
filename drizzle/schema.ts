@@ -192,6 +192,24 @@ export const jurisprudenceRecords = mysqlTable("jurisprudence_records", {
   index("jurisprudence_status_idx").on(table.sourceStatus),
 ]);
 
+/** Fila de revisão humana de registros já catalogados; decisões anteriores permanecem nos eventos de auditoria. */
+export const evidenceReviewItems = mysqlTable("evidence_review_items", {
+  id: int("id").autoincrement().primaryKey(),
+  jurisprudenceId: int("jurisprudenceId").notNull().unique(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "returned"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["routine", "elevated", "urgent"]).default("routine").notNull(),
+  requestedReason: text("requestedReason").notNull(),
+  assignedToUserId: int("assignedToUserId"),
+  decisionNote: text("decisionNote"),
+  reviewedByUserId: int("reviewedByUserId"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("evidence_review_status_idx").on(table.status),
+  index("evidence_review_priority_idx").on(table.priority),
+]);
+
 export const jurisprudenceTopics = mysqlTable("jurisprudence_topics", {
   id: int("id").autoincrement().primaryKey(),
   jurisprudenceId: int("jurisprudenceId").notNull(),

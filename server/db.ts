@@ -1,7 +1,8 @@
 import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, users } from "../drizzle/schema";
+import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, users } from "../drizzle/schema";
 import { getNationalDistributionStatus, normalizeNationalCensusFilter, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
+import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -210,4 +211,87 @@ export async function searchCompendium(input: CompendiumSearchInput) {
     decisionIds.length > 0 ? db.select().from(jurisprudenceTopics).where(inArray(jurisprudenceTopics.jurisprudenceId, decisionIds)) : Promise.resolve([]),
   ]);
   return { decisions, sources, topicLinks, total: Number(totalRows[0]?.count ?? 0), page, pageSize };
+}
+
+export type EvidenceReviewQueueFilter = {
+  status?: "pending" | "approved" | "rejected" | "returned";
+  priority?: "routine" | "elevated" | "urgent";
+  tribunal?: string;
+};
+
+export async function getEvidenceReviewQueue(input: EvidenceReviewQueueFilter = {}) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const conditions = [];
+  if (input.status) conditions.push(eq(evidenceReviewItems.status, input.status));
+  if (input.priority) conditions.push(eq(evidenceReviewItems.priority, input.priority));
+  if (input.tribunal) conditions.push(eq(jurisprudenceRecords.tribunal, input.tribunal));
+  const condition = conditions.length ? and(...conditions) : undefined;
+  return db.select({
+    id: evidenceReviewItems.id,
+    status: evidenceReviewItems.status,
+    priority: evidenceReviewItems.priority,
+    requestedReason: evidenceReviewItems.requestedReason,
+    decisionNote: evidenceReviewItems.decisionNote,
+    reviewedAt: evidenceReviewItems.reviewedAt,
+    createdAt: evidenceReviewItems.createdAt,
+    externalId: jurisprudenceRecords.externalId,
+    tribunal: jurisprudenceRecords.tribunal,
+    decisionType: jurisprudenceRecords.decisionType,
+    theme: jurisprudenceRecords.theme,
+    sourceStatus: jurisprudenceRecords.sourceStatus,
+    sourceUrl: evidenceSources.sourceUrl,
+  }).from(evidenceReviewItems)
+    .innerJoin(jurisprudenceRecords, eq(evidenceReviewItems.jurisprudenceId, jurisprudenceRecords.id))
+    .leftJoin(evidenceSources, eq(jurisprudenceRecords.sourceId, evidenceSources.id))
+    .where(condition)
+    .orderBy(asc(evidenceReviewItems.status), desc(evidenceReviewItems.createdAt));
+}
+
+export async function enqueueEvidenceReview(externalId: string, priority: ReviewPriority, requestedReason: string, actorUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const reason = validateReviewRequest(requestedReason);
+  const [record] = await db.select({ id: jurisprudenceRecords.id }).from(jurisprudenceRecords).where(eq(jurisprudenceRecords.externalId, externalId)).limit(1);
+  if (!record) throw new Error("Registro jurisprudencial não encontrado.");
+  const existing = await db.select().from(evidenceReviewItems).where(eq(evidenceReviewItems.jurisprudenceId, record.id)).limit(1);
+  if (existing[0] && (existing[0].status === "pending" || existing[0].status === "returned")) throw new Error("Este registro já possui revisão ativa.");
+  if (existing[0]) {
+    await db.update(evidenceReviewItems).set({ status: "pending", priority, requestedReason: reason, decisionNote: null, reviewedAt: null, reviewedByUserId: null }).where(eq(evidenceReviewItems.id, existing[0].id));
+  } else {
+    await db.insert(evidenceReviewItems).values({ jurisprudenceId: record.id, status: "pending", priority, requestedReason: reason, assignedToUserId: actorUserId });
+  }
+  await db.insert(auditEvents).values({ entityType: "evidence_review", entityKey: externalId, action: "queued_for_review", sourceStatus: null, actorLabel: "admin", note: reason });
+  return { success: true } as const;
+}
+
+export async function decideEvidenceReview(reviewId: number, decision: ReviewDecision, decisionNote: string, actorUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [review] = await db.select().from(evidenceReviewItems).where(eq(evidenceReviewItems.id, reviewId)).limit(1);
+  if (!review) throw new Error("Item de revisão não encontrado.");
+  const checked = validateReviewDecision(review.status, decision, decisionNote);
+  await db.update(evidenceReviewItems).set({ status: checked.status, decisionNote: checked.note, reviewedByUserId: actorUserId, reviewedAt: new Date() }).where(eq(evidenceReviewItems.id, reviewId));
+  const [record] = await db.select({ externalId: jurisprudenceRecords.externalId, sourceStatus: jurisprudenceRecords.sourceStatus }).from(jurisprudenceRecords).where(eq(jurisprudenceRecords.id, review.jurisprudenceId)).limit(1);
+  if (record) await db.insert(auditEvents).values({ entityType: "evidence_review", entityKey: record.externalId, action: `review_${decision}`, sourceStatus: record.sourceStatus, actorLabel: "admin", note: checked.note });
+  return { success: true } as const;
+}
+
+export async function getCitationDossier(externalId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [record] = await db.select({ record: jurisprudenceRecords, source: evidenceSources, batch: ingestionBatches }).from(jurisprudenceRecords)
+    .innerJoin(evidenceSources, eq(jurisprudenceRecords.sourceId, evidenceSources.id))
+    .innerJoin(ingestionBatches, eq(jurisprudenceRecords.batchId, ingestionBatches.id))
+    .where(eq(jurisprudenceRecords.externalId, externalId)).limit(1);
+  if (!record) return null;
+  const topics = await db.select({ id: legalTopics.id, title: legalTopics.title, pathKey: legalTopics.pathKey, relevance: jurisprudenceTopics.relevance }).from(jurisprudenceTopics)
+    .innerJoin(legalTopics, eq(jurisprudenceTopics.topicId, legalTopics.id)).where(eq(jurisprudenceTopics.jurisprudenceId, record.record.id));
+  const topicIds = topics.map(topic => topic.id);
+  const theses = topicIds.length > 0 ? await db.select().from(legalTheses).where(inArray(legalTheses.topicId, topicIds)) : [];
+  const [review, events] = await Promise.all([
+    db.select().from(evidenceReviewItems).where(eq(evidenceReviewItems.jurisprudenceId, record.record.id)).limit(1),
+    db.select().from(auditEvents).where(and(eq(auditEvents.entityType, "evidence_review"), eq(auditEvents.entityKey, externalId))).orderBy(desc(auditEvents.createdAt)),
+  ]);
+  return { ...record, topics, theses, review: review[0] ?? null, events };
 }

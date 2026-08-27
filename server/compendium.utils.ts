@@ -15,3 +15,8 @@ export function isSafePublicMetadata(record: Record<string, unknown>) {
   };
   return Object.entries(record).every(([key, value]) => !forbidden.some(term => key.toLowerCase().includes(term)) && walk(value));
 }
+
+/** Notas de revisão entram em eventos auditáveis; identificadores pessoais continuam vedados. */
+export function isSafeReviewNote(note: string) {
+  return note.trim().length > 0 && isSafePublicMetadata({ reviewNote: note });
+}

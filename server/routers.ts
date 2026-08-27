@@ -1,10 +1,11 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
-import { getCompendiumOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
+import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumOverview, getEvidenceReviewQueue, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
 import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
 import { getEjcIntegrationStatus } from "@shared/ejc-integration";
+import { REVIEW_DECISIONS, REVIEW_PRIORITIES, REVIEW_STATUSES } from "./evidence-review";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
@@ -51,6 +52,12 @@ export const appRouter = router({
       page: z.number().int().min(0).max(10_000).optional(),
       pageSize: z.number().int().min(1).max(50).optional(),
     })).query(({ input }) => searchCompendium(input)),
+    dossier: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).query(({ input }) => getCitationDossier(input.externalId)),
+    reviewQueue: router({
+      list: adminProcedure.input(z.object({ status: z.enum(REVIEW_STATUSES).optional(), priority: z.enum(REVIEW_PRIORITIES).optional(), tribunal: z.string().trim().min(1).max(191).optional() }).optional()).query(({ input }) => getEvidenceReviewQueue(input)),
+      enqueue: adminProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191), priority: z.enum(REVIEW_PRIORITIES), requestedReason: z.string().trim().min(3).max(2_000) })).mutation(({ ctx, input }) => enqueueEvidenceReview(input.externalId, input.priority, input.requestedReason, ctx.user.id)),
+      decide: adminProcedure.input(z.object({ reviewId: z.number().int().positive(), decision: z.enum(REVIEW_DECISIONS), decisionNote: z.string().trim().min(3).max(2_000) })).mutation(({ ctx, input }) => decideEvidenceReview(input.reviewId, input.decision, input.decisionNote, ctx.user.id)),
+    }),
     ingestion: router({
       preview: adminProcedure.input(z.object({
         batchKey: z.string().trim().min(3).max(191),

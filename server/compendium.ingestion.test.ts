@@ -46,6 +46,12 @@ describe("controlled compendium ingestion", () => {
     await expect(adminCaller.compendium.ingestion.preview({ batchKey: "lote-admin", candidates: [candidate] })).resolves.toMatchObject({ accepted: 1, rejected: 0 });
   });
 
+  it("restricts the evidence review queue to the administrative role", async () => {
+    const userCaller = appRouter.createCaller(createContext("user"));
+    await expect(userCaller.compendium.reviewQueue.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(userCaller.compendium.reviewQueue.enqueue({ externalId: "tjmg-003", priority: "routine", requestedReason: "Conferir origem oficial." })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("rejects personal identifiers in metadata values and malformed CNJ numbers", () => {
     const preview = previewControlledIngestion("lote-privacidade", [
       { externalId: "tjmg-004", cnjNumber: "123", tribunal: "TJMG", justice: "Estadual", decisionType: "Acórdão", sourceStatus: "attachment_reviewed", metadata: { observacao: "Contato: pessoa@exemplo.com" } },

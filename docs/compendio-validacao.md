@@ -20,3 +20,9 @@ Data da validação: **26/08/2026**.
 > O lote continua explicitamente classificado como **piloto local** de Betim, Contagem e Belo Horizonte. Ele não representa censo nacional, nem permite inferência estatística nacional ou por estrato inferior a dez registros.
 
 A revisão visual também confirmou que **Atlas Forense / JEC** é a marca-mãe da página; o Compêndio aparece como módulo jurídico subordinado e declara a natureza da evidência em seus blocos principais.
+
+| Dossiê de citação | Registro real do lote piloto exibiu identificação pública, origem, lote, hash, taxonomia, tese, estado de revisão e ressalva de uso profissional. |
+
+Em **27/08/2026**, a rota de dossiê foi validada com um julgado real já catalogado. A tela exibiu apenas metadados públicos necessários à citação e não mostrou dados de partes, contato ou documento pessoal.
+
+Em viewport de **375 × 812 px**, o dossiê preservou leitura de identificação, proveniência, taxonomia, tese, estado de revisão e ressalva profissional em coluna única. A central de controle exibiu a fila sem registros e manteve a barreira de autenticação antes de qualquer ação administrativa.

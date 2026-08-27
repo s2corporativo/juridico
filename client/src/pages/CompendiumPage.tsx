@@ -143,7 +143,7 @@ export default function CompendiumPage() {
                   <div><dt>Resultado</dt><dd>{decision.outcomeAppeal ?? decision.outcomeOrigin ?? "Não informado"}</dd></div>
                   <div><dt>Classificação</dt><dd>{selectedTopics.get(decision.id) ?? decision.legalArea ?? "Em revisão"}</dd></div>
                 </dl>
-                <div className="decision-foot"><code>{decision.cnjNumber ?? decision.externalId}</code>{source?.sourceUrl && <a href={source.sourceUrl} target="_blank" rel="noreferrer">Fonte oficial <ArrowUpRight size={14} /></a>}</div>
+                <div className="decision-foot"><code>{decision.cnjNumber ?? decision.externalId}</code><span><a href={`/dossie/${encodeURIComponent(decision.externalId)}`}>Dossiê <ArrowUpRight size={14} /></a>{source?.sourceUrl && <a href={source.sourceUrl} target="_blank" rel="noreferrer">Fonte oficial <ArrowUpRight size={14} /></a>}</span></div>
               </article>;
             })}
             {!search.isError && decisions.length === 0 && <div className="compendium-empty">Nenhum registro corresponde aos filtros. Remova um termo ou selecione outra área.</div>}

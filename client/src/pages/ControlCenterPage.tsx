@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Database, FileCheck2, FileLock2, KeyRound, Scale, Search, ShieldCheck, Upload, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, Database, FileCheck2, FileLock2, KeyRound, Scale, Search, ShieldCheck, Upload, XCircle } from "lucide-react";
 import { useState } from "react";
 
 type CandidateInput = {
@@ -22,10 +22,24 @@ export default function ControlCenterPage() {
   const [parseError, setParseError] = useState<string | null>(null);
   const [tribunalAlias, setTribunalAlias] = useState<"tjmg" | "trt3" | "trf6" | "tre-mg" | "tjmmg">("tjmg");
   const [processNumber, setProcessNumber] = useState("");
+  const [reviewExternalId, setReviewExternalId] = useState("");
+  const [reviewPriority, setReviewPriority] = useState<"routine" | "elevated" | "urgent">("routine");
+  const [reviewReason, setReviewReason] = useState("");
+  const [decisionNotes, setDecisionNotes] = useState<Record<number, string>>({});
+  const [reviewStatusFilter, setReviewStatusFilter] = useState<"" | "pending" | "approved" | "rejected" | "returned">("");
+  const [reviewPriorityFilter, setReviewPriorityFilter] = useState<"" | "routine" | "elevated" | "urgent">("");
+  const [reviewTribunalFilter, setReviewTribunalFilter] = useState("");
   const preview = trpc.compendium.ingestion.preview.useMutation();
   const dataJudStatus = trpc.datajud.status.useQuery();
   const dataJudLookup = trpc.datajud.lookup.useMutation();
   const dataJudCoverage = trpc.datajud.coverage.useMutation();
+  const isAdmin = user?.role === "admin";
+  const reviewOverview = trpc.compendium.overview.useQuery(undefined, { enabled: isAdmin });
+  const reviewQueueInput = { status: reviewStatusFilter || undefined, priority: reviewPriorityFilter || undefined, tribunal: reviewTribunalFilter || undefined };
+  const reviewQueue = trpc.compendium.reviewQueue.list.useQuery(reviewQueueInput, { enabled: isAdmin });
+  const reviewUtils = trpc.useUtils();
+  const enqueueReview = trpc.compendium.reviewQueue.enqueue.useMutation({ onSuccess: () => { setReviewReason(""); setReviewExternalId(""); reviewUtils.compendium.reviewQueue.list.invalidate(); } });
+  const decideReview = trpc.compendium.reviewQueue.decide.useMutation({ onSuccess: () => reviewUtils.compendium.reviewQueue.list.invalidate() });
 
   const runPreview = () => {
     setParseError(null);
@@ -41,8 +55,6 @@ export default function ControlCenterPage() {
     preview.mutate({ batchKey, candidates });
   };
 
-  const isAdmin = user?.role === "admin";
-
   const runDataJudLookup = () => {
     dataJudLookup.reset();
     dataJudLookup.mutate({ tribunalAlias, processNumber });
@@ -52,6 +64,9 @@ export default function ControlCenterPage() {
     dataJudCoverage.reset();
     dataJudCoverage.mutate({});
   };
+
+  const queueReview = () => enqueueReview.mutate({ externalId: reviewExternalId.trim(), priority: reviewPriority, requestedReason: reviewReason.trim() });
+  const decideQueuedReview = (reviewId: number, decision: "approved" | "rejected" | "returned") => decideReview.mutate({ reviewId, decision, decisionNote: decisionNotes[reviewId]?.trim() ?? "" });
 
   return (
     <div className="control-shell">
@@ -74,6 +89,7 @@ export default function ControlCenterPage() {
           {preview.error && <p className="preflight-error"><XCircle size={16} /> {preview.error.message}</p>}
           <button className="preflight-button" disabled={preview.isPending || !batchKey.trim()} onClick={runPreview}>{preview.isPending ? "Validando…" : "Executar pré-validação"}</button>
           {preview.data && <div className="preflight-result"><div><span>ACEITOS</span><strong>{preview.data.accepted}</strong></div><div><span>REJEITADOS</span><strong>{preview.data.rejected}</strong></div><div className="preflight-items">{preview.data.items.map(item => <article key={item.externalId}><span>{item.accepted ? <CheckCircle2 size={16} /> : <XCircle size={16} />}</span><code>{item.externalId}</code><p>{item.accepted ? "Elegível para revisão humana posterior." : item.reasons.join(" ")}</p></article>)}</div></div>}
+          <section className="review-admin-panel"><div className="preflight-heading"><ClipboardCheck size={21} /><div><span>FILA DE REVISÃO HUMANA</span><h2>Decida e registre a curadoria.</h2></div></div><p className="datajud-admin-note">A fila atua sobre registros já existentes no acervo. A motivação e a decisão entram na trilha de auditoria; dados pessoais são rejeitados.</p><div className="review-enqueue"><label className="preflight-field"><span>Identificador do julgado</span><input value={reviewExternalId} onChange={event => setReviewExternalId(event.target.value)} placeholder="externalId já catalogado" /></label><label className="preflight-field"><span>Prioridade</span><select value={reviewPriority} onChange={event => setReviewPriority(event.target.value as typeof reviewPriority)}><option value="routine">Rotina</option><option value="elevated">Elevada</option><option value="urgent">Urgente</option></select></label><label className="preflight-field note"><span>Motivação</span><input value={reviewReason} onChange={event => setReviewReason(event.target.value)} placeholder="Ex.: conferir número e URL oficial" /></label><button className="preflight-button" disabled={enqueueReview.isPending || !reviewExternalId.trim() || reviewReason.trim().length < 3} onClick={queueReview}>{enqueueReview.isPending ? "Enfileirando…" : "Enviar à revisão"}</button></div><div className="review-filters"><label><span>Situação</span><select value={reviewStatusFilter} onChange={event => setReviewStatusFilter(event.target.value as typeof reviewStatusFilter)}><option value="">Todas</option><option value="pending">Pendente</option><option value="returned">Devolvido</option><option value="approved">Aprovado</option><option value="rejected">Rejeitado</option></select></label><label><span>Prioridade</span><select value={reviewPriorityFilter} onChange={event => setReviewPriorityFilter(event.target.value as typeof reviewPriorityFilter)}><option value="">Todas</option><option value="routine">Rotina</option><option value="elevated">Elevada</option><option value="urgent">Urgente</option></select></label><label><span>Tribunal</span><select value={reviewTribunalFilter} onChange={event => setReviewTribunalFilter(event.target.value)}><option value="">Todos</option>{reviewOverview.data?.facets.tribunals.map(item => <option key={item} value={item}>{item}</option>)}</select></label></div>{enqueueReview.error && <p className="preflight-error"><XCircle size={16} /> {enqueueReview.error.message}</p>}{reviewQueue.error && <p className="preflight-error"><XCircle size={16} /> {reviewQueue.error.message}</p>}<div className="review-queue">{reviewQueue.isLoading ? <p>Carregando fila…</p> : reviewQueue.data?.length ? reviewQueue.data.map(item => <article key={item.id}><div><span className={`review-priority ${item.priority}`}>{item.priority}</span><b>{item.tribunal} · {item.decisionType}</b><code>{item.externalId}</code><p>{item.theme ?? "Tema não informado"}</p><small>{item.requestedReason}</small></div><div className="review-actions"><span>{item.status.replaceAll("_", " ")}</span>{item.status === "pending" || item.status === "returned" ? <><input value={decisionNotes[item.id] ?? ""} onChange={event => setDecisionNotes(notes => ({ ...notes, [item.id]: event.target.value }))} placeholder="Fundamentação da decisão" /><div><button disabled={decideReview.isPending || (decisionNotes[item.id]?.trim().length ?? 0) < 3} onClick={() => decideQueuedReview(item.id, "approved")}>Aprovar</button><button disabled={decideReview.isPending || (decisionNotes[item.id]?.trim().length ?? 0) < 3} onClick={() => decideQueuedReview(item.id, "returned")}>Devolver</button><button disabled={decideReview.isPending || (decisionNotes[item.id]?.trim().length ?? 0) < 3} onClick={() => decideQueuedReview(item.id, "rejected")}>Rejeitar</button></div></> : <small>{item.decisionNote ?? "Decisão registrada sem nota."}</small>}</div></article>) : <p className="review-empty">Nenhum registro corresponde aos filtros ativos.</p>}</div></section>
           <section className="datajud-admin-panel"><div className="preflight-heading"><Database size={21} /><div><span>CONSULTA PONTUAL · DATAJUD</span><h2>Consultar metadados públicos com controle.</h2></div></div><p className="datajud-admin-note">{dataJudStatus.data?.label ?? "Verificando disponibilidade do conector…"}. A consulta retorna apenas metadados públicos mínimos e não grava nenhum resultado no acervo.</p><div className="datajud-form"><label className="preflight-field"><span>Tribunal</span><select value={tribunalAlias} onChange={event => setTribunalAlias(event.target.value as typeof tribunalAlias)}><option value="tjmg">TJMG</option><option value="trt3">TRT 3ª Região</option><option value="trf6">TRF 6ª Região</option><option value="tre-mg">TRE-MG</option><option value="tjmmg">TJM-MG</option></select></label><label className="preflight-field"><span>Número CNJ</span><input value={processNumber} onChange={event => setProcessNumber(event.target.value)} placeholder="0000000-00.0000.0.00.0000" /></label><button className="preflight-button" disabled={dataJudLookup.isPending || !processNumber.trim() || !dataJudStatus.data?.configured} onClick={runDataJudLookup}><Search size={15} /> {dataJudLookup.isPending ? "Consultando…" : "Consultar DataJud"}</button></div>{dataJudLookup.error && <p className="preflight-error"><XCircle size={16} /> {dataJudLookup.error.message}</p>}{dataJudLookup.data && <div className="datajud-result"><span>{dataJudLookup.data.found ? "METADADO ENCONTRADO" : "SEM RESULTADO"}</span>{dataJudLookup.data.record ? <dl><div><dt>Número</dt><dd>{dataJudLookup.data.record.numeroProcesso ?? "Não informado"}</dd></div><div><dt>Órgão</dt><dd>{dataJudLookup.data.record.orgaoJulgador ?? "Não informado"}</dd></div><div><dt>Classe</dt><dd>{dataJudLookup.data.record.classe ?? "Não informada"}</dd></div><div><dt>Atualização</dt><dd>{dataJudLookup.data.record.updatedAt ?? "Não informada"}</dd></div></dl> : <p>Não houve registro retornado pela fonte selecionada.</p>}<small>{dataJudLookup.data.citation}</small></div>}<div className="datajud-coverage"><p>Antes do censo, teste os 27 aliases estaduais com consulta vazia. Este teste mede resposta do endpoint, não completude, histórico ou comparabilidade.</p><button className="preflight-button" disabled={dataJudCoverage.isPending} onClick={runDataJudCoverage}>{dataJudCoverage.isPending ? "Verificando aliases…" : "Verificar cobertura estadual"}</button>{dataJudCoverage.error && <p className="preflight-error"><XCircle size={16} /> {dataJudCoverage.error.message}</p>}{dataJudCoverage.data && <div className="datajud-result"><span>COBERTURA DE ENDPOINT</span><dl><div><dt>Aliases disponíveis</dt><dd>{dataJudCoverage.data.available}/{dataJudCoverage.data.total}</dd></div><div><dt>Resposta</dt><dd>{dataJudCoverage.data.coveragePct}%</dd></div></dl><p>Indisponíveis: {dataJudCoverage.data.items.filter(item => item.status !== "available").map(item => item.alias).join(", ") || "nenhum"}</p><small>{dataJudCoverage.data.citation}</small></div>}</div></section>
         </section>}
       </main>

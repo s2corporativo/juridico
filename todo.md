@@ -84,3 +84,11 @@
 - [x] Mapear plataformas comparáveis de jurimetria, pesquisa jurídica e inteligência de precedentes.
 - [x] Avaliar funcionalidades, governança, evidências e limites das referências encontradas.
 - [x] Priorizar melhorias aplicáveis ao Atlas Forense com estimativa de valor, risco e esforço.
+- [x] Modelar o ciclo de revisão humana para evidências, com estados, decisão fundamentada e trilha de auditoria.
+- [x] Implementar procedimentos administrativos protegidos para aprovar, rejeitar ou devolver evidências à revisão.
+- [ ] Criar fila administrativa de revisão com filtros, evidência mínima e estado vazio seguro.
+- [x] Criar dossiê de citação exportável por julgado, com fontes, teses, taxonomia e ressalvas metodológicas.
+- [ ] Validar papéis, auditoria, exportação e responsividade dos novos módulos.
+- [ ] Executar validação operacional autenticada da fila com um administrador, sem criar conteúdo fictício.
+- [ ] Adicionar filtros da fila por status, prioridade e tribunal, sem expor dados pessoais.
+- [x] Validar a exportação Markdown e a impressão do dossiê com registro real já catalogado.
