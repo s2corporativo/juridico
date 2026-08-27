@@ -1,8 +1,9 @@
 import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, users } from "../drizzle/schema";
+import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
 import { getNationalDistributionStatus, normalizeNationalCensusFilter, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
 import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
+import { calculateAverageEvidenceScore, calculateEvidenceQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -172,6 +173,38 @@ export async function getCompendiumOverview() {
       sourceStatuses: sourceStatuses.map(row => row.value),
     },
   };
+}
+
+export async function getCompendiumQualityOverview() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [records, topicRows, thesisRows] = await Promise.all([
+    db.select({ record: jurisprudenceRecords, source: evidenceSources, batch: ingestionBatches })
+      .from(jurisprudenceRecords)
+      .innerJoin(evidenceSources, eq(jurisprudenceRecords.sourceId, evidenceSources.id))
+      .innerJoin(ingestionBatches, eq(jurisprudenceRecords.batchId, ingestionBatches.id)),
+    db.select({ jurisprudenceId: jurisprudenceTopics.jurisprudenceId, count: sql<number>`count(*)` }).from(jurisprudenceTopics).groupBy(jurisprudenceTopics.jurisprudenceId),
+    db.select({ jurisprudenceId: thesisAuthorities.jurisprudenceId, count: sql<number>`count(*)` }).from(thesisAuthorities).groupBy(thesisAuthorities.jurisprudenceId),
+  ]);
+  const topicCount = new Map(topicRows.map(row => [row.jurisprudenceId, Number(row.count ?? 0)]));
+  const thesisCount = new Map(thesisRows.map(row => [row.jurisprudenceId, Number(row.count ?? 0)]));
+  const items = records.map(({ record, source, batch }) => {
+    const quality = calculateEvidenceQuality({ sourceStatus: record.sourceStatus, sourceUrl: source.sourceUrl, sourceHash: source.hashSha256, cnjNumber: record.cnjNumber, decisionDate: record.decisionDate, tribunal: record.tribunal, court: record.court, judgingBody: record.judgingBody, validationNote: record.validationNote, topicCount: topicCount.get(record.id) ?? 0, thesisCount: thesisCount.get(record.id) ?? 0, batchStatus: batch.status });
+    return { externalId: record.externalId, theme: record.theme, tribunal: record.tribunal, sourceLabel: source.label, sourceStatus: record.sourceStatus, decisionDate: record.decisionDate, quality, hasOfficialUrl: Boolean(source.sourceUrl?.startsWith("https://")) };
+  });
+  const grouped = new Map<string, { sourceLabel: string; sourceStatus: string; tribunal: string; records: number; officialUrlCount: number; firstDecisionDate: Date | null; lastDecisionDate: Date | null }>();
+  for (const item of items) {
+    const key = `${item.sourceLabel}|${item.sourceStatus}|${item.tribunal}`;
+    const existing = grouped.get(key) ?? { sourceLabel: item.sourceLabel, sourceStatus: item.sourceStatus, tribunal: item.tribunal, records: 0, officialUrlCount: 0, firstDecisionDate: null, lastDecisionDate: null };
+    existing.records += 1;
+    existing.officialUrlCount += item.hasOfficialUrl ? 1 : 0;
+    if (item.decisionDate && (!existing.firstDecisionDate || item.decisionDate < existing.firstDecisionDate)) existing.firstDecisionDate = item.decisionDate;
+    if (item.decisionDate && (!existing.lastDecisionDate || item.decisionDate > existing.lastDecisionDate)) existing.lastDecisionDate = item.decisionDate;
+    grouped.set(key, existing);
+  }
+  const coverage = Array.from(grouped.values()).sort((a, b) => b.records - a.records || a.sourceLabel.localeCompare(b.sourceLabel));
+  const averageScore = calculateAverageEvidenceScore(items.map(item => item.quality));
+  return { items, coverage, summary: { ...summarizeEvidenceCoverage(coverage), averageScore } };
 }
 
 export type CompendiumSearchInput = {

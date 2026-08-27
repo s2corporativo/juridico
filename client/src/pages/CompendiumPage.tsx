@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buildTopicLabels } from "@shared/compendium-presentation";
+import "../quality.css";
 
 const COMPENDIUM_PAGE_SIZE = 12;
 
@@ -27,6 +28,7 @@ function formatDate(value: Date | string | null) {
 
 export default function CompendiumPage() {
   const overview = trpc.compendium.overview.useQuery();
+  const qualityOverview = trpc.compendium.quality.useQuery();
   const [query, setQuery] = useState("");
   const [area, setArea] = useState("Todas");
   const [tribunal, setTribunal] = useState("Todos");
@@ -53,6 +55,7 @@ export default function CompendiumPage() {
   const cities = useMemo(() => ["Todas", ...(snapshot?.facets.cities ?? [])], [snapshot]);
   const decisions = search.data?.decisions ?? [];
   const sourcesById = useMemo(() => new Map((search.data?.sources ?? []).map(source => [source.id, source])), [search.data]);
+  const qualityByExternalId = useMemo(() => new Map((qualityOverview.data?.items ?? []).map(item => [item.externalId, item.quality])), [qualityOverview.data]);
   const topicMap = useMemo(() => new Map((snapshot?.topics ?? []).map(topic => [topic.id, topic])), [snapshot]);
 
   if (overview.isLoading) {
@@ -84,7 +87,8 @@ export default function CompendiumPage() {
           <a href="#jurisprudencia"><span>02</span>Jurisprudência</a>
           <a href="#teses"><span>03</span>Teses</a>
           <a href="#taxonomia"><span>04</span>Taxonomia</a>
-          <a href="#auditoria"><span>05</span>Auditoria</a>
+          <a href="#qualidade"><span>05</span>Qualidade</a>
+          <a href="#auditoria"><span>06</span>Auditoria</a>
         </nav>
         <div className="compendium-rail-foot"><ShieldCheck size={16} /><p>Sem partes, CPF, endereço ou documento pessoal no modelo público.</p></div>
       </aside>
@@ -110,6 +114,7 @@ export default function CompendiumPage() {
           <article><span>Fontes oficiais</span><strong>{snapshot.metrics.officialSourceCount}/{snapshot.metrics.sourceCount}</strong><small>URLs de origem registradas</small></article>
           <article><span>Temas mapeados</span><strong>{snapshot.topics.length}</strong><small>Taxonomia inicial versionada</small></article>
           <article><span>Teses estruturadas</span><strong>{snapshot.theses.length}</strong><small>Leitura condicionada à prova</small></article>
+          <article><span>Qualidade média</span><strong>{qualityOverview.data?.summary.averageScore ?? "—"}/100</strong><small>Completude documental, não mérito</small></article>
         </section>
 
         <section className="compendium-search-panel" id="jurisprudencia">
@@ -134,8 +139,10 @@ export default function CompendiumPage() {
           <div className="decision-grid">
             {search.isError ? <div className="compendium-empty error"><CircleAlert size={18} /> A busca não pôde ser concluída. Tente novamente; nenhum dado foi alterado.</div> : decisions.map(decision => {
               const source = sourcesById.get(decision.sourceId);
+              const quality = qualityByExternalId.get(decision.externalId);
               return <article className="decision-card" key={decision.id}>
                 <div className="decision-meta"><span>{decision.tribunal} · {decision.city ?? "Origem não informada"}</span><i className={decision.sourceStatus === "official_confirmed" ? "official" : "review"}>{sourceLabel[decision.sourceStatus] ?? decision.sourceStatus}</i></div>
+                {quality && <div className={`document-quality quality-${quality.level}`}><b>{quality.score}/100</b><span>qualidade {quality.level}</span></div>}
                 <h3>{decision.theme ?? "Tema não classificado"}</h3>
                 <p>{decision.reasoningSummary ?? "Sem resumo público disponível."}</p>
                 <dl>
@@ -168,6 +175,16 @@ export default function CompendiumPage() {
               {snapshot.topics.map(topic => <div key={topic.id} className={`topic-node level-${topic.kind}`}><span>{topic.kind}</span><strong>{topic.title}</strong><p>{topic.summary}</p></div>)}
             </div>
           </article>
+        </section>
+
+        <section className="quality-section" id="qualidade">
+          <div className="quality-heading"><div><span className="eyebrow">COBERTURA · COMPLETUDE DOCUMENTAL</span><h2>A qualidade descreve a evidência. Não antecipa o desfecho.</h2><p>O score soma somente itens conferíveis de proveniência, identificação e classificação. Ele não afirma força jurídica, vigência ou chance de êxito.</p></div><div className="quality-summary"><strong>{qualityOverview.data?.summary.officialUrlRate ?? 0}%</strong><span>registros com URL HTTPS de origem</span><small>{qualityOverview.data?.summary.sourceCount ?? 0} fonte(s) · {qualityOverview.data?.summary.tribunalCount ?? 0} tribunal(is)</small></div></div>
+          <div className="coverage-grid">
+            {(qualityOverview.data?.coverage ?? []).map(item => <article key={`${item.sourceLabel}-${item.tribunal}`}><span>{item.sourceStatus.replaceAll("_", " ")}</span><h3>{item.sourceLabel}</h3><p>{item.tribunal} · {item.records} registro(s)</p><dl><div><dt>URLs HTTPS</dt><dd>{item.officialUrlCount}/{item.records}</dd></div><div><dt>Período</dt><dd>{formatDate(item.firstDecisionDate)} — {formatDate(item.lastDecisionDate)}</dd></div></dl></article>)}
+            {qualityOverview.isLoading && <p className="coverage-loading">Calculando cobertura documentada…</p>}
+            {qualityOverview.isError && <p className="coverage-loading error">A cobertura não pôde ser calculada. Nenhum dado foi alterado.</p>}
+          </div>
+          <p className="quality-disclaimer">{qualityOverview.data?.items[0]?.quality.disclaimer ?? "O score mede rastreabilidade documental e não substitui a conferência da fonte."}</p>
         </section>
 
         <section className="audit-section" id="auditoria">

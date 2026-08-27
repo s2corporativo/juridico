@@ -92,3 +92,11 @@
 - [ ] Executar validação operacional autenticada da fila com um administrador, sem criar conteúdo fictício.
 - [ ] Adicionar filtros da fila por status, prioridade e tribunal, sem expor dados pessoais.
 - [x] Validar a exportação Markdown e a impressão do dossiê com registro real já catalogado.
+- [x] Definir score documental objetivo com critérios visíveis e sem inferência de mérito jurídico.
+- [ ] Calcular níveis de qualidade para julgados e teses a partir de metadados já auditados.
+- [x] Criar painel de cobertura por fonte, tribunal, status e período de evidência.
+- [x] Exibir score e cobertura na consulta do Compêndio, com limites metodológicos explícitos.
+- [x] Validar cálculos, responsividade e ausência de dados pessoais no módulo de qualidade documental.
+- [x] Executar e registrar testes explícitos de score, média, níveis, cobertura e resposta pública sem dados pessoais.
+- [x] Extrair a média agregada para helper puro e testar o resultado esperado com dataset controlado.
+- [ ] Definir critérios autônomos de qualidade documental para teses antes de atribuir-lhes pontuação.

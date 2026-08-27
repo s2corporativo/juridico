@@ -1,6 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
-import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumOverview, getEvidenceReviewQueue, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
+import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumOverview, getCompendiumQualityOverview, getEvidenceReviewQueue, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
 import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
@@ -43,6 +43,7 @@ export const appRouter = router({
   }),
   compendium: router({
     overview: publicProcedure.query(() => getCompendiumOverview()),
+    quality: publicProcedure.query(() => getCompendiumQualityOverview()),
     search: publicProcedure.input(z.object({
       query: z.string().trim().max(160).optional(),
       tribunal: z.string().trim().max(64).optional(),
