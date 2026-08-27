@@ -54,6 +54,20 @@ export function buildLowerQuery({ judgingBodyCodes = [], pageSize = 250 } = {}) 
   };
 }
 
+export function addLowerAggregate(monthTotals, { month, judgingBodyCode }) {
+  const key = `${judgingBodyCode ?? ""}|${month}`;
+  monthTotals.set(key, (monthTotals.get(key) ?? 0) + 1);
+}
+
+export function buildLowerMetricRows({ alias, uf, monthTotals, territorial }) {
+  return [...monthTotals.entries()].map(([key, amount]) => {
+    const [judgingBodyCode, month] = key.split("|");
+    return territorial
+      ? { alias, uf, month, amount, judgingBodyCode }
+      : { alias, uf, month, amount };
+  });
+}
+
 export function isRetryableDataJudError(error) {
   const message = error instanceof Error ? error.message : String(error ?? "");
   const status = Number(message.match(/HTTP\s+(\d{3})/)?.[1] ?? 0);

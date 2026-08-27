@@ -76,4 +76,16 @@ describe("national lower run telemetry", () => {
     expect(() => runtime.parseJudgingBodyCodes("40011,abc")).toThrow("códigos de órgão");
     expect(() => runtime.parseJudgingBodyCodes("1,2,3,4")).toThrow("códigos de órgão");
   });
+
+  it("keeps territorial lower totals separated by judging body and month", () => {
+    const totals = new Map();
+    runtime.addLowerAggregate(totals, { judgingBodyCode: "40011", month: "2026-06" });
+    runtime.addLowerAggregate(totals, { judgingBodyCode: "8161", month: "2026-06" });
+    runtime.addLowerAggregate(totals, { judgingBodyCode: "40011", month: "2026-06" });
+
+    expect(runtime.buildLowerMetricRows({ alias: "tjmg", uf: "MG", monthTotals: totals, territorial: true })).toEqual([
+      { alias: "tjmg", uf: "MG", month: "2026-06", amount: 2, judgingBodyCode: "40011" },
+      { alias: "tjmg", uf: "MG", month: "2026-06", amount: 1, judgingBodyCode: "8161" },
+    ]);
+  });
 });

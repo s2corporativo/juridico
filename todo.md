@@ -153,3 +153,5 @@
 - [ ] Cobrir em teste a serialização do filtro territorial, a rejeição de códigos não permitidos e a ausência de identificadores em erros e manifestos.
 - [x] Corrigir o helper de filtro territorial para receber explicitamente o tamanho de página, preservando seu uso isolado nos testes.
 - [ ] Executar somente o pré-teste TJMG para os órgãos oficiais de Betim e Igarapé, com até três páginas e sem persistir processos individuais.
+- [ ] Segregar os totais de baixas por órgão julgador e mês, evitando apresentar Betim e Igarapé como uma única contagem territorial.
+- [ ] Corrigir a verificação de privacidade na VPS para ler arquivos do diretório restrito com privilégio e confirmar que somente agregados foram persistidos.

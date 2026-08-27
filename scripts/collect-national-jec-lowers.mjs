@@ -4,6 +4,8 @@ import path from "node:path";
 import {
   createAliasTelemetry,
   buildLowerQuery,
+  addLowerAggregate,
+  buildLowerMetricRows,
   failAlias,
   finishAlias,
   isRetryableDataJudError,
@@ -206,7 +208,7 @@ async function main() {
             if (seen.has(dedupeKey)) continue;
             seen.add(dedupeKey);
             pageDeduplicated += 1;
-            months.set(movementMonth, (months.get(movementMonth) ?? 0) + 1);
+            addLowerAggregate(months, { month: movementMonth, judgingBodyCode });
           }
         }
         recordLowerPage(aliasTelemetry, { processedRecords: hits.length, eligibleMovements: pageEligible, deduplicatedProcessMonths: pageDeduplicated });
@@ -219,11 +221,7 @@ async function main() {
         body = await nextScroll(key, scrollId, aliasTelemetry);
         scrollId = body?._scroll_id ?? scrollId;
       }
-      for (const [movementMonth, amount] of months.entries()) {
-        const result = { alias, uf, month: movementMonth, amount };
-        if (judgingBodyCodes.length > 0) result.judgingBodyCodes = judgingBodyCodes;
-        results.push(result);
-      }
+      results.push(...buildLowerMetricRows({ alias, uf, monthTotals: months, territorial: judgingBodyCodes.length > 0 }));
       telemetry.push(limited ? limitAlias(aliasTelemetry) : finishAlias(aliasTelemetry));
     } catch (error) {
       telemetry.push(failAlias(aliasTelemetry, error));
