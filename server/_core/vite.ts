@@ -3,11 +3,12 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
+import { pathToFileURL } from "url";
 
 export async function setupVite(app: Express, server: Server) {
   const [{ createServer: createViteServer }, { default: viteConfig }] = await Promise.all([
     import("vite"),
-    import("../../vite.config"),
+    import(pathToFileURL(path.resolve(import.meta.dirname, "../../vite.config.ts")).href),
   ]);
   const serverOptions = {
     middlewareMode: true,
