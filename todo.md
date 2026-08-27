@@ -141,3 +141,7 @@
 - [x] Registrar e validar no domínio publicado o estado consolidado de segurança, dados públicos e bloqueios externos.
 - [ ] Revalidar a disponibilidade da página oficial de chave pública DataJud a partir da VPS antes de repetir o piloto TJMG limitado.
 - [x] Validar explicitamente no dossiê público a renderização dos eventos de auditoria com registros já catalogados, sem dados pessoais.
+- [x] Mapear o contrato atual de autenticação, papéis, callbacks e variáveis do Atlas para a ponte EJC/SSO.
+- [ ] Criar configuração externa versionada e reversível para OAuth/SSO, sem credenciais no repositório ou na interface pública.
+- [ ] Preparar a unidade VPS e a documentação para receber segredos OAuth/SSO exclusivamente por ambiente protegido.
+- [ ] Validar com usuário administrativo real a sessão, os filtros, a fila, as decisões e a auditoria antes de liberar a Central de Controle.

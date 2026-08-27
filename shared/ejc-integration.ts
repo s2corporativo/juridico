@@ -26,8 +26,10 @@ export const ejcIntegrationManifest = {
 export const ejcAuthBridge = {
   mode: "disabled" as const,
   currentProvider: "Manus OAuth",
-  futureClaims: ["externalSubject", "role", "sessionIssuedAt"] as const,
-  activationRule: "Exige URL do EJC, mapeamento de identidade, escopo de sigilo aprovado e revisão humana.",
+  protocol: "oidc_authorization_code" as const,
+  callbackPath: "/api/ejc-sso/callback",
+  futureClaims: ["iss", "sub", "aud", "exp", "role", "auth_time"] as const,
+  activationRule: "Exige issuer HTTPS do EJC, discovery OIDC validado, cliente registrado, mapeamento de identidade, escopo de sigilo aprovado e revisão humana.",
 } as const;
 
 export function getEjcIntegrationStatus() {
@@ -35,6 +37,8 @@ export function getEjcIntegrationStatus() {
     mode: ejcIntegrationManifest.integrationMode,
     currentProvider: ejcAuthBridge.currentProvider,
     authBridgeMode: ejcAuthBridge.mode,
+    authBridgeProtocol: ejcAuthBridge.protocol,
+    callbackPath: ejcAuthBridge.callbackPath,
     routes: ejcIntegrationManifest.modules.map(module => ({ key: module.key, route: module.route, access: module.access })),
     activationRule: ejcAuthBridge.activationRule,
   };

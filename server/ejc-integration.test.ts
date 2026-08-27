@@ -7,5 +7,6 @@ describe("EJC integration manifest", () => {
     expect(ejcIntegrationManifest.modules.every(module => module.route.startsWith("/"))).toBe(true);
     expect(ejcIntegrationManifest.confidentiality.prohibitedTransfer).toContain("credenciais");
     expect(getEjcIntegrationStatus()).toMatchObject({ mode: "pending_approval", authBridgeMode: "disabled" });
+    expect(getEjcIntegrationStatus()).toMatchObject({ authBridgeProtocol: "oidc_authorization_code", callbackPath: "/api/ejc-sso/callback" });
   });
 });

@@ -5,6 +5,7 @@ import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
 import { getEjcIntegrationStatus } from "@shared/ejc-integration";
+import { getEjcSsoReadiness } from "./ejc-sso-config";
 import { REVIEW_DECISIONS, REVIEW_PRIORITIES, REVIEW_STATUSES } from "./evidence-review";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -35,7 +36,7 @@ export const appRouter = router({
     coverage: adminProcedure.input(z.object({ aliases: z.array(z.enum(NATIONAL_DATAJUD_ALIASES)).min(1).max(NATIONAL_DATAJUD_ALIASES.length).optional() })).mutation(({ input }) => checkDataJudCoverage(input.aliases)),
   }),
   integration: router({
-    ejcStatus: publicProcedure.query(() => getEjcIntegrationStatus()),
+    ejcStatus: publicProcedure.query(() => ({ ...getEjcIntegrationStatus(), sso: getEjcSsoReadiness() })),
   }),
   nationalCensus: router({
     readiness: publicProcedure.query(() => getNationalCensusReadiness()),
