@@ -59,7 +59,7 @@
 - [x] Executar somente um dry-run de estrutura da paginação, sem processos, antes de solicitar autorização para a coleta completa.
 - [ ] Executar o coletor autorizado e validar no manifesto real os contadores por alias, páginas e cobertura, sem placeholders.
 - [ ] Persistir apenas as baixas nacionais agregadas após validar o manifesto autorizado e a deduplicação por processo+mês.
-- [ ] Executar piloto limitado de um alias e poucas páginas para validar scroll, deduplicação e descarte antes de escalar a coleta.
+- [x] Executar piloto limitado de um alias e poucas páginas para validar scroll, deduplicação e descarte antes de escalar a coleta.
 - [x] Coletar e consolidar assuntos CNJ e órgãos julgadores nacionais como facetas agregadas, sem processos individuais.
 - [x] Paginar as facetas DataJud por alias e validar que não há truncamento silencioso de buckets.
 - [x] Documentar e testar a completude operacional das facetas agregadas antes de apresentá-las como consolidadas.
@@ -122,3 +122,7 @@
 - [x] Reconciliar cautelosamente o histórico de migrações Drizzle já aplicadas no MariaDB isolado, sem executar DDL duplicado.
 - [ ] Rotacionar o token de Cloudflare enviado em conversa e manter somente token de escopo mínimo fora do projeto e da VPS.
 - [x] Reduzir a exposição residual da unidade systemd Atlas sem impedir rede local, MariaDB, logs ou reinicialização automática.
+- [x] Parametrizar o coletor de baixas para saída controlada, pausa entre páginas, teto por execução e encerramento seguro em falha.
+- [x] Reconciliar a documentação da coleta de baixas com a paginação efetivamente usada e os limites do piloto.
+- [ ] Executar na VPS um único piloto TJMG de baixas, com poucas páginas, telemetria sanitizada e sem persistir identificadores.
+- [ ] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.
