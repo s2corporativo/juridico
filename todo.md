@@ -136,3 +136,6 @@
 - [x] Validar a Home hidratada no domínio publicado, incluindo os cartões novos e a ausência de PII exposta.
 - [x] Eliminar a dependência circular entre os bundles de gráficos e React que impede a hidratação da Home em produção.
 - [x] Integrar ao painel inicial os órgãos JEC de Betim/MG e Igarapé/MG disponíveis nas facetas agregadas oficiais, sem somar órgãos não equivalentes nem inferir censo completo.
+- [x] Validar por contratos e navegação pública que as áreas administrativas permanecem inacessíveis sem OAuth/SSO e sem expor registros de revisão.
+- [x] Consolidar documento operacional com critérios explícitos de retomada para token Cloudflare, chave DataJud e administrador real.
+- [x] Registrar e validar no domínio publicado o estado consolidado de segurança, dados públicos e bloqueios externos.
