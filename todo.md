@@ -125,4 +125,10 @@
 - [x] Parametrizar o coletor de baixas para saída controlada, pausa entre páginas, teto por execução e encerramento seguro em falha.
 - [x] Reconciliar a documentação da coleta de baixas com a paginação efetivamente usada e os limites do piloto.
 - [ ] Executar na VPS um único piloto TJMG de baixas, com poucas páginas, telemetria sanitizada e sem persistir identificadores.
-- [x] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.
+- [ ] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.
+- [x] Adicionar retentativas exponenciais limitadas, erro sanitizado e telemetria de tentativas ao coletor DataJud de baixas TJMG.
+- [x] Cobrir em teste o cálculo de retentativa, a parada após o limite e a ausência de dados de processos nos erros registrados.
+- [x] Validar no fluxo do coletor que falhas repetidas encerram no limite de retentativas sem expor identificadores no manifesto.
+- [x] Criar painel editorial na página inicial com estatísticas reais de temas, teses, autoridades e julgados do Compêndio.
+- [x] Exibir Betim/MG e Igarapé/MG como comarcas do recorte, distinguindo evidência catalogada de ausência de acervo confirmado.
+- [ ] Validar a nova página inicial em desktop e móvel, dados reais, privacidade e publicação externa.

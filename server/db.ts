@@ -145,7 +145,7 @@ export async function getNationalCensusOverview(input: NationalCensusFilter = {}
 export async function getCompendiumOverview() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const [topics, theses, thesisAuthorityCounts, batches, decisionCounts, officialSourceCounts, sourceCounts, tribunals, cities, legalAreas, sourceStatuses] = await Promise.all([
+  const [topics, theses, thesisAuthorityCounts, batches, decisionCounts, officialSourceCounts, sourceCounts, tribunals, cities, cityCoverage, legalAreas, sourceStatuses] = await Promise.all([
     db.select().from(legalTopics).orderBy(asc(legalTopics.pathKey)),
     db.select().from(legalTheses).orderBy(desc(legalTheses.updatedAt)),
     db.select({ thesisId: thesisAuthorities.thesisId, count: sql<number>`count(*)` }).from(thesisAuthorities).groupBy(thesisAuthorities.thesisId),
@@ -155,6 +155,7 @@ export async function getCompendiumOverview() {
     db.select({ count: sql<number>`count(*)` }).from(evidenceSources),
     db.select({ value: jurisprudenceRecords.tribunal }).from(jurisprudenceRecords).groupBy(jurisprudenceRecords.tribunal),
     db.select({ value: jurisprudenceRecords.city }).from(jurisprudenceRecords).where(sql`${jurisprudenceRecords.city} is not null`).groupBy(jurisprudenceRecords.city),
+    db.select({ city: jurisprudenceRecords.city, decisionCount: sql<number>`count(*)` }).from(jurisprudenceRecords).where(sql`${jurisprudenceRecords.city} is not null`).groupBy(jurisprudenceRecords.city),
     db.select({ value: jurisprudenceRecords.legalArea }).from(jurisprudenceRecords).where(sql`${jurisprudenceRecords.legalArea} is not null`).groupBy(jurisprudenceRecords.legalArea),
     db.select({ value: jurisprudenceRecords.sourceStatus }).from(jurisprudenceRecords).groupBy(jurisprudenceRecords.sourceStatus),
   ]);
@@ -167,10 +168,12 @@ export async function getCompendiumOverview() {
       decisionCount: Number(decisionCounts[0]?.count ?? 0),
       officialSourceCount: Number(officialSourceCounts[0]?.count ?? 0),
       sourceCount: Number(sourceCounts[0]?.count ?? 0),
+      authorityCount: thesisAuthorityCounts.reduce((sum, row) => sum + Number(row.count ?? 0), 0),
     },
     facets: {
       tribunals: tribunals.map(row => row.value).filter((value): value is string => Boolean(value)),
       cities: cities.map(row => row.value).filter((value): value is string => Boolean(value)),
+      cityCoverage: cityCoverage.map(row => ({ city: row.city, decisionCount: Number(row.decisionCount ?? 0) })),
       legalAreas: legalAreas.map(row => row.value).filter((value): value is string => Boolean(value)),
       sourceStatuses: sourceStatuses.map(row => row.value),
     },

@@ -32,6 +32,8 @@ import {
 import { jecDashboardData } from "@/data/jecDashboardData";
 import { AdvancedEvidencePanel } from "@/components/AdvancedEvidencePanel";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { buildCompendiumHomeStats } from "@shared/compendium-home";
 
 type CityFilter = "Todos" | "Belo Horizonte" | "Betim";
 type YearFilter = "Todos" | "2025" | "2026";
@@ -120,6 +122,50 @@ function MetricCard({
       <strong>{value}</strong>
       <p>{caption}</p>
     </article>
+  );
+}
+
+function CompendiumHomePanel() {
+  const overview = trpc.compendium.overview.useQuery();
+  const snapshot = overview.data;
+  const stats = snapshot ? buildCompendiumHomeStats({
+    topics: snapshot.topics,
+    theses: snapshot.theses,
+    metrics: snapshot.metrics,
+    cityCoverage: snapshot.facets.cityCoverage,
+  }) : null;
+
+  return (
+    <section className="compendium-home-panel" id="compendio" aria-label="Cobertura atual do Compêndio Jurídico">
+      <div className="compendium-home-heading">
+        <div>
+          <span className="eyebrow">COMPÊNDIO JURÍDICO · COBERTURA CATALOGADA</span>
+          <h2>O acervo começa pela <em>proveniência</em>.</h2>
+          <p>Temas, teses, autoridades e julgados são exibidos a partir do catálogo público atual. A ausência de registro não indica ausência de processos na comarca.</p>
+        </div>
+        <a href="/compendio" className="compendium-home-link"><BookOpenCheck size={16} /> Examinar acervo <ChevronRight size={15} /></a>
+      </div>
+
+      {overview.isLoading && <p className="compendium-home-state"><Database size={17} /> Carregando estatísticas auditáveis do acervo…</p>}
+      {overview.isError && <p className="compendium-home-state error"><CircleHelp size={17} /> A cobertura do Compêndio não pôde carregar; os dados do painel JEC não foram alterados.</p>}
+      {stats && <>
+        <div className="compendium-home-metrics">
+          <article><span>Temas</span><strong>{fmt.format(stats.themes)}</strong><small>Taxonomia versionada</small></article>
+          <article><span>Teses</span><strong>{fmt.format(stats.theses)}</strong><small>Hipóteses condicionadas</small></article>
+          <article><span>Autoridades</span><strong>{fmt.format(stats.authorities)}</strong><small>Vínculos a julgados</small></article>
+          <article><span>Julgados</span><strong>{fmt.format(stats.decisions)}</strong><small>{stats.officialSources}/{stats.totalSources} fontes oficiais</small></article>
+        </div>
+        <div className="comarca-coverage" aria-label="Comarcas incluídas na camada de acervo">
+          {stats.comarcas.map(comarca => <article key={comarca.label} className={comarca.catalogued ? "catalogued" : "pending"}>
+            <span>COMARCA DO RECORTE</span><h3>{comarca.label}</h3>
+            {comarca.catalogued
+              ? <p><strong>{fmt.format(comarca.decisionCount)}</strong> julgado(s) catalogado(s) no acervo público.</p>
+              : <p><strong>Sem acervo confirmado</strong> no catálogo atual; inclusão territorial registrada sem estimar volume.</p>}
+          </article>)}
+        </div>
+      </>}
+      <div className="compendium-home-foot"><ShieldCheck size={16} /><span>Escopo do acervo: piloto local TJMG. Não usar estas contagens como censo, taxa de êxito ou comparação nacional.</span></div>
+    </section>
   );
 }
 
@@ -280,7 +326,7 @@ export default function Home() {
 
         <div className="sidebar-context">
           <span className="eyebrow">RECORTE ATIVO</span>
-          <p>Processos do JEC em Belo Horizonte e Betim.</p>
+          <p>Censo JEC: Belo Horizonte e Betim. Acervo jurídico: Betim e Igarapé/MG.</p>
           <div className="source-stamp"><Database size={15} /> DataJud / TJMG</div>
         </div>
 
@@ -290,6 +336,7 @@ export default function Home() {
           <a href="#unidades"><span>03</span>Varas e unidades</a>
           <a href="#tempo"><span>04</span>Tempo observado</a>
           <a href="#metodo"><span>05</span>Metodologia</a>
+          <a href="#compendio"><span>06</span>Compêndio</a>
         </nav>
 
         <div className="sidebar-footnote">
@@ -314,6 +361,8 @@ export default function Home() {
           </div>
           <div className="hero-art" aria-hidden="true"><img src="/manus-storage/atlas-forense-hero_a0688916.jpg" alt="" /></div>
         </section>
+
+        <CompendiumHomePanel />
 
         <section className="filter-ribbon" aria-label="Filtros do painel">
           <div className="filter-intro"><Filter size={17} /><span>Refinar a evidência</span></div>
