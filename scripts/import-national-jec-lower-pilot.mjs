@@ -5,10 +5,19 @@ import mysql from "mysql2/promise";
 export const LOWER_PILOT_RUN_KEY = "datajud-jec-tjmg-betim-igarape-baixas-pilot-v1";
 export const ALLOWED_TJMG_BODIES = new Set(["40011", "8161"]);
 
+export function hasForbiddenIndividualField(value) {
+  if (Array.isArray(value)) return value.some(hasForbiddenIndividualField);
+  if (!value || typeof value !== "object") return false;
+  return Object.entries(value).some(([key, nestedValue]) => {
+    const normalizedKey = key.replace(/[^a-z0-9]/gi, "").toLowerCase();
+    return ["numeroprocesso", "cpf", "email", "telefone", "hmac", "scrollid", "respostabruta", "rawresponse"].includes(normalizedKey)
+      || hasForbiddenIndividualField(nestedValue);
+  });
+}
+
 export function parseTerritorialLowerPilot({ manifestText, metricsText }) {
   const manifest = JSON.parse(manifestText);
   const metrics = JSON.parse(metricsText);
-  const serialized = `${manifestText}\n${metricsText}`.toLowerCase();
 
   if (manifest.mode !== "pilot" || manifest.state !== "completed" || manifest.expectedTribunals !== 1 || manifest.respondedTribunals !== 1) {
     throw new Error("O manifesto não descreve um piloto territorial TJMG concluído e isolado.");
@@ -22,7 +31,7 @@ export function parseTerritorialLowerPilot({ manifestText, metricsText }) {
   if (metrics.some(row => !ALLOWED_TJMG_BODIES.has(String(row.judgingBodyCode)))) {
     throw new Error("A métrica contém órgão julgador fora do recorte territorial aprovado.");
   }
-  if (/(numero\s*processo|"cpf"|"email"|"telefone"|"hmac"|"_scroll_id")/.test(serialized)) {
+  if (hasForbiddenIndividualField(manifest) || hasForbiddenIndividualField(metrics)) {
     throw new Error("O artefato de piloto contém marcador de dado individual não permitida para importação.");
   }
 

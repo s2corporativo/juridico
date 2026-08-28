@@ -29,8 +29,15 @@ describe("territorial lower import", () => {
       metricsText: JSON.stringify([{ alias: "tjmg", uf: "MG", month: "2026-06", amount: 38, judgingBodyCode: "99999" }]),
     })).toThrow("recorte territorial");
     expect(() => importer.parseTerritorialLowerPilot({
-      manifestText: JSON.stringify({ ...manifest, dataPolicy: "numeroProcesso" }),
+      manifestText: JSON.stringify({ ...manifest, rawRecord: { numeroProcesso: "identificador-proibido" } }),
       metricsText: JSON.stringify([{ alias: "tjmg", uf: "MG", month: "2026-06", amount: 38, judgingBodyCode: "40011" }]),
     })).toThrow("dado individual");
+  });
+
+  it("permits a privacy-policy description without treating it as persisted individual data", () => {
+    expect(() => importer.parseTerritorialLowerPilot({
+      manifestText: JSON.stringify({ ...manifest, dataPolicy: "numeroProcesso é transitório e não persistido" }),
+      metricsText: JSON.stringify([{ alias: "tjmg", uf: "MG", month: "2026-06", amount: 38, judgingBodyCode: "40011" }]),
+    })).not.toThrow();
   });
 });
