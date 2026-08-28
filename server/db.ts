@@ -9,6 +9,7 @@ import { ENV } from './_core/env';
 import { INITIAL_LEGAL_BRANCHES, RMBH_MUNICIPALITIES } from "@shared/atlas-expansion";
 import { buildMetropolitanCoverageRows } from "@shared/metropolitan-coverage";
 import { describeDocumentFreshness, summarizeDocumentFreshness } from "@shared/document-freshness";
+import { THESIS_MAP_RELATED_LIMIT } from "@shared/thesis-map-contract";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -469,6 +470,28 @@ export async function decideEvidenceReview(reviewId: number, decision: ReviewDec
   const [record] = await db.select({ externalId: jurisprudenceRecords.externalId, sourceStatus: jurisprudenceRecords.sourceStatus }).from(jurisprudenceRecords).where(eq(jurisprudenceRecords.id, review.jurisprudenceId)).limit(1);
   if (record) await db.insert(auditEvents).values({ entityType: "evidence_review", entityKey: record.externalId, action: `review_${decision}`, sourceStatus: record.sourceStatus, actorLabel: "admin", note: checked.note });
   return { success: true } as const;
+}
+
+export async function getThesisRelatedDocuments(thesisId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  return db.select({
+    id: jurisprudenceRecords.id,
+    externalId: jurisprudenceRecords.externalId,
+    title: jurisprudenceRecords.theme,
+    tribunal: jurisprudenceRecords.tribunal,
+    city: jurisprudenceRecords.city,
+    decisionType: jurisprudenceRecords.decisionType,
+    decisionDate: jurisprudenceRecords.decisionDate,
+    sourceStatus: jurisprudenceRecords.sourceStatus,
+    sourceUrl: evidenceSources.sourceUrl,
+    stance: thesisAuthorities.stance,
+  }).from(thesisAuthorities)
+    .innerJoin(jurisprudenceRecords, eq(thesisAuthorities.jurisprudenceId, jurisprudenceRecords.id))
+    .innerJoin(evidenceSources, eq(jurisprudenceRecords.sourceId, evidenceSources.id))
+    .where(eq(thesisAuthorities.thesisId, thesisId))
+    .orderBy(desc(jurisprudenceRecords.decisionDate))
+    .limit(THESIS_MAP_RELATED_LIMIT);
 }
 
 export async function getCitationDossier(externalId: string) {

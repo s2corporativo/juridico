@@ -11,6 +11,7 @@ import { Route, Switch } from "wouter";
 const Home = lazy(() => import("./pages/Home"));
 const CompendiumPage = lazy(() => import("@/pages/CompendiumPage"));
 const ControlCenterPage = lazy(() => import("@/pages/ControlCenterPage"));
+const EditorialReviewPage = lazy(() => import("@/pages/EditorialReviewPage"));
 const GovernancePage = lazy(() => import("@/pages/GovernancePage"));
 const PublicSourcesPage = lazy(() => import("@/pages/PublicSourcesPage"));
 const NationalCensusPage = lazy(() => import("@/pages/NationalCensusPage"));
@@ -33,6 +34,7 @@ export default function App() {
               <Route path={routes.compendium} component={CompendiumPage} />
               <Route path="/estrutura" component={GovernancePage} />
               <Route path="/controle" component={ControlCenterPage} />
+              <Route path="/controle/fila-editorial" component={EditorialReviewPage} />
               <Route path={routes.sources} component={PublicSourcesPage} />
               <Route path={routes.national} component={NationalCensusPage} />
               <Route path="/rmbh" component={MetropolitanCoveragePage} />

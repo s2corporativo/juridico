@@ -215,7 +215,7 @@
 - [x] Definir fontes públicas oficiais, periodicidade, escopo editorial e revisão humana para atualizações de julgados, legislação e fontes relevantes.
 - [x] Configurar atualização recorrente idempotente, com falhas sanitizadas, sem publicação automática de conteúdo não revisado.
 - [x] Implementar mapa contextual para teses pesquisadas, usando apenas relações taxonômicas e evidências públicas disponíveis.
-- [ ] Validar privacidade, governança, acessibilidade e separação entre conteúdo novo, Compêndio e métricas DataJud.
+- [x] Validar privacidade, governança, acessibilidade e separação entre conteúdo novo, Compêndio e métricas DataJud.
 
 - [x] Fixar a rotina diária aprovada para 06:00 UTC (03:00 em Brasília), com fila de revisão humana e sem publicação automática.
 - [x] Selecionar e documentar fontes públicas oficiais para julgados, legislação e atualizações relevantes, com escopo inicial conservador.
@@ -223,4 +223,9 @@
 - [x] Criar callback diário protegido em `/api/scheduled/` e preparar o cadastro da rotina após checkpoint e deploy.
 - [x] Implementar mapa contextual acionado por pesquisa de tese, limitado a relações taxonômicas e evidências já catalogadas.
 
-- [ ] Corrigir a callback editorial para responder 403 de forma sanitizada a chamadas públicas não autenticadas, sem transformar falha de autenticação em 500.
+- [x] Corrigir a callback editorial para responder 403 de forma sanitizada a chamadas públicas não autenticadas, sem transformar falha de autenticação em 500.
+- [x] Criar página dedicada de revisão editorial rápida, protegida por papel admin, com filtros e ações de decisão auditáveis.
+- [x] Adicionar expansão interativa de nós do mapa de teses com detalhes e documentos relacionados já catalogados.
+- [x] Adicionar exportação do mapa de teses em imagem e PDF com filtros, fonte e nota metodológica.
+- [x] Entregar e validar a habilidade reutilizável `atlas-forense-piloto-auditavel`.
+
