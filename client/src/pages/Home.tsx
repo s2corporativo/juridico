@@ -143,11 +143,11 @@ function CompendiumHomePanel() {
     <section className="compendium-home-panel" id="compendio" aria-label="Cobertura atual do Compêndio Jurídico">
       <div className="compendium-home-heading">
         <div>
-          <span className="eyebrow">COMPÊNDIO JURÍDICO · COBERTURA CATALOGADA</span>
-          <h2>O acervo começa pela <em>proveniência</em>.</h2>
-          <p>Temas, teses, autoridades e julgados são exibidos a partir do catálogo público atual. A ausência de registro não indica ausência de processos na comarca.</p>
+          <span className="eyebrow">COMPÊNDIO JURÍDICO · CONSULTA ESTRUTURADA</span>
+          <h2>Consulte por <em>fichas jurídicas</em>, não por atalhos.</h2>
+          <p>Temas, teses, autoridades, julgados e fontes aparecem como campos de uma ficha rastreável. A ausência de registro não indica ausência de processos na comarca.</p>
         </div>
-        <a href="/compendio" className="compendium-home-link"><BookOpenCheck size={16} /> Examinar acervo <ChevronRight size={15} /></a>
+        <a href="/compendio" className="compendium-home-link"><FileText size={16} /> Consultar fichas <ChevronRight size={15} /></a>
       </div>
 
       {overview.isLoading && <p className="compendium-home-state"><Database size={17} /> Carregando estatísticas auditáveis do acervo…</p>}
@@ -158,6 +158,11 @@ function CompendiumHomePanel() {
           <article><span>Teses</span><strong>{fmt.format(stats.theses)}</strong><small>Hipóteses condicionadas</small></article>
           <article><span>Autoridades</span><strong>{fmt.format(stats.authorities)}</strong><small>Vínculos a julgados</small></article>
           <article><span>Julgados</span><strong>{fmt.format(stats.decisions)}</strong><small>{stats.officialSources}/{stats.totalSources} fontes oficiais</small></article>
+        </div>
+        <div className="compendium-reference-grid" aria-label="Como consultar o Compêndio Jurídico">
+          <article><span>01 · MATÉRIA</span><strong>Área e tema</strong><small>Localize o instituto e a taxonomia que organizam a pesquisa.</small></article>
+          <article><span>02 · LEITURA</span><strong>Tese e condição</strong><small>Verifique hipótese, fatos adversos e observações de prova.</small></article>
+          <article><span>03 · EVIDÊNCIA</span><strong>Julgado e fonte</strong><small>Abra a ficha, o dossiê e a referência de origem antes do uso.</small></article>
         </div>
         <div className="comarca-coverage" aria-label="Comarcas incluídas na camada de acervo">
           {stats.comarcas.map(comarca => <article key={comarca.label} className={comarca.catalogued ? "catalogued" : "pending"}>
@@ -327,51 +332,51 @@ export default function Home() {
       <aside className="atlas-sidebar" style={{ backgroundImage: `url(${ATLAS_SEAL_URL})` }}>
         <div className="brand-block">
           <img className="brand-mark" src="/manus-storage/atlas-forense-logo_bb6317e2.png" alt="Marca gráfica Atlas Forense" />
-          <div><span>Atlas Forense</span><strong>JEC comparado</strong><small>duas comarcas · uma linha de prova</small></div>
+          <div><span>Atlas Forense</span><strong>Compêndio<br />Jurídico</strong><small>consulta · evidência · contexto</small></div>
         </div>
 
         <div className="sidebar-context">
           <span className="eyebrow">RECORTE ATIVO</span>
-          <p>Censo JEC: Belo Horizonte e Betim. Acervo jurídico: Betim e Igarapé/MG.</p>
-          <div className="source-stamp"><Database size={15} /> DataJud / TJMG</div>
+          <p>Acervo público catalogado, com jurisdição, fonte e estado documental visíveis.</p>
+          <div className="source-stamp"><BookOpenCheck size={15} /> Fontes e dossiês</div>
         </div>
 
         <nav className="section-nav" aria-label="Navegação do painel">
-          <a href="#visao"><span>01</span>Visão comparada</a>
-          <a href="#piloto-civel-consumidor"><span>02</span>Cível / Consumidor</a>
-          <a href="#causas"><span>03</span>Causas</a>
-          <a href="#unidades"><span>04</span>Varas e unidades</a>
-          <a href="#tempo"><span>05</span>Tempo observado</a>
-          <a href="#metodo"><span>06</span>Metodologia</a>
-          <a href="#compendio"><span>07</span>Compêndio</a>
+          <a href="#visao"><span>01</span>Consulta jurídica</a>
+          <a href="#compendio"><span>02</span>Fichas do acervo</a>
+          <a href="#piloto-civel-consumidor"><span>03</span>Cível / Consumidor</a>
+          <a href="#causas"><span>04</span>Jurimetria JEC</a>
+          <a href="#unidades"><span>05</span>Órgãos e unidades</a>
+          <a href="#tempo"><span>06</span>Tempo observado</a>
+          <a href="#metodo"><span>07</span>Metodologia</a>
         </nav>
 
         <div className="sidebar-footnote">
           <ShieldCheck size={16} />
-          <p>Sem dados pessoais. Censo, amostra e movimento são camadas distintas.</p>
+          <p>Sem dados pessoais. Fichas, censo, amostra e movimento são camadas distintas.</p>
         </div>
       </aside>
 
       <main className="atlas-main">
         <header className="topbar">
-          <div className="breadcrumb"><Landmark size={16} /> Ecossistema Jurídico Clovis <ChevronRight size={15} /> Jurimetria pública</div>
-          <div className="topbar-actions"><a className="structure-link" href="/estrutura"><Landmark size={16} /> Estrutura</a><a className="structure-link" href="/rmbh"><Landmark size={16} /> RMBH</a><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Abrir Compêndio</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
+          <div className="breadcrumb"><Landmark size={16} /> Ecossistema Jurídico Clovis <ChevronRight size={15} /> Compêndio Jurídico</div>
+          <div className="topbar-actions"><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Pesquisar acervo</a><a className="structure-link" href="/fontes"><Database size={16} /> Fontes</a><a className="structure-link" href="/rmbh"><Landmark size={16} /> RMBH</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
         </header>
 
         <section className="hero-panel" id="visao">
           <div className="hero-text">
-            <span className="eyebrow">CENSO • AMOSTRA • EVIDÊNCIA</span>
-            <h1>O volume muda.<br /><em>O denominador</em> permanece explícito.</h1>
-            <p>Comparação auditável entre a distribuição de causas, unidades jurisdicionais e tempo observado de tramitação no JEC de Belo Horizonte e Betim.</p>
-            <div className="hero-tags"><Pill tone="city">Classe 436</Pill><Pill>01/01/2025 — 26/08/2026</Pill><Pill tone="alert">2026 parcial</Pill></div>
+            <span className="eyebrow">COMPÊNDIO JURÍDICO · EVIDÊNCIA RASTREÁVEL</span>
+            <h1>Direito para <em>consultar</em>,<br />não para supor.</h1>
+            <p>Um compêndio jurídico público para navegar por temas, teses, fontes e julgados catalogados, mantendo os recortes jurimétricos em uma camada própria e explícita.</p>
+            <div className="hero-tags"><Pill tone="city">Fichas com proveniência</Pill><Pill>Temas · teses · julgados</Pill><Pill tone="alert">Uso condicionado à fonte</Pill></div>
             <PartialRuler />
           </div>
           <div className="hero-art" aria-hidden="true"><img src="/manus-storage/atlas-forense-hero_a0688916.jpg" alt="" /></div>
         </section>
 
         <CompendiumHomePanel />
-        <CivilConsumerPanel />
         <EditorialUpdatesPanel />
+        <CivilConsumerPanel />
 
         <section className="filter-ribbon" aria-label="Filtros do painel">
           <div className="filter-intro"><Filter size={17} /><span>Refinar a evidência</span></div>

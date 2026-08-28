@@ -229,3 +229,7 @@
 - [x] Adicionar exportação do mapa de teses em imagem e PDF com filtros, fonte e nota metodológica.
 - [x] Entregar e validar a habilidade reutilizável `atlas-forense-piloto-auditavel`.
 
+- [x] Reorganizar a experiência do Atlas como Compêndio Jurídico real, inspirado em compêndios técnicos sem adotar analogias clínicas no conteúdo jurídico.
+- [x] Criar uma página de consulta por fichas jurídicas, com tema, tese, autoridade, fonte, situação documental e alertas metodológicos.
+- [x] Reorientar a Home para priorizar pesquisa, taxonomia e acesso a fichas do Compêndio, preservando o painel jurimétrico como módulo separado.
+- [x] Validar linguagem, privacidade, responsividade e links de proveniência do novo Compêndio Jurídico.

@@ -321,3 +321,14 @@ body { background:#f8fafb; color:var(--ink); }
 .comarca-coverage p strong { color:#a8612d; }
 .comarca-coverage p small { color:#69807a; }
 @media (max-width: 620px) { .topbar { flex-wrap:wrap; align-items:flex-start; padding:12px 0 10px; } .topbar-actions { width:100%; max-width:100%; justify-content:flex-start; overflow-x:auto; flex-wrap:nowrap; padding-bottom:2px; scrollbar-width:thin; } .topbar-actions > * { flex:none; white-space:nowrap; } }
+
+/* Compêndio Jurídico: orientação por fichas de consulta */
+.compendium-reference-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:16px 0 4px; }
+.compendium-reference-grid article { min-height:118px; padding:17px; border:1px solid #dbe7e4; border-top:3px solid #0d6964; background:linear-gradient(145deg,#fff 0%,#f4faf8 100%); box-shadow:0 6px 16px rgba(17,64,61,.035); }
+.compendium-reference-grid article:nth-child(2) { border-top-color:#a8612d; }
+.compendium-reference-grid article:nth-child(3) { border-top-color:#537d76; }
+.compendium-reference-grid span { display:block; color:#a8612d; font-size:.66rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.compendium-reference-grid strong { display:block; margin:12px 0 5px; color:#173c3a; font-family:'Fraunces',serif; font-size:1.14rem; font-weight:600; }
+.compendium-reference-grid small { display:block; color:#60716e; font-size:.78rem; line-height:1.42; }
+.atlas-sidebar .section-nav a:first-child { color:#0d6964; border-left-color:#0d6964; background:#eff8f5; }
+@media (max-width:760px) { .compendium-reference-grid { grid-template-columns:1fr; } .compendium-reference-grid article { min-height:0; } }
