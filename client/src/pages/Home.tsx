@@ -32,6 +32,7 @@ import {
 import { jecDashboardData } from "@/data/jecDashboardData";
 import { AdvancedEvidencePanel } from "@/components/AdvancedEvidencePanel";
 import CivilConsumerPanel from "@/components/CivilConsumerPanel";
+import EditorialUpdatesPanel from "@/components/EditorialUpdatesPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { buildCompendiumHomeStats } from "@shared/compendium-home";
@@ -370,6 +371,7 @@ export default function Home() {
 
         <CompendiumHomePanel />
         <CivilConsumerPanel />
+        <EditorialUpdatesPanel />
 
         <section className="filter-ribbon" aria-label="Filtros do painel">
           <div className="filter-intro"><Filter size={17} /><span>Refinar a evidência</span></div>

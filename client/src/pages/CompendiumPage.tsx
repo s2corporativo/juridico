@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buildTopicLabels } from "@shared/compendium-presentation";
+import ThesisEvidenceMap from "@/components/ThesisEvidenceMap";
 import "../quality.css";
 import "../document-freshness.css";
 
@@ -171,6 +172,8 @@ export default function CompendiumPage() {
           </div>
           {!search.isError && totalResults > COMPENDIUM_PAGE_SIZE && <div className="compendium-pagination"><button disabled={page === 0} onClick={() => setPage(current => Math.max(0, current - 1))}>Anterior</button><span>Página {page + 1} de {pageCount}</span><button disabled={page + 1 >= pageCount} onClick={() => setPage(current => current + 1)}>Próxima</button></div>}
         </section>
+
+        <ThesisEvidenceMap query={query} theses={snapshot.theses} topics={snapshot.topics} />
 
         <section className="compendium-columns" id="teses">
           <article className="thesis-card">
