@@ -54,6 +54,7 @@ const queries = batches.map((batch) => buildCivilConsumerMetricsQuery({
   consumerCodes,
 }));
 const manifestBase = {
+  sourceKey: "datajud_public_api",
   title: "Piloto agregado Cível/Consumidor RMBH — métricas por categoria, órgão e mês",
   source: "CNJ/DataJud API Pública",
   collectedAt: new Date().toISOString(),

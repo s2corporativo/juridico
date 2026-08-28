@@ -269,6 +269,59 @@ export const jurisprudenceRecords = mysqlTable("jurisprudence_records", {
   index("jurisprudence_status_idx").on(table.sourceStatus),
 ]);
 
+/** Execuções do pipeline editorial diário; erros são resumidos e respostas brutas não são persistidas. */
+export const editorialUpdateRuns = mysqlTable("editorial_update_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  runKey: varchar("runKey", { length: 191 }).notNull().unique(),
+  status: mysqlEnum("status", ["running", "completed", "partial", "failed"]).notNull(),
+  sourceCount: int("sourceCount").default(0).notNull(),
+  discoveredCount: int("discoveredCount").default(0).notNull(),
+  queuedCount: int("queuedCount").default(0).notNull(),
+  failedCount: int("failedCount").default(0).notNull(),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  finishedAt: timestamp("finishedAt"),
+  errorSummary: varchar("errorSummary", { length: 500 }),
+}, table => [index("editorial_update_runs_status_idx").on(table.status)]);
+
+/** Metadados oficiais aguardando revisão; não contém íntegra de decisão, PDF ou resposta bruta. */
+export const editorialUpdates = mysqlTable("editorial_updates", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull(),
+  externalKey: varchar("externalKey", { length: 191 }).notNull(),
+  kind: mysqlEnum("kind", ["jurisprudence", "legislation", "official_update"]).notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  summary: varchar("summary", { length: 1_000 }),
+  canonicalUrl: varchar("canonicalUrl", { length: 1_024 }).notNull(),
+  publishedAt: timestamp("publishedAt"),
+  contentHash: varchar("contentHash", { length: 64 }).notNull(),
+  status: mysqlEnum("status", ["pending_review", "approved", "rejected", "superseded"]).default("pending_review").notNull(),
+  reviewedByUserId: int("reviewedByUserId"),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewNote: varchar("reviewNote", { length: 1_000 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("editorial_updates_source_external_unique").on(table.sourceKey, table.externalKey),
+  index("editorial_updates_status_idx").on(table.status),
+  index("editorial_updates_kind_idx").on(table.kind),
+  index("editorial_updates_published_idx").on(table.publishedAt),
+]);
+
+/** Configuração do job diário; o task UID é a única referência para manutenção do agendamento. */
+export const editorialUpdateSchedules = mysqlTable("editorial_update_schedules", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull().unique(),
+  cronExpression: varchar("cronExpression", { length: 32 }).notNull(),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }).unique(),
+  enabled: int("enabled").default(1).notNull(),
+  lastRunAt: timestamp("lastRunAt"),
+  lastStatus: mysqlEnum("lastStatus", ["never", "completed", "partial", "failed"]).default("never").notNull(),
+  lastErrorCode: varchar("lastErrorCode", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("editorial_schedule_task_uid_idx").on(table.scheduleCronTaskUid)]);
+
 /** Fila de revisão humana de registros já catalogados; decisões anteriores permanecem nos eventos de auditoria. */
 export const evidenceReviewItems = mysqlTable("evidence_review_items", {
   id: int("id").autoincrement().primaryKey(),

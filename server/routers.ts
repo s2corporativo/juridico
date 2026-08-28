@@ -1,6 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
-import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumFreshnessOverview, getCompendiumOverview, getCompendiumQualityOverview, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, getRmbhCivilConsumerOverview, searchCompendium } from "./db";
+import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumFreshnessOverview, getCompendiumOverview, getCompendiumQualityOverview, getEditorialUpdateQueue, getPublicEditorialUpdates, decideEditorialUpdate, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, getRmbhCivilConsumerOverview, searchCompendium } from "./db";
 import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
@@ -29,6 +29,11 @@ export const appRouter = router({
   sources: router({
     list: publicProcedure.query(() => getPublicDataSources()),
     stjCatalog: publicProcedure.input(z.object({ query: z.string().trim().max(120).optional() })).query(({ input }) => fetchStjJurisprudenceCatalog(input.query)),
+  }),
+  editorial: router({
+    approved: publicProcedure.query(() => getPublicEditorialUpdates()),
+    queue: adminProcedure.input(z.object({ status: z.enum(["pending_review", "approved", "rejected", "superseded"]).optional(), kind: z.enum(["jurisprudence", "legislation", "official_update"]).optional() }).optional()).query(({ input }) => getEditorialUpdateQueue(input)),
+    decide: adminProcedure.input(z.object({ id: z.number().int().positive(), decision: z.enum(["approved", "rejected", "superseded"]), reviewNote: z.string().trim().min(3).max(1_000) })).mutation(({ ctx, input }) => decideEditorialUpdate(input.id, input.decision, input.reviewNote, ctx.user.id)),
   }),
   datajud: router({
     status: publicProcedure.query(() => getDataJudConnectionStatus()),

@@ -10,6 +10,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { ATLAS_HEALTH_RESPONSE } from "@shared/deployment";
+import { registerEditorialScheduledRoute } from "../editorial-scheduled";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -39,6 +40,7 @@ async function startServer() {
   app.get("/healthz", (_req, res) => res.status(200).json(ATLAS_HEALTH_RESPONSE));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  registerEditorialScheduledRoute(app);
   // tRPC API
   app.use(
     "/api/trpc",

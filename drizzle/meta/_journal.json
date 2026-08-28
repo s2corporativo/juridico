@@ -57,6 +57,13 @@
       "when": 1787943643215,
       "tag": "0007_yellow_jazinda",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1787945784601,
+      "tag": "0008_tiny_shadow_king",
+      "breakpoints": true
     }
   ]
 }

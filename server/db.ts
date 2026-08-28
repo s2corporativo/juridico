@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, metropolitanCoverageRuns, metropolitanJudgingBodyFacets, rmbhCivilConsumerMetrics, rmbhCivilConsumerRuns, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
+import { auditEvents, editorialUpdates, editorialUpdateRuns, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, metropolitanCoverageRuns, metropolitanJudgingBodyFacets, rmbhCivilConsumerMetrics, rmbhCivilConsumerRuns, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
 import { getNationalDistributionStatus, normalizeNationalCensusFilter, selectNationalCensusRun, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
 import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
 import { calculateAverageEvidenceScore, calculateEvidenceQuality, calculateThesisQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
@@ -215,6 +215,55 @@ export async function getRmbhCivilConsumerOverview(input: { from?: string; to?: 
     bodies: bodies.map(row => ({ ...row, amount: Number(row.amount ?? 0) })),
     total: categories.reduce((sum, row) => sum + Number(row.amount ?? 0), 0),
   };
+}
+
+export async function getEditorialUpdateQueue(input: { status?: "pending_review" | "approved" | "rejected" | "superseded"; kind?: "jurisprudence" | "legislation" | "official_update" } = {}) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const conditions = [];
+  if (input.status) conditions.push(eq(editorialUpdates.status, input.status));
+  if (input.kind) conditions.push(eq(editorialUpdates.kind, input.kind));
+  const rows = await db.select({ id: editorialUpdates.id, sourceKey: editorialUpdates.sourceKey, externalKey: editorialUpdates.externalKey, kind: editorialUpdates.kind, title: editorialUpdates.title, summary: editorialUpdates.summary, canonicalUrl: editorialUpdates.canonicalUrl, publishedAt: editorialUpdates.publishedAt, status: editorialUpdates.status, createdAt: editorialUpdates.createdAt, reviewNote: editorialUpdates.reviewNote }).from(editorialUpdates).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(editorialUpdates.createdAt)).limit(100);
+  return rows;
+}
+
+export async function getPublicEditorialUpdates() {
+  return getEditorialUpdateQueue({ status: "approved" });
+}
+
+export async function decideEditorialUpdate(id: number, decision: "approved" | "rejected" | "superseded", reviewNote: string, reviewedByUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.update(editorialUpdates).set({ status: decision, reviewNote, reviewedByUserId, reviewedAt: new Date() }).where(eq(editorialUpdates.id, id));
+  await db.insert(auditEvents).values({ entityType: "editorial_update", entityKey: String(id), action: `review_${decision}`, actorLabel: `user:${reviewedByUserId}`, sourceStatus: decision, note: reviewNote });
+  return { success: true } as const;
+}
+
+export async function recordEditorialRunStart(runKey: string, sourceCount: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.insert(editorialUpdateRuns).values({ runKey, status: "running", sourceCount }).onDuplicateKeyUpdate({ set: { status: "running", sourceCount, errorSummary: null } });
+  const row = await db.select({ id: editorialUpdateRuns.id }).from(editorialUpdateRuns).where(eq(editorialUpdateRuns.runKey, runKey)).limit(1);
+  return row[0]?.id ?? null;
+}
+
+export async function finishEditorialRun(runId: number, result: { status: "completed" | "partial" | "failed"; discoveredCount: number; queuedCount: number; failedCount: number; errorSummary?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.update(editorialUpdateRuns).set({ status: result.status, discoveredCount: result.discoveredCount, queuedCount: result.queuedCount, failedCount: result.failedCount, finishedAt: new Date(), errorSummary: result.errorSummary ?? null }).where(eq(editorialUpdateRuns.id, runId));
+}
+
+export async function enqueueEditorialCandidates(runId: number, candidates: Array<{ sourceKey: string; externalKey: string; kind: "jurisprudence" | "legislation" | "official_update"; title: string; summary: string; canonicalUrl: string; publishedAt: Date | null; contentHash: string }>) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  let queuedCount = 0;
+  for (const item of candidates) {
+    const existing = await db.select({ id: editorialUpdates.id }).from(editorialUpdates).where(and(eq(editorialUpdates.sourceKey, item.sourceKey), eq(editorialUpdates.externalKey, item.externalKey))).limit(1);
+    if (existing.length) continue;
+    await db.insert(editorialUpdates).values({ runId, ...item });
+    queuedCount += 1;
+  }
+  return queuedCount;
 }
 
 export async function getCompendiumOverview() {
