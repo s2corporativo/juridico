@@ -8,6 +8,7 @@ import { isSafePublicCitationAuditEvent, PUBLIC_CITATION_AUDIT_ENTITY_TYPE } fro
 import { ENV } from './_core/env';
 import { INITIAL_LEGAL_BRANCHES, RMBH_MUNICIPALITIES } from "@shared/atlas-expansion";
 import { buildMetropolitanCoverageRows } from "@shared/metropolitan-coverage";
+import { describeDocumentFreshness, summarizeDocumentFreshness } from "@shared/document-freshness";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -255,6 +256,25 @@ export async function getCompendiumQualityOverview() {
   const coverage = Array.from(grouped.values()).sort((a, b) => b.records - a.records || a.sourceLabel.localeCompare(b.sourceLabel));
   const averageScore = calculateAverageEvidenceScore(items.map(item => item.quality));
   return { items, coverage, summary: { ...summarizeEvidenceCoverage(coverage), averageScore } };
+}
+
+/** Situação de verificação documental; não declara vigência, força ou aplicabilidade jurídica. */
+export async function getCompendiumFreshnessOverview() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [sources, theses] = await Promise.all([
+    db.select({ label: evidenceSources.label, lastVerifiedAt: evidenceSources.lastVerifiedAt }).from(evidenceSources).orderBy(asc(evidenceSources.label)),
+    db.select({ title: legalTheses.title, lastReviewedAt: legalTheses.lastReviewedAt }).from(legalTheses).orderBy(asc(legalTheses.title)),
+  ]);
+  const sourceItems = sources.map(source => ({ kind: "source" as const, label: source.label, freshness: describeDocumentFreshness(source.lastVerifiedAt) }));
+  const thesisItems = theses.map(thesis => ({ kind: "thesis" as const, label: thesis.title, freshness: describeDocumentFreshness(thesis.lastReviewedAt) }));
+  return {
+    summary: {
+      sources: summarizeDocumentFreshness(sourceItems.map(item => item.freshness)),
+      theses: summarizeDocumentFreshness(thesisItems.map(item => item.freshness)),
+    },
+    items: [...sourceItems, ...thesisItems],
+  };
 }
 
 export type CompendiumSearchInput = {

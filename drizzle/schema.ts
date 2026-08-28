@@ -52,6 +52,8 @@ export const evidenceSources = mysqlTable("evidence_sources", {
   hashSha256: varchar("hashSha256", { length: 64 }),
   publicStatus: mysqlEnum("publicStatus", ["official_confirmed", "official_without_number", "attachment_reviewed", "secondary_pending", "not_for_use"]).notNull(),
   note: text("note"),
+  /** Momento de conferência da fonte; ausência não permite declarar verificação atual. */
+  lastVerifiedAt: timestamp("lastVerifiedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, table => [index("evidence_sources_status_idx").on(table.publicStatus)]);
 

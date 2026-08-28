@@ -6,6 +6,7 @@ import {
 import { useMemo, useState } from "react";
 import { buildTopicLabels } from "@shared/compendium-presentation";
 import "../quality.css";
+import "../document-freshness.css";
 
 const COMPENDIUM_PAGE_SIZE = 12;
 
@@ -29,6 +30,7 @@ function formatDate(value: Date | string | null) {
 export default function CompendiumPage() {
   const overview = trpc.compendium.overview.useQuery();
   const qualityOverview = trpc.compendium.quality.useQuery();
+  const freshnessOverview = trpc.compendium.freshness.useQuery();
   const [query, setQuery] = useState("");
   const [area, setArea] = useState("Todas");
   const [tribunal, setTribunal] = useState("Todos");
@@ -115,6 +117,18 @@ export default function CompendiumPage() {
           <article><span>Temas mapeados</span><strong>{snapshot.topics.length}</strong><small>Taxonomia inicial versionada</small></article>
           <article><span>Teses estruturadas</span><strong>{snapshot.theses.length}</strong><small>Leitura condicionada à prova</small></article>
           <article><span>Qualidade média</span><strong>{qualityOverview.data?.summary.averageScore ?? "—"}/100</strong><small>Completude documental, não mérito</small></article>
+        </section>
+
+        <section className="freshness-section" aria-labelledby="situacao-documental">
+          <div className="freshness-heading"><div><span className="eyebrow">GOVERNANÇA DOCUMENTAL · REVISÃO</span><h2 id="situacao-documental">Verificação visível, sem declarar vigência.</h2><p>O indicador usa somente a data registrada de verificação da fonte ou de revisão da tese. Ele não substitui a leitura do inteiro teor nem afirma validade jurídica.</p></div></div>
+          <div className="freshness-stat-grid">
+            <article className="freshness-stat"><strong>{freshnessOverview.data?.summary.sources.total ?? "—"}</strong><span>fontes acompanhadas</span></article>
+            <article className="freshness-stat"><strong>{freshnessOverview.data?.summary.sources.confirmedRecent ?? "—"}</strong><span>fontes verificadas ≤90 dias</span></article>
+            <article className="freshness-stat"><strong>{freshnessOverview.data?.summary.theses.reviewDue ?? "—"}</strong><span>teses com revisão documental necessária</span></article>
+            <article className="freshness-stat"><strong>{freshnessOverview.data?.summary.theses.notVerified ?? "—"}</strong><span>teses sem revisão registrada</span></article>
+          </div>
+          {freshnessOverview.isError && <p className="freshness-disclaimer">A situação documental não pôde ser calculada; nenhum dado foi alterado.</p>}
+          {!freshnessOverview.isError && <p className="freshness-disclaimer">Prazo editorial de revisão: 90 dias. A situação é documental e não equivale a vigência, força vinculante, aderência ao caso concreto ou autorização de uso profissional.</p>}
         </section>
 
         <section className="compendium-search-panel" id="jurisprudencia">

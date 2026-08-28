@@ -182,3 +182,12 @@
 - [x] Corrigir e validar a resolução da rota pública RMBH após a inclusão da nova página metropolitana.
 - [x] Qualificar na cobertura RMBH os órgãos retornados por classe 436 cujo rótulo institucional não identifica unidade JEC, sem inferir competência pelo nome do município.
 - [x] Validar a expansão em desktop e móvel, privacidade, fontes oficiais, exportação e ausência de inferências indevidas.
+- [x] Comparar a especificação recebida do Compêndio com a arquitetura Atlas e registrar requisitos incorporados, adaptados ou recusados por segurança e privacidade.
+- [ ] Modelar a governança de vigência de teses e julgados no banco Atlas isolado, sem importar casos, notas internas ou dados pessoais para a área pública.
+- [ ] Implementar indicadores de verificação e citação copiável no Compêndio a partir de fontes oficiais já catalogadas.
+- [ ] Criar cálculo público de situação documental baseado exclusivamente na última verificação de fonte ou revisão de tese, sem declarar vigência jurídica.
+- [ ] Expor resumo sanitizado de situação documental no Compêndio e adicionar ação de copiar referência no dossiê público.
+- [ ] Cobrir em testes os limiares de revisão documental e a formatação da referência copiável.
+- [ ] Adicionar e migrar data explícita de verificação em fontes de evidência, mantendo registros existentes como não verificados até revisão humana.
+- [ ] Preservar funcionalidades administrativas internas propostas pela especificação atrás de autenticação real, sem senha coletiva ou exposição pública.
+- [ ] Validar as melhorias do Compêndio em dados reais, responsividade, privacidade e publicação externa.
