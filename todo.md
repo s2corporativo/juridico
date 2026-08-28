@@ -181,4 +181,4 @@
 - [x] Expor contrato público sanitizado para a cobertura RMBH, preservando a separação entre mapeamento de órgãos e métricas processuais.
 - [x] Corrigir e validar a resolução da rota pública RMBH após a inclusão da nova página metropolitana.
 - [x] Qualificar na cobertura RMBH os órgãos retornados por classe 436 cujo rótulo institucional não identifica unidade JEC, sem inferir competência pelo nome do município.
-- [ ] Validar a expansão em desktop e móvel, privacidade, fontes oficiais, exportação e ausência de inferências indevidas.
+- [x] Validar a expansão em desktop e móvel, privacidade, fontes oficiais, exportação e ausência de inferências indevidas.
