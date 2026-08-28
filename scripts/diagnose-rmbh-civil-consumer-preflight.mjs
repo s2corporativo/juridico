@@ -2,17 +2,36 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildCivilConsumerBaseDiagnosticQuery, summarizeCivilConsumerBaseDiagnostic } from "./rmbh-civil-consumer-preflight-runtime.mjs";
+import {
+  buildCivilConsumerBaseDiagnosticQuery,
+  buildCivilConsumerSubjectAggregationDiagnosticQuery,
+  summarizeCivilConsumerBaseDiagnostic,
+  summarizeCivilConsumerSubjectAggregationDiagnostic,
+} from "./rmbh-civil-consumer-preflight-runtime.mjs";
 
 const ACCESS_URL = "https://datajud-wiki.cnj.jus.br/api-publica/acesso/";
 const BASE_URL = "https://api-publica.datajud.cnj.jus.br";
 const ALIAS = "tjmg";
 const EXECUTE = process.argv.includes("--execute");
 const AUTHORIZED = process.env.RMBH_CIVIL_CONSUMER_AUTHORIZATION === "approved";
+const requestedStage = process.argv.find((argument) => argument.startsWith("--stage="))?.slice("--stage=".length) ?? "base";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDir, "..");
 const outputDir = process.env.RMBH_CIVIL_CONSUMER_DIAGNOSTIC_OUTPUT_DIR ?? path.resolve(projectRoot, "data", "rmbh-civil-consumer-preflight-diagnostic");
-const ALLOWED_FIELD_MARKERS = ["grau", "classe.codigo", "dataAjuizamento"];
+const stages = {
+  base: {
+    query: buildCivilConsumerBaseDiagnosticQuery,
+    summarize: summarizeCivilConsumerBaseDiagnostic,
+    excludes: ["assuntos", "agregações", "_source", "hits"],
+  },
+  subject_aggregation: {
+    query: buildCivilConsumerSubjectAggregationDiagnosticQuery,
+    summarize: summarizeCivilConsumerSubjectAggregationDiagnostic,
+    excludes: ["filtro de assuntos", "_source", "hits"],
+  },
+};
+const stage = stages[requestedStage];
+const ALLOWED_FIELD_MARKERS = ["grau", "classe.codigo", "dataAjuizamento", "assuntos.codigo"];
 
 async function publicKeyInMemory() {
   const response = await fetch(ACCESS_URL, { headers: { Accept: "text/html" }, signal: AbortSignal.timeout(15_000) });
@@ -56,19 +75,20 @@ async function readJsonSafely(response) {
 
 async function main() {
   await mkdir(outputDir, { recursive: true });
-  const query = buildCivilConsumerBaseDiagnosticQuery();
+  if (!stage) throw new Error("Etapa de diagnóstico inválida.");
+  const query = stage.query();
   const manifestBase = {
     title: "Diagnóstico agregado de consulta-base TJMG — Cível/Consumidor JEC",
     source: "CNJ/DataJud API Pública",
     collectedAt: new Date().toISOString(),
     alias: ALIAS,
-    scope: { degree: "JE", classCode: 436, period: "2025-01 a 2026-08 (2026 parcial até 26/08)", excludes: ["assuntos", "agregações", "_source", "hits"] },
+    scope: { degree: "JE", classCode: 436, diagnosticStage: requestedStage, period: "2025-01 a 2026-08 (2026 parcial até 26/08)", excludes: stage.excludes },
     queryFingerprint: createHash("sha256").update(JSON.stringify(query)).digest("hex"),
     privacy: "Consulta única size=0 e _source=false; não solicita, registra ou imprime processos, partes, documentos, resposta bruta ou chave pública.",
     limitation: "Diagnóstico técnico da consulta-base. Não confirma indexação de assunto nem produz métrica territorial ou temática.",
   };
   if (!(EXECUTE && AUTHORIZED)) {
-    await writeFile(path.join(outputDir, "manifesto_diagnostico_rmbh_civel_consumidor.json"), `${JSON.stringify({ ...manifestBase, mode: "dry_run", authorization: "required_for_execution" }, null, 2)}\n`, "utf8");
+    await writeFile(path.join(outputDir, `manifesto_diagnostico_rmbh_civel_consumidor_${requestedStage}.json`), `${JSON.stringify({ ...manifestBase, mode: "dry_run", authorization: "required_for_execution" }, null, 2)}\n`, "utf8");
     console.log("RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO_DRY_RUN: execução bloqueada até autorização explícita.");
     return;
   }
@@ -83,14 +103,14 @@ async function main() {
   const payload = await readJsonSafely(response);
   if (!response.ok) {
     const diagnostic = sanitizeErrorDiagnostic(payload, response.status);
-    await writeFile(path.join(outputDir, "manifesto_diagnostico_rmbh_civel_consumidor.json"), `${JSON.stringify({ ...manifestBase, mode: "execute", authorization: "approved", state: "query_base_rejected", diagnostic }, null, 2)}\n`, "utf8");
-    console.log(`RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO: estado=query_base_rejected; http=${response.status}; tipos=${diagnostic.errorTypes.join(",") || "indisponível"}.`);
+    await writeFile(path.join(outputDir, `manifesto_diagnostico_rmbh_civel_consumidor_${requestedStage}.json`), `${JSON.stringify({ ...manifestBase, mode: "execute", authorization: "approved", state: `query_${requestedStage}_rejected`, diagnostic }, null, 2)}\n`, "utf8");
+    console.log(`RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO: etapa=${requestedStage}; estado=rejected; http=${response.status}; tipos=${diagnostic.errorTypes.join(",") || "indisponível"}.`);
     process.exitCode = 1;
     return;
   }
-  const summary = summarizeCivilConsumerBaseDiagnostic(payload);
-  await writeFile(path.join(outputDir, "manifesto_diagnostico_rmbh_civel_consumidor.json"), `${JSON.stringify({ ...manifestBase, mode: "execute", authorization: "approved", state: "query_base_accepted", summary }, null, 2)}\n`, "utf8");
-  console.log(`RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO: estado=query_base_accepted; total=${summary.observedProcessCount}; relacao=${summary.totalRelation}.`);
+  const summary = stage.summarize(payload);
+  await writeFile(path.join(outputDir, `manifesto_diagnostico_rmbh_civel_consumidor_${requestedStage}.json`), `${JSON.stringify({ ...manifestBase, mode: "execute", authorization: "approved", state: `query_${requestedStage}_accepted`, summary }, null, 2)}\n`, "utf8");
+  console.log(`RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO: etapa=${requestedStage}; estado=accepted; total=${summary.observedProcessCount}; relacao=${summary.totalRelation}.`);
 }
 
 main().catch((error) => {

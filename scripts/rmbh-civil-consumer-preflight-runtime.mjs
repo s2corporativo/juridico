@@ -18,6 +18,15 @@ export function buildCivilConsumerBaseDiagnosticQuery() {
   };
 }
 
+export function buildCivilConsumerSubjectAggregationDiagnosticQuery() {
+  return {
+    ...buildCivilConsumerBaseDiagnosticQuery(),
+    aggs: {
+      subjectCodes: { terms: { field: "assuntos.codigo", size: 100 } },
+    },
+  };
+}
+
 export function summarizeCivilConsumerBaseDiagnostic(payload) {
   const total = Number(payload?.hits?.total?.value ?? 0);
   const relation = payload?.hits?.total?.relation;
@@ -25,6 +34,14 @@ export function summarizeCivilConsumerBaseDiagnostic(payload) {
     observedProcessCount: Number.isSafeInteger(total) && total >= 0 ? total : 0,
     totalRelation: relation === "eq" || relation === "gte" ? relation : "unknown",
   };
+}
+
+export function summarizeCivilConsumerSubjectAggregationDiagnostic(payload) {
+  const base = summarizeCivilConsumerBaseDiagnostic(payload);
+  const indexedTargetRoots = (payload?.aggregations?.subjectCodes?.buckets ?? [])
+    .map((bucket) => ({ code: String(bucket?.key ?? ""), count: Number(bucket?.doc_count ?? 0) }))
+    .filter((bucket) => CIVIL_CONSUMER_ROOT_SUBJECTS.includes(Number(bucket.code)) && Number.isSafeInteger(bucket.count) && bucket.count >= 0);
+  return { ...base, indexedTargetRoots, targetRootsFound: indexedTargetRoots.length > 0 };
 }
 
 export function buildCivilConsumerPreflightQuery() {

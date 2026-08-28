@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildCivilConsumerBaseDiagnosticQuery,
   buildCivilConsumerPreflightQuery,
+  buildCivilConsumerSubjectAggregationDiagnosticQuery,
   summarizeCivilConsumerBaseDiagnostic,
   summarizeCivilConsumerPreflight,
+  summarizeCivilConsumerSubjectAggregationDiagnostic,
 } from "../scripts/rmbh-civil-consumer-preflight-runtime.mjs";
 
 describe("pré-teste agregado Cível/Consumidor RMBH", () => {
@@ -16,6 +18,21 @@ describe("pré-teste agregado Cível/Consumidor RMBH", () => {
     expect(summarizeCivilConsumerBaseDiagnostic({ hits: { total: { value: 12, relation: "eq" } } })).toEqual({
       observedProcessCount: 12,
       totalRelation: "eq",
+    });
+  });
+
+  it("agrega assuntos sem aplicar filtro temático e descarta buckets não permitidos no resumo", () => {
+    const query = buildCivilConsumerSubjectAggregationDiagnosticQuery();
+    expect(query).toMatchObject({ size: 0, _source: false, aggs: { subjectCodes: { terms: { field: "assuntos.codigo" } } } });
+    expect(query.query.bool.must).not.toContainEqual({ terms: { "assuntos.codigo": [899, 1156] } });
+    expect(summarizeCivilConsumerSubjectAggregationDiagnostic({
+      hits: { total: { value: 12, relation: "eq" } },
+      aggregations: { subjectCodes: { buckets: [{ key: 899, doc_count: 7 }, { key: 9999, doc_count: 5 }] } },
+    })).toEqual({
+      observedProcessCount: 12,
+      totalRelation: "eq",
+      indexedTargetRoots: [{ code: "899", count: 7 }],
+      targetRootsFound: true,
     });
   });
 
