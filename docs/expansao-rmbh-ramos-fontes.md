@@ -28,6 +28,19 @@ A expansão inicial deve diferenciar a **matéria** (assunto TPU), a **competên
 
 Nesta fase, a ampliação territorial e temática será construída a partir de **fontes públicas, códigos oficiais e métricas agregadas**. A existência de um município na RMBH não implica que haja órgão, série ou acervo confirmado para ele. Processos concretos, PDFs, partes, CPF, endereços, respostas brutas e credenciais permanecem fora da camada pública por padrão.
 
+## Piloto Cível/Consumidor — filtro oficial provisório
+
+O primeiro piloto agregado selecionado pelo usuário será limitado às raízes TPU **Direito Civil (`899`)** e **Direito do Consumidor (`1156`)**, ambas presentes na consulta pública de assuntos do CNJ. A consulta piloto deverá confirmar, com `size: 0`, o modo como `assuntos.codigo` é indexado no DataJud/TJMG antes de produzir qualquer métrica. Não será usado código de órgão extraído de levantamento orientativo como filtro de coleta sem confirmação no retorno agregado do alias `tjmg`.
+
+| Camada | Regra do piloto | Vedação |
+| --- | --- | --- |
+| Assunto | `899` e `1156`, com confirmação de cobertura da subárvore no retorno agregado | Inferir que todo processo cível é consumerista ou vice-versa. |
+| Tribunal e grau | Alias `tjmg`, Justiça Estadual, 1º grau | Consultar dados de Trabalho, Federal ou outro tribunal como se fossem TJMG. |
+| Territorialidade | Município, comarca-sede e órgão serão mantidos separados | Atribuir à cidade-satélite a métrica da comarca-sede. |
+| Resultado | Apenas contagens, buckets e manifesto sanitizado | Listar processos, partes, documentos, respostas brutas ou credenciais. |
+
+> O mapeamento paralelo de comarcas é orientativo. O piloto só poderá incluir um município quando o órgão correspondente estiver comprovado por resposta agregada com proveniência `tjmg`, não apenas por rótulo institucional ou código de comarca.
+
 ## Mapeamento preliminar de jurisdição TJMG
 
 Foi produzido um levantamento de orientação com 34 consultas institucionais do TJMG. Ele servirá apenas para organizar a próxima coleta e **não será publicado como métrica** até a validação individual das fontes e dos códigos de órgão na API DataJud. O mapeamento indica comarcas próprias nos quatro municípios prioritários: Belo Horizonte, Betim, Contagem e Igarapé. Também identifica municípios que dependem de comarca-sede, como Baldim (Sete Lagoas), Capim Branco (Matozinhos), Florestal (Juatuba), Mário Campos e Sarzedo (Ibirité), Nova União e Taquaraçu de Minas (Caeté), Raposos e Rio Acima (Nova Lima), Rio Manso (Bonfim), São Joaquim de Bicas (Igarapé) e São José da Lapa (Vespasiano).
