@@ -1,6 +1,32 @@
 export const CIVIL_CONSUMER_ROOT_SUBJECTS = [899, 1156];
 export const JEC_PROCEDURE_CLASS = 436;
 
+export function buildCivilConsumerBaseDiagnosticQuery() {
+  return {
+    size: 0,
+    track_total_hits: true,
+    _source: false,
+    query: {
+      bool: {
+        must: [
+          { match: { grau: "JE" } },
+          { terms: { "classe.codigo": [JEC_PROCEDURE_CLASS] } },
+          { range: { dataAjuizamento: { gte: "20250101000000", lte: "20260826235959" } } },
+        ],
+      },
+    },
+  };
+}
+
+export function summarizeCivilConsumerBaseDiagnostic(payload) {
+  const total = Number(payload?.hits?.total?.value ?? 0);
+  const relation = payload?.hits?.total?.relation;
+  return {
+    observedProcessCount: Number.isSafeInteger(total) && total >= 0 ? total : 0,
+    totalRelation: relation === "eq" || relation === "gte" ? relation : "unknown",
+  };
+}
+
 export function buildCivilConsumerPreflightQuery() {
   return {
     size: 0,

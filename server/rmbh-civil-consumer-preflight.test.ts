@@ -1,7 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { buildCivilConsumerPreflightQuery, summarizeCivilConsumerPreflight } from "../scripts/rmbh-civil-consumer-preflight-runtime.mjs";
+import {
+  buildCivilConsumerBaseDiagnosticQuery,
+  buildCivilConsumerPreflightQuery,
+  summarizeCivilConsumerBaseDiagnostic,
+  summarizeCivilConsumerPreflight,
+} from "../scripts/rmbh-civil-consumer-preflight-runtime.mjs";
 
 describe("pré-teste agregado Cível/Consumidor RMBH", () => {
+  it("isola a consulta-base de diagnóstico sem assunto, agregação, fonte ou hits", () => {
+    const query = buildCivilConsumerBaseDiagnosticQuery();
+    expect(query).toMatchObject({ size: 0, track_total_hits: true, _source: false });
+    expect(JSON.stringify(query)).not.toContain("assuntos");
+    expect(JSON.stringify(query)).not.toContain("aggs");
+    expect(JSON.stringify(query)).not.toContain("numeroProcesso");
+    expect(summarizeCivilConsumerBaseDiagnostic({ hits: { total: { value: 12, relation: "eq" } } })).toEqual({
+      observedProcessCount: 12,
+      totalRelation: "eq",
+    });
+  });
+
   it("solicita apenas agregações TJMG JEC sem documentos individuais", () => {
     const query = buildCivilConsumerPreflightQuery();
     expect(query.size).toBe(0);
