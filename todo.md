@@ -198,6 +198,6 @@
 - [x] Diagnosticar o HTTP 400 do pré-teste Cível/Consumidor com uma única consulta base `size: 0`, sem `_source`, hits, identificadores ou persistência de resposta bruta.
 - [x] Isolar incrementalmente a agregação e o filtro de `assuntos.codigo` após a aceitação da consulta-base, sem repetir a consulta temática completa às cegas.
 - [x] Construir árvore versionada de descendentes oficiais TPU para as raízes 899 e 1156, com fonte, versão e regra explícita de inclusão.
-- [ ] Confrontar a árvore TPU oficial com a indexação agregada do DataJud/TJMG, sem inferir descendentes ou consultar processos individuais.
+- [x] Confrontar a árvore TPU oficial com a indexação agregada do DataJud/TJMG, sem inferir descendentes ou consultar processos individuais.
 - [x] Validar o filtro temático futuro contra privacidade, exclusão de município não confirmado e separação do censo nacional.
-- [ ] Executar uma única pré-consulta DataJud/TJMG agregada para testar a indexação dos 405 códigos TPU, com `size: 0`, `_source: false` e manifesto exclusivamente sanitizado.
+- [x] Executar uma única pré-consulta DataJud/TJMG agregada para testar a indexação dos 405 códigos TPU, com `size: 0`, `_source: false` e manifesto exclusivamente sanitizado.

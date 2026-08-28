@@ -15,12 +15,18 @@ const authorizedTree = {
 };
 
 describe("filtro de descendentes Cível/Consumidor", () => {
-  it("mantém o filtro materializado em estado pendente de DataJud e sem campos processuais", async () => {
+  it("mantém o filtro materializado com pré-consulta agregada aceita e sem campos processuais", async () => {
     const filter = JSON.parse(await readFile(resolve(process.cwd(), "data/rmbh-civil-consumer-descendant-filter.json"), "utf8"));
     expect(filter).toMatchObject({
       scope: "rmbh_civil_consumer_descendant_filter_preparation",
       treeSource: { authority: "Conselho Nacional de Justiça", version: "26/05/2026" },
-      readiness: { termsCount: 405, maxConservativeTerms: 1024, eligibleForSingleTermsClause: true, datajudValidation: "pending" },
+      readiness: {
+        termsCount: 405,
+        maxConservativeTerms: 1024,
+        eligibleForSingleTermsClause: true,
+        datajudValidation: "accepted_nonzero",
+        datajudPreflight: { matchedDocumentCount: 354539, totalRelation: "eq", manifestClassification: "sanitized_aggregate_only" },
+      },
     });
     expect(filter.subjectCodes).toHaveLength(405);
     expect(filter.subjectCodes.every(Number.isInteger)).toBe(true);

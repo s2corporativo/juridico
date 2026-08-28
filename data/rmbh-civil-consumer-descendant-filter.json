@@ -430,7 +430,14 @@
     "termsCount": 405,
     "maxConservativeTerms": 1024,
     "eligibleForSingleTermsClause": true,
-    "datajudValidation": "pending",
-    "executionRestriction": "Não executar este filtro sem autorização específica, consulta agregada size:0, _source:false e validação de classe, grau, órgão e indexação DataJud."
+    "datajudValidation": "accepted_nonzero",
+    "datajudPreflight": {
+      "executedAt": "2026-08-28T17:04:34.267Z",
+      "matchedDocumentCount": 354539,
+      "totalRelation": "eq",
+      "scope": "TJMG; grau JE; classe 436; dataAjuizamento de 01/01/2025 a 26/08/2026; 405 códigos TPU 899/1156 e descendentes",
+      "manifestClassification": "sanitized_aggregate_only"
+    },
+    "executionRestriction": "Pré-consulta de indexação concluída. Não ampliar, desagregar por município/órgão, criar série ou publicar métrica temática sem nova autorização metodológica e execução agregada separada."
   }
 }

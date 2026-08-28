@@ -26,6 +26,12 @@ Quando houver validação específica no DataJud/TJMG, uma consulta poderá usar
 
 Antes de qualquer coleta temática, deverão ser comprovados: a indexação de cada código efetivamente usado, a compatibilidade do limite de termos, a classe 436, o grau `JE` e os órgãos DataJud com proveniência TJMG. Municípios sem órgão confirmado continuarão excluídos.
 
+## Pré-consulta de indexação DataJud/TJMG
+
+Em 28/08/2026, foi executada uma única pré-consulta autorizada, usando os 405 códigos da árvore em uma cláusula `terms`, com `size: 0`, `_source: false`, grau `JE`, classe 436 e período de 01/01/2025 a 26/08/2026. O DataJud/TJMG aceitou a consulta e retornou **354.539 documentos** com relação de total `eq`. O manifesto, mantido no diretório restrito da VPS, contém somente escopo, fingerprint, estado e total agregado; não contém hits, processos, partes, documentos, resposta bruta ou chave.
+
+Esse resultado confirma a indexação de ao menos um código da lista no recorte, mas não identifica quais códigos individualmente possuem documentos e não é uma métrica por município, órgão, mês ou resultado processual. A próxima etapa, caso autorizada, deverá ser uma nova execução agregada e independente, limitada aos recortes territorial e institucional que forem confirmados.
+
 ## Referências
 
 [1] [CNJ — Consulta Pública de Assuntos TPU](https://www.cnj.jus.br/sgt/consulta_publica_assuntos.php).
