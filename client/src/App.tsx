@@ -15,6 +15,7 @@ const GovernancePage = lazy(() => import("@/pages/GovernancePage"));
 const PublicSourcesPage = lazy(() => import("@/pages/PublicSourcesPage"));
 const NationalCensusPage = lazy(() => import("@/pages/NationalCensusPage"));
 const CitationDossierPage = lazy(() => import("@/pages/CitationDossierPage"));
+const MetropolitanCoveragePage = lazy(() => import("@/pages/MetropolitanCoveragePage"));
 
 function PageLoader() {
   return <main className="compendium-loading"><Database size={24} /><p>Carregando módulo do Atlas Forense…</p></main>;
@@ -34,6 +35,7 @@ export default function App() {
               <Route path="/controle" component={ControlCenterPage} />
               <Route path={routes.sources} component={PublicSourcesPage} />
               <Route path={routes.national} component={NationalCensusPage} />
+              <Route path="/rmbh" component={MetropolitanCoveragePage} />
               <Route path="/dossie/:externalId" component={CitationDossierPage} />
               <Route component={Home} />
             </Switch>

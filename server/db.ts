@@ -1,11 +1,13 @@
 import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
+import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, metropolitanCoverageRuns, metropolitanJudgingBodyFacets, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
 import { getNationalDistributionStatus, normalizeNationalCensusFilter, selectNationalCensusRun, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
 import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
 import { calculateAverageEvidenceScore, calculateEvidenceQuality, calculateThesisQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
 import { isSafePublicCitationAuditEvent, PUBLIC_CITATION_AUDIT_ENTITY_TYPE } from "./compendium.utils";
 import { ENV } from './_core/env';
+import { INITIAL_LEGAL_BRANCHES, RMBH_MUNICIPALITIES } from "@shared/atlas-expansion";
+import { buildMetropolitanCoverageRows } from "@shared/metropolitan-coverage";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -142,6 +144,46 @@ export async function getNationalCensusOverview(input: NationalCensusFilter = {}
     subjects: subjects.map(row => ({ code: row.code, label: row.label, amount: Number(row.amount ?? 0) })),
     judgingBodies: judgingBodies.map(row => ({ code: row.code, label: row.label, amount: Number(row.amount ?? 0) })),
     comarcaHighlights: comarcaHighlights.map(row => ({ code: row.code, label: row.label, amount: Number(row.amount ?? 0) })),
+  };
+}
+
+/** Cobertura territorial TJMG com alias e município preservados; não é censo municipal de processos. */
+export async function getMetropolitanCoverageOverview() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const runs = await db.select().from(metropolitanCoverageRuns).where(eq(metropolitanCoverageRuns.tribunalAlias, "tjmg")).orderBy(desc(metropolitanCoverageRuns.createdAt));
+  const latest = runs.find(run => run.status === "completed") ?? runs[0];
+  if (!latest?.id) {
+    return {
+      readiness: { state: "unavailable" as const, expectedMunicipalities: RMBH_MUNICIPALITIES.length, mappedMunicipalities: 0, totalBodies: 0, facetAmount: 0 },
+      municipalities: buildMetropolitanCoverageRows(RMBH_MUNICIPALITIES, []),
+      legalBranches: INITIAL_LEGAL_BRANCHES,
+    };
+  }
+  const facets = await db.select({
+    municipalityName: metropolitanJudgingBodyFacets.municipalityName,
+    municipalityIbgeCode: metropolitanJudgingBodyFacets.municipalityIbgeCode,
+    judgingBodyCode: metropolitanJudgingBodyFacets.judgingBodyCode,
+    judgingBodyLabel: metropolitanJudgingBodyFacets.judgingBodyLabel,
+    amount: metropolitanJudgingBodyFacets.amount,
+  }).from(metropolitanJudgingBodyFacets).where(eq(metropolitanJudgingBodyFacets.runId, latest.id)).orderBy(asc(metropolitanJudgingBodyFacets.municipalityName), desc(metropolitanJudgingBodyFacets.amount));
+  const municipalities = buildMetropolitanCoverageRows(RMBH_MUNICIPALITIES, facets.map(facet => ({ ...facet, amount: Number(facet.amount ?? 0) })));
+  return {
+    readiness: {
+      state: latest.status,
+      runKey: latest.runKey,
+      sourceKey: latest.sourceKey,
+      tribunalAlias: latest.tribunalAlias,
+      periodStart: latest.periodStart,
+      periodEnd: latest.periodEnd,
+      expectedMunicipalities: latest.expectedMunicipalities,
+      mappedMunicipalities: latest.mappedMunicipalities,
+      totalBodies: facets.length,
+      facetAmount: facets.reduce((sum, facet) => sum + Number(facet.amount ?? 0), 0),
+      coverageNote: latest.coverageNote,
+    },
+    municipalities,
+    legalBranches: INITIAL_LEGAL_BRANCHES,
   };
 }
 

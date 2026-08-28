@@ -1,6 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
-import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumOverview, getCompendiumQualityOverview, getEvidenceReviewQueue, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
+import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumOverview, getCompendiumQualityOverview, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
 import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
@@ -41,6 +41,9 @@ export const appRouter = router({
   nationalCensus: router({
     readiness: publicProcedure.query(() => getNationalCensusReadiness()),
     overview: publicProcedure.input(z.object({ from: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(), to: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(), tribunalAlias: z.string().trim().max(64).optional() }).optional()).query(({ input }) => getNationalCensusOverview(input)),
+  }),
+  metropolitan: router({
+    coverage: publicProcedure.query(() => getMetropolitanCoverageOverview()),
   }),
   compendium: router({
     overview: publicProcedure.query(() => getCompendiumOverview()),

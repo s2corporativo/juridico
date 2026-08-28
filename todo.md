@@ -177,4 +177,7 @@
 - [ ] Criar tabelas próprias para execuções e facetas territoriais RMBH, preservando alias TJMG, código IBGE, órgão, período, fonte e estado de cobertura.
 - [ ] Importar idempotentemente as facetas RMBH TJMG com proveniência, sem transpor processos, respostas brutas ou dados pessoais.
 - [ ] Ampliar o painel e as exportações com filtros metropolitanos e de ramo, exibindo somente cobertura e dados confirmados.
+- [ ] Criar rota pública RMBH com cobertura TJMG por município, ramos do Direito, filtros e exportação CSV metodológica.
+- [ ] Expor contrato público sanitizado para a cobertura RMBH, preservando a separação entre mapeamento de órgãos e métricas processuais.
+- [ ] Corrigir e validar a resolução da rota pública RMBH após a inclusão da nova página metropolitana.
 - [ ] Validar a expansão em desktop e móvel, privacidade, fontes oficiais, exportação e ausência de inferências indevidas.
