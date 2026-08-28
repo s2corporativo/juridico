@@ -44,6 +44,21 @@ Em **27/08/2026**, a pré-validação voltou a concluir e foi executado um únic
 
 Foram persistidas somente 13 células agregadas por `alias`, `UF`, `mês`, `código do órgão` e quantidade. Não foram persistidos números de processo, HMACs, respostas brutas, nomes de partes, documentos ou chave DataJud. O manifesto registrou estado `completed`, mas isto significa apenas que o **piloto limitado** encontrou o fim do retorno dentro do teto configurado; não o converte em censo nacional, taxa de baixa, estoque, produtividade ou taxa de êxito.
 
+## Importação no banco Atlas isolado
+
+Em **28/08/2026**, o manifesto e as 13 células agregadas foram submetidos ao importador `import-national-jec-lower-pilot.mjs` no banco MariaDB isolado `atlas_ejc`. A rotina exige autorização transitória, restringe o manifesto aos códigos `40011` e `8161`, rejeita campos estruturais de identificadores ou respostas brutas e realiza `upsert` pela chave única de execução, mês, métrica, classe e órgão.
+
+| Validação | Resultado |
+| --- | --- |
+| Linhas após a primeira importação | 13 células agregadas |
+| Reexecução idempotente | 13 células distintas; não houve duplicação |
+| Total Betim — órgão `40011` | 8 meses; 218 baixas observadas |
+| Total Igarapé — órgão `8161` | 5 meses; 65 baixas observadas |
+| Evento de auditoria de importação | 1 evento sanitizado |
+| Página nacional pública | Continua ligada ao censo de 27 tribunais; não exibe o piloto territorial automaticamente |
+
+O piloto permanece armazenado como execução `partial` separada. Seu uso em painel, relatório ou comparação exige revisão metodológica humana e uma decisão explícita de publicação.
+
 ## Referência
 
 [1] [Skill Jurimetria de Juizados Públicos — consultas DataJud](../skills/jurimetria-juizados-publicos/references/datajud_queries.md)

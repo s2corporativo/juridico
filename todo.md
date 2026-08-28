@@ -159,12 +159,12 @@
 - [x] Formalizar o Atlas como controlador do seu banco MariaDB isolado, sem réplica ou sincronização de dados jurídicos com o EJC.
 - [x] Restringir o escopo futuro do EJC/SSO à autenticação, identidade e papel, preservando a independência operacional do Atlas.
 - [x] Revalidar na VPS o banco, o usuário de aplicação e o serviço isolados após formalizar a fronteira arquitetural.
-- [ ] Inspecionar o esquema e os importadores para armazenar o piloto territorial TJMG somente como métrica agregada no banco Atlas isolado.
-- [ ] Criar importação idempotente das células de baixas por órgão e mês, com manifesto sanitizado e sem dados individuais.
-- [ ] Corrigir o acionamento do importador territorial quando executado pelo caminho simbólico `/opt/atlas-ejc/current` na VPS.
-- [ ] Corrigir a parametrização da criação da execução territorial no MariaDB antes de repetir a importação idempotente.
-- [ ] Distinguir no importador territorial a rejeição de órgão não autorizado da rejeição de métrica agregada malformada.
-- [ ] Validar marcadores proibidos por estrutura de dados no manifesto, sem rejeitar uma descrição textual de política de privacidade.
-- [ ] Executar e consultar o teste de importação isolada para Betim e Igarapé, sem expor ou sincronizar dados com o EJC.
-- [ ] Validar que o painel público não apresenta os totais de baixas do piloto sem revisão metodológica e aprovação de publicação.
-- [ ] Impedir que uma execução territorial parcial se torne a fonte padrão da página nacional após a importação no banco isolado.
+- [x] Inspecionar o esquema e os importadores para armazenar o piloto territorial TJMG somente como métrica agregada no banco Atlas isolado.
+- [x] Criar importação idempotente das células de baixas por órgão e mês, com manifesto sanitizado e sem dados individuais.
+- [x] Corrigir o acionamento do importador territorial quando executado pelo caminho simbólico `/opt/atlas-ejc/current` na VPS.
+- [x] Corrigir a parametrização da criação da execução territorial no MariaDB antes de repetir a importação idempotente.
+- [x] Distinguir no importador territorial a rejeição de órgão não autorizado da rejeição de métrica agregada malformada.
+- [x] Validar marcadores proibidos por estrutura de dados no manifesto, sem rejeitar uma descrição textual de política de privacidade.
+- [x] Executar e consultar o teste de importação isolada para Betim e Igarapé, sem expor ou sincronizar dados com o EJC.
+- [x] Validar que o painel público não apresenta os totais de baixas do piloto sem revisão metodológica e aprovação de publicação.
+- [x] Impedir que uma execução territorial parcial se torne a fonte padrão da página nacional após a importação no banco isolado.
