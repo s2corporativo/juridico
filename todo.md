@@ -168,3 +168,11 @@
 - [x] Executar e consultar o teste de importação isolada para Betim e Igarapé, sem expor ou sincronizar dados com o EJC.
 - [x] Validar que o painel público não apresenta os totais de baixas do piloto sem revisão metodológica e aprovação de publicação.
 - [x] Impedir que uma execução territorial parcial se torne a fonte padrão da página nacional após a importação no banco isolado.
+- [x] Definir a lista oficial de municípios da Região Metropolitana de Belo Horizonte e registrar seus códigos IBGE para o recorte Atlas.
+- [x] Cobrir em teste a composição legal de 34 municípios da RMBH e a rejeição de códigos IBGE ausentes.
+- [ ] Definir ramos jurídicos prioritários, classes CNJ e limites de competência para a expansão inicial do Atlas.
+- [ ] Mapear órgãos julgadores e disponibilidade DataJud/TJMG para Betim, Belo Horizonte, Contagem, Igarapé e demais municípios metropolitanos.
+- [ ] Impedir o uso de facetas nacionais sem alias como prova de órgão TJMG, preservando a proveniência tribunal-município antes da expansão metropolitana.
+- [ ] Modelar uma camada territorial e temática que mantenha separados censo, piloto de baixas, facetas e acervo jurisprudencial.
+- [ ] Ampliar o painel e as exportações com filtros metropolitanos e de ramo, exibindo somente cobertura e dados confirmados.
+- [ ] Validar a expansão em desktop e móvel, privacidade, fontes oficiais, exportação e ausência de inferências indevidas.
