@@ -5,8 +5,14 @@ import { runEditorialUpdate, sanitizeEditorialError } from "./editorial-pipeline
 
 export function registerEditorialScheduledRoute(app: Express) {
   app.post("/api/scheduled/editorial-daily", async (req: Request, res: Response) => {
+    let user;
     try {
-      const user = await sdk.authenticateRequest(req);
+      user = await sdk.authenticateRequest(req);
+    } catch {
+      res.status(403).json({ error: "scheduled_only" });
+      return;
+    }
+    try {
       if (!user.isCron || !user.taskUid) {
         res.status(403).json({ error: "scheduled_only" });
         return;

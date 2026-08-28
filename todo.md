@@ -223,3 +223,4 @@
 - [x] Criar callback diário protegido em `/api/scheduled/` e preparar o cadastro da rotina após checkpoint e deploy.
 - [x] Implementar mapa contextual acionado por pesquisa de tese, limitado a relações taxonômicas e evidências já catalogadas.
 
+- [ ] Corrigir a callback editorial para responder 403 de forma sanitizada a chamadas públicas não autenticadas, sem transformar falha de autenticação em 500.
