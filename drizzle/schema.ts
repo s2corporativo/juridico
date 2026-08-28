@@ -129,6 +129,42 @@ export const nationalCensusFacets = mysqlTable("national_census_facets", {
   index("national_census_facets_kind_idx").on(table.kind),
 ]);
 
+/** Execuções rastreáveis de cobertura territorial RMBH, sempre distintas do censo nacional. */
+export const metropolitanCoverageRuns = mysqlTable("metropolitan_coverage_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  runKey: varchar("runKey", { length: 191 }).notNull().unique(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull(),
+  tribunalAlias: varchar("tribunalAlias", { length: 64 }).notNull(),
+  status: mysqlEnum("status", ["planned", "running", "partial", "completed", "failed", "rejected"]).notNull(),
+  scope: varchar("scope", { length: 128 }).notNull(),
+  periodStart: varchar("periodStart", { length: 7 }).notNull(),
+  periodEnd: varchar("periodEnd", { length: 7 }).notNull(),
+  expectedMunicipalities: int("expectedMunicipalities").notNull(),
+  mappedMunicipalities: int("mappedMunicipalities").default(0).notNull(),
+  methodologyVersion: varchar("methodologyVersion", { length: 64 }).notNull(),
+  queryFingerprint: varchar("queryFingerprint", { length: 64 }),
+  coverageNote: text("coverageNote").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("metropolitan_coverage_runs_status_idx").on(table.status)]);
+
+/** Facetas DataJud agregadas por órgão e município RMBH, com alias de tribunal preservado. */
+export const metropolitanJudgingBodyFacets = mysqlTable("metropolitan_judging_body_facets", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  tribunalAlias: varchar("tribunalAlias", { length: 64 }).notNull(),
+  municipalityName: varchar("municipalityName", { length: 128 }).notNull(),
+  municipalityIbgeCode: varchar("municipalityIbgeCode", { length: 16 }).notNull(),
+  judgingBodyCode: varchar("judgingBodyCode", { length: 64 }).notNull(),
+  judgingBodyLabel: varchar("judgingBodyLabel", { length: 500 }).notNull(),
+  amount: int("amount").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("metropolitan_body_facet_unique").on(table.runId, table.tribunalAlias, table.municipalityIbgeCode, table.judgingBodyCode),
+  index("metropolitan_body_facet_municipality_idx").on(table.municipalityIbgeCode),
+  index("metropolitan_body_facet_alias_idx").on(table.tribunalAlias),
+]);
+
 export const legalTheses = mysqlTable("legal_theses", {
   id: int("id").autoincrement().primaryKey(),
   topicId: int("topicId").notNull(),

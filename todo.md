@@ -174,5 +174,7 @@
 - [ ] Mapear órgãos julgadores e disponibilidade DataJud/TJMG para Betim, Belo Horizonte, Contagem, Igarapé e demais municípios metropolitanos.
 - [ ] Impedir o uso de facetas nacionais sem alias como prova de órgão TJMG, preservando a proveniência tribunal-município antes da expansão metropolitana.
 - [ ] Modelar uma camada territorial e temática que mantenha separados censo, piloto de baixas, facetas e acervo jurisprudencial.
+- [ ] Criar tabelas próprias para execuções e facetas territoriais RMBH, preservando alias TJMG, código IBGE, órgão, período, fonte e estado de cobertura.
+- [ ] Importar idempotentemente as facetas RMBH TJMG com proveniência, sem transpor processos, respostas brutas ou dados pessoais.
 - [ ] Ampliar o painel e as exportações com filtros metropolitanos e de ramo, exibindo somente cobertura e dados confirmados.
 - [ ] Validar a expansão em desktop e móvel, privacidade, fontes oficiais, exportação e ausência de inferências indevidas.
