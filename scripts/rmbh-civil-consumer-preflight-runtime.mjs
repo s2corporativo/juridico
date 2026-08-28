@@ -27,6 +27,18 @@ export function buildCivilConsumerSubjectAggregationDiagnosticQuery() {
   };
 }
 
+export function buildCivilConsumerSubjectFilterDiagnosticQuery() {
+  const query = buildCivilConsumerBaseDiagnosticQuery();
+  return {
+    ...query,
+    query: {
+      bool: {
+        must: [...query.query.bool.must, { terms: { "assuntos.codigo": CIVIL_CONSUMER_ROOT_SUBJECTS } }],
+      },
+    },
+  };
+}
+
 export function summarizeCivilConsumerBaseDiagnostic(payload) {
   const total = Number(payload?.hits?.total?.value ?? 0);
   const relation = payload?.hits?.total?.relation;
@@ -42,6 +54,10 @@ export function summarizeCivilConsumerSubjectAggregationDiagnostic(payload) {
     .map((bucket) => ({ code: String(bucket?.key ?? ""), count: Number(bucket?.doc_count ?? 0) }))
     .filter((bucket) => CIVIL_CONSUMER_ROOT_SUBJECTS.includes(Number(bucket.code)) && Number.isSafeInteger(bucket.count) && bucket.count >= 0);
   return { ...base, indexedTargetRoots, targetRootsFound: indexedTargetRoots.length > 0 };
+}
+
+export function summarizeCivilConsumerSubjectFilterDiagnostic(payload) {
+  return summarizeCivilConsumerBaseDiagnostic(payload);
 }
 
 export function buildCivilConsumerPreflightQuery() {

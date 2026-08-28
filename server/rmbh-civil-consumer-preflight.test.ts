@@ -3,6 +3,7 @@ import {
   buildCivilConsumerBaseDiagnosticQuery,
   buildCivilConsumerPreflightQuery,
   buildCivilConsumerSubjectAggregationDiagnosticQuery,
+  buildCivilConsumerSubjectFilterDiagnosticQuery,
   summarizeCivilConsumerBaseDiagnostic,
   summarizeCivilConsumerPreflight,
   summarizeCivilConsumerSubjectAggregationDiagnostic,
@@ -34,6 +35,13 @@ describe("pré-teste agregado Cível/Consumidor RMBH", () => {
       indexedTargetRoots: [{ code: "899", count: 7 }],
       targetRootsFound: true,
     });
+  });
+
+  it("testa o filtro TPU sem combinar agregação de assuntos", () => {
+    const query = buildCivilConsumerSubjectFilterDiagnosticQuery();
+    expect(query).toMatchObject({ size: 0, _source: false });
+    expect(query.query.bool.must).toContainEqual({ terms: { "assuntos.codigo": [899, 1156] } });
+    expect(query).not.toHaveProperty("aggs");
   });
 
   it("solicita apenas agregações TJMG JEC sem documentos individuais", () => {

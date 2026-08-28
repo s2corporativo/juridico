@@ -5,8 +5,10 @@ import { fileURLToPath } from "node:url";
 import {
   buildCivilConsumerBaseDiagnosticQuery,
   buildCivilConsumerSubjectAggregationDiagnosticQuery,
+  buildCivilConsumerSubjectFilterDiagnosticQuery,
   summarizeCivilConsumerBaseDiagnostic,
   summarizeCivilConsumerSubjectAggregationDiagnostic,
+  summarizeCivilConsumerSubjectFilterDiagnostic,
 } from "./rmbh-civil-consumer-preflight-runtime.mjs";
 
 const ACCESS_URL = "https://datajud-wiki.cnj.jus.br/api-publica/acesso/";
@@ -28,6 +30,11 @@ const stages = {
     query: buildCivilConsumerSubjectAggregationDiagnosticQuery,
     summarize: summarizeCivilConsumerSubjectAggregationDiagnostic,
     excludes: ["filtro de assuntos", "_source", "hits"],
+  },
+  subject_filter: {
+    query: buildCivilConsumerSubjectFilterDiagnosticQuery,
+    summarize: summarizeCivilConsumerSubjectFilterDiagnostic,
+    excludes: ["agregações", "_source", "hits"],
   },
 };
 const stage = stages[requestedStage];
