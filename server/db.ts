@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
-import { getNationalDistributionStatus, normalizeNationalCensusFilter, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
+import { getNationalDistributionStatus, normalizeNationalCensusFilter, selectNationalCensusRun, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
 import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
 import { calculateAverageEvidenceScore, calculateEvidenceQuality, calculateThesisQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
 import { isSafePublicCitationAuditEvent, PUBLIC_CITATION_AUDIT_ENTITY_TYPE } from "./compendium.utils";
@@ -102,11 +102,11 @@ export async function getPublicDataSources() {
 export async function getNationalCensusReadiness() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const [runs, metricCount] = await Promise.all([
-    db.select().from(nationalCensusRuns).orderBy(desc(nationalCensusRuns.createdAt)),
-    db.select({ count: sql<number>`count(*)` }).from(nationalCensusMetrics),
-  ]);
-  return summarizeNationalCensusReadiness(runs, Number(metricCount[0]?.count ?? 0));
+  const runs = await db.select().from(nationalCensusRuns).orderBy(desc(nationalCensusRuns.createdAt));
+  const nationalRun = selectNationalCensusRun(runs);
+  if (!nationalRun?.id) return summarizeNationalCensusReadiness([], 0);
+  const metricCount = await db.select({ count: sql<number>`count(*)` }).from(nationalCensusMetrics).where(eq(nationalCensusMetrics.runId, nationalRun.id));
+  return summarizeNationalCensusReadiness([nationalRun], Number(metricCount[0]?.count ?? 0));
 }
 
 export async function getNationalCensusOverview(input: NationalCensusFilter = {}) {

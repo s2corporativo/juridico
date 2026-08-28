@@ -1,5 +1,7 @@
 export type CensusRunSnapshot = {
   id?: number;
+  runKey?: string;
+  scope?: string;
   status: "planned" | "running" | "partial" | "completed" | "failed" | "rejected";
   expectedTribunals: number;
   respondedTribunals: number;
@@ -8,6 +10,11 @@ export type CensusRunSnapshot = {
   methodologyVersion: string;
   coverageNote: string;
 };
+
+/** Escolhe apenas a execução que cobre os 27 tribunais estaduais; pilotos locais não substituem o censo público. */
+export function selectNationalCensusRun(runs: CensusRunSnapshot[]) {
+  return runs.find(run => run.expectedTribunals === 27 && run.scope?.startsWith("JEC estadual:")) ?? null;
+}
 
 export function summarizeNationalCensusReadiness(runs: CensusRunSnapshot[], metricRows: number) {
   const latest = runs[0];

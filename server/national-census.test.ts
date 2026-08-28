@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getNationalDistributionStatus, hasCompleteNationalFacetCollection, normalizeNationalCensusFilter, summarizeNationalCensusReadiness } from "./national-census";
+import { getNationalDistributionStatus, hasCompleteNationalFacetCollection, normalizeNationalCensusFilter, selectNationalCensusRun, summarizeNationalCensusReadiness } from "./national-census";
 
 describe("national census readiness", () => {
   it("does not represent a censo as available without a persisted run", () => {
@@ -9,6 +9,14 @@ describe("national census readiness", () => {
   it("reports coverage from responded tribunals without inferring representativeness", () => {
     const summary = summarizeNationalCensusReadiness([{ status: "partial", expectedTribunals: 27, respondedTribunals: 18, periodStart: "2025-01", periodEnd: "2026-08", coverageNote: "Cobertura parcial." }], 216);
     expect(summary).toMatchObject({ state: "partial", coveragePct: 67, metricRows: 216 });
+  });
+
+  it("keeps the 27-tribunal census as the public source when a newer territorial pilot exists", () => {
+    const selected = selectNationalCensusRun([
+      { id: 2, runKey: "pilot", scope: "tjmg_territorial_lower_pilot", status: "partial", expectedTribunals: 1, respondedTribunals: 1, periodStart: "2025-01", periodEnd: "2026-08", methodologyVersion: "lower-pilot-v2", coverageNote: "piloto" },
+      { id: 1, runKey: "national", scope: "JEC estadual: distribuições; baixas pendentes", status: "partial", expectedTribunals: 27, respondedTribunals: 27, periodStart: "2025-01", periodEnd: "2026-08", methodologyVersion: "1.0", coverageNote: "censo" },
+    ]);
+    expect(selected).toMatchObject({ id: 1, runKey: "national" });
   });
 
   it("does not present distributions when only endpoint coverage exists", () => {

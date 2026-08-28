@@ -167,3 +167,4 @@
 - [ ] Validar marcadores proibidos por estrutura de dados no manifesto, sem rejeitar uma descrição textual de política de privacidade.
 - [ ] Executar e consultar o teste de importação isolada para Betim e Igarapé, sem expor ou sincronizar dados com o EJC.
 - [ ] Validar que o painel público não apresenta os totais de baixas do piloto sem revisão metodológica e aprovação de publicação.
+- [ ] Impedir que uma execução territorial parcial se torne a fonte padrão da página nacional após a importação no banco isolado.
