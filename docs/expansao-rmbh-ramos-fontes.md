@@ -41,6 +41,12 @@ O primeiro piloto agregado selecionado pelo usuário será limitado às raízes 
 
 > O mapeamento paralelo de comarcas é orientativo. O piloto só poderá incluir um município quando o órgão correspondente estiver comprovado por resposta agregada com proveniência `tjmg`, não apenas por rótulo institucional ou código de comarca.
 
+### Resultado da validação técnica em 28/08/2026
+
+No recorte TJMG/JEC de 01/01/2025 a 26/08/2026, a consulta-base retornou total exato de **375.798** registros e a agregação simples de `assuntos.codigo` foi aceita. A consulta com filtro exato das raízes 899 e 1156 também foi aceita, mas retornou zero registros. O parâmetro de inclusão por expressão regular na agregação numérica foi, portanto, a causa isolada do HTTP 400 inicial e foi removido.
+
+Esse resultado **não comprova inexistência de demandas cíveis ou consumeristas**, nem autoriza tratar outros códigos de assunto como descendentes das raízes 899/1156. A próxima coleta temática dependerá de mapeamento oficial, versionado e revisado da árvore TPU e de nova autorização metodológica para os códigos que forem comprovadamente associados.
+
 ## Mapeamento preliminar de jurisdição TJMG
 
 Foi produzido um levantamento de orientação com 34 consultas institucionais do TJMG. Ele servirá apenas para organizar a próxima coleta e **não será publicado como métrica** até a validação individual das fontes e dos códigos de órgão na API DataJud. O mapeamento indica comarcas próprias nos quatro municípios prioritários: Belo Horizonte, Betim, Contagem e Igarapé. Também identifica municípios que dependem de comarca-sede, como Baldim (Sete Lagoas), Capim Branco (Matozinhos), Florestal (Juatuba), Mário Campos e Sarzedo (Ibirité), Nova União e Taquaraçu de Minas (Caeté), Raposos e Rio Acima (Nova Lima), Rio Manso (Bonfim), São Joaquim de Bicas (Igarapé) e São José da Lapa (Vespasiano).

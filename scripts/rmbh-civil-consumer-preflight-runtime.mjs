@@ -75,7 +75,7 @@ export function buildCivilConsumerPreflightQuery() {
       },
     },
     aggs: {
-      rootSubjects: { terms: { field: "assuntos.codigo", size: 10, include: "899|1156" } },
+      rootSubjects: { terms: { field: "assuntos.codigo", size: 10 } },
       classes: { terms: { field: "classe.codigo", size: 10 } },
       judgingBodies: { terms: { field: "orgaoJulgador.codigo", size: 500 } },
     },
@@ -99,5 +99,6 @@ export function summarizeCivilConsumerPreflight(payload) {
     indexedJecClass: classes,
     distinctJudgingBodies,
     usable: rootSubjects.length > 0 && classes.length > 0,
+    subjectRootLimitation: rootSubjects.length > 0 ? null : "Nenhuma raiz TPU exata retornou no recorte; a consulta não permite inferir descendentes sem mapeamento oficial adicional.",
   };
 }

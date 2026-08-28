@@ -49,6 +49,7 @@ describe("pré-teste agregado Cível/Consumidor RMBH", () => {
     expect(query.size).toBe(0);
     expect(JSON.stringify(query)).not.toContain("top_hits");
     expect(JSON.stringify(query)).not.toContain("numeroProcesso");
+    expect(JSON.stringify(query)).not.toContain("include");
     expect(query.query.bool.must).toContainEqual({ terms: { "assuntos.codigo": [899, 1156] } });
     expect(query.query.bool.must).toContainEqual({ terms: { "classe.codigo": [436] } });
   });
@@ -68,6 +69,15 @@ describe("pré-teste agregado Cível/Consumidor RMBH", () => {
       indexedJecClass: [{ code: "436", count: 12 }],
       distinctJudgingBodies: 2,
       usable: true,
+      subjectRootLimitation: null,
     });
+  });
+
+  it("declara a limitação sem inferir descendentes quando nenhuma raiz TPU exata está indexada", () => {
+    const summary = summarizeCivilConsumerPreflight({
+      hits: { total: { value: 0 } },
+      aggregations: { rootSubjects: { buckets: [] }, classes: { buckets: [{ key: 436, doc_count: 375798 }] }, judgingBodies: { buckets: [] } },
+    });
+    expect(summary).toMatchObject({ usable: false, indexedRootSubjects: [], subjectRootLimitation: expect.stringContaining("não permite inferir descendentes") });
   });
 });
