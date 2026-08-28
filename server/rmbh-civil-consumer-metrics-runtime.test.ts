@@ -6,9 +6,10 @@ describe("métricas Cível/Consumidor DataJud", () => {
     const query = buildCivilConsumerMetricsQuery({ bodyCodes: ["17283"], civilCodes: ["899", "12935"], consumerCodes: ["1156", "1185"] });
     expect(query).toMatchObject({ size: 0, track_total_hits: true, _source: false });
     expect(query.query.bool.filter).toEqual(expect.arrayContaining([
-      { term: { grau: "JE" } },
-      { term: { "classe.codigo": 436 } },
-      { terms: { "orgaoJulgador.codigo": ["17283"] } },
+      { match: { grau: "JE" } },
+      { terms: { "classe.codigo": [436] } },
+      { terms: { "orgaoJulgador.codigo": [17283] } },
+      { range: { dataAjuizamento: { gte: "20250101000000", lte: "20260827235959" } } },
     ]));
     expect(query.aggs.by_category.aggs.by_body.aggs.by_month.date_histogram.format).toBe("yyyy-MM");
     expect(JSON.stringify(query)).not.toMatch(/"hits"\s*:|"_source"\s*:\s*true|processo|cpf|parte/i);

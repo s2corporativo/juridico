@@ -15,10 +15,10 @@ export function buildCivilConsumerMetricsQuery({ bodyCodes, civilCodes, consumer
     query: {
       bool: {
         filter: [
-          { term: { grau: "JE" } },
-          { term: { "classe.codigo": 436 } },
-          { terms: { "orgaoJulgador.codigo": bodyCodes } },
-          { range: { dataAjuizamento: { gte: from, lt: to } } },
+          { match: { grau: "JE" } },
+          { terms: { "classe.codigo": [436] } },
+          { terms: { "orgaoJulgador.codigo": bodyCodes.map(Number) } },
+          { range: { dataAjuizamento: { gte: from.replaceAll("-", "") + "000000", lte: to.replaceAll("-", "") + "235959" } } },
         ],
       },
     },
@@ -26,8 +26,8 @@ export function buildCivilConsumerMetricsQuery({ bodyCodes, civilCodes, consumer
       by_category: {
         filters: {
           filters: {
-            civil: { terms: { "assuntos.codigo": civilCodes } },
-            consumer: { terms: { "assuntos.codigo": consumerCodes } },
+            civil: { terms: { "assuntos.codigo": civilCodes.map(Number) } },
+            consumer: { terms: { "assuntos.codigo": consumerCodes.map(Number) } },
           },
         },
         aggs: {

@@ -210,3 +210,4 @@
 - [ ] Implementar e validar a consulta pública com filtros e o componente visual SaaS em dados reais.
 - [ ] Testar a interface em desktop e móvel, revisar logs e salvar checkpoint publicado.
 
+- [ ] Corrigir a consulta temática para reutilizar exatamente o contrato DataJud já comprovado (`match` para grau, `terms` de classe e timestamp completo), evitando interpretar zero documentos como ausência de indexação.
