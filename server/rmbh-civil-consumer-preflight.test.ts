@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCivilConsumerBaseDiagnosticQuery,
+  buildCivilConsumerDescendantFilterDiagnosticQuery,
   buildCivilConsumerPreflightQuery,
   buildCivilConsumerSubjectAggregationDiagnosticQuery,
   buildCivilConsumerSubjectFilterDiagnosticQuery,
   summarizeCivilConsumerBaseDiagnostic,
+  summarizeCivilConsumerDescendantFilterDiagnostic,
   summarizeCivilConsumerPreflight,
   summarizeCivilConsumerSubjectAggregationDiagnostic,
 } from "../scripts/rmbh-civil-consumer-preflight-runtime.mjs";
@@ -42,6 +44,16 @@ describe("pré-teste agregado Cível/Consumidor RMBH", () => {
     expect(query).toMatchObject({ size: 0, _source: false });
     expect(query.query.bool.must).toContainEqual({ terms: { "assuntos.codigo": [899, 1156] } });
     expect(query).not.toHaveProperty("aggs");
+  });
+
+  it("testa os 405 descendentes TPU sem hits ou agregações", () => {
+    const subjectCodes = Array.from({ length: 405 }, (_, index) => index + 1);
+    const query = buildCivilConsumerDescendantFilterDiagnosticQuery(subjectCodes);
+    expect(query).toMatchObject({ size: 0, track_total_hits: true, _source: false });
+    expect(query.query.bool.must).toContainEqual({ terms: { "assuntos.codigo": subjectCodes } });
+    expect(query).not.toHaveProperty("aggs");
+    expect(JSON.stringify(query)).not.toMatch(/top_hits|numeroProcesso|partes/i);
+    expect(summarizeCivilConsumerDescendantFilterDiagnostic({ hits: { total: { value: 123, relation: "eq" } } })).toEqual({ observedProcessCount: 123, totalRelation: "eq" });
   });
 
   it("solicita apenas agregações TJMG JEC sem documentos individuais", () => {

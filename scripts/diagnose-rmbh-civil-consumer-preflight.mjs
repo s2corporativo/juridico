@@ -1,12 +1,14 @@
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildCivilConsumerBaseDiagnosticQuery,
+  buildCivilConsumerDescendantFilterDiagnosticQuery,
   buildCivilConsumerSubjectAggregationDiagnosticQuery,
   buildCivilConsumerSubjectFilterDiagnosticQuery,
   summarizeCivilConsumerBaseDiagnostic,
+  summarizeCivilConsumerDescendantFilterDiagnostic,
   summarizeCivilConsumerSubjectAggregationDiagnostic,
   summarizeCivilConsumerSubjectFilterDiagnostic,
 } from "./rmbh-civil-consumer-preflight-runtime.mjs";
@@ -19,6 +21,7 @@ const AUTHORIZED = process.env.RMBH_CIVIL_CONSUMER_AUTHORIZATION === "approved";
 const requestedStage = process.argv.find((argument) => argument.startsWith("--stage="))?.slice("--stage=".length) ?? "base";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDir, "..");
+const descendantFilterPath = path.resolve(projectRoot, "data", "rmbh-civil-consumer-descendant-filter.json");
 const outputDir = process.env.RMBH_CIVIL_CONSUMER_DIAGNOSTIC_OUTPUT_DIR ?? path.resolve(projectRoot, "data", "rmbh-civil-consumer-preflight-diagnostic");
 const stages = {
   base: {
@@ -35,6 +38,17 @@ const stages = {
     query: buildCivilConsumerSubjectFilterDiagnosticQuery,
     summarize: summarizeCivilConsumerSubjectFilterDiagnostic,
     excludes: ["agregações", "_source", "hits"],
+  },
+  descendant_filter: {
+    query: async () => {
+      const filter = JSON.parse(await readFile(descendantFilterPath, "utf8"));
+      if (filter?.scope !== "rmbh_civil_consumer_descendant_filter_preparation" || filter?.readiness?.datajudValidation !== "pending" || filter?.readiness?.eligibleForSingleTermsClause !== true || !Array.isArray(filter?.subjectCodes)) {
+        throw new Error("Filtro de descendentes TPU sem contrato metodológico válido.");
+      }
+      return buildCivilConsumerDescendantFilterDiagnosticQuery(filter.subjectCodes);
+    },
+    summarize: summarizeCivilConsumerDescendantFilterDiagnostic,
+    excludes: ["agregações", "_source", "hits", "processos individuais"],
   },
 };
 const stage = stages[requestedStage];
@@ -83,16 +97,16 @@ async function readJsonSafely(response) {
 async function main() {
   await mkdir(outputDir, { recursive: true });
   if (!stage) throw new Error("Etapa de diagnóstico inválida.");
-  const query = stage.query();
+  const query = await stage.query();
   const manifestBase = {
     title: "Diagnóstico agregado de consulta-base TJMG — Cível/Consumidor JEC",
     source: "CNJ/DataJud API Pública",
     collectedAt: new Date().toISOString(),
     alias: ALIAS,
-    scope: { degree: "JE", classCode: 436, diagnosticStage: requestedStage, period: "2025-01 a 2026-08 (2026 parcial até 26/08)", excludes: stage.excludes },
+    scope: { degree: "JE", classCode: 436, diagnosticStage: requestedStage, period: "2025-01 a 2026-08 (2026 parcial até 26/08)", descendantTerms: requestedStage === "descendant_filter" ? 405 : null, excludes: stage.excludes },
     queryFingerprint: createHash("sha256").update(JSON.stringify(query)).digest("hex"),
     privacy: "Consulta única size=0 e _source=false; não solicita, registra ou imprime processos, partes, documentos, resposta bruta ou chave pública.",
-    limitation: "Diagnóstico técnico da consulta-base. Não confirma indexação de assunto nem produz métrica territorial ou temática.",
+    limitation: requestedStage === "descendant_filter" ? "Teste técnico de indexação de códigos TPU mapeados. Não produz métrica territorial ou temática e não valida competência municipal ou órgão." : "Diagnóstico técnico da consulta-base. Não confirma indexação de assunto nem produz métrica territorial ou temática.",
   };
   if (!(EXECUTE && AUTHORIZED)) {
     await writeFile(path.join(outputDir, `manifesto_diagnostico_rmbh_civel_consumidor_${requestedStage}.json`), `${JSON.stringify({ ...manifestBase, mode: "dry_run", authorization: "required_for_execution" }, null, 2)}\n`, "utf8");

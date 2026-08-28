@@ -39,6 +39,22 @@ export function buildCivilConsumerSubjectFilterDiagnosticQuery() {
   };
 }
 
+export function buildCivilConsumerDescendantFilterDiagnosticQuery(subjectCodes) {
+  const normalizedCodes = [...new Set(subjectCodes)].sort((left, right) => left - right);
+  if (normalizedCodes.length === 0 || normalizedCodes.length > 1_024 || !normalizedCodes.every(Number.isInteger)) {
+    throw new Error("Filtro de descendentes TPU inválido para diagnóstico agregado.");
+  }
+  const query = buildCivilConsumerBaseDiagnosticQuery();
+  return {
+    ...query,
+    query: {
+      bool: {
+        must: [...query.query.bool.must, { terms: { "assuntos.codigo": normalizedCodes } }],
+      },
+    },
+  };
+}
+
 export function summarizeCivilConsumerBaseDiagnostic(payload) {
   const total = Number(payload?.hits?.total?.value ?? 0);
   const relation = payload?.hits?.total?.relation;
@@ -57,6 +73,10 @@ export function summarizeCivilConsumerSubjectAggregationDiagnostic(payload) {
 }
 
 export function summarizeCivilConsumerSubjectFilterDiagnostic(payload) {
+  return summarizeCivilConsumerBaseDiagnostic(payload);
+}
+
+export function summarizeCivilConsumerDescendantFilterDiagnostic(payload) {
   return summarizeCivilConsumerBaseDiagnostic(payload);
 }
 
