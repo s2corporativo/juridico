@@ -170,14 +170,15 @@
 - [x] Impedir que uma execução territorial parcial se torne a fonte padrão da página nacional após a importação no banco isolado.
 - [x] Definir a lista oficial de municípios da Região Metropolitana de Belo Horizonte e registrar seus códigos IBGE para o recorte Atlas.
 - [x] Cobrir em teste a composição legal de 34 municípios da RMBH e a rejeição de códigos IBGE ausentes.
-- [ ] Definir ramos jurídicos prioritários, classes CNJ e limites de competência para a expansão inicial do Atlas.
-- [ ] Mapear órgãos julgadores e disponibilidade DataJud/TJMG para Betim, Belo Horizonte, Contagem, Igarapé e demais municípios metropolitanos.
-- [ ] Impedir o uso de facetas nacionais sem alias como prova de órgão TJMG, preservando a proveniência tribunal-município antes da expansão metropolitana.
-- [ ] Modelar uma camada territorial e temática que mantenha separados censo, piloto de baixas, facetas e acervo jurisprudencial.
-- [ ] Criar tabelas próprias para execuções e facetas territoriais RMBH, preservando alias TJMG, código IBGE, órgão, período, fonte e estado de cobertura.
-- [ ] Importar idempotentemente as facetas RMBH TJMG com proveniência, sem transpor processos, respostas brutas ou dados pessoais.
-- [ ] Ampliar o painel e as exportações com filtros metropolitanos e de ramo, exibindo somente cobertura e dados confirmados.
-- [ ] Criar rota pública RMBH com cobertura TJMG por município, ramos do Direito, filtros e exportação CSV metodológica.
-- [ ] Expor contrato público sanitizado para a cobertura RMBH, preservando a separação entre mapeamento de órgãos e métricas processuais.
-- [ ] Corrigir e validar a resolução da rota pública RMBH após a inclusão da nova página metropolitana.
+- [x] Definir ramos jurídicos prioritários, classes CNJ e limites de competência para a expansão inicial do Atlas.
+- [x] Mapear órgãos julgadores e disponibilidade DataJud/TJMG para Betim, Belo Horizonte, Contagem, Igarapé e demais municípios metropolitanos.
+- [x] Impedir o uso de facetas nacionais sem alias como prova de órgão TJMG, preservando a proveniência tribunal-município antes da expansão metropolitana.
+- [x] Modelar uma camada territorial e temática que mantenha separados censo, piloto de baixas, facetas e acervo jurisprudencial.
+- [x] Criar tabelas próprias para execuções e facetas territoriais RMBH, preservando alias TJMG, código IBGE, órgão, período, fonte e estado de cobertura.
+- [x] Importar idempotentemente as facetas RMBH TJMG com proveniência, sem transpor processos, respostas brutas ou dados pessoais.
+- [x] Ampliar o painel e as exportações com filtros metropolitanos e de ramo, exibindo somente cobertura e dados confirmados.
+- [x] Criar rota pública RMBH com cobertura TJMG por município, ramos do Direito, filtros e exportação CSV metodológica.
+- [x] Expor contrato público sanitizado para a cobertura RMBH, preservando a separação entre mapeamento de órgãos e métricas processuais.
+- [x] Corrigir e validar a resolução da rota pública RMBH após a inclusão da nova página metropolitana.
+- [x] Qualificar na cobertura RMBH os órgãos retornados por classe 436 cujo rótulo institucional não identifica unidade JEC, sem inferir competência pelo nome do município.
 - [ ] Validar a expansão em desktop e móvel, privacidade, fontes oficiais, exportação e ausência de inferências indevidas.
