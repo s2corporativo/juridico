@@ -57,7 +57,7 @@ async function main() {
     await connection.beginTransaction();
     await connection.query(
       "INSERT INTO national_census_runs (runKey, sourceKey, status, scope, periodStart, periodEnd, expectedTribunals, respondedTribunals, methodologyVersion, queryFingerprint, coverageNote) VALUES (?, 'datajud', 'partial', 'tjmg_territorial_lower_pilot', '2025-01', '2026-08', 1, 1, 'lower-pilot-v2', ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status), respondedTribunals = VALUES(respondedTribunals), queryFingerprint = VALUES(queryFingerprint), coverageNote = VALUES(coverageNote)",
-      [manifest.queryFingerprint ?? null, "Piloto territorial de baixas definitivas observadas no TJMG, limitado aos órgãos 40011 (Betim) e 8161 (Igarapé), com teto de 3 páginas. Série parcial, não comparável a censo, estoque, taxa de baixa, produtividade ou êxito."],
+      [LOWER_PILOT_RUN_KEY, manifest.queryFingerprint ?? null, "Piloto territorial de baixas definitivas observadas no TJMG, limitado aos órgãos 40011 (Betim) e 8161 (Igarapé), com teto de 3 páginas. Série parcial, não comparável a censo, estoque, taxa de baixa, produtividade ou êxito."],
     );
     const [[run]] = await connection.query("SELECT id FROM national_census_runs WHERE runKey = ? LIMIT 1", [LOWER_PILOT_RUN_KEY]);
     if (!run?.id) throw new Error("Não foi possível localizar a execução territorial após a criação.");
