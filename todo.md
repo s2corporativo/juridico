@@ -205,7 +205,7 @@
 - [x] Criar componente visual público para volume agregado por categoria principal TPU, com proveniência, recorte e limitação visíveis.
 - [x] Adicionar filtros interativos de período e comarca que só habilitem combinações efetivamente coletadas e auditáveis.
 - [x] Modernizar a experiência visual do painel no padrão SaaS jurídico-tech, com responsividade, contraste e acessibilidade preservados.
-- [ ] Corrigir a importação ausente de `createHash` no coletor temático antes da execução real na VPS.
+- [x] Corrigir a importação ausente de `createHash` no coletor temático antes da execução real na VPS.
 - [ ] Executar e importar as células agregadas categoria × órgão × mês na camada temática isolada.
 - [ ] Implementar e validar a consulta pública com filtros e o componente visual SaaS em dados reais.
 - [x] Testar a interface em desktop e móvel, revisar logs e salvar checkpoint publicado.
@@ -236,3 +236,6 @@
 
 - [x] Adicionar resumo assistido por IA às fichas públicas, limitado a campos agregados e metadados já exibidos.
 - [x] Validar contrato de privacidade, resposta estruturada, falha segura e experiência responsiva do resumo assistido.
+- [ ] Adicionar seção pública “Julgados Relacionados” às fichas, baseada apenas em vínculos já catalogados de tese ou classificação.
+- [ ] Validar limite, sanitização, links de fonte e responsividade da nova seção.
+

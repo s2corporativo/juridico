@@ -341,3 +341,18 @@ body { background:#f8fafb; color:var(--ink); }
 .ai-summary-action p { margin:0; padding:.8rem; color:#45605b; border-left:3px solid #a8612d; background:#f8fbfa; font-size:.83rem; line-height:1.5; }
 .ai-summary-action p b { color:#1c4945; }
 .compendium-ai-error { margin:1rem 0 0; padding:.75rem .9rem; color:#8a412c; border-left:3px solid #b95d42; background:#fff3ef; font-size:.82rem; }
+
+/* Relações públicas por ficha: carregamento sob demanda, sem inflar o cartão. */
+.decision-related { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: .75rem; }
+.decision-related-trigger { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: .75rem; border: 0; background: transparent; color: var(--foreground); font: inherit; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; padding: .35rem 0; }
+.decision-related-trigger span { display: inline-flex; align-items: center; gap: .4rem; }
+.decision-related-trigger span:last-child { color: var(--muted-foreground); font-size: .68rem; white-space: nowrap; }
+.decision-related-trigger svg { transition: transform 160ms ease; }
+.decision-related-list { display: grid; gap: .5rem; margin-top: .6rem; }
+.decision-related-item { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .65rem .75rem; border: 1px solid var(--border); background: color-mix(in srgb, var(--card) 92%, var(--primary) 8%); color: inherit; text-decoration: none; transition: border-color 160ms ease, transform 160ms ease; }
+.decision-related-item:hover { border-color: var(--primary); transform: translateY(-1px); }
+.decision-related-item span { display: grid; gap: .2rem; min-width: 0; }
+.decision-related-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; }
+.decision-related-item small { color: var(--muted-foreground); font-size: .7rem; }
+.decision-related-state { margin: .6rem 0 0; color: var(--muted-foreground); font-size: .78rem; }
+.decision-related-state.error { color: var(--destructive); }

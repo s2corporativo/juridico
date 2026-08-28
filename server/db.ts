@@ -494,6 +494,38 @@ export async function getThesisRelatedDocuments(thesisId: number) {
     .limit(THESIS_MAP_RELATED_LIMIT);
 }
 
+export async function getDecisionRelatedDocuments(externalId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [record] = await db.select({ id: jurisprudenceRecords.id })
+    .from(jurisprudenceRecords)
+    .where(eq(jurisprudenceRecords.externalId, externalId))
+    .limit(1);
+  if (!record) return [];
+  const thesisRows = await db.select({ thesisId: thesisAuthorities.thesisId })
+    .from(thesisAuthorities)
+    .where(eq(thesisAuthorities.jurisprudenceId, record.id));
+  const thesisIds = thesisRows.map(row => row.thesisId);
+  if (!thesisIds.length) return [];
+  return db.select({
+    id: jurisprudenceRecords.id,
+    externalId: jurisprudenceRecords.externalId,
+    title: jurisprudenceRecords.theme,
+    tribunal: jurisprudenceRecords.tribunal,
+    city: jurisprudenceRecords.city,
+    decisionType: jurisprudenceRecords.decisionType,
+    decisionDate: jurisprudenceRecords.decisionDate,
+    sourceStatus: jurisprudenceRecords.sourceStatus,
+    sourceUrl: evidenceSources.sourceUrl,
+    stance: thesisAuthorities.stance,
+  }).from(thesisAuthorities)
+    .innerJoin(jurisprudenceRecords, eq(thesisAuthorities.jurisprudenceId, jurisprudenceRecords.id))
+    .innerJoin(evidenceSources, eq(jurisprudenceRecords.sourceId, evidenceSources.id))
+    .where(and(inArray(thesisAuthorities.thesisId, thesisIds), sql`${jurisprudenceRecords.id} <> ${record.id}`))
+    .orderBy(desc(jurisprudenceRecords.decisionDate))
+    .limit(THESIS_MAP_RELATED_LIMIT);
+}
+
 /** Dados estritamente públicos já exibidos em ficha; usados exclusivamente para síntese assistida. */
 export async function getPublicDecisionSummaryInput(externalId: string) {
   const db = await getDb();

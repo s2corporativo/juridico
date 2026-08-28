@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft, ArrowUpRight, BookMarked, Bot, Boxes, CheckCircle2, CircleAlert,
-  Database, FileSearch, Landmark, Scale, Search, ShieldCheck, Sparkles,
+  ChevronDown, Database, FileSearch, Landmark, Scale, Search, ShieldCheck, Sparkles,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buildTopicLabels } from "@shared/compendium-presentation";
@@ -26,6 +26,27 @@ const sourceLabel: Record<string, string> = {
 function formatDate(value: Date | string | null) {
   if (!value) return "Data não informada";
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(value));
+}
+
+function RelatedJudgments({ externalId }: { externalId: string }) {
+  const [open, setOpen] = useState(false);
+  const related = trpc.compendium.decisionRelated.useQuery({ externalId }, { enabled: open });
+  return (
+    <div className="decision-related">
+      <button type="button" className="decision-related-trigger" onClick={() => setOpen(current => !current)} aria-expanded={open}>
+        <span><Scale size={15} /> Julgados relacionados</span>
+        <span>{open ? "Ocultar" : "Ver vínculos"} <ChevronDown size={15} className={open ? "rotate-180" : ""} /></span>
+      </button>
+      {open && (related.isLoading ? <p className="decision-related-state">Carregando vínculos catalogados…</p> : related.isError ? <p className="decision-related-state error">Não foi possível carregar os julgados relacionados.</p> : related.data?.length ? (
+        <div className="decision-related-list">
+          {related.data.slice(0, 6).map(item => <a className="decision-related-item" key={item.id} href={`/dossie/${encodeURIComponent(item.externalId)}`}>
+            <span><strong>{item.title ?? "Julgado sem tema informado"}</strong><small>{item.tribunal} · {item.city ?? "Origem não informada"} · {item.decisionType}</small></span>
+            <ArrowUpRight size={14} />
+          </a>)}
+        </div>
+      ) : <p className="decision-related-state">Nenhum julgado relacionado foi catalogado para esta ficha.</p>)}
+    </div>
+  );
 }
 
 export default function CompendiumPage() {
@@ -174,6 +195,7 @@ export default function CompendiumPage() {
                   <div><dt>Resultado</dt><dd>{decision.outcomeAppeal ?? decision.outcomeOrigin ?? "Não informado"}</dd></div>
                   <div><dt>Classificação</dt><dd>{selectedTopics.get(decision.id) ?? decision.legalArea ?? "Em revisão"}</dd></div>
                 </dl>
+                <RelatedJudgments externalId={decision.externalId} />
                 <div className="ai-summary-action">
                   <button type="button" onClick={() => aiSummary.mutate({ externalId: decision.externalId })} disabled={aiSummary.isPending}>
                     <Bot size={15} /> {aiSummary.isPending ? "Gerando síntese…" : "Resumo com IA"}
