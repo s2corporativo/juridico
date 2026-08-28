@@ -4,6 +4,8 @@
 
 O Atlas Forense está **preparado, mas não vinculado** ao Ecossistema Jurídico Clovis. A arquitetura atual conserva módulos independentes e uma matriz de acesso compatível com integração futura, sem estabelecer conexão, SSO, transferência de dados ou dependência externa.
 
+> **Decisão arquitetural de 27/08/2026:** o Atlas é controlador de seu próprio banco MariaDB isolado (`atlas_ejc`). O EJC não será fonte, réplica ou destino automático de acervo, processos, partes, documentos, métricas, teses, fontes, auditoria ou resultados de coleta.
+
 | Módulo | Rota Atlas | Perfil previsto | Finalidade |
 |---|---|---|---|
 | Atlas Forense | `/` | Política pública ou autenticada a definir | Jurimetria, séries e relatórios. |
@@ -16,6 +18,8 @@ O Atlas Forense está **preparado, mas não vinculado** ao Ecossistema Jurídico
 > A integração deverá iniciar por navegação e identidade, nunca por transferência ampla de dados.
 
 A vinculação dependerá da identificação do ponto de entrada no EJC, do mapeamento formal de papéis, da política de sigilo de casos e da aprovação humana. Credenciais, dados pessoais, documentos privados e dados de partes são expressamente excluídos do contrato base. Qualquer integração de casos exige análise individual de finalidade, autorização e revisão humana.
+
+Na etapa atualmente autorizada, o EJC terá função exclusiva de **provedor de identidade OIDC**: autenticar a pessoa usuária e fornecer o papel permitido (`admin` ou `user`). O Atlas continuará validando a sessão, aplicando a autorização da Central de Controle e registrando seus próprios eventos de auditoria. A indisponibilidade do EJC não deve impedir as rotas públicas do Atlas.
 
 ## Contrato de extensão
 

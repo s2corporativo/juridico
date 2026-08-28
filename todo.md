@@ -156,3 +156,6 @@
 - [x] Segregar os totais de baixas por órgão julgador e mês, evitando apresentar Betim e Igarapé como uma única contagem territorial.
 - [x] Corrigir a verificação de privacidade na VPS para ler arquivos do diretório restrito com privilégio e confirmar que somente agregados foram persistidos.
 - [x] Adicionar teste automatizado do manifesto territorial que comprove a ausência de números de processo, PII, HMACs e respostas brutas persistidas.
+- [x] Formalizar o Atlas como controlador do seu banco MariaDB isolado, sem réplica ou sincronização de dados jurídicos com o EJC.
+- [x] Restringir o escopo futuro do EJC/SSO à autenticação, identidade e papel, preservando a independência operacional do Atlas.
+- [x] Revalidar na VPS o banco, o usuário de aplicação e o serviço isolados após formalizar a fronteira arquitetural.

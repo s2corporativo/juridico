@@ -3,6 +3,8 @@
 **Estado:** estrutura pronta, autenticação EJC ainda desativada.  
 **Escopo:** identidade e papel; não há sincronização de casos, documentos, partes ou dados processuais.
 
+**Fronteira de dados aprovada:** o banco `atlas_ejc` permanece autônomo. O EJC participa apenas como provedor de identidade; não recebe nem replica o acervo jurídico, as métricas DataJud, os manifestos de coleta, os eventos de auditoria ou os dados de revisão do Atlas.
+
 O Atlas será um *Relying Party* OIDC. A ativação futura usará **Authorization Code Flow**, discovery do emissor e validação do ID Token. OIDC usa a camada OAuth 2.0 para autenticar e retornar *claims* de identidade; o fluxo de código entrega o código antes da troca de tokens no endpoint seguro do provedor.[1] O discovery fornece a configuração pública do emissor, incluindo os endpoints de autorização, token e o conjunto de chaves públicas para validação.[2]
 
 | Item | Valor de preparação | Regra de segurança |
