@@ -30,21 +30,28 @@ function formatDate(value: Date | string | null) {
 
 function RelatedJudgments({ externalId }: { externalId: string }) {
   const [open, setOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [comparison, setComparison] = useState<{ similarities: string[]; differences: string[]; caveats: string[] } | null>(null);
   const related = trpc.compendium.decisionRelated.useQuery({ externalId }, { enabled: open });
+  const compare = trpc.compendium.aiCompareRelated.useMutation({ onSuccess: setComparison });
+  const toggleSelected = (id: string) => setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : current.length >= 4 ? current : [...current, id]);
   return (
     <div className="decision-related">
       <button type="button" className="decision-related-trigger" onClick={() => setOpen(current => !current)} aria-expanded={open}>
         <span><Scale size={15} /> Julgados relacionados</span>
         <span>{open ? "Ocultar" : "Ver vínculos"} <ChevronDown size={15} className={open ? "rotate-180" : ""} /></span>
       </button>
-      {open && (related.isLoading ? <p className="decision-related-state">Carregando vínculos catalogados…</p> : related.isError ? <p className="decision-related-state error">Não foi possível carregar os julgados relacionados.</p> : related.data?.length ? (
+      {open && (related.isLoading ? <p className="decision-related-state">Carregando vínculos catalogados…</p> : related.isError ? <p className="decision-related-state error">Não foi possível carregar os julgados relacionados.</p> : related.data?.length ? <>
+        <div className="decision-related-toolbar"><span>Selecione de 2 a 4 julgados para comparar</span><button type="button" disabled={selectedIds.length < 2 || compare.isPending} onClick={() => compare.mutate({ externalIds: selectedIds })}><Bot size={14} />{compare.isPending ? "Comparando…" : "Comparar com IA"}</button></div>
         <div className="decision-related-list">
-          {related.data.slice(0, 6).map(item => <a className="decision-related-item" key={item.id} href={`/dossie/${encodeURIComponent(item.externalId)}`}>
-            <span><strong>{item.title ?? "Julgado sem tema informado"}</strong><small>{item.tribunal} · {item.city ?? "Origem não informada"} · {item.decisionType}</small></span>
-            <ArrowUpRight size={14} />
-          </a>)}
+          {related.data.slice(0, 6).map(item => <article className="decision-related-item" key={item.id}>
+            <label className="decision-related-select"><input type="checkbox" checked={selectedIds.includes(item.externalId)} onChange={() => toggleSelected(item.externalId)} aria-label={`Selecionar ${item.title ?? "julgado"}`} /><span><strong>{item.title ?? "Julgado sem tema informado"}</strong><small>{item.tribunal} · {item.city ?? "Origem não informada"} · {item.decisionType}</small></span></label>
+            <a href={`/dossie/${encodeURIComponent(item.externalId)}`} aria-label="Abrir dossiê"><ArrowUpRight size={14} /></a>
+          </article>)}
         </div>
-      ) : <p className="decision-related-state">Nenhum julgado relacionado foi catalogado para esta ficha.</p>)}
+        {compare.isError && <p className="decision-related-state error">A comparação não pôde ser gerada. Os dossiês seguem disponíveis.</p>}
+        {comparison && <aside className="decision-comparison" aria-live="polite"><strong><Sparkles size={15} /> Comparação assistida</strong><section><h4>Semelhanças</h4>{comparison.similarities.map(item => <p key={item}>{item}</p>)}</section><section><h4>Diferenças</h4>{comparison.differences.map(item => <p key={item}>{item}</p>)}</section><section><h4>Ressalvas</h4>{comparison.caveats.map(item => <p key={item}>{item}</p>)}</section><small>Leitura assistida de metadados públicos; não substitui o dossiê nem constitui conclusão jurídica.</small></aside>}
+      </> : <p className="decision-related-state">Nenhum julgado relacionado foi catalogado para esta ficha.</p>)}
     </div>
   );
 }

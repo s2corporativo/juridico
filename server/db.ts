@@ -526,6 +526,25 @@ export async function getDecisionRelatedDocuments(externalId: string) {
     .limit(THESIS_MAP_RELATED_LIMIT);
 }
 
+/** Dados estritamente públicos já exibidos nos relacionados; usados exclusivamente para comparação assistida. */
+export async function getPublicRelatedDecisionInputs(externalIds: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  return db.select({
+    externalId: jurisprudenceRecords.externalId,
+    title: jurisprudenceRecords.theme,
+    tribunal: jurisprudenceRecords.tribunal,
+    city: jurisprudenceRecords.city,
+    decisionType: jurisprudenceRecords.decisionType,
+    decisionDate: jurisprudenceRecords.decisionDate,
+    sourceStatus: jurisprudenceRecords.sourceStatus,
+    stance: thesisAuthorities.stance,
+  }).from(jurisprudenceRecords)
+    .leftJoin(thesisAuthorities, eq(thesisAuthorities.jurisprudenceId, jurisprudenceRecords.id))
+    .where(inArray(jurisprudenceRecords.externalId, externalIds))
+    .limit(24);
+}
+
 /** Dados estritamente públicos já exibidos em ficha; usados exclusivamente para síntese assistida. */
 export async function getPublicDecisionSummaryInput(externalId: string) {
   const db = await getDb();

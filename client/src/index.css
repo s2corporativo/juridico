@@ -356,3 +356,17 @@ body { background:#f8fafb; color:var(--ink); }
 .decision-related-item small { color: var(--muted-foreground); font-size: .7rem; }
 .decision-related-state { margin: .6rem 0 0; color: var(--muted-foreground); font-size: .78rem; }
 .decision-related-state.error { color: var(--destructive); }
+
+.decision-related-toolbar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin:.75rem 0;color:var(--muted-foreground);font-size:.78rem}
+.decision-related-toolbar button{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--border);border-radius:999px;background:var(--primary);color:var(--primary-foreground);padding:.45rem .75rem;font-weight:700;transition:opacity .18s ease,transform .18s ease}
+.decision-related-toolbar button:disabled{opacity:.45;cursor:not-allowed}
+.decision-related-toolbar button:not(:disabled):active{transform:scale(.97)}
+.decision-related-select{display:flex;align-items:flex-start;gap:.65rem;min-width:0;cursor:pointer}
+.decision-related-select input{margin-top:.2rem;accent-color:var(--primary)}
+.decision-comparison{margin-top:1rem;border:1px solid color-mix(in srgb,var(--primary) 18%,var(--border));border-radius:1rem;background:color-mix(in srgb,var(--primary) 4%,white);padding:1rem;box-shadow:0 10px 24px rgba(20,45,42,.06)}
+.decision-comparison>strong{display:flex;align-items:center;gap:.4rem;color:var(--primary);font-size:.9rem}
+.decision-comparison section{margin-top:.75rem;border-top:1px solid var(--border);padding-top:.65rem}
+.decision-comparison h4{margin:0 0 .35rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted-foreground)}
+.decision-comparison p{margin:.3rem 0;font-size:.82rem;line-height:1.45;color:var(--foreground)}
+.decision-comparison>small{display:block;margin-top:.8rem;color:var(--muted-foreground);font-size:.7rem;line-height:1.4}
+@media (max-width:640px){.decision-related-toolbar{align-items:flex-start;flex-direction:column}.decision-related-toolbar button{width:100%;justify-content:center}.decision-comparison{padding:.8rem}}

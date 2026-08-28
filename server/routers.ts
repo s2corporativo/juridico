@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
 import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getThesisRelatedDocuments, getDecisionRelatedDocuments, getCompendiumFreshnessOverview, getCompendiumOverview, getCompendiumQualityOverview, getEditorialUpdateQueue, getPublicEditorialUpdates, decideEditorialUpdate, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, getRmbhCivilConsumerOverview, searchCompendium } from "./db";
 import { summarizePublicDecision } from "./compendium-ai-summary";
+import { comparePublicRelatedDecisions } from "./compendium-ai-compare";
 import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
@@ -73,6 +74,7 @@ export const appRouter = router({
     })).query(({ input }) => searchCompendium(input)),
     dossier: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).query(({ input }) => getCitationDossier(input.externalId)),
     aiSummary: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).mutation(({ ctx, input }) => summarizePublicDecision(input.externalId, ctx.req.ip || "anonymous")),
+    aiCompareRelated: publicProcedure.input(z.object({ externalIds: z.array(z.string().trim().min(1).max(191)).min(2).max(4) })).mutation(({ ctx, input }) => comparePublicRelatedDecisions(input.externalIds, ctx.req.ip || "anonymous")),
     thesisRelated: publicProcedure.input(z.object({ thesisId: z.number().int().positive() })).query(({ input }) => getThesisRelatedDocuments(input.thesisId)),
     decisionRelated: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).query(({ input }) => getDecisionRelatedDocuments(input.externalId)),
     reviewQueue: router({

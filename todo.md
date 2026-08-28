@@ -236,6 +236,11 @@
 
 - [x] Adicionar resumo assistido por IA às fichas públicas, limitado a campos agregados e metadados já exibidos.
 - [x] Validar contrato de privacidade, resposta estruturada, falha segura e experiência responsiva do resumo assistido.
-- [ ] Adicionar seção pública “Julgados Relacionados” às fichas, baseada apenas em vínculos já catalogados de tese ou classificação.
-- [ ] Validar limite, sanitização, links de fonte e responsividade da nova seção.
+- [x] Adicionar seção pública “Julgados Relacionados” às fichas, baseada apenas em vínculos já catalogados de tese ou classificação.
+- [x] Validar limite, sanitização, links de fonte e responsividade da nova seção.
+
+- [x] Adicionar seleção múltipla e botão de comparação assistida por IA aos julgados relacionados.
+- [x] Gerar saída estruturada com semelhanças, diferenças, divergências de resultado e limites documentais.
+- [x] Validar que a comparação usa somente campos públicos sanitizados e não produz conclusão jurídica ou prognóstico.
+- [x] Testar responsividade, estados de erro, limites de quantidade e publicar a melhoria.
 
