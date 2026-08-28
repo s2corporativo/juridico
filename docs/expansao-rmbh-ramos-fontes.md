@@ -47,6 +47,10 @@ No recorte TJMG/JEC de 01/01/2025 a 26/08/2026, a consulta-base retornou total e
 
 Esse resultado **não comprova inexistência de demandas cíveis ou consumeristas**, nem autoriza tratar outros códigos de assunto como descendentes das raízes 899/1156. A próxima coleta temática dependerá de mapeamento oficial, versionado e revisado da árvore TPU e de nova autorização metodológica para os códigos que forem comprovadamente associados.
 
+### Árvore de descendentes autorizada em 28/08/2026
+
+Após autorização expressa, o Atlas passou a manter a árvore taxonômica pública do CNJ em [`data/tpu-civil-consumer-tree.json`](../data/tpu-civil-consumer-tree.json): 405 nós, sendo 338 descendentes de Direito Civil (`899`) e 65 de Direito do Consumidor (`1156`). O método, a fonte e as restrições de uso estão documentados em [`arvore-tpu-civel-consumidor.md`](arvore-tpu-civel-consumidor.md). O artefato é uma base de classificação, não uma métrica processual; a validação da indexação no DataJud permanece etapa autônoma e obrigatória.
+
 ## Mapeamento preliminar de jurisdição TJMG
 
 Foi produzido um levantamento de orientação com 34 consultas institucionais do TJMG. Ele servirá apenas para organizar a próxima coleta e **não será publicado como métrica** até a validação individual das fontes e dos códigos de órgão na API DataJud. O mapeamento indica comarcas próprias nos quatro municípios prioritários: Belo Horizonte, Betim, Contagem e Igarapé. Também identifica municípios que dependem de comarca-sede, como Baldim (Sete Lagoas), Capim Branco (Matozinhos), Florestal (Juatuba), Mário Campos e Sarzedo (Ibirité), Nova União e Taquaraçu de Minas (Caeté), Raposos e Rio Acima (Nova Lima), Rio Manso (Bonfim), São Joaquim de Bicas (Igarapé) e São José da Lapa (Vespasiano).

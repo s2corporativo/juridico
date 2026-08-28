@@ -1,0 +1,3269 @@
+{
+  "schemaVersion": 1,
+  "scope": "tpu_official_descendants_civil_899_consumer_1156",
+  "source": {
+    "authority": "Conselho Nacional de Justiça",
+    "publicTreeUrl": "https://www.cnj.jus.br/sgt/consulta_publica_assuntos.php",
+    "version": "26/05/2026",
+    "method": "Leitura sequencial da expansão pública da árvore de Assuntos TPU; sem dados processuais ou respostas brutas."
+  },
+  "retrievedAt": "2026-08-28T16:00:13.016Z",
+  "roots": [
+    {
+      "code": 899,
+      "label": "DIREITO CIVIL",
+      "descendantCount": 338
+    },
+    {
+      "code": 1156,
+      "label": "DIREITO DO CONSUMIDOR",
+      "descendantCount": 65
+    }
+  ],
+  "nodes": [
+    {
+      "code": 899,
+      "label": "DIREITO CIVIL",
+      "parentCode": null,
+      "rootCode": 899,
+      "depth": 0
+    },
+    {
+      "code": 1156,
+      "label": "DIREITO DO CONSUMIDOR",
+      "parentCode": null,
+      "rootCode": 1156,
+      "depth": 0
+    },
+    {
+      "code": 12935,
+      "parentCode": 899,
+      "label": "Bem de Família Legal",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 10432,
+      "parentCode": 899,
+      "label": "Coisas",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 12937,
+      "parentCode": 899,
+      "label": "Direitos da Personalidade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 9616,
+      "parentCode": 899,
+      "label": "Empresas",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 5626,
+      "parentCode": 899,
+      "label": "Família",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 7947,
+      "parentCode": 899,
+      "label": "Fatos Jurídicos",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 14205,
+      "parentCode": 899,
+      "label": "Lei Geral de Proteção de Dados (LGPD)",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 7681,
+      "parentCode": 899,
+      "label": "Obrigações",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 9981,
+      "parentCode": 899,
+      "label": "Pessoas Jurídicas",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 5754,
+      "parentCode": 899,
+      "label": "Pessoas naturais",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 15219,
+      "parentCode": 899,
+      "label": "Prestação de Contas",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 10431,
+      "parentCode": 899,
+      "label": "Responsabilidade Civil",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 7673,
+      "parentCode": 899,
+      "label": "Sucessões",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 1
+    },
+    {
+      "code": 11974,
+      "parentCode": 1156,
+      "label": "Cláusulas Abusivas",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 11868,
+      "parentCode": 1156,
+      "label": "Combustíveis e derivados",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 7771,
+      "parentCode": 1156,
+      "label": "Contratos de Consumo",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 12930,
+      "parentCode": 1156,
+      "label": "Cursos Extracurriculares",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 11810,
+      "parentCode": 1156,
+      "label": "Dever de Informação",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 11864,
+      "parentCode": 1156,
+      "label": "Irregularidade no atendimento",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 11866,
+      "parentCode": 1156,
+      "label": "Jogos / Sorteios / Promoções comerciais",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 11812,
+      "parentCode": 1156,
+      "label": "Oferta e Publicidade",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 11811,
+      "parentCode": 1156,
+      "label": "Práticas Abusivas",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 6220,
+      "parentCode": 1156,
+      "label": "Responsabilidade do Fornecedor",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 15048,
+      "parentCode": 1156,
+      "label": "Superendividamento",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 11865,
+      "parentCode": 1156,
+      "label": "Vendas casadas",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 1
+    },
+    {
+      "code": 10495,
+      "parentCode": 10432,
+      "label": "Anticrese",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 11412,
+      "parentCode": 10432,
+      "label": "Conflito fundiário coletivo rural",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 11413,
+      "parentCode": 10432,
+      "label": "Conflito fundiário coletivo urbano",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10482,
+      "parentCode": 10432,
+      "label": "Enfiteuse",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10487,
+      "parentCode": 10432,
+      "label": "Habitação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10494,
+      "parentCode": 10432,
+      "label": "Hipoteca",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10488,
+      "parentCode": 10432,
+      "label": "Penhor",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10444,
+      "parentCode": 10432,
+      "label": "Posse",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10496,
+      "parentCode": 10432,
+      "label": "Promessa de Compra e Venda",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10448,
+      "parentCode": 10432,
+      "label": "Propriedade",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10483,
+      "parentCode": 10432,
+      "label": "Servidão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10485,
+      "parentCode": 10432,
+      "label": "Superfície",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10486,
+      "parentCode": 10432,
+      "label": "Uso",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10484,
+      "parentCode": 10432,
+      "label": "Usufruto",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 9617,
+      "parentCode": 9616,
+      "label": "Espécies de Sociedades",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5009,
+      "parentCode": 9616,
+      "label": "Mercado de Capitais",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 4993,
+      "parentCode": 9616,
+      "label": "Recuperação judicial e Falência",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5724,
+      "parentCode": 9616,
+      "label": "Sociedade",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5779,
+      "parentCode": 5626,
+      "label": "Alimentos",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 14126,
+      "parentCode": 5626,
+      "label": "Alimentos Gravídicos",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7661,
+      "parentCode": 5626,
+      "label": "Bem de Família (Voluntário)",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5808,
+      "parentCode": 5626,
+      "label": "Casamento",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 12241,
+      "parentCode": 5626,
+      "label": "Curatela",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 15046,
+      "parentCode": 5626,
+      "label": "Investigação de Paternidade Pós Morte",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 15047,
+      "parentCode": 5626,
+      "label": "Reconhecimento/Dissolução Sócio Afetivo Pós Morte",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7659,
+      "parentCode": 5626,
+      "label": "Regime de Bens Entre os Cônjuges",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10577,
+      "parentCode": 5626,
+      "label": "Relações de Parentesco",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 12235,
+      "parentCode": 5626,
+      "label": "Tutela",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7657,
+      "parentCode": 5626,
+      "label": "Tutela e Curatela",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7656,
+      "parentCode": 5626,
+      "label": "União Estável ou Concubinato",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7660,
+      "parentCode": 5626,
+      "label": "Usufruto e Administração dos Bens de Filhos Menores",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10948,
+      "parentCode": 5626,
+      "label": "Violência Doméstica Contra a Mulher",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 15173,
+      "parentCode": 5626,
+      "label": "Violência Doméstica e Familiar contra Criança e Adolescente",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 4701,
+      "parentCode": 7947,
+      "label": "Ato / Negócio Jurídico",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5632,
+      "parentCode": 7947,
+      "label": "Prescrição e Decadência",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 14207,
+      "parentCode": 14205,
+      "label": "Privacidade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 14206,
+      "parentCode": 14205,
+      "label": "Proteção de Dados Pessoais",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7690,
+      "parentCode": 7681,
+      "label": "Adimplemento e Extinção",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7694,
+      "parentCode": 7681,
+      "label": "Atos Unilaterais",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 12980,
+      "parentCode": 7681,
+      "label": "Direito de Empresa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 9580,
+      "parentCode": 7681,
+      "label": "Espécies de Contratos",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7717,
+      "parentCode": 7681,
+      "label": "Espécies de Títulos de Crédito",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7691,
+      "parentCode": 7681,
+      "label": "Inadimplemento",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7696,
+      "parentCode": 7681,
+      "label": "Preferências e Privilégios Creditórios",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 4949,
+      "parentCode": 7681,
+      "label": "Títulos de Crédito",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7688,
+      "parentCode": 7681,
+      "label": "Transmissão",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 4897,
+      "parentCode": 9981,
+      "label": "Associação",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 4905,
+      "parentCode": 9981,
+      "label": "Fundação de Direito Privado",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7952,
+      "parentCode": 9981,
+      "label": "Organizações Religiosas",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7953,
+      "parentCode": 9981,
+      "label": "Partido Político",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 9541,
+      "parentCode": 5754,
+      "label": "Capacidade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 9542,
+      "parentCode": 5754,
+      "label": "Curadoria dos bens do ausente",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7949,
+      "parentCode": 5754,
+      "label": "Direitos da Personalidade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 15189,
+      "parentCode": 5754,
+      "label": "Morte Presumida",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 15306,
+      "parentCode": 5754,
+      "label": "Nome Social",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 9543,
+      "parentCode": 5754,
+      "label": "Sucessão Provisória",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 14694,
+      "parentCode": 10431,
+      "label": "DPVAT",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10439,
+      "parentCode": 10431,
+      "label": "Indenização por Dano Material",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 10433,
+      "parentCode": 10431,
+      "label": "Indenização por Dano Moral",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 15367,
+      "parentCode": 10431,
+      "label": "SPVAT",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 11991,
+      "parentCode": 7673,
+      "label": "Adjudicação de herança",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7676,
+      "parentCode": 7673,
+      "label": "Administração de herança",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 12162,
+      "parentCode": 7673,
+      "label": "Cremação/Traslado",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5834,
+      "parentCode": 7673,
+      "label": "Deserdação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5832,
+      "parentCode": 7673,
+      "label": "Exclusão de herdeiro ou legatário",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 15088,
+      "parentCode": 7673,
+      "label": "Indignidade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7687,
+      "parentCode": 7673,
+      "label": "Inventário e Partilha",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 15087,
+      "parentCode": 7673,
+      "label": "Inventário Negativo",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5829,
+      "parentCode": 7673,
+      "label": "Nulidade e Anulação de Partilha e Adjudicação de Herança",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5825,
+      "parentCode": 7673,
+      "label": "Nulidade e Anulação de Testamento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5833,
+      "parentCode": 7673,
+      "label": "Petição de Herança",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 5831,
+      "parentCode": 7673,
+      "label": "Sub-rogação de Vinculo",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 2
+    },
+    {
+      "code": 7752,
+      "parentCode": 7771,
+      "label": "Bancários",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 11808,
+      "parentCode": 7771,
+      "label": "Capitalização e Previdência Privada",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7772,
+      "parentCode": 7771,
+      "label": "Cartão de Crédito",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 11861,
+      "parentCode": 7771,
+      "label": "Combustíveis e derivados",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7619,
+      "parentCode": 7771,
+      "label": "Consórcio",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7620,
+      "parentCode": 7771,
+      "label": "Estabelecimentos de Ensino",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7773,
+      "parentCode": 7771,
+      "label": "Financiamento de Produto",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7761,
+      "parentCode": 7771,
+      "label": "Fornecimento de Água",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7760,
+      "parentCode": 7771,
+      "label": "Fornecimento de Energia Elétrica",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 6233,
+      "parentCode": 7771,
+      "label": "Planos de Saúde",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 11860,
+      "parentCode": 7771,
+      "label": "Produto Impróprio",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7621,
+      "parentCode": 7771,
+      "label": "Seguro",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7775,
+      "parentCode": 7771,
+      "label": "Serviços Hospitalares",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7774,
+      "parentCode": 7771,
+      "label": "Serviços Profissionais",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7617,
+      "parentCode": 7771,
+      "label": "Telefonia",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 4862,
+      "parentCode": 7771,
+      "label": "Transporte Aéreo",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 11809,
+      "parentCode": 7771,
+      "label": "Transporte Aquaviário",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7776,
+      "parentCode": 7771,
+      "label": "Transporte Terrestre",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7618,
+      "parentCode": 7771,
+      "label": "Turismo",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 12931,
+      "parentCode": 12930,
+      "label": "Cobrança",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7769,
+      "parentCode": 6220,
+      "label": "Abatimento proporcional do preço",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7780,
+      "parentCode": 6220,
+      "label": "Indenização por Dano Material",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7779,
+      "parentCode": 6220,
+      "label": "Indenização por Dano Moral",
+      "expandable": true,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7770,
+      "parentCode": 6220,
+      "label": "Interpretação / Revisão de Contrato",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 11867,
+      "parentCode": 6220,
+      "label": "Produto Impróprio",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 14925,
+      "parentCode": 6220,
+      "label": "Repetição do Indébito",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7768,
+      "parentCode": 6220,
+      "label": "Rescisão do contrato e devolução do dinheiro",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 7767,
+      "parentCode": 6220,
+      "label": "Substituição do Produto",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 2
+    },
+    {
+      "code": 10491,
+      "parentCode": 10488,
+      "label": "Direitos e Títulos de Crédito",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10490,
+      "parentCode": 10488,
+      "label": "Industrial / Mercantil",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10493,
+      "parentCode": 10488,
+      "label": "Legal",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10489,
+      "parentCode": 10488,
+      "label": "Rural - Agrícola/Pecuário",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10492,
+      "parentCode": 10488,
+      "label": "Veículos",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10447,
+      "parentCode": 10444,
+      "label": "Aquisição",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10445,
+      "parentCode": 10444,
+      "label": "Esbulho / Turbação / Ameaça",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10446,
+      "parentCode": 10444,
+      "label": "Imissão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10450,
+      "parentCode": 10448,
+      "label": "Adjudicação Compulsória",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10454,
+      "parentCode": 10448,
+      "label": "Alienação Judicial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10455,
+      "parentCode": 10448,
+      "label": "Aquisição",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10462,
+      "parentCode": 10448,
+      "label": "Condomínio",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10463,
+      "parentCode": 10448,
+      "label": "Condomínio em Edifício",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10461,
+      "parentCode": 10448,
+      "label": "Direito de Vizinhança",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10451,
+      "parentCode": 10448,
+      "label": "Divisão e Demarcação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10470,
+      "parentCode": 10448,
+      "label": "Incorporação Imobiliária",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10449,
+      "parentCode": 10448,
+      "label": "Perda da Propriedade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10481,
+      "parentCode": 10448,
+      "label": "Propriedade Fiduciária",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4654,
+      "parentCode": 10448,
+      "label": "Propriedade Intelectual / Industrial",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10480,
+      "parentCode": 10448,
+      "label": "Propriedade Resolúvel",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10452,
+      "parentCode": 10448,
+      "label": "Reivindicação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10453,
+      "parentCode": 10448,
+      "label": "Retificação de Área de Imóvel",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9623,
+      "parentCode": 9617,
+      "label": "Anônima",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9626,
+      "parentCode": 9617,
+      "label": "Coligadas",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9624,
+      "parentCode": 9617,
+      "label": "Comandita por Ações",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9621,
+      "parentCode": 9617,
+      "label": "Comandita Simples",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9618,
+      "parentCode": 9617,
+      "label": "Conta de Participação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9625,
+      "parentCode": 9617,
+      "label": "Cooperativa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9627,
+      "parentCode": 9617,
+      "label": "Dependente de Autorização",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9984,
+      "parentCode": 9617,
+      "label": "Em comum / De fato",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9629,
+      "parentCode": 9617,
+      "label": "Estrangeira",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9622,
+      "parentCode": 9617,
+      "label": "Limitada",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9620,
+      "parentCode": 9617,
+      "label": "Nome Coletivo",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9619,
+      "parentCode": 9617,
+      "label": "Simples",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5010,
+      "parentCode": 5009,
+      "label": "Bolsa de Valores",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9558,
+      "parentCode": 4993,
+      "label": "Administração judicial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4998,
+      "parentCode": 4993,
+      "label": "Autofalência",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9559,
+      "parentCode": 4993,
+      "label": "Classificação de créditos",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5000,
+      "parentCode": 4993,
+      "label": "Concurso de Credores",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9556,
+      "parentCode": 4993,
+      "label": "Convolação de recuperação judicial em falência",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10924,
+      "parentCode": 4993,
+      "label": "Depósito Elisivo",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 11985,
+      "parentCode": 4993,
+      "label": "Extinção das Obrigaões do Falido",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9555,
+      "parentCode": 4993,
+      "label": "Ineficácia de atos em relação à massa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5001,
+      "parentCode": 4993,
+      "label": "Liquidação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4994,
+      "parentCode": 4993,
+      "label": "Recuperação extrajudicial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5003,
+      "parentCode": 4993,
+      "label": "Revogação de atos praticados em prejuízo de credores e da massa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9539,
+      "parentCode": 5724,
+      "label": "Alteração de capital",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4933,
+      "parentCode": 5724,
+      "label": "Apuração de haveres",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9537,
+      "parentCode": 5724,
+      "label": "Cisão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9533,
+      "parentCode": 5724,
+      "label": "Coligação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4934,
+      "parentCode": 5724,
+      "label": "Constituição",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4939,
+      "parentCode": 5724,
+      "label": "Desconsideração da Personalidade Jurídica",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4935,
+      "parentCode": 5724,
+      "label": "Dissolução",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9536,
+      "parentCode": 5724,
+      "label": "Fusão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9535,
+      "parentCode": 5724,
+      "label": "Incorporação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4940,
+      "parentCode": 5724,
+      "label": "Ingresso e Exclusão dos Sócios na Sociedade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9538,
+      "parentCode": 5724,
+      "label": "Liquidação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4942,
+      "parentCode": 5724,
+      "label": "Responsabilidade dos sócios e administradores",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4943,
+      "parentCode": 5724,
+      "label": "Transferência de cotas",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9534,
+      "parentCode": 5724,
+      "label": "Transformação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5787,
+      "parentCode": 5779,
+      "label": "Exoneração",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 6239,
+      "parentCode": 5779,
+      "label": "Fixação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 6238,
+      "parentCode": 5779,
+      "label": "Oferta",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5788,
+      "parentCode": 5779,
+      "label": "Revisão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 11988,
+      "parentCode": 5808,
+      "label": "Conversão da união estável em casamento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7664,
+      "parentCode": 5808,
+      "label": "Dissolução",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5813,
+      "parentCode": 5808,
+      "label": "Nulidade / Anulação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12244,
+      "parentCode": 12241,
+      "label": "Dispensa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12242,
+      "parentCode": 12241,
+      "label": "Levantamento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12245,
+      "parentCode": 12241,
+      "label": "Nomeação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12243,
+      "parentCode": 12241,
+      "label": "Remoção",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7671,
+      "parentCode": 10577,
+      "label": "Adoção de Maior",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 11977,
+      "parentCode": 10577,
+      "label": "Alienação Parental",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5801,
+      "parentCode": 10577,
+      "label": "Busca e Apreensão de Menores",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5802,
+      "parentCode": 10577,
+      "label": "Guarda",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10936,
+      "parentCode": 10577,
+      "label": "Guarda com genitor ou responsável no exterior",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7667,
+      "parentCode": 10577,
+      "label": "Investigação de Maternidade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5804,
+      "parentCode": 10577,
+      "label": "Investigação de Paternidade",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5805,
+      "parentCode": 10577,
+      "label": "Regulamentação de Visitas",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 11986,
+      "parentCode": 10577,
+      "label": "Suspensão ou Extinção do Poder Familiar",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12237,
+      "parentCode": 12235,
+      "label": "Dispensa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12240,
+      "parentCode": 12235,
+      "label": "Levantamento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12236,
+      "parentCode": 12235,
+      "label": "Nomeação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12238,
+      "parentCode": 12235,
+      "label": "Remoção",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 12239,
+      "parentCode": 12235,
+      "label": "Remoção",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14924,
+      "parentCode": 7656,
+      "label": "Partilha",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7677,
+      "parentCode": 7656,
+      "label": "Reconhecimento / Dissolução",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7672,
+      "parentCode": 7656,
+      "label": "União Homoafetiva",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4703,
+      "parentCode": 4701,
+      "label": "Defeito, nulidade ou anulação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4706,
+      "parentCode": 4701,
+      "label": "Evicção ou Vicio Redibitório",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7709,
+      "parentCode": 7690,
+      "label": "Compensação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7710,
+      "parentCode": 7690,
+      "label": "Confusão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7707,
+      "parentCode": 7690,
+      "label": "Dação em Pagamento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 15628,
+      "parentCode": 7690,
+      "label": "Desconto em Benefício Previdenciário de contribuição associativa ou sindical (ADPFs 1234 e 1236)",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10592,
+      "parentCode": 7690,
+      "label": "Desconto em Folha de Pagamento/Benefício Previdenciário",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7706,
+      "parentCode": 7690,
+      "label": "Imputação do Pagamento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7708,
+      "parentCode": 7690,
+      "label": "Novação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7703,
+      "parentCode": 7690,
+      "label": "Pagamento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7705,
+      "parentCode": 7690,
+      "label": "Pagamento com Sub-rogação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7704,
+      "parentCode": 7690,
+      "label": "Pagamento em Consignação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7711,
+      "parentCode": 7690,
+      "label": "Remissão das Dívidas",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7715,
+      "parentCode": 7694,
+      "label": "Enriquecimento sem Causa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7713,
+      "parentCode": 7694,
+      "label": "Gestão de Negócios",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7714,
+      "parentCode": 7694,
+      "label": "Pagamento Indevido",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7712,
+      "parentCode": 7694,
+      "label": "Promessa de Recompensa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9581,
+      "parentCode": 9580,
+      "label": "Agência e Distribuição",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 13055,
+      "parentCode": 9580,
+      "label": "Agência e Distribuição",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9582,
+      "parentCode": 9580,
+      "label": "Alienação Fiduciária",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9584,
+      "parentCode": 9580,
+      "label": "Arrendamento Mercantil",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9583,
+      "parentCode": 9580,
+      "label": "Arrendamento Rural",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4728,
+      "parentCode": 9580,
+      "label": "Câmbio",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9585,
+      "parentCode": 9580,
+      "label": "Cartão de Crédito",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14917,
+      "parentCode": 9580,
+      "label": "Cessão de Direitos",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9586,
+      "parentCode": 9580,
+      "label": "Comissão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9602,
+      "parentCode": 9580,
+      "label": "Comodato",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9587,
+      "parentCode": 9580,
+      "label": "Compra e Venda",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9606,
+      "parentCode": 9580,
+      "label": "Compromisso",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14918,
+      "parentCode": 9580,
+      "label": "Confissão/Composição de Dívida",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9604,
+      "parentCode": 9580,
+      "label": "Constituição de Renda",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9607,
+      "parentCode": 9580,
+      "label": "Contratos Bancários",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9588,
+      "parentCode": 9580,
+      "label": "Corretagem",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 13124,
+      "parentCode": 9580,
+      "label": "Corretagem",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10501,
+      "parentCode": 9580,
+      "label": "Crédito Rural",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9589,
+      "parentCode": 9580,
+      "label": "Depósito",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 13136,
+      "parentCode": 9580,
+      "label": "Depósito",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9590,
+      "parentCode": 9580,
+      "label": "Doação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 5680,
+      "parentCode": 9580,
+      "label": "Edição",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9591,
+      "parentCode": 9580,
+      "label": "Empreitada",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 13153,
+      "parentCode": 9580,
+      "label": "Empreitada",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9601,
+      "parentCode": 9580,
+      "label": "Estimatório",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9592,
+      "parentCode": 9580,
+      "label": "Fiança",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14916,
+      "parentCode": 9580,
+      "label": "Fornecimento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9608,
+      "parentCode": 9580,
+      "label": "Franquia",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9605,
+      "parentCode": 9580,
+      "label": "Jogo e Aposta",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9593,
+      "parentCode": 9580,
+      "label": "Locação de Imóvel",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9609,
+      "parentCode": 9580,
+      "label": "Locação de Móvel",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9594,
+      "parentCode": 9580,
+      "label": "Mandato",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 13230,
+      "parentCode": 9580,
+      "label": "Mútuo",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9603,
+      "parentCode": 9580,
+      "label": "Mútuo",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4794,
+      "parentCode": 9580,
+      "label": "Parceria Agrícola e/ou pecuária",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9596,
+      "parentCode": 9580,
+      "label": "Prestação de Serviços",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 13262,
+      "parentCode": 9580,
+      "label": "Prestação de Serviços",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4805,
+      "parentCode": 9580,
+      "label": "Previdência privada",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4813,
+      "parentCode": 9580,
+      "label": "Representação comercial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9597,
+      "parentCode": 9580,
+      "label": "Seguro",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4839,
+      "parentCode": 9580,
+      "label": "Sistema Financeiro da Habitação",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9598,
+      "parentCode": 9580,
+      "label": "Transação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9599,
+      "parentCode": 9580,
+      "label": "Transporte de Coisas",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9600,
+      "parentCode": 9580,
+      "label": "Transporte de Pessoas",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9595,
+      "parentCode": 9580,
+      "label": "Troca ou Permuta",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4961,
+      "parentCode": 7717,
+      "label": "Cédula de Crédito à Exportação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4960,
+      "parentCode": 7717,
+      "label": "Cédula de Crédito Bancário",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4962,
+      "parentCode": 7717,
+      "label": "Cédula de Crédito Comercial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4963,
+      "parentCode": 7717,
+      "label": "Cédula de Crédito Industrial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4964,
+      "parentCode": 7717,
+      "label": "Cédula de Crédito Rural",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4968,
+      "parentCode": 7717,
+      "label": "Cédula de Produto Rural",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4969,
+      "parentCode": 7717,
+      "label": "Cédula Hipotecária",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4970,
+      "parentCode": 7717,
+      "label": "Cheque",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4971,
+      "parentCode": 7717,
+      "label": "Debêntures",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4972,
+      "parentCode": 7717,
+      "label": "Duplicata",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4973,
+      "parentCode": 7717,
+      "label": "Letra de Câmbio",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4974,
+      "parentCode": 7717,
+      "label": "Nota de Crédito Comercial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4975,
+      "parentCode": 7717,
+      "label": "Nota de Crédito Industrial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4976,
+      "parentCode": 7717,
+      "label": "Nota de Crédito Rural",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4980,
+      "parentCode": 7717,
+      "label": "Nota Promissória",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4981,
+      "parentCode": 7717,
+      "label": "Warrant",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7701,
+      "parentCode": 7691,
+      "label": "Arras ou Sinal",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7700,
+      "parentCode": 7691,
+      "label": "Cláusula Penal",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10855,
+      "parentCode": 7691,
+      "label": "Comissão de Permanência",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7697,
+      "parentCode": 7691,
+      "label": "Correção Monetária",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7699,
+      "parentCode": 7691,
+      "label": "Juros de Mora - Legais / Contratuais",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14066,
+      "parentCode": 7691,
+      "label": "Mora",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7698,
+      "parentCode": 7691,
+      "label": "Perdas e Danos",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10582,
+      "parentCode": 7691,
+      "label": "Rescisão / Resolução",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4951,
+      "parentCode": 4949,
+      "label": "Anulação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14740,
+      "parentCode": 4949,
+      "label": "Protesto de CDA",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14743,
+      "parentCode": 4949,
+      "label": "Protesto de CDA",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4957,
+      "parentCode": 4949,
+      "label": "Requisitos",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9575,
+      "parentCode": 4949,
+      "label": "Sustação de Protesto",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 7689,
+      "parentCode": 7688,
+      "label": "Assunção de Dívida",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4718,
+      "parentCode": 7688,
+      "label": "Cessão de Crédito",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4899,
+      "parentCode": 4897,
+      "label": "Assembléia",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4902,
+      "parentCode": 4897,
+      "label": "Eleição",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9546,
+      "parentCode": 4897,
+      "label": "Exclusão de associado",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4904,
+      "parentCode": 4897,
+      "label": "Extinção",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9545,
+      "parentCode": 4897,
+      "label": "Inclusão de associado",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4907,
+      "parentCode": 4905,
+      "label": "Assembléia",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4909,
+      "parentCode": 4905,
+      "label": "Eleição",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 4910,
+      "parentCode": 4905,
+      "label": "Extinção",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9547,
+      "parentCode": 4905,
+      "label": "Fiscalização",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9551,
+      "parentCode": 7953,
+      "label": "Eleições - Diretórios",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9549,
+      "parentCode": 7953,
+      "label": "Exclusão de filiado",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 9550,
+      "parentCode": 7953,
+      "label": "Fusão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 11954,
+      "parentCode": 10439,
+      "label": "Acidente de Trabalho - Ressarcimento ao Erário",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10441,
+      "parentCode": 10439,
+      "label": "Acidente de Trânsito",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14919,
+      "parentCode": 10439,
+      "label": "Atraso na Entrega do Imóvel",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14921,
+      "parentCode": 10439,
+      "label": "Direito Autoral",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10443,
+      "parentCode": 10439,
+      "label": "Direito de Imagem",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10442,
+      "parentCode": 10439,
+      "label": "Lei de Imprensa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10440,
+      "parentCode": 10439,
+      "label": "Serviços de Saúde",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10435,
+      "parentCode": 10433,
+      "label": "Acidente de Trânsito",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14920,
+      "parentCode": 10433,
+      "label": "Atraso na Entrega do Imóvel",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14922,
+      "parentCode": 10433,
+      "label": "Direito Autoral",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10437,
+      "parentCode": 10433,
+      "label": "Direito de Imagem",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10436,
+      "parentCode": 10433,
+      "label": "Lei de Imprensa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 10434,
+      "parentCode": 10433,
+      "label": "Serviços de Saúde",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 3
+    },
+    {
+      "code": 14757,
+      "parentCode": 7752,
+      "label": "Crédito Direto ao Consumidor - CDC",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 14758,
+      "parentCode": 7752,
+      "label": "Crédito Rotativo",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 11806,
+      "parentCode": 7752,
+      "label": "Empréstimo consignado",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 10945,
+      "parentCode": 7752,
+      "label": "Expurgos Inflacionários / Planos Econômicos",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 15546,
+      "parentCode": 7752,
+      "label": "Fraude Bancária",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 14926,
+      "parentCode": 7752,
+      "label": "Revisão de Juros Remuneratórios, Capitalização/Anatocismo",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 11807,
+      "parentCode": 7752,
+      "label": "Tarifas",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 12222,
+      "parentCode": 6233,
+      "label": "Fornecimento de medicamentos",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 12225,
+      "parentCode": 6233,
+      "label": "Reajuste contratual",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 12223,
+      "parentCode": 6233,
+      "label": "Tratamento médico-hospitalar",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 12224,
+      "parentCode": 6233,
+      "label": "Unidade de terapia intensiva (UTI) ou Unidade de cuidados intensivos (UCI)",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 7626,
+      "parentCode": 7617,
+      "label": "Assinatura Básica Mensal",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 10598,
+      "parentCode": 7617,
+      "label": "Cobrança indevida de ligações",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 7627,
+      "parentCode": 7617,
+      "label": "Pulsos Excedentes",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 7748,
+      "parentCode": 4862,
+      "label": "Acidente Aéreo",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 4829,
+      "parentCode": 4862,
+      "label": "Atraso de vôo",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 4830,
+      "parentCode": 4862,
+      "label": "Cancelamento de vôo",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 4832,
+      "parentCode": 4862,
+      "label": "Extravio de bagagem",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 4831,
+      "parentCode": 4862,
+      "label": "Overbooking",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 11814,
+      "parentCode": 7776,
+      "label": "Transporte Ferroviário",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 11815,
+      "parentCode": 7776,
+      "label": "Transporte Rodoviário",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 12932,
+      "parentCode": 12931,
+      "label": "Mensalidades",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 12042,
+      "parentCode": 7779,
+      "label": "Análise de Crédito",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 6226,
+      "parentCode": 7779,
+      "label": "Inclusão Indevida em Cadastro de Inadimplentes",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 7781,
+      "parentCode": 7779,
+      "label": "Protesto Indevido de Título",
+      "expandable": false,
+      "rootCode": 1156,
+      "depth": 3
+    },
+    {
+      "code": 10456,
+      "parentCode": 10455,
+      "label": "Acessão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 11980,
+      "parentCode": 10455,
+      "label": "Usucapião Conjugal",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10500,
+      "parentCode": 10455,
+      "label": "Usucapião da L 6.969/1981",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 11990,
+      "parentCode": 10455,
+      "label": "Usucapião de bem móvel",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10457,
+      "parentCode": 10455,
+      "label": "Usucapião Especial (Constitucional)",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10460,
+      "parentCode": 10455,
+      "label": "Usucapião Especial Coletiva",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10458,
+      "parentCode": 10455,
+      "label": "Usucapião Extraordinária",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10459,
+      "parentCode": 10455,
+      "label": "Usucapião Ordinária",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10464,
+      "parentCode": 10463,
+      "label": "Administração",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10465,
+      "parentCode": 10463,
+      "label": "Alteração de Coisa Comum",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10466,
+      "parentCode": 10463,
+      "label": "Assembléia",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10467,
+      "parentCode": 10463,
+      "label": "Despesas Condominiais",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10468,
+      "parentCode": 10463,
+      "label": "Direitos / Deveres do Condômino",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10595,
+      "parentCode": 10463,
+      "label": "Multa",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10469,
+      "parentCode": 10463,
+      "label": "Vaga de garagem",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4670,
+      "parentCode": 4654,
+      "label": "Desenho Industrial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4656,
+      "parentCode": 4654,
+      "label": "Direito Autoral",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4680,
+      "parentCode": 4654,
+      "label": "Marca",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4660,
+      "parentCode": 4654,
+      "label": "Patente",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10499,
+      "parentCode": 4654,
+      "label": "Programa de Computador",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 14923,
+      "parentCode": 7664,
+      "label": "Partilha",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 12156,
+      "parentCode": 11986,
+      "label": "Extinção do Poder Familiar",
+      "expandable": true,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 12155,
+      "parentCode": 11986,
+      "label": "Suspensão do Poder Familiar",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 9614,
+      "parentCode": 9593,
+      "label": "Benfeitorias",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 11000,
+      "parentCode": 9593,
+      "label": "Cobrança de Aluguéis - Sem despejo",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 11001,
+      "parentCode": 9593,
+      "label": "Consignação de Chaves",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 9611,
+      "parentCode": 9593,
+      "label": "Despejo para Uso de Ascendentes e Descendentes",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 9610,
+      "parentCode": 9593,
+      "label": "Despejo para Uso Próprio",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 9612,
+      "parentCode": 9593,
+      "label": "Despejo por Denúncia Vazia",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 14915,
+      "parentCode": 9593,
+      "label": "Despejo por Inadimplemento",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 9615,
+      "parentCode": 9593,
+      "label": "Direito de Preferência",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10590,
+      "parentCode": 4805,
+      "label": "Resgate de Contribuição",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4840,
+      "parentCode": 4839,
+      "label": "Equivalência salarial",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 14735,
+      "parentCode": 4839,
+      "label": "Minha Casa, Minha Vida",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 11804,
+      "parentCode": 4839,
+      "label": "Programas de Arrendamento Residencial PAR",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4841,
+      "parentCode": 4839,
+      "label": "Quitação",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4842,
+      "parentCode": 4839,
+      "label": "Reajuste de Prestações",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4854,
+      "parentCode": 4839,
+      "label": "Revisão do Saldo Devedor",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4847,
+      "parentCode": 4839,
+      "label": "Seguro",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 14237,
+      "parentCode": 4839,
+      "label": "Sistema Financeiro Imobiliário",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4846,
+      "parentCode": 4839,
+      "label": "Sustação/Alteração de Leilão",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 11805,
+      "parentCode": 4839,
+      "label": "Tabela Price",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 4843,
+      "parentCode": 4839,
+      "label": "Transferência de Financiamento (contrato de gaveta)",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10588,
+      "parentCode": 4839,
+      "label": "Vícios de Construção",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10585,
+      "parentCode": 7699,
+      "label": "Capitalização / Anatocismo",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 10586,
+      "parentCode": 7699,
+      "label": "Limitação de Juros",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 4
+    },
+    {
+      "code": 12383,
+      "parentCode": 12156,
+      "label": "Perda por crime contra titular do mesmo poder ou descendente (L. 13.715/2018)",
+      "expandable": false,
+      "rootCode": 899,
+      "depth": 5
+    }
+  ],
+  "validation": {
+    "nodeCount": 405,
+    "descendantCount": 403,
+    "containsOnlyAuthorizedRoots": true,
+    "useRestriction": "Mapa taxonômico; não comprova competência, cobertura DataJud, órgão, município ou métrica processual."
+  }
+}

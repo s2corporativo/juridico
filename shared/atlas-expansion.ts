@@ -40,7 +40,7 @@ export const RMBH_MUNICIPALITIES: RmbhMunicipality[] = [
  * Raízes da TPU para navegação. Não equivalem, sozinhas, a competência ou fonte disponível.
  */
 export const INITIAL_LEGAL_BRANCHES: LegalBranch[] = [
-  { key: "civil-consumer", label: "Cível e consumidor", topicRoots: ["899", "1156"], jurisdictions: ["TJMG"], status: "available_in_tjmg", scopeNote: "Requer classe e órgão confirmados em cada recorte." },
+  { key: "civil-consumer", label: "Cível e consumidor", topicRoots: ["899", "1156"], jurisdictions: ["TJMG"], status: "available_in_tjmg", scopeNote: "Árvore TPU oficial mapeada; classe, órgão e indexação DataJud permanecem obrigatórios em cada recorte." },
   { key: "family-records", label: "Família, sucessões e registros", topicRoots: ["899", "7724"], jurisdictions: ["TJMG"], status: "mapping_required", scopeNote: "Não confundir Justiça comum com Juizado Especial." },
   { key: "public-tax-health", label: "Público, tributário e saúde", topicRoots: ["9985", "14", "12480"], jurisdictions: ["TJMG", "JEFazenda"], status: "mapping_required", scopeNote: "Competência e classe serão declaradas por fonte." },
   { key: "penal-jecrim", label: "Penal e JECRIM", topicRoots: ["287"], jurisdictions: ["TJMG"], status: "mapping_required", scopeNote: "Movimentos, decisões e inteiro teor permanecem camadas distintas." },
