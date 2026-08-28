@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { auditEvents, editorialUpdates, editorialUpdateRuns, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, metropolitanCoverageRuns, metropolitanJudgingBodyFacets, rmbhCivilConsumerMetrics, rmbhCivilConsumerRuns, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
+import { auditEvents, editorialUpdates, editorialUpdateRuns, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, metropolitanCoverageRuns, metropolitanJudgingBodyFacets, rmbhCivilConsumerMetrics, rmbhCivilConsumerRuns, editorialUpdateSchedules, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
 import { getNationalDistributionStatus, normalizeNationalCensusFilter, selectNationalCensusRun, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
 import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
 import { calculateAverageEvidenceScore, calculateEvidenceQuality, calculateThesisQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
@@ -237,6 +237,19 @@ export async function decideEditorialUpdate(id: number, decision: "approved" | "
   await db.update(editorialUpdates).set({ status: decision, reviewNote, reviewedByUserId, reviewedAt: new Date() }).where(eq(editorialUpdates.id, id));
   await db.insert(auditEvents).values({ entityType: "editorial_update", entityKey: String(id), action: `review_${decision}`, actorLabel: `user:${reviewedByUserId}`, sourceStatus: decision, note: reviewNote });
   return { success: true } as const;
+}
+
+export async function getEditorialScheduleByTaskUid(taskUid: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select().from(editorialUpdateSchedules).where(eq(editorialUpdateSchedules.scheduleCronTaskUid, taskUid)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertEditorialScheduleTaskUid(name: string, taskUid: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.insert(editorialUpdateSchedules).values({ name, cronExpression: "0 0 6 * * *", scheduleCronTaskUid: taskUid, enabled: 1 }).onDuplicateKeyUpdate({ set: { scheduleCronTaskUid: taskUid, enabled: 1 } });
 }
 
 export async function recordEditorialRunStart(runKey: string, sourceCount: number) {

@@ -212,14 +212,14 @@
 
 - [x] Corrigir a consulta temática para reutilizar exatamente o contrato DataJud já comprovado (`match` para grau, `terms` de classe e timestamp completo), evitando interpretar zero documentos como ausência de indexação.
 - [x] Corrigir a importação ausente de `readFile` no importador temático antes de carregar as 74 células agregadas.
-- [ ] Definir fontes públicas oficiais, periodicidade, escopo editorial e revisão humana para atualizações de julgados, legislação e fontes relevantes.
-- [ ] Configurar atualização recorrente idempotente, com falhas sanitizadas, sem publicação automática de conteúdo não revisado.
-- [ ] Implementar mapa contextual para teses pesquisadas, usando apenas relações taxonômicas e evidências públicas disponíveis.
+- [x] Definir fontes públicas oficiais, periodicidade, escopo editorial e revisão humana para atualizações de julgados, legislação e fontes relevantes.
+- [x] Configurar atualização recorrente idempotente, com falhas sanitizadas, sem publicação automática de conteúdo não revisado.
+- [x] Implementar mapa contextual para teses pesquisadas, usando apenas relações taxonômicas e evidências públicas disponíveis.
 - [ ] Validar privacidade, governança, acessibilidade e separação entre conteúdo novo, Compêndio e métricas DataJud.
 
-- [ ] Fixar a rotina diária aprovada para 06:00 UTC (03:00 em Brasília), com fila de revisão humana e sem publicação automática.
-- [ ] Selecionar e documentar fontes públicas oficiais para julgados, legislação e atualizações relevantes, com escopo inicial conservador.
-- [ ] Implementar fila de revisão e deduplicação por fonte, identificador público sanitizado e hash de conteúdo permitido.
-- [ ] Criar callback diário protegido em `/api/scheduled/` e preparar o cadastro da rotina após checkpoint e deploy.
-- [ ] Implementar mapa contextual acionado por pesquisa de tese, limitado a relações taxonômicas e evidências já catalogadas.
+- [x] Fixar a rotina diária aprovada para 06:00 UTC (03:00 em Brasília), com fila de revisão humana e sem publicação automática.
+- [x] Selecionar e documentar fontes públicas oficiais para julgados, legislação e atualizações relevantes, com escopo inicial conservador.
+- [x] Implementar fila de revisão e deduplicação por fonte, identificador público sanitizado e hash de conteúdo permitido.
+- [x] Criar callback diário protegido em `/api/scheduled/` e preparar o cadastro da rotina após checkpoint e deploy.
+- [x] Implementar mapa contextual acionado por pesquisa de tese, limitado a relações taxonômicas e evidências já catalogadas.
 

@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { sdk } from "./_core/sdk";
+import { getEditorialScheduleByTaskUid } from "./db";
 import { runEditorialUpdate, sanitizeEditorialError } from "./editorial-pipeline";
 
 export function registerEditorialScheduledRoute(app: Express) {
@@ -8,6 +9,11 @@ export function registerEditorialScheduledRoute(app: Express) {
       const user = await sdk.authenticateRequest(req);
       if (!user.isCron || !user.taskUid) {
         res.status(403).json({ error: "scheduled_only" });
+        return;
+      }
+      const schedule = await getEditorialScheduleByTaskUid(user.taskUid);
+      if (!schedule || !schedule.enabled) {
+        res.status(200).json({ ok: true, skipped: "orphan_or_disabled" });
         return;
       }
       const result = await runEditorialUpdate();
