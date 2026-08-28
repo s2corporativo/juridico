@@ -202,13 +202,13 @@
 - [x] Validar o filtro temático futuro contra privacidade, exclusão de município não confirmado e separação do censo nacional.
 - [x] Executar uma única pré-consulta DataJud/TJMG agregada para testar a indexação dos 405 códigos TPU, com `size: 0`, `_source: false` e manifesto exclusivamente sanitizado.
 - [ ] Definir camada de métricas agregadas Cível/Consumidor por categoria TPU, período e comarca DataJud confirmada, sem confundir o piloto com o censo nacional.
-- [ ] Criar componente visual público para volume agregado por categoria principal TPU, com proveniência, recorte e limitação visíveis.
-- [ ] Adicionar filtros interativos de período e comarca que só habilitem combinações efetivamente coletadas e auditáveis.
-- [ ] Modernizar a experiência visual do painel no padrão SaaS jurídico-tech, com responsividade, contraste e acessibilidade preservados.
+- [x] Criar componente visual público para volume agregado por categoria principal TPU, com proveniência, recorte e limitação visíveis.
+- [x] Adicionar filtros interativos de período e comarca que só habilitem combinações efetivamente coletadas e auditáveis.
+- [x] Modernizar a experiência visual do painel no padrão SaaS jurídico-tech, com responsividade, contraste e acessibilidade preservados.
 - [ ] Corrigir a importação ausente de `createHash` no coletor temático antes da execução real na VPS.
 - [ ] Executar e importar as células agregadas categoria × órgão × mês na camada temática isolada.
 - [ ] Implementar e validar a consulta pública com filtros e o componente visual SaaS em dados reais.
-- [ ] Testar a interface em desktop e móvel, revisar logs e salvar checkpoint publicado.
+- [x] Testar a interface em desktop e móvel, revisar logs e salvar checkpoint publicado.
 
 - [x] Corrigir a consulta temática para reutilizar exatamente o contrato DataJud já comprovado (`match` para grau, `terms` de classe e timestamp completo), evitando interpretar zero documentos como ausência de indexação.
 - [x] Corrigir a importação ausente de `readFile` no importador temático antes de carregar as 74 células agregadas.
