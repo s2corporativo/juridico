@@ -124,7 +124,7 @@
 - [x] Reduzir a exposição residual da unidade systemd Atlas sem impedir rede local, MariaDB, logs ou reinicialização automática.
 - [x] Parametrizar o coletor de baixas para saída controlada, pausa entre páginas, teto por execução e encerramento seguro em falha.
 - [x] Reconciliar a documentação da coleta de baixas com a paginação efetivamente usada e os limites do piloto.
-- [ ] Executar na VPS um único piloto TJMG de baixas, com poucas páginas, telemetria sanitizada e sem persistir identificadores.
+- [x] Executar na VPS um único piloto TJMG de baixas, com poucas páginas, telemetria sanitizada e sem persistir identificadores.
 - [x] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.
 - [x] Adicionar retentativas exponenciais limitadas, erro sanitizado e telemetria de tentativas ao coletor DataJud de baixas TJMG.
 - [x] Cobrir em teste o cálculo de retentativa, a parada após o limite e a ausência de dados de processos nos erros registrados.
