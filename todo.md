@@ -161,6 +161,7 @@
 - [x] Revalidar na VPS o banco, o usuário de aplicação e o serviço isolados após formalizar a fronteira arquitetural.
 - [ ] Inspecionar o esquema e os importadores para armazenar o piloto territorial TJMG somente como métrica agregada no banco Atlas isolado.
 - [ ] Criar importação idempotente das células de baixas por órgão e mês, com manifesto sanitizado e sem dados individuais.
+- [ ] Corrigir o acionamento do importador territorial quando executado pelo caminho simbólico `/opt/atlas-ejc/current` na VPS.
 - [ ] Distinguir no importador territorial a rejeição de órgão não autorizado da rejeição de métrica agregada malformada.
 - [ ] Validar marcadores proibidos por estrutura de dados no manifesto, sem rejeitar uma descrição textual de política de privacidade.
 - [ ] Executar e consultar o teste de importação isolada para Betim e Igarapé, sem expor ou sincronizar dados com o EJC.

@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import mysql from "mysql2/promise";
 
@@ -82,7 +82,9 @@ async function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+const invokedScript = process.argv[1] ? await realpath(process.argv[1]).catch(() => null) : null;
+
+if (invokedScript && import.meta.url === pathToFileURL(invokedScript).href) {
   main().catch(error => {
     console.error(`IMPORTACAO_BAIXAS_TERRITORIAL_ERRO: ${error instanceof Error ? error.message : "erro desconhecido"}`);
     process.exitCode = 1;
