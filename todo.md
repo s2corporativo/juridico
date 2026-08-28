@@ -193,7 +193,7 @@
 - [x] Validar as melhorias do Compêndio em dados reais, responsividade, privacidade e publicação externa.
 - [ ] Revalidar por fonte primária DataJud/TJMG os códigos e órgãos Cível/Consumidor antes de qualquer piloto, descartando mapeamentos sem identificador jurisdicional comprovado.
 - [ ] Manter fora do piloto Cível/Consumidor municípios com fonte apenas indicativa, URL não segura ou competência não comprovada.
-- [ ] Criar pré-teste agregado DataJud/TJMG de Cível/Consumidor com `size: 0`, classes, assuntos e órgãos, sem recuperação de processos individuais.
-- [ ] Confirmar no retorno agregado se as raízes TPU 899 e 1156 são indexadas de forma utilizável antes de gravar qualquer métrica do piloto.
+- [x] Criar pré-teste agregado DataJud/TJMG de Cível/Consumidor com `size: 0`, classes, assuntos e órgãos, sem recuperação de processos individuais.
+- [x] Confirmar no retorno agregado se as raízes TPU 899 e 1156 são indexadas de forma utilizável antes de gravar qualquer métrica do piloto.
 - [x] Diagnosticar o HTTP 400 do pré-teste Cível/Consumidor com uma única consulta base `size: 0`, sem `_source`, hits, identificadores ou persistência de resposta bruta.
-- [ ] Isolar incrementalmente a agregação e o filtro de `assuntos.codigo` após a aceitação da consulta-base, sem repetir a consulta temática completa às cegas.
+- [x] Isolar incrementalmente a agregação e o filtro de `assuntos.codigo` após a aceitação da consulta-base, sem repetir a consulta temática completa às cegas.
