@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
 import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getThesisRelatedDocuments, getCompendiumFreshnessOverview, getCompendiumOverview, getCompendiumQualityOverview, getEditorialUpdateQueue, getPublicEditorialUpdates, decideEditorialUpdate, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, getRmbhCivilConsumerOverview, searchCompendium } from "./db";
+import { summarizePublicDecision } from "./compendium-ai-summary";
 import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
@@ -71,6 +72,7 @@ export const appRouter = router({
       pageSize: z.number().int().min(1).max(50).optional(),
     })).query(({ input }) => searchCompendium(input)),
     dossier: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).query(({ input }) => getCitationDossier(input.externalId)),
+    aiSummary: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).mutation(({ ctx, input }) => summarizePublicDecision(input.externalId, ctx.req.ip || "anonymous")),
     thesisRelated: publicProcedure.input(z.object({ thesisId: z.number().int().positive() })).query(({ input }) => getThesisRelatedDocuments(input.thesisId)),
     reviewQueue: router({
       list: adminProcedure.input(z.object({ status: z.enum(REVIEW_STATUSES).optional(), priority: z.enum(REVIEW_PRIORITIES).optional(), tribunal: z.string().trim().min(1).max(191).optional() }).optional()).query(({ input }) => getEvidenceReviewQueue(input)),

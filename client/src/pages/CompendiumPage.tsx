@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import {
-  ArrowLeft, ArrowUpRight, BookMarked, Boxes, CheckCircle2, CircleAlert,
+  ArrowLeft, ArrowUpRight, BookMarked, Bot, Boxes, CheckCircle2, CircleAlert,
   Database, FileSearch, Landmark, Scale, Search, ShieldCheck, Sparkles,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -38,6 +38,15 @@ export default function CompendiumPage() {
   const [city, setCity] = useState("Todas");
   const [sourceStatus, setSourceStatus] = useState<SourceStatus | "Todas">("Todas");
   const [page, setPage] = useState(0);
+  const [aiSummaries, setAiSummaries] = useState<Record<string, string>>({});
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const aiSummary = trpc.compendium.aiSummary.useMutation({
+    onSuccess: (result, variables) => {
+      setAiSummaries(current => ({ ...current, [variables.externalId]: result.summary }));
+      setSummaryError(null);
+    },
+    onError: () => setSummaryError("Não foi possível gerar o resumo agora. A ficha e a fonte original continuam disponíveis."),
+  });
 
   const snapshot = overview.data;
   const searchInput = useMemo(() => ({
@@ -165,11 +174,18 @@ export default function CompendiumPage() {
                   <div><dt>Resultado</dt><dd>{decision.outcomeAppeal ?? decision.outcomeOrigin ?? "Não informado"}</dd></div>
                   <div><dt>Classificação</dt><dd>{selectedTopics.get(decision.id) ?? decision.legalArea ?? "Em revisão"}</dd></div>
                 </dl>
+                <div className="ai-summary-action">
+                  <button type="button" onClick={() => aiSummary.mutate({ externalId: decision.externalId })} disabled={aiSummary.isPending}>
+                    <Bot size={15} /> {aiSummary.isPending ? "Gerando síntese…" : "Resumo com IA"}
+                  </button>
+                  {aiSummaries[decision.externalId] && <p><b>Resumo assistido:</b> {aiSummaries[decision.externalId]}</p>}
+                </div>
                 <div className="decision-foot"><code>{decision.cnjNumber ?? decision.externalId}</code><span><a href={`/dossie/${encodeURIComponent(decision.externalId)}`}>Dossiê <ArrowUpRight size={14} /></a>{source?.sourceUrl && <a href={source.sourceUrl} target="_blank" rel="noreferrer">Fonte oficial <ArrowUpRight size={14} /></a>}</span></div>
               </article>;
             })}
             {!search.isError && decisions.length === 0 && <div className="compendium-empty">Nenhum registro corresponde aos filtros. Remova um termo ou selecione outra área.</div>}
           </div>
+          {summaryError && <p className="compendium-ai-error" role="status">{summaryError}</p>}
           {!search.isError && totalResults > COMPENDIUM_PAGE_SIZE && <div className="compendium-pagination"><button disabled={page === 0} onClick={() => setPage(current => Math.max(0, current - 1))}>Anterior</button><span>Página {page + 1} de {pageCount}</span><button disabled={page + 1 >= pageCount} onClick={() => setPage(current => current + 1)}>Próxima</button></div>}
         </section>
 

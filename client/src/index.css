@@ -332,3 +332,12 @@ body { background:#f8fafb; color:var(--ink); }
 .compendium-reference-grid small { display:block; color:#60716e; font-size:.78rem; line-height:1.42; }
 .atlas-sidebar .section-nav a:first-child { color:#0d6964; border-left-color:#0d6964; background:#eff8f5; }
 @media (max-width:760px) { .compendium-reference-grid { grid-template-columns:1fr; } .compendium-reference-grid article { min-height:0; } }
+
+/* Síntese assistida: ação opcional, sempre subordinada à ficha e à fonte. */
+.ai-summary-action { display:grid; gap:.65rem; margin-top:1rem; padding-top:.9rem; border-top:1px solid #e1e9e7; }
+.ai-summary-action button { display:inline-flex; width:max-content; align-items:center; gap:.45rem; padding:.52rem .72rem; color:#0d5e5a; border:1px solid #b6d4cd; background:#f1f8f6; font:inherit; font-size:.75rem; font-weight:800; cursor:pointer; transition:transform .16s ease,background .16s ease; }
+.ai-summary-action button:hover:not(:disabled), .ai-summary-action button:focus-visible { background:#dceee9; transform:translateY(-1px); outline:2px solid #a8612d; outline-offset:2px; }
+.ai-summary-action button:disabled { cursor:wait; opacity:.65; }
+.ai-summary-action p { margin:0; padding:.8rem; color:#45605b; border-left:3px solid #a8612d; background:#f8fbfa; font-size:.83rem; line-height:1.5; }
+.ai-summary-action p b { color:#1c4945; }
+.compendium-ai-error { margin:1rem 0 0; padding:.75rem .9rem; color:#8a412c; border-left:3px solid #b95d42; background:#fff3ef; font-size:.82rem; }

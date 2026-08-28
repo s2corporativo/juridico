@@ -233,3 +233,6 @@
 - [x] Criar uma página de consulta por fichas jurídicas, com tema, tese, autoridade, fonte, situação documental e alertas metodológicos.
 - [x] Reorientar a Home para priorizar pesquisa, taxonomia e acesso a fichas do Compêndio, preservando o painel jurimétrico como módulo separado.
 - [x] Validar linguagem, privacidade, responsividade e links de proveniência do novo Compêndio Jurídico.
+
+- [x] Adicionar resumo assistido por IA às fichas públicas, limitado a campos agregados e metadados já exibidos.
+- [x] Validar contrato de privacidade, resposta estruturada, falha segura e experiência responsiva do resumo assistido.

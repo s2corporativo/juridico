@@ -494,6 +494,25 @@ export async function getThesisRelatedDocuments(thesisId: number) {
     .limit(THESIS_MAP_RELATED_LIMIT);
 }
 
+/** Dados estritamente públicos já exibidos em ficha; usados exclusivamente para síntese assistida. */
+export async function getPublicDecisionSummaryInput(externalId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [record] = await db.select({
+    theme: jurisprudenceRecords.theme,
+    tribunal: jurisprudenceRecords.tribunal,
+    city: jurisprudenceRecords.city,
+    decisionType: jurisprudenceRecords.decisionType,
+    decisionDate: jurisprudenceRecords.decisionDate,
+    legalArea: jurisprudenceRecords.legalArea,
+    outcomeOrigin: jurisprudenceRecords.outcomeOrigin,
+    outcomeAppeal: jurisprudenceRecords.outcomeAppeal,
+    reasoningSummary: jurisprudenceRecords.reasoningSummary,
+    sourceStatus: jurisprudenceRecords.sourceStatus,
+  }).from(jurisprudenceRecords).where(eq(jurisprudenceRecords.externalId, externalId)).limit(1);
+  return record ?? null;
+}
+
 export async function getCitationDossier(externalId: string) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
