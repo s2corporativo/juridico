@@ -201,3 +201,7 @@
 - [x] Confrontar a árvore TPU oficial com a indexação agregada do DataJud/TJMG, sem inferir descendentes ou consultar processos individuais.
 - [x] Validar o filtro temático futuro contra privacidade, exclusão de município não confirmado e separação do censo nacional.
 - [x] Executar uma única pré-consulta DataJud/TJMG agregada para testar a indexação dos 405 códigos TPU, com `size: 0`, `_source: false` e manifesto exclusivamente sanitizado.
+- [ ] Definir camada de métricas agregadas Cível/Consumidor por categoria TPU, período e comarca DataJud confirmada, sem confundir o piloto com o censo nacional.
+- [ ] Criar componente visual público para volume agregado por categoria principal TPU, com proveniência, recorte e limitação visíveis.
+- [ ] Adicionar filtros interativos de período e comarca que só habilitem combinações efetivamente coletadas e auditáveis.
+- [ ] Modernizar a experiência visual do painel no padrão SaaS jurídico-tech, com responsividade, contraste e acessibilidade preservados.

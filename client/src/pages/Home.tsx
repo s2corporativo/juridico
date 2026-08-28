@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { jecDashboardData } from "@/data/jecDashboardData";
 import { AdvancedEvidencePanel } from "@/components/AdvancedEvidencePanel";
+import CivilConsumerPanel from "@/components/CivilConsumerPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { buildCompendiumHomeStats } from "@shared/compendium-home";
@@ -336,11 +337,12 @@ export default function Home() {
 
         <nav className="section-nav" aria-label="Navegação do painel">
           <a href="#visao"><span>01</span>Visão comparada</a>
-          <a href="#causas"><span>02</span>Causas</a>
-          <a href="#unidades"><span>03</span>Varas e unidades</a>
-          <a href="#tempo"><span>04</span>Tempo observado</a>
-          <a href="#metodo"><span>05</span>Metodologia</a>
-          <a href="#compendio"><span>06</span>Compêndio</a>
+          <a href="#piloto-civel-consumidor"><span>02</span>Cível / Consumidor</a>
+          <a href="#causas"><span>03</span>Causas</a>
+          <a href="#unidades"><span>04</span>Varas e unidades</a>
+          <a href="#tempo"><span>05</span>Tempo observado</a>
+          <a href="#metodo"><span>06</span>Metodologia</a>
+          <a href="#compendio"><span>07</span>Compêndio</a>
         </nav>
 
         <div className="sidebar-footnote">
@@ -367,6 +369,7 @@ export default function Home() {
         </section>
 
         <CompendiumHomePanel />
+        <CivilConsumerPanel />
 
         <section className="filter-ribbon" aria-label="Filtros do painel">
           <div className="filter-intro"><Filter size={17} /><span>Refinar a evidência</span></div>

@@ -1,6 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
-import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumFreshnessOverview, getCompendiumOverview, getCompendiumQualityOverview, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, searchCompendium } from "./db";
+import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getCompendiumFreshnessOverview, getCompendiumOverview, getCompendiumQualityOverview, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, getRmbhCivilConsumerOverview, searchCompendium } from "./db";
 import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
@@ -44,6 +44,13 @@ export const appRouter = router({
   }),
   metropolitan: router({
     coverage: publicProcedure.query(() => getMetropolitanCoverageOverview()),
+  }),
+  civilConsumer: router({
+    overview: publicProcedure.input(z.object({
+      from: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+      to: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+      municipalityIbgeCode: z.string().regex(/^\d{7}$/).optional(),
+    }).optional()).query(({ input }) => getRmbhCivilConsumerOverview(input)),
   }),
   compendium: router({
     overview: publicProcedure.query(() => getCompendiumOverview()),

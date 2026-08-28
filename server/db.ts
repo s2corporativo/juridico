@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, metropolitanCoverageRuns, metropolitanJudgingBodyFacets, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
+import { auditEvents, evidenceReviewItems, evidenceSources, ingestionBatches, InsertUser, jurisprudenceRecords, jurisprudenceTopics, legalTheses, legalTopics, metropolitanCoverageRuns, metropolitanJudgingBodyFacets, rmbhCivilConsumerMetrics, rmbhCivilConsumerRuns, nationalCensusFacets, nationalCensusMetrics, nationalCensusRuns, publicDataSources, thesisAuthorities, users } from "../drizzle/schema";
 import { getNationalDistributionStatus, normalizeNationalCensusFilter, selectNationalCensusRun, summarizeNationalCensusReadiness, type NationalCensusFilter } from "./national-census";
 import { validateReviewDecision, validateReviewRequest, type ReviewDecision, type ReviewPriority } from "./evidence-review";
 import { calculateAverageEvidenceScore, calculateEvidenceQuality, calculateThesisQuality, summarizeEvidenceCoverage } from "@shared/evidence-quality";
@@ -185,6 +185,35 @@ export async function getMetropolitanCoverageOverview() {
     },
     municipalities,
     legalBranches: INITIAL_LEGAL_BRANCHES,
+  };
+}
+
+export async function getRmbhCivilConsumerOverview(input: { from?: string; to?: string; municipalityIbgeCode?: string } = {}) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const runs = await db.select().from(rmbhCivilConsumerRuns).orderBy(desc(rmbhCivilConsumerRuns.createdAt));
+  const latest = runs.find(run => run.status === "completed") ?? runs[0];
+  const empty = { readiness: { state: "not_started" as const, runKey: null, sourceKey: null, periodStart: null, periodEnd: null, subjectTreeVersion: null, coverageNote: "Ainda não há execução temática concluída." }, filter: input, categories: [], monthly: [], municipalities: [], bodies: [], total: 0 };
+  if (!latest?.id) return empty;
+  const conditions = [eq(rmbhCivilConsumerMetrics.runId, latest.id)];
+  if (input.from) conditions.push(gte(rmbhCivilConsumerMetrics.month, input.from));
+  if (input.to) conditions.push(lte(rmbhCivilConsumerMetrics.month, input.to));
+  if (input.municipalityIbgeCode) conditions.push(eq(rmbhCivilConsumerMetrics.municipalityIbgeCode, input.municipalityIbgeCode));
+  const condition = and(...conditions);
+  const [categories, monthly, municipalities, bodies] = await Promise.all([
+    db.select({ code: rmbhCivilConsumerMetrics.categoryCode, label: rmbhCivilConsumerMetrics.categoryLabel, amount: sql<number>`sum(${rmbhCivilConsumerMetrics.amount})` }).from(rmbhCivilConsumerMetrics).where(condition).groupBy(rmbhCivilConsumerMetrics.categoryCode, rmbhCivilConsumerMetrics.categoryLabel).orderBy(desc(sql`sum(${rmbhCivilConsumerMetrics.amount})`)),
+    db.select({ month: rmbhCivilConsumerMetrics.month, amount: sql<number>`sum(${rmbhCivilConsumerMetrics.amount})` }).from(rmbhCivilConsumerMetrics).where(condition).groupBy(rmbhCivilConsumerMetrics.month).orderBy(asc(rmbhCivilConsumerMetrics.month)),
+    db.select({ municipalityIbgeCode: rmbhCivilConsumerMetrics.municipalityIbgeCode, municipalityName: rmbhCivilConsumerMetrics.municipalityName, amount: sql<number>`sum(${rmbhCivilConsumerMetrics.amount})` }).from(rmbhCivilConsumerMetrics).where(condition).groupBy(rmbhCivilConsumerMetrics.municipalityIbgeCode, rmbhCivilConsumerMetrics.municipalityName).orderBy(desc(sql`sum(${rmbhCivilConsumerMetrics.amount})`)),
+    db.select({ judgingBodyCode: rmbhCivilConsumerMetrics.judgingBodyCode, judgingBodyLabel: rmbhCivilConsumerMetrics.judgingBodyLabel, municipalityName: rmbhCivilConsumerMetrics.municipalityName, amount: sql<number>`sum(${rmbhCivilConsumerMetrics.amount})` }).from(rmbhCivilConsumerMetrics).where(condition).groupBy(rmbhCivilConsumerMetrics.judgingBodyCode, rmbhCivilConsumerMetrics.judgingBodyLabel, rmbhCivilConsumerMetrics.municipalityName).orderBy(desc(sql`sum(${rmbhCivilConsumerMetrics.amount})`)),
+  ]);
+  return {
+    readiness: { state: latest.status, runKey: latest.runKey, sourceKey: latest.sourceKey, periodStart: latest.periodStart, periodEnd: latest.periodEnd, subjectTreeVersion: latest.subjectTreeVersion, termsCount: latest.termsCount, coverageNote: latest.coverageNote },
+    filter: input,
+    categories: categories.map(row => ({ ...row, amount: Number(row.amount ?? 0) })),
+    monthly: monthly.map(row => ({ ...row, amount: Number(row.amount ?? 0) })),
+    municipalities: municipalities.map(row => ({ ...row, amount: Number(row.amount ?? 0) })),
+    bodies: bodies.map(row => ({ ...row, amount: Number(row.amount ?? 0) })),
+    total: categories.reduce((sum, row) => sum + Number(row.amount ?? 0), 0),
   };
 }
 
