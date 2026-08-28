@@ -205,3 +205,8 @@
 - [ ] Criar componente visual público para volume agregado por categoria principal TPU, com proveniência, recorte e limitação visíveis.
 - [ ] Adicionar filtros interativos de período e comarca que só habilitem combinações efetivamente coletadas e auditáveis.
 - [ ] Modernizar a experiência visual do painel no padrão SaaS jurídico-tech, com responsividade, contraste e acessibilidade preservados.
+- [ ] Corrigir a importação ausente de `createHash` no coletor temático antes da execução real na VPS.
+- [ ] Executar e importar as células agregadas categoria × órgão × mês na camada temática isolada.
+- [ ] Implementar e validar a consulta pública com filtros e o componente visual SaaS em dados reais.
+- [ ] Testar a interface em desktop e móvel, revisar logs e salvar checkpoint publicado.
+
