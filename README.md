@@ -2,7 +2,7 @@
 
 Plataforma jurídica para **Compêndio**, **Banco Nacional de Teses**, **Jurimetria**, **fontes oficiais**, **curadoria** e **governança**.
 
-Este repositório é uma reconstrução controlada do Atlas após a exclusão do repositório anterior. A reconstrução preserva o desenho funcional registrado no projeto, mas **não inventa dados que foram perdidos**. O antigo dataset estático JEC não foi recriado com números fictícios: o módulo lê snapshots do banco e mostra ausência de dados quando não há snapshot carregado.
+Este repositório é uma reconstrução controlada do Atlas após a exclusão do repositório anterior. A reconstrução preserva o desenho funcional registrado no projeto e recupera o snapshot agregado JEC disponível, sem inventar dados ausentes.
 
 ## Princípios
 
@@ -52,4 +52,15 @@ pnpm db:preflight
 pnpm db:migrate
 ```
 
-Leia `docs/validation-without-github-actions.md` antes de produção.
+## Produção
+
+A VPS oficial roda a aplicação atrás de reverse proxy em `127.0.0.1:3010`.
+
+Runbook e artefatos de deploy:
+
+- `docs/production-deploy.md`;
+- `deploy/vps/deploy.sh`;
+- `deploy/vps/atlas-forense.service`;
+- `deploy/vps/nginx-atlas.conf`.
+
+O deploy deve passar por build, preflight e backup antes de migration e troca de tráfego.
