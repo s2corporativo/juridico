@@ -49,6 +49,22 @@ O script executa, nesta ordem:
 9. healthcheck local;
 10. rollback automático do symlink se o serviço/healthcheck falhar.
 
+## Migrations
+
+O runner registra cada arquivo aplicado em `schema_migrations`, com o hash do
+conteúdo, e aplica apenas o que estiver pendente. Um banco que já rodou o runner
+anterior é reconhecido na primeira execução e tem `0001` e `0002` marcadas como
+aplicadas — não é preciso intervir na VPS.
+
+A migration `0003_integrity_and_indexes.sql` adiciona os índices de
+`decisionDate` e `legalArea` e as chaves estrangeiras que faltavam no núcleo
+legado. Ela **falha se houver linha órfã**, por isso o `db:preflight` do passo 4
+é pré-requisito e não deve ser pulado: a migration não apaga dados para abrir
+caminho. Se o preflight acusar órfãos, corrija-os antes de seguir.
+
+Migrations aplicadas são imutáveis. Para mudar o schema, crie um arquivo novo —
+editar um já aplicado gera aviso e não reexecuta.
+
 ## Troca de tráfego
 
 Somente depois do healthcheck local aprovado:
