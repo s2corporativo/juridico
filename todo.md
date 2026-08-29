@@ -244,3 +244,6 @@
 - [x] Validar que a comparação usa somente campos públicos sanitizados e não produz conclusão jurídica ou prognóstico.
 - [x] Testar responsividade, estados de erro, limites de quantidade e publicar a melhoria.
 
+
+- [ ] Recriar o repositório privado no destino `s2corporativo/jurídico` com nome de repositório GitHub válido.
+- [ ] Sincronizar a branch de trabalho e validar que nenhum segredo ou arquivo de ambiente foi publicado.
