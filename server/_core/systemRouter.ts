@@ -1,1 +1,1 @@
-import{router,publicProcedure}from"./trpc";import{ENV}from"./env";export const systemRouter=router({health:publicProcedure.query(()=>({ok:true,service:"atlas-forense",env:ENV.nodeEnv,time:new Date().toISOString()}))});
+import{router,publicProcedure}from"./trpc";export const systemRouter=router({health:publicProcedure.query(()=>({ok:true,service:"atlas-forense",time:new Date().toISOString()}))});

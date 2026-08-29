@@ -40,7 +40,7 @@ export default function CitationDossierPage() {
   if (dossier.isLoading) return <main className="loading"><FileText size={20}/> Montando dossiê…</main>;
   if (dossier.isError || !dossier.data) return <main className="page"><div className="notice error"><CircleAlert size={18}/> Dossiê não disponível.</div></main>;
 
-  const { record, source, batch, topics, theses, review, events } = dossier.data;
+  const { record, source, batch, topics, theses, humanReview } = dossier.data;
   const markdown = buildCitationDossierMarkdown({
     externalId: record.externalId,
     cnjNumber: record.cnjNumber,
@@ -87,7 +87,7 @@ export default function CitationDossierPage() {
 
     <section className="split section">
       <article className="dossier-card"><h2>Taxonomia e teses</h2><div className="tag-row">{topics.length?topics.map(topic=><span className="tag" key={topic.id}>{topic.pathKey}</span>):<span className="tag">Sem taxonomia</span>}</div><div className="list" style={{marginTop:12}}>{theses.length?theses.map(thesis=><div className="list-item" key={thesis.id}><span className="status">{thesis.position}</span><p><b>{thesis.title}</b></p></div>):<p>Nenhuma tese relacionada foi catalogada.</p>}</div></article>
-      <article className="dossier-card"><h2>Revisão humana</h2><p><b>{review?.status ?? "Ainda não enfileirado"}</b></p><p>{review?.requestedReason ?? "Sem revisão pública registrada."}</p>{review?.decisionNote&&<p>{review.decisionNote}</p>}<div className="list">{events.map(event=><div className="list-item" key={event.id}><b>{event.action}</b><p>{formatDate(event.createdAt)} · {event.note ?? "Sem nota pública."}</p></div>)}</div></article>
+      <article className="dossier-card"><h2>Revisão humana</h2><p><b>{humanReview.verified ? "Revisado" : "Em conferência"}</b></p><p>{humanReview.statement}</p></article>
     </section>
     <div className="notice warn section"><CircleAlert size={17}/> Este dossiê não substitui inteiro teor, confirmação de fonte, adequação do precedente nem revisão profissional.</div>
   </main>;
