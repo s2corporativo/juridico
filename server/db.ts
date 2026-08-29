@@ -16,6 +16,13 @@ function requireDb<T>(db:T|null):T{if(!db)throw new TRPCError({code:"PRECONDITIO
 export async function upsertUser(input:InsertUser){const db=requireDb(await getDb());if(!input.openId)throw new TRPCError({code:"BAD_REQUEST",message:"openId obrigatório"});await db.insert(users).values({...input,lastSignedIn:input.lastSignedIn??new Date()}).onDuplicateKeyUpdate({set:{name:input.name??null,email:input.email??null,loginMethod:input.loginMethod??null,role:input.role??"user",lastSignedIn:new Date()}});const [row]=await db.select().from(users).where(eq(users.openId,input.openId)).limit(1);if(!row)throw new Error("Falha ao persistir usuário.");return row}
 export async function getUserByOpenId(openId:string){const db=await getDb();if(!db)return null;const [row]=await db.select().from(users).where(eq(users.openId,openId)).limit(1);return row??null}
 
+/**
+ * Auditoria transversal. Grava melhor-esforço: uma falha ao registrar o evento
+ * não pode derrubar o login nem a consulta que o originou.
+ */
+export async function recordAuditEvent(entityType:string,entityKey:string,action:string,actorUserId:number|null,note:string){try{const db=await getDb();if(!db)return;await db.insert(auditEvents).values({entityType,entityKey,action,actorLabel:actorUserId?`user:${actorUserId}`:"system",note})}catch(error){console.error("[atlas-audit] falha ao registrar evento",error)}}
+export async function recordAuthEvent(action:"login"|"logout",userId:number,note:string){await recordAuditEvent("session",`user:${userId}`,action,userId,note)}
+
 export async function getPublicDataSources(){const db=await getDb();if(!db)return[];const rows=await db.select().from(publicDataSources).orderBy(asc(publicDataSources.label));return rows.map(row=>({id:row.id,label:row.label,kind:row.sourceType,baseUrl:row.baseUrl,official:/\.(jus|gov|leg)\.br\b/i.test(row.baseUrl)||/CNJ|STF|STJ|Tribunal|Câmara|Senado/i.test(row.maintainer),status:row.integrationStatus==="integrated"||row.integrationStatus==="ready"?"active":row.integrationStatus==="credential_required"?"limited":"planned",note:row.usageNote,lastVerifiedAt:row.lastVerifiedAt}))}
 
 export async function getCompendiumOverview(){const db=await getDb();if(!db)return{topics:[],theses:[],facets:{tribunals:[],legalAreas:[]},metrics:{decisionCount:0,sourceCount:0,officialSourceCount:0,authorityCount:0}};const [topics,theses,sources,decisionCountRows,authorityCountRows,tribRows,areaRows]=await Promise.all([
