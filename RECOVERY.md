@@ -1,5 +1,11 @@
-# Atlas Forense — recuperação
+# Atlas Forense — repositório reconstruído
 
-Repositório de destino para restauração do Atlas Forense após exclusão acidental do repositório anterior.
+Este repositório substitui o `ATLAS-EJC` excluído. A reconstrução preserva o desenho funcional conhecido e documenta explicitamente o que não pôde ser recuperado.
 
-A restauração é feita sem GitHub Actions. O gate de release permanece local/servidor.
+- sem GitHub Actions;
+- sem segredos versionados;
+- sem dados pessoais;
+- sem fabricação do snapshot JEC perdido;
+- release somente após gate local/servidor e preflight de banco.
+
+Leia `docs/recovery.md`, `docs/architecture.md` e `docs/database-recovery.md` antes de implantar.

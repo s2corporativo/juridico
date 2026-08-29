@@ -1,0 +1,3 @@
+export type QualityLevel="alta"|"media"|"baixa"|"insuficiente";
+export function qualityLevel(score:number):QualityLevel{if(score>=85)return"alta";if(score>=65)return"media";if(score>=40)return"baixa";return"insuficiente"}
+export function calculateEvidenceQuality(input:{officialSource:boolean;hasSourceUrl:boolean;hasDecisionDate:boolean;hasReasoningSummary:boolean;hasCnjNumber:boolean}){let score=0;score+=input.officialSource?35:5;score+=input.hasSourceUrl?20:0;score+=input.hasDecisionDate?15:0;score+=input.hasReasoningSummary?20:0;score+=input.hasCnjNumber?10:0;return{score,level:qualityLevel(score)}}

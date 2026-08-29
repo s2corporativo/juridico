@@ -1,0 +1,9 @@
+import{SignJWT,jwtVerify}from"jose";import{randomUUID}from"node:crypto";import{ENV,isProduction}from"./env";
+export const USER_SESSION_MS=86400000,ADMIN_SESSION_MS=28800000,SESSION_ISSUER="atlas-forense",SESSION_COOKIE="atlas_session";
+export type SessionPayload={userId:number;openId:string;role:"user"|"admin";email?:string|null;name?:string|null};
+function key(){if(!ENV.jwtSecret)throw new Error("JWT_SECRET não configurada.");return new TextEncoder().encode(ENV.jwtSecret)}
+export async function signSession(p:SessionPayload){const ttl=p.role==="admin"?ADMIN_SESSION_MS:USER_SESSION_MS;return new SignJWT(p).setProtectedHeader({alg:"HS256",typ:"JWT"}).setIssuer(SESSION_ISSUER).setAudience("atlas-forense-web").setIssuedAt().setJti(randomUUID()).setExpirationTime(Math.floor((Date.now()+ttl)/1000)).sign(key())}
+export async function verifySession(token:string):Promise<SessionPayload>{const{payload}=await jwtVerify(token,key(),{algorithms:["HS256"],issuer:SESSION_ISSUER,audience:"atlas-forense-web"});if(typeof payload.userId!=="number"||typeof payload.openId!=="string"||(payload.role!=="user"&&payload.role!=="admin"))throw new Error("Sessão inválida.");return{userId:payload.userId,openId:payload.openId,role:payload.role,email:typeof payload.email==="string"?payload.email:null,name:typeof payload.name==="string"?payload.name:null}}
+export function sessionCookie(token:string,maxAgeMs:number){const p=[`${SESSION_COOKIE}=${encodeURIComponent(token)}`,"Path=/","HttpOnly","SameSite=Lax",`Max-Age=${Math.floor(maxAgeMs/1000)}`];if(isProduction)p.push("Secure");return p.join("; ")}
+export function clearSessionCookie(){return`${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isProduction?"; Secure":""}`}
+export function parseCookies(header:string|undefined){const out:Record<string,string>={};for(const part of(header??"").split(";")){const[k,...r]=part.trim().split("=");if(k)out[k]=decodeURIComponent(r.join("="))}return out}

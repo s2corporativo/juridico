@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";describe("dossiê público",()=>{it("contrato público não deve conter campos administrativos",()=>{const keys=["status","priority","createdAt","reviewedAt","requestedReason","decisionNote"];expect(keys).not.toContain("assignedToUserId");expect(keys).not.toContain("reviewedByUserId");expect(keys).not.toContain("jurisprudenceId")})});

@@ -1,0 +1,1 @@
+import{publicProcedure,router}from"../_core/trpc";import{getEjcIntegrationStatus}from"@shared/ejc-integration";export const integrationRouter=router({ejcStatus:publicProcedure.query(()=>getEjcIntegrationStatus())});

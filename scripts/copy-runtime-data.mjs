@@ -1,0 +1,1 @@
+import fs from"node:fs";fs.rmSync("dist/data",{recursive:true,force:true});fs.mkdirSync("dist",{recursive:true});fs.cpSync("data","dist/data",{recursive:true});console.log("[build] runtime data copiado para dist/data");
