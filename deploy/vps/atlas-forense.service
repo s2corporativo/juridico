@@ -1,0 +1,23 @@
+[Unit]
+Description=Atlas Forense
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=atlas
+Group=atlas
+WorkingDirectory=/opt/atlas-forense/current
+EnvironmentFile=/etc/atlas-forense/atlas.env
+ExecStart=/usr/bin/env corepack pnpm start
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/atlas-forense
+
+[Install]
+WantedBy=multi-user.target
