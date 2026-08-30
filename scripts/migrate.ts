@@ -4,6 +4,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import mysql from "mysql2/promise";
+import { statementsOf } from "./lib/migration-statements";
 
 /**
  * Runner de migrations com controle de estado.
@@ -27,16 +28,10 @@ const MIGRATIONS = [
   "0001_atlas_rebuild.sql",
   "0002_thesis_bank_hardening.sql",
   "0003_integrity_and_indexes.sql",
+  "0004_knowledge_base.sql",
 ];
 /** Migrations aplicadas pelo runner antigo, que não registrava estado. */
 const LEGACY_APPLIED = new Set(["0001_atlas_rebuild.sql", "0002_thesis_bank_hardening.sql"]);
-
-function statementsOf(raw: string) {
-  return raw
-    .split(/;\s*(?:\r?\n|$)/)
-    .map((statement) => statement.trim())
-    .filter((statement) => statement && !statement.startsWith("--"));
-}
 
 const conn = await mysql.createConnection({ uri: url, multipleStatements: false });
 
