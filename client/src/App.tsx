@@ -9,6 +9,9 @@ const Home = lazy(() => import("@/pages/Home"));
 const Compendium = lazy(() => import("@/pages/CompendiumPage"));
 const Theses = lazy(() => import("@/pages/ThesisBankPage"));
 const ThesisDetail = lazy(() => import("@/pages/ThesisDetailPage"));
+const KnowledgeBase = lazy(() => import("@/pages/KnowledgeBasePage"));
+const KnowledgeDocumentDetail = lazy(() => import("@/pages/KnowledgeDocumentDetailPage"));
+const KnowledgeCuration = lazy(() => import("@/pages/KnowledgeCurationPage"));
 const Jec = lazy(() => import("@/pages/JecJurimetryPage"));
 const National = lazy(() => import("@/pages/NationalCensusPage"));
 const Rmbh = lazy(() => import("@/pages/MetropolitanCoveragePage"));
@@ -25,6 +28,7 @@ const MODULE_COMPONENTS = {
   home: Home,
   compendium: Compendium,
   theses: Theses,
+  knowledgeBase: KnowledgeBase,
   jurimetryJec: Jec,
   national: National,
   metropolitan: Rmbh,
@@ -33,6 +37,7 @@ const MODULE_COMPONENTS = {
   control: Control,
   evidenceControl: Evidence,
   thesisCuration: Curation,
+  knowledgeCuration: KnowledgeCuration,
 } as const;
 
 function Loader() {
@@ -52,6 +57,8 @@ export default function App() {
           <Route path={ATLAS_ROUTES.home} component={Home} />
           <Route path="/teses/:publicId" component={ThesisDetail} />
           <Route path={ATLAS_ROUTES.theses} component={Theses} />
+          <Route path="/base-conhecimento/:kind/:slug" component={KnowledgeDocumentDetail} />
+          <Route path={ATLAS_ROUTES.knowledgeBase} component={KnowledgeBase} />
           <Route path={ATLAS_ROUTES.compendium} component={Compendium} />
           <Route path={ATLAS_ROUTES.jurimetryJec} component={Jec} />
           <Route path={ATLAS_ROUTES.national} component={National} />
@@ -61,6 +68,7 @@ export default function App() {
           <Route path={ATLAS_ROUTES.control}>{() => <AdminGate><Control /></AdminGate>}</Route>
           <Route path={ATLAS_ROUTES.evidenceControl}>{() => <AdminGate><Evidence /></AdminGate>}</Route>
           <Route path={ATLAS_ROUTES.thesisCuration}>{() => <AdminGate><Curation /></AdminGate>}</Route>
+          <Route path={ATLAS_ROUTES.knowledgeCuration}>{() => <AdminGate><KnowledgeCuration /></AdminGate>}</Route>
           <Route path="/dossie/:externalId" component={Dossier} />
           {Object.entries(ATLAS_ROUTE_ALIASES).map(([path, moduleKey]) => (
             <Route key={path} path={path} component={MODULE_COMPONENTS[moduleKey]} />

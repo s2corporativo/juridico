@@ -48,6 +48,16 @@ export async function previewKnowledgeIngestion(batchKey: string, candidates: Kn
   return { batchKey, total: items.length, accepted: items.filter((x) => x.accepted).length, rejected: items.filter((x) => !x.accepted).length, items, warning: "Pré-validação apenas. Nenhum candidato foi gravado." };
 }
 
+/** Um chunk representativo por documento (o primeiro), mesmo critério de unicidade que searchIndex() já aplica quando há query. */
+function dedupeByDocument(chunks: SearchableChunk[]): SearchableChunk[] {
+  const seen = new Map<string, SearchableChunk>();
+  for (const c of chunks) {
+    const key = `${c.documentKind}:${c.documentId}`;
+    if (!seen.has(key)) seen.set(key, c);
+  }
+  return [...seen.values()];
+}
+
 export type KnowledgeSearchInput = { query?: string; documentType?: string; area?: string; kind?: "knowledge_document" | "legislation"; page?: number; pageSize?: number };
 
 export async function searchKnowledgeBase(input: KnowledgeSearchInput) {
@@ -64,6 +74,7 @@ export async function searchKnowledgeBase(input: KnowledgeSearchInput) {
     const rows = await db
       .select({
         documentId: knowledgeDocuments.id,
+        documentType: knowledgeDocuments.documentType,
         slug: knowledgeDocuments.slug,
         title: knowledgeDocuments.title,
         area: knowledgeDocuments.area,
@@ -90,7 +101,7 @@ export async function searchKnowledgeBase(input: KnowledgeSearchInput) {
 
   const query = input.query?.trim();
   const index = buildSearchIndex(chunks);
-  const hits = query ? searchIndex(query, index, 200) : chunks.map((c) => ({ ...c, score: 0 }));
+  const hits = query ? searchIndex(query, index, 200) : dedupeByDocument(chunks).map((c) => ({ ...c, score: 0 }));
   const total = hits.length;
   const paged = hits.slice(page * pageSize, page * pageSize + pageSize).map((h) => ({ ...h, chunkText: h.chunkText.length > 600 ? `${h.chunkText.slice(0, 600)}…` : h.chunkText }));
   return { hits: paged, total, page, pageSize };
@@ -101,7 +112,7 @@ export async function knowledgeDocumentDetail(kind: "knowledge_document" | "legi
   if (kind === "legislation") {
     const [row] = await db.select().from(legislationLibrary).where(eq(legislationLibrary.slug, slug));
     if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Legislação não encontrada." });
-    return { kind, document: row, chunks: [], relationships: [] };
+    return { kind, document: row, chunks: [], relationships: { outgoing: [], incoming: [] } };
   }
   const [row] = await db.select().from(knowledgeDocuments).where(eq(knowledgeDocuments.slug, slug));
   if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Documento não encontrado." });

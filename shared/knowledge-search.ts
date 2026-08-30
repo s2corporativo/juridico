@@ -42,6 +42,7 @@ export function tokenVariants(t: string): string[] {
 export type SearchableChunk = {
   documentId: number;
   documentKind: "knowledge_document" | "legislation";
+  documentType?: string;
   slug: string;
   title: string;
   area: string;
