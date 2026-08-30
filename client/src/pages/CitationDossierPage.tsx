@@ -70,7 +70,7 @@ export default function CitationDossierPage() {
   return <main className="dossier">
     <header className="dossier-header">
       <a href="/compendio" className="health"><ArrowLeft size={14}/> Compêndio</a>
-      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      <div className="dossier-actions" style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <button className="button secondary" onClick={async()=>{await copyText(reference);setCopied(true);setTimeout(()=>setCopied(false),2000)}}>{copied?<Check size={14}/>:<Copy size={14}/>} {copied?"Copiado":"Copiar referência"}</button>
         <button className="button secondary" onClick={()=>downloadText(`dossie-${record.externalId}.md`,markdown)}><Download size={14}/> Markdown</button>
         <button className="button secondary" onClick={()=>window.print()}><Printer size={14}/> Imprimir</button>
