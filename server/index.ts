@@ -68,7 +68,7 @@ if (isProduction) {
   });
 } else {
   const { createServer: createVite } = await import("vite");
-  const vite = await createVite({ root: path.join(root, "client"), server: { middlewareMode: true }, appType: "spa" });
+  const vite = await createVite({ configFile: path.join(root, "vite.config.ts"), root: path.join(root, "client"), server: { middlewareMode: true }, appType: "spa" });
   app.use(vite.middlewares);
 }
 
