@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, CircleAlert, Copy, Download, FileText, Landmark, Printer, ShieldCheck } from "lucide-react";
-import { useRoute } from "wouter";
+import { Link, useRoute } from "wouter";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { buildCitationDossierMarkdown } from "@shared/citation-dossier";
@@ -69,7 +69,7 @@ export default function CitationDossierPage() {
 
   return <main className="dossier">
     <header className="dossier-header">
-      <a href="/compendio" className="health"><ArrowLeft size={14}/> Compêndio</a>
+      <Link href="/compendio" className="health"><ArrowLeft size={14}/> Compêndio</Link>
       <div className="dossier-actions" style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <button className="button secondary" onClick={async()=>{await copyText(reference);setCopied(true);setTimeout(()=>setCopied(false),2000)}}>{copied?<Check size={14}/>:<Copy size={14}/>} {copied?"Copiado":"Copiar referência"}</button>
         <button className="button secondary" onClick={()=>downloadText(`dossie-${record.externalId}.md`,markdown)}><Download size={14}/> Markdown</button>

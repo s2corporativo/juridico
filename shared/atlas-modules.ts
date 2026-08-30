@@ -19,3 +19,29 @@ export const ATLAS_MODULES:readonly AtlasModule[]=[
 {key:"thesisCuration",route:ATLAS_ROUTES.thesisCuration,label:"Curadoria de Teses",shortLabel:"Curadoria",description:"Workspace versionada de conteúdo, evidências, avaliação e revisão.",group:"governance",access:"admin",status:"active"}
 ] as const;
 export function moduleByRoute(route:string){return ATLAS_MODULES.find(m=>m.route===route)??null}
+
+/**
+ * Aliases de compatibilidade com rotas anteriores do produto. Continuam
+ * navegáveis (App.tsx registra uma Route para cada um), mas não têm módulo
+ * próprio em ATLAS_MODULES — sem esta resolução, navegar por um alias não
+ * acende item nenhum no menu.
+ */
+export const ATLAS_ROUTE_ALIASES:Record<string,AtlasModuleKey>={"/nacional":"national","/rmbh":"metropolitan","/estrutura":"governance"};
+
+/**
+ * Rota do módulo que deve aparecer marcada como ativa na navegação.
+ *
+ * Escolhe o match mais específico entre os módulos visíveis, em vez do
+ * primeiro prefixo que bater — location.startsWith(route+"/") sozinho
+ * marcava "/controle" e "/controle/evidencias" ao mesmo tempo em
+ * "/controle/evidencias", porque "/controle" também é prefixo válido.
+ */
+export function activeModuleRoute(location:string,modules:readonly AtlasModule[]):string|null{
+ const resolved=ATLAS_ROUTE_ALIASES[location]?ATLAS_MODULES.find(m=>m.key===ATLAS_ROUTE_ALIASES[location])?.route??location:location;
+ let best:string|null=null;
+ for(const m of modules){
+  const matches=m.route==="/"?resolved==="/":resolved===m.route||resolved.startsWith(`${m.route}/`);
+  if(matches&&(best===null||m.route.length>best.length))best=m.route;
+ }
+ return best;
+}

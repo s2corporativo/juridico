@@ -3,7 +3,71 @@ import { Route, Switch } from "wouter";
 import { Database } from "lucide-react";
 import AtlasNavigation from "@/components/AtlasNavigation";
 import AdminGate from "@/components/AdminGate";
-import { ATLAS_ROUTES } from "@shared/atlas-modules";
-const Home=lazy(()=>import("@/pages/Home")); const Compendium=lazy(()=>import("@/pages/CompendiumPage")); const Theses=lazy(()=>import("@/pages/ThesisBankPage")); const ThesisDetail=lazy(()=>import("@/pages/ThesisDetailPage")); const Jec=lazy(()=>import("@/pages/JecJurimetryPage")); const National=lazy(()=>import("@/pages/NationalCensusPage")); const Rmbh=lazy(()=>import("@/pages/MetropolitanCoveragePage")); const Sources=lazy(()=>import("@/pages/PublicSourcesPage")); const Governance=lazy(()=>import("@/pages/GovernancePage")); const Control=lazy(()=>import("@/pages/ControlCenterPage")); const Evidence=lazy(()=>import("@/pages/EvidenceControlPage")); const Curation=lazy(()=>import("@/pages/ThesisCurationPage")); const Dossier=lazy(()=>import("@/pages/CitationDossierPage")); const NotFound=lazy(()=>import("@/pages/NotFound"));
-function Loader(){return <main className="loading"><Database size={20}/> Carregando módulo do Atlas…</main>}
-export default function App(){return <><AtlasNavigation/><Suspense fallback={<Loader/>}><Switch><Route path={ATLAS_ROUTES.home} component={Home}/><Route path="/teses/:publicId" component={ThesisDetail}/><Route path={ATLAS_ROUTES.theses} component={Theses}/><Route path={ATLAS_ROUTES.compendium} component={Compendium}/><Route path={ATLAS_ROUTES.jurimetryJec} component={Jec}/><Route path={ATLAS_ROUTES.national} component={National}/><Route path={ATLAS_ROUTES.metropolitan} component={Rmbh}/><Route path={ATLAS_ROUTES.sources} component={Sources}/><Route path={ATLAS_ROUTES.governance} component={Governance}/><Route path={ATLAS_ROUTES.control}>{() => <AdminGate><Control/></AdminGate>}</Route><Route path={ATLAS_ROUTES.evidenceControl}>{() => <AdminGate><Evidence/></AdminGate>}</Route><Route path={ATLAS_ROUTES.thesisCuration}>{() => <AdminGate><Curation/></AdminGate>}</Route><Route path="/dossie/:externalId" component={Dossier}/><Route path="/nacional" component={National}/><Route path="/rmbh" component={Rmbh}/><Route path="/estrutura" component={Governance}/><Route component={NotFound}/></Switch></Suspense></>}
+import { ATLAS_ROUTE_ALIASES, ATLAS_ROUTES } from "@shared/atlas-modules";
+
+const Home = lazy(() => import("@/pages/Home"));
+const Compendium = lazy(() => import("@/pages/CompendiumPage"));
+const Theses = lazy(() => import("@/pages/ThesisBankPage"));
+const ThesisDetail = lazy(() => import("@/pages/ThesisDetailPage"));
+const Jec = lazy(() => import("@/pages/JecJurimetryPage"));
+const National = lazy(() => import("@/pages/NationalCensusPage"));
+const Rmbh = lazy(() => import("@/pages/MetropolitanCoveragePage"));
+const Sources = lazy(() => import("@/pages/PublicSourcesPage"));
+const Governance = lazy(() => import("@/pages/GovernancePage"));
+const Control = lazy(() => import("@/pages/ControlCenterPage"));
+const Evidence = lazy(() => import("@/pages/EvidenceControlPage"));
+const Curation = lazy(() => import("@/pages/ThesisCurationPage"));
+const Dossier = lazy(() => import("@/pages/CitationDossierPage"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+
+/** Componente de cada módulo, para resolver os aliases de rota (shared/atlas-modules.ts) sem repetir a lista aqui. */
+const MODULE_COMPONENTS = {
+  home: Home,
+  compendium: Compendium,
+  theses: Theses,
+  jurimetryJec: Jec,
+  national: National,
+  metropolitan: Rmbh,
+  sources: Sources,
+  governance: Governance,
+  control: Control,
+  evidenceControl: Evidence,
+  thesisCuration: Curation,
+} as const;
+
+function Loader() {
+  return (
+    <main className="loading">
+      <Database size={20} /> Carregando módulo do Atlas…
+    </main>
+  );
+}
+
+export default function App() {
+  return (
+    <>
+      <AtlasNavigation />
+      <Suspense fallback={<Loader />}>
+        <Switch>
+          <Route path={ATLAS_ROUTES.home} component={Home} />
+          <Route path="/teses/:publicId" component={ThesisDetail} />
+          <Route path={ATLAS_ROUTES.theses} component={Theses} />
+          <Route path={ATLAS_ROUTES.compendium} component={Compendium} />
+          <Route path={ATLAS_ROUTES.jurimetryJec} component={Jec} />
+          <Route path={ATLAS_ROUTES.national} component={National} />
+          <Route path={ATLAS_ROUTES.metropolitan} component={Rmbh} />
+          <Route path={ATLAS_ROUTES.sources} component={Sources} />
+          <Route path={ATLAS_ROUTES.governance} component={Governance} />
+          <Route path={ATLAS_ROUTES.control}>{() => <AdminGate><Control /></AdminGate>}</Route>
+          <Route path={ATLAS_ROUTES.evidenceControl}>{() => <AdminGate><Evidence /></AdminGate>}</Route>
+          <Route path={ATLAS_ROUTES.thesisCuration}>{() => <AdminGate><Curation /></AdminGate>}</Route>
+          <Route path="/dossie/:externalId" component={Dossier} />
+          {Object.entries(ATLAS_ROUTE_ALIASES).map(([path, moduleKey]) => (
+            <Route key={path} path={path} component={MODULE_COMPONENTS[moduleKey]} />
+          ))}
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    </>
+  );
+}
