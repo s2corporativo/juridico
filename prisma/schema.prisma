@@ -1,0 +1,117 @@
+// EJC – Ecossistema Jurídico Clovis
+// Schema de conhecimento jurídico estruturado
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Documento jurídico canônico — unidade central da base
+model KnowledgeDocument {
+  id                            String   @id @default(cuid())
+  slug                          String   @unique // canonicalização (item 22)
+  titulo                        String
+  tipoDocumento                 String // LEGISLACAO | JURISPRUDENCIA | TESE | PECA | CONTRATO | CHECKLIST | FLUXO | TABELA_DOCUMENTOS | TRIAGEM | PRAZO | ARGUMENTACAO | DOUTRINA | REGRA_INTELIGENCIA | REGRAS_CONTRATUAIS | JURIMETRIA
+  area                          String
+  subarea                       String?
+  assunto                       String?
+  subassunto                    String?
+  prioridade                    String   @default("P2") // P0 | P1 | P2 | P3 (item 26/33)
+  lote                          String? // LOTE-001
+  conteudo                      String // texto estruturado (markdown)
+  metadados                     String? // JSON — metadados obrigatórios (item 19)
+  tags                          String? // JSON array — taxonomia (item 20)
+  fonte                         String?
+  urlFonte                      String?
+  dataConsulta                  String?
+  confiabilidade                String   @default("B") // A | B | C (item 33)
+  vigente                       Boolean  @default(true)
+  status                        String   @default("ATIVO") // ATIVO | REVISAO_HUMANA | DESATIVADO | DEMONSTRACAO
+  dadosFicticios                Boolean  @default(false) // item 24
+  versao                        Int      @default(1) // versionamento (item 22)
+  dataUltimaVerificacao         String? // item 23
+  proximaVerificacaoRecomendada String?
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+
+  chunks         KnowledgeChunk[]
+  relacaoOrigem  KnowledgeRelationship[] @relation("origem")
+  relacaoDestino KnowledgeRelationship[] @relation("destino")
+
+  @@index([tipoDocumento])
+  @@index([area])
+  @@index([subarea])
+  @@index([lote])
+  @@index([prioridade])
+  @@index([confiabilidade])
+}
+
+// Chunk para indexação vetorial/RAG — unidade semanticamente completa (item 21)
+model KnowledgeChunk {
+  id         String            @id @default(cuid())
+  documentId String
+  document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  ordem      Int
+  contexto   String // identificação do assunto do chunk (contexto próprio)
+  texto      String
+  palavras   Int @default(0) // métrica de tamanho técnico
+  embedding  String? // reservado para embedding futuro (JSON vetores) — item 21
+
+  @@index([documentId])
+}
+
+// Grafo jurídico de conhecimento — relacionamentos (item 29)
+model KnowledgeRelationship {
+  id        String            @id @default(cuid())
+  origemId  String
+  origem    KnowledgeDocument @relation("origem", fields: [origemId], references: [id], onDelete: Cascade)
+  destinoId String
+  destino   KnowledgeDocument @relation("destino", fields: [destinoId], references: [id], onDelete: Cascade)
+  tipo      String // REFERENCIA_LEGISLACAO | PRECEDENTE_APLICAVEL | MODELO_PECAS | PROVA_NECESSARIA | RISCO | TESE_APLICAVEL | CONCEITO_RELAZIONADO | PRAZO_APLICAVEL
+  descricao String?
+
+  @@index([origemId])
+  @@index([destinoId])
+  @@index([tipo])
+}
+
+// Controle de lotes de produção e relatórios (item 26/34)
+model IngestBatch {
+  id                 String   @id @default(cuid())
+  codigo             String   @unique // LOTE-001
+  descricao          String
+  status             String   @default("CONCLUIDO")
+  pesquisado         Int      @default(0)
+  criados            Int      @default(0)
+  atualizados        Int      @default(0)
+  duplicatasEvitadas Int      @default(0)
+  fontesConsultadas  String? // JSON
+  relatorio          String? // JSON — relatório completo (item 34)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// Testes de qualidade do RAG (item 37)
+model RagTest {
+  id                     String   @id @default(cuid())
+  pergunta               String
+  resposta               String?
+  documentosEncontrados  String? // JSON — slugs + scores
+  score                  Float?
+  status                 String   @default("PENDENTE") // SUCESSO | PARCIAL | FALHA | PENDENTE
+  observacao             String?
+  createdAt              DateTime @default(now())
+}
+
+// Controle de confidencialidade — segregação base geral x casos (item 25)
+model CaseWorkspace {
+  id        String   @id @default(cuid())
+  nome      String
+  cliente   String?
+  privado   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
