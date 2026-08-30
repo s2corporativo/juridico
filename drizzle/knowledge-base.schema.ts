@@ -11,7 +11,7 @@ export const knowledgeDocuments=mysqlTable("knowledge_documents",{
  id:int("id").autoincrement().primaryKey(),
  slug:varchar("slug",{length:191}).notNull(),
  title:varchar("title",{length:500}).notNull(),
- documentType:mysqlEnum("document_type",["peca","contrato","checklist","fluxo","tabela_documentos","triagem","prazo","doutrina","regra_inteligencia","regras_contratuais"]).notNull(),
+ documentType:mysqlEnum("document_type",["peca","contrato","checklist","fluxo","tabela_documentos","triagem","prazo","doutrina","regra_inteligencia","regras_contratuais","argumentacao","jurimetria"]).notNull(),
  area:varchar("area",{length:64}).notNull(),
  subarea:varchar("subarea",{length:128}),
  subject:varchar("subject",{length:255}),
