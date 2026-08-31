@@ -35,7 +35,7 @@ export default function KnowledgeDocumentDetailPage() {
 
   const { document, chunks, relationships } = query.data;
   const isLegislation = kind === "legislation";
-  const doc = document as typeof document & { documentType?: string; norm?: string; provision?: string | null; officialUrl?: string | null; consultedAt?: string | null };
+  const doc = document as typeof document & { documentType?: string; norm?: string; provision?: string | null; officialUrl?: string | null; consultedAt?: string | null; status?: string };
 
   return (
     <main className="page">
@@ -48,6 +48,11 @@ export default function KnowledgeDocumentDetailPage() {
           <h1>{doc.title}</h1>
           <div className="tag-row">
             <span className={`status ${doc.sourceStatus === "official_confirmed" ? "official" : "review"}`}>{doc.sourceStatus.replaceAll("_", " ")}</span>
+            {doc.status && doc.status !== "ativo" ? (
+              <span className={`status ${doc.status === "demonstracao" ? "demo" : "review"}`}>
+                {doc.status === "demonstracao" ? "dados fictícios — demonstração" : doc.status === "desativado" ? "desativado" : "não revisado"}
+              </span>
+            ) : null}
             <span className="tag">{doc.area}</span>
             {"subarea" in doc && doc.subarea ? <span className="tag">{doc.subarea as string}</span> : null}
           </div>

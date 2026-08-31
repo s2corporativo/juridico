@@ -30,4 +30,14 @@ describe("searchIndex", () => {
     const hits = searchIndex("infração ambiental", buildSearchIndex(twoChunksSameDoc), 5);
     expect(hits).toHaveLength(1);
   });
+
+  it("penaliza documento não revisado/demonstração, igualando termos e demais boosts (porte de rag.ts do EJC)", () => {
+    const reviewed: SearchableChunk = { ...chunks[0], documentId: 10, slug: "doc-revisado", status: "ativo", chunkText: "auto de infração ambiental" };
+    const demo: SearchableChunk = { ...chunks[0], documentId: 11, slug: "doc-demo", status: "demonstracao", chunkText: "auto de infração ambiental" };
+    const pending: SearchableChunk = { ...chunks[0], documentId: 12, slug: "doc-pendente", status: "revisao_humana", chunkText: "auto de infração ambiental" };
+    const hits = searchIndex("infração ambiental", buildSearchIndex([demo, pending, reviewed]), 5);
+    expect(hits[0]?.slug).toBe("doc-revisado");
+    expect(hits[0]!.score).toBeGreaterThan(hits[1]!.score);
+    expect(hits[0]!.score).toBeGreaterThan(hits[2]!.score);
+  });
 });

@@ -79,6 +79,7 @@ export async function searchKnowledgeBase(input: KnowledgeSearchInput) {
         title: knowledgeDocuments.title,
         area: knowledgeDocuments.area,
         sourceStatus: knowledgeDocuments.sourceStatus,
+        status: knowledgeDocuments.status,
         priority: knowledgeDocuments.priority,
         chunkId: knowledgeChunks.id,
         chunkContext: knowledgeChunks.context,

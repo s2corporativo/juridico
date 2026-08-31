@@ -1,17 +1,37 @@
 /**
  * Auditoria de integridade da curadoria — porta parcial de src/lib/ejc/auditoria.ts
- * (EJC, Zai GLM), com escopo reduzido de propósito: várias das checagens
- * originais (slug kebab-case, JSON válido em metadados, chunk órfão, FK
- * quebrada) viraram impossíveis por construção no schema do Atlas — enums
- * reais, FKs de verdade, JSON nativo — em vez de checadas em runtime como no
- * EJC (SQLite sem enum, JSON como string). O que sobra aqui é justamente o
- * que nenhum schema consegue garantir sozinho: varredura de LGPD, coerência
- * entre confiabilidade declarada e domínio da fonte, duplicidade semântica
- * e saúde do RAG.
+ * (EJC, Zai GLM). O original tem 7 seções e ~34 checagens (EST-01..14,
+ * TAX-01..06, CUR-01..13, LGP-01..06, INV-01..05, DUP-01, RAG-01..03); aqui
+ * ficaram 4: varredura de LGPD (LGP-01..03), 2 checagens de consistência de
+ * fonte (CUR-03/04), duplicidade semântica (DUP-01) e saúde do RAG (RAG-01/02).
  *
- * Fora de escopo deste MVP: a comparação com a taxonomia de 113 subáreas
- * declaradas do EJC (capítulos vazios) — exigiria portar um arquivo de
- * taxonomia inteiro que hoje não tem nenhum outro uso no Atlas.
+ * Do que faltou, uma parte é redundante por construção no schema do Atlas —
+ * enums reais, FKs de verdade, JSON nativo — em vez de checada em runtime
+ * como no EJC (SQLite sem enum, JSON como string): EST-01..14 (slug
+ * kebab-case, JSON válido, chunk/relacionamento órfão, lote fantasma,
+ * prioridade/status/tipo fora do vocabulário).
+ *
+ * O restante é lacuna real, não redundância — verificado em 2026-08-31 e
+ * ainda não portado:
+ *   - TAX-01..06 (taxonomia): exigiria portar as 113 subáreas declaradas do
+ *     EJC, hoje sem uso no Atlas.
+ *   - CUR-01/02 (documento factual sem fonte/URL/data de consulta),
+ *     CUR-05 (confiabilidade fora de A/B/C — sourceStatus não tem
+ *     equivalente disso), CUR-06 (vigente=false com status "ativo"; o
+ *     schema do Atlas não tem campo "vigente"), CUR-07 (fictitious=1 sem
+ *     status="demonstracao"), CUR-08/09 (jurisprudência sem tribunal /
+ *     sem confirmação de nº de processo), CUR-10..13 (confiabilidade C
+ *     sem revisão humana, cobertura de frescor, dataConsulta no futuro).
+ *   - INV-01..05 (anti-invenção): legislação sem URL oficial, JURIMETRIA
+ *     citando súmula/acórdão como se fosse fundamento (só é legítimo como
+ *     menção metodológica), honestidade de "(VETADO)"/redação empilhada.
+ *
+ * A penalidade de ranking para status≠"ativo" (revisão pendente/demonstração/
+ * desativado) e o selo correspondente no card de busca — que no EJC eram a
+ * forma de sinalizar exatamente esse tipo de conteúdo não revisado ao
+ * usuário final — foram portados em shared/knowledge-search.ts (ver
+ * NON_ACTIVE_STATUS_PENALTY) e nas páginas de busca/detalhe da base de
+ * conhecimento.
  */
 
 export type Severity = "OK" | "INFO" | "AVISO" | "ERRO";

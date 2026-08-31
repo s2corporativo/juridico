@@ -161,7 +161,14 @@ export default function KnowledgeBasePage() {
             {search.data?.hits.map((hit) => (
               <article className="card" key={`${hit.documentKind}:${hit.documentId}`}>
                 <div className="card-top">
-                  <span className={`status ${hit.sourceStatus === "official_confirmed" ? "official" : "review"}`}>{hit.sourceStatus.replaceAll("_", " ")}</span>
+                  <div className="tag-row">
+                    <span className={`status ${hit.sourceStatus === "official_confirmed" ? "official" : "review"}`}>{hit.sourceStatus.replaceAll("_", " ")}</span>
+                    {hit.status && hit.status !== "ativo" ? (
+                      <span className={`status ${hit.status === "demonstracao" ? "demo" : "review"}`}>
+                        {hit.status === "demonstracao" ? "dados fictícios — demonstração" : hit.status === "desativado" ? "desativado" : "não revisado"}
+                      </span>
+                    ) : null}
+                  </div>
                   <BookOpenCheck size={16} />
                 </div>
                 <h3>{hit.title}</h3>

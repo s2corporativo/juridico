@@ -47,6 +47,8 @@ export type SearchableChunk = {
   title: string;
   area: string;
   sourceStatus: string;
+  /** Status de curadoria (ativo/revisao_humana/desativado/demonstracao) — só existe em knowledgeDocuments; legislação é sempre tratada como ativa. */
+  status?: string;
   priority?: string;
   chunkId: number | null;
   chunkContext: string | null;
@@ -62,10 +64,13 @@ type ScoredIndex = {
   bonus: Map<string, number>;
   priorityBoost: number;
   statusBoost: number;
+  curationPenalty: number;
 };
 
 const PRIORITY_BOOST: Record<string, number> = { P0: 0.3, P1: 0.15 };
 const OFFICIAL_STATUS_BOOST = 0.25;
+/** Porte de rag.ts (EJC) — registros fora de status "ativo" (revisão pendente, demonstração/dados fictícios, desativado) levam a mesma penalidade que tinham no EJC, em vez de competir em pé de igualdade com conteúdo revisado. Legislação não tem esse campo — trata-se sempre como ativa. */
+const NON_ACTIVE_STATUS_PENALTY = -0.8;
 
 export function buildSearchIndex(chunks: SearchableChunk[]): ScoredIndex[] {
   return chunks.map((chunk) => {
@@ -83,6 +88,7 @@ export function buildSearchIndex(chunks: SearchableChunk[]): ScoredIndex[] {
       bonus,
       priorityBoost: chunk.priority ? (PRIORITY_BOOST[chunk.priority] ?? 0) : 0,
       statusBoost: chunk.sourceStatus === "official_confirmed" ? OFFICIAL_STATUS_BOOST : 0,
+      curationPenalty: chunk.status && chunk.status !== "ativo" ? NON_ACTIVE_STATUS_PENALTY : 0,
     };
   });
 }
@@ -119,7 +125,7 @@ export function searchIndex(query: string, index: ScoredIndex[], topK = 20): Sea
     let bonus = 0;
     for (const t of qSet) bonus += bonusWithVariants(idx, t);
     if (qSet.has(idx.chunk.area.toLowerCase())) bonus += 0.4;
-    const score = overlap / Math.sqrt(idx.len) + bonus + idx.priorityBoost + idx.statusBoost;
+    const score = overlap / Math.sqrt(idx.len) + bonus + idx.priorityBoost + idx.statusBoost + idx.curationPenalty;
     hits.push({ ...idx.chunk, score: Math.round(score * 1000) / 1000 });
   }
   hits.sort((a, b) => b.score - a.score);
