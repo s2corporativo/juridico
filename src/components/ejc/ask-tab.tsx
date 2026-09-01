@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { BrainCircuit, Clock3, ExternalLink, Send, ShieldAlert, ShieldCheck, Sparkles, Trash2 } from 'lucide-react';
 import { Markdown } from './markdown';
@@ -81,6 +83,7 @@ export function AskTab() {
   const [resp, setResp] = useState<AskResponse | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [semantico, setSemantico] = useState(true);
   const [historico, setHistorico] = useState<RegistroHistorico[]>([]);
 
   useEffect(() => setHistorico(lerHistorico()), []);
@@ -95,7 +98,7 @@ export function AskTab() {
       const r = await fetch('/api/ejc/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pergunta: texto }),
+        body: JSON.stringify({ pergunta: texto, semantico }),
       });
       const d = (await r.json()) as AskResponse;
       if (!r.ok) setErro(d.error ?? 'Erro na consulta');
@@ -149,9 +152,16 @@ export function AskTab() {
               rows={5}
               aria-label="Pergunta jurídica"
             />
+            <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+              <div className="min-w-0">
+                <Label htmlFor="busca-semantica" className="flex items-center gap-1.5 text-xs font-medium"><BrainCircuit className="size-3.5 text-amber-600" /> Busca semântica (IA)</Label>
+                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">Expande a consulta com terminologia jurídica e funde os rankings (RRF). Se a IA falhar, usa o léxico puro.</p>
+              </div>
+              <Switch id="busca-semantica" checked={semantico} onCheckedChange={setSemantico} aria-label="Ativar busca semântica" className="shrink-0" />
+            </div>
             <Button onClick={() => perguntar()} disabled={carregando || !pergunta.trim()} className="w-full">
               {carregando ? <Sparkles className="mr-2 size-4 animate-pulse" /> : <Send className="mr-2 size-4" />}
-              {carregando ? 'Consultando a base...' : 'Consultar EJC'}
+              {carregando ? 'Consultando a base...' : semantico ? 'Consultar (busca híbrida)' : 'Consultar (léxico)'}
             </Button>
             <div>
               <p className="mb-1.5 text-xs font-medium text-muted-foreground">Perguntas de teste (item 37):</p>

@@ -6,6 +6,10 @@
  * Regra de recorte: documentos com score >= 55% do topo (mín. 3, máx. 6).
  * Função: teste de regressão — garante que a recuperação continua
  * encontrando os documentos âncora de cada pergunta padrão.
+ * Revisão 2026-09-01 (LOTE-032): na pergunta do tempo médio JEC/BH removidas as
+ * expectativas tangenciais (lei-12153 competência Fazenda; sumula-376 MS) —
+ * âncoras reais da pergunta são os docs jurimetria-jec-* (crowd-out legítimo
+ * dos novos retratos DataJud de varas/cidades).
  */
 
 export interface PerguntaPadrao {
@@ -207,9 +211,7 @@ export const PERGUNTAS_PADRAO: PerguntaPadrao[] = [
       "jurimetria-jec-visao-geral-bh-betim-2025-2026",
       "lei9099-art62-63-criterios-competencia",
       "sumula-203-stj-sem-resp-contra-turma-recursal",
-      "jurimetria-jec-unidades-judiciarias",
-      "lei-12153-jec-fazenda-publica-competencia",
-      "sumula-376-stj-ms-contra-ato-turma-recursal"
+      "jurimetria-jec-unidades-judiciarias"
     ]
   },
   {

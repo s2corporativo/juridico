@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { retrieve, type DocParaRetrieval } from '@/lib/ejc/rag';
+import { buildIndex, type DocParaRetrieval } from '@/lib/ejc/rag';
+import { expandirConsulta, retrieveHibrido, rerankSemantico } from '@/lib/ejc/semantic';
 import ZAI from 'z-ai-web-dev-sdk';
 
 interface Payload {
   pergunta?: string;
   topK?: number;
+  semantico?: boolean;
 }
 
 export async function POST(req: NextRequest) {
@@ -39,10 +41,23 @@ export async function POST(req: NextRequest) {
       chunkTexto: c.texto,
     }));
 
-    const hits = retrieve(pergunta, paraRetrieval, Math.min(12, Math.max(4, body.topK ?? 8)));
-    if (!hits.length) {
+    const index = buildIndex(paraRetrieval);
+
+    // Busca híbrida (léxico + semântico-IA) com degradação honesta para o léxico puro.
+    const querSemantico = body.semantico !== false;
+    const expansao = querSemantico ? await expandirConsulta(pergunta) : null;
+    const { hits, semantico } = retrieveHibrido(pergunta, index, Math.min(12, Math.max(4, body.topK ?? 8)), expansao);
+    const hitsFinais = semantico && hits.length > 3 ? await rerankSemantico(pergunta, hits) : hits;
+    const modo = !querSemantico
+      ? 'léxico (seleção do usuário)'
+      : semantico
+        ? `híbrido (léxico + semântico-IA${expansao?.length ? `: ${expansao.length} termos de expansão` : ''})`
+        : 'léxico (degradação honesta — expansão IA indisponível)';
+
+    if (!hitsFinais.length) {
       return NextResponse.json({
         pergunta,
+        modo,
         resposta:
           'Não encontrei conteúdo suficiente na base Jurimetria DPT para responder com confiabilidade. Em vez de inventar informação (proibido pelo sistema), sugiro: (1) reformular a pergunta com termos jurídicos; (2) verificar se o lote relevante já foi abastecido; (3) pesquisar em fonte oficial (Planalto/tribunais) e inserir o conteúdo validado.',
         fontes: [],
@@ -51,7 +66,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Contexto com rastreabilidade
-    const contexto = hits
+    const contexto = hitsFinais
       .map((h, i) => {
         const revisao = h.status !== 'ATIVO' ? ' [REGISTRO EM REVISAO_HUMANA — não usar como fundamento definitivo]' : '';
         return `[FONTE ${i + 1}] ${h.titulo} (tipo: ${h.tipoDocumento}; confiabilidade: ${h.confiabilidade}; fonte: ${h.fonte ?? '—'}; URL: ${h.urlFonte ?? '—'}; consulta: ${h.dataConsulta ?? '—'})${revisao}\n${h.chunkTexto}`;
@@ -72,7 +87,7 @@ export async function POST(req: NextRequest) {
     });
     const resposta = completion.choices[0]?.message?.content ?? 'Sem resposta do modelo.';
 
-    const fontes = hits.map((h) => ({
+    const fontes = hitsFinais.map((h) => ({
       slug: h.slug,
       titulo: h.titulo,
       tipoDocumento: h.tipoDocumento,
@@ -86,7 +101,7 @@ export async function POST(req: NextRequest) {
       trecho: h.chunkTexto.slice(0, 320),
     }));
 
-    return NextResponse.json({ pergunta, resposta, fontes, modo: 'rag+llm', totalFontes: fontes.length });
+    return NextResponse.json({ pergunta, resposta, fontes, modo, totalFontes: fontes.length });
   } catch (e) {
     return NextResponse.json({ error: 'Erro na consulta jurídica', detalhe: String(e) }, { status: 500 });
   }

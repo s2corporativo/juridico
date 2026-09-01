@@ -171,6 +171,23 @@ export function variacoesToken(t: string): string[] {
 }
 
 /**
+ * IDF (inverse document frequency) do corpus indexado — para ponderação de termos.
+ * Termos ubíquos (ex.: nome de comarca em vários lotes) recebem peso menor;
+ * termos raros/discriminantes recebem peso maior. IDF = ln(1 + N/df).
+ */
+export function extrairIdf(index: ChunkIndex[]): Map<string, number> {
+  const df = new Map<string, number>();
+  for (const idx of index) for (const t of idx.freq.keys()) df.set(t, (df.get(t) ?? 0) + 1);
+  const N = index.length || 1;
+  const idf = new Map<string, number>();
+  // IDF temperado: 1 + 0,25·(ln(1+N/df) − 1) — preserva o matching multi-termo
+  // (o IDF puro fazia um termo raro dominar vários termos comuns) e ainda
+  // reduz o peso de termos ubíquos (ex.: nome de comarca).
+  for (const [t, d] of df) idf.set(t, 1 + 0.25 * (Math.log(1 + N / d) - 1));
+  return idf;
+}
+
+/**
  * Busca a frequência do token no chunk aceitando variações de plural (stemmer mínimo).
  */
 function freqComVariacoes(idx: ChunkIndex, t: string): number {
@@ -194,8 +211,13 @@ function bonusComVariacoes(idx: ChunkIndex, t: string): number {
 
 /** Retrieval sobre índice pré-computado — O(corpus) uma única vez.
  *  Extensão 2026-08-30 (LOTE-026): matching com stemmer mínimo de plural —
- *  token exato mantém pontuação idêntica à versão anterior; variações ampliam recall. */
-export function retrieveFromIndex(query: string, index: ChunkIndex[], topK = 8): RetrievalHit[] {
+ *  token exato mantém pontuação idêntica à versão anterior; variações ampliam recall.
+ *  Extensão 2026-09-01 (LOTE-032): parâmetro opcional `idf` (Map) — se informado, o
+ *  overlap de cada termo é ponderado. EXPERIMENTAL: em corpus pequeno o IDF puro
+ *  degrada o matching multi-termo (suíte: 90,9%) e o temperado ainda move 2 casos
+ *  (97,9%); por isso o caminho padrão NÃO pondera (comportamento validado 100%).
+ *  Reservado para reavaliação quando a base passar de ~10k chunks. */
+export function retrieveFromIndex(query: string, index: ChunkIndex[], topK = 8, idf?: Map<string, number>): RetrievalHit[] {
   const qTokens = tokenize(query);
   if (!qTokens.length) return [];
   const qSet = new Set(qTokens);
@@ -205,7 +227,7 @@ export function retrieveFromIndex(query: string, index: ChunkIndex[], topK = 8):
     let overlap = 0;
     for (const t of qSet) {
       const f = freqComVariacoes(idx, t);
-      if (f) overlap += 1 + Math.log(f);
+      if (f) overlap += (1 + Math.log(f)) * (idf?.get(t) ?? 1);
     }
     if (overlap === 0) continue;
     let bonus = 0;
