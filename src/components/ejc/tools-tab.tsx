@@ -25,6 +25,10 @@ import { DataJudChecker } from '@/components/ejc/datajud-checker';
 //   quarta-feira a sábado — ver nota).
 // - Prazos em dias CORRIDOS (ex.: administrativos da Lei 9.784/98 art. 66,
 //   CDC art. 49) contam-se do dia seguinte, incluindo fins de semana.
+// - RECESSO FORENSE (CPC art. 220): "Suspende-se o curso do prazo processual
+//   nos dias compreendidos entre 20 de dezembro e 20 de janeiro, inclusive."
+//   Opcional na calculadora (interruptor "Recesso"), aplicável somente a
+//   prazos PROCESSUAIS em dias úteis — nunca a prazos materiais/administrativos.
 // ---------------------------------------------------------------------------
 
 function pascoa(ano: number): Date {
@@ -88,6 +92,18 @@ function ehDiaUtil(d: Date, feriados: Set<string>): boolean {
 const toISO = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+/**
+ * Recesso forense (CPC art. 220): de 20/dez a 20/jan, inclusive — suspende o
+ * curso de prazos processuais. Retorna a data se estiver dentro da janela.
+ */
+function emRecesso(d: Date): boolean {
+  const m = d.getMonth(); // 0-based: 11 = dezembro, 0 = janeiro
+  const dia = d.getDate();
+  if (m === 11) return dia >= 20;
+  if (m === 0) return dia <= 20;
+  return false;
+}
+
 const DIAS_SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
@@ -144,6 +160,7 @@ export function ToolsTab() {
   const [dias, setDias] = useState<string>('15');
   const [tipo, setTipo] = useState<'uteis' | 'corridos'>('uteis');
   const [comMoveis, setComMoveis] = useState(true);
+  const [comRecesso, setComRecesso] = useState(false);
   const [direcao, setDirecao] = useState<'futuro' | 'retro'>('futuro');
 
   const resultado = useMemo(() => {
@@ -158,7 +175,7 @@ export function ToolsTab() {
 
     if (tipo === 'corridos') {
       const fim = deslocar(base, direcao === 'futuro' ? n : -n);
-      return { fim, diasCorridos: n, diasUteisEnvolvidos: null, observacao: null };
+      return { fim, diasCorridos: n, diasUteisEnvolvidos: null, diasRecesso: null, observacao: null };
     }
     // Dias úteis: contagem inicia no 1º dia seguinte à data-base; para prazo futuro
     // processual (publicação/intimação), se a data-base cair em dia não útil ou
@@ -166,18 +183,23 @@ export function ToolsTab() {
     // dia útil seguinte — aqui aplicamos a regra básica: começar no primeiro dia
     // útil após a data-base.
     let contador = 0;
+    let recesso = 0;
     let cursor = base;
     let inicio: Date | null = null;
     const passo = direcao === 'futuro' ? 1 : -1;
     while (contador < n) {
       cursor = deslocar(cursor, passo);
+      if (comRecesso && emRecesso(cursor)) {
+        recesso++;
+        continue;
+      }
       if (ehDiaUtil(cursor, feriados)) {
         if (!inicio) inicio = cursor;
         contador++;
       }
     }
-    return { fim: cursor, diasCorridos: null, diasUteisEnvolvidos: n, inicio, observacao: null };
-  }, [dataBase, dias, tipo, comMoveis, direcao]);
+    return { fim: cursor, diasCorridos: null, diasUteisEnvolvidos: n, diasRecesso: comRecesso ? recesso : null, inicio, observacao: null };
+  }, [dataBase, dias, tipo, comMoveis, comRecesso, direcao]);
 
   const feriadosProximos = useMemo(() => {
     const lista: { data: Date; nome: string }[] = [];
@@ -213,12 +235,12 @@ export function ToolsTab() {
     const dt = resultado.fim;
     const stamp = (x: Date) => `${x.getFullYear()}${String(x.getMonth() + 1).padStart(2, '0')}${String(x.getDate()).padStart(2, '0')}`;
     const uid = `ejc-${stamp(new Date())}-${Math.random().toString(36).slice(2, 8)}@ejc-local`;
-    const resumo = `Vencimento: ${Number(dias)} dias ${tipo === 'uteis' ? 'úteis' : 'corridos'} (EJC)`;
-    const desc = `Calculado pelo EJC a partir de ${formatarCurto(new Date(dataBase + 'T12:00:00'))} (${direcao === 'futuro' ? 'futuro' : 'retroativo'}). Fundamentos na base EJC (CPC art. 219 / CLT arts. 775 e 477). Feriados forenses locais não inclusos.`;
+    const resumo = `Vencimento: ${Number(dias)} dias ${tipo === 'uteis' ? 'úteis' : 'corridos'} (Jurimetria DPT)`;
+    const desc = `Calculado pelo Jurimetria DPT a partir de ${formatarCurto(new Date(dataBase + 'T12:00:00'))} (${direcao === 'futuro' ? 'futuro' : 'retroativo'}), ${tipo === 'uteis' ? 'dias úteis (CPC art. 219)' : 'dias corridos'}${comRecesso ? ', com suspensão do recesso de 20/dez a 20/jan (CPC art. 220)' : ''}. Fundamentos na base (CPC art. 219 / CLT arts. 775 e 477). Feriados forenses locais não inclusos.`;
     const ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//EJC Ecossistema Juridico Clovis//PT-BR',
+      'PRODID:-//Jurimetria DPT De Paula Teixeira Advocacia//PT-BR',
       'BEGIN:VEVENT',
       `UID:${uid}`,
       `DTSTAMP:${stamp(new Date())}T000000Z`,
@@ -291,11 +313,20 @@ export function ToolsTab() {
                 ))}
               </div>
             </div>
-            <div className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3">
-              <Switch checked={comMoveis} onCheckedChange={setComMoveis} aria-label="Considerar recessos móveis" className="mt-0.5" />
-              <div>
-                <Label className="text-xs font-medium">Considerar recessos usuais (Carnaval, Sexta-feira da Paixão, Corpus Christi)</Label>
-                <p className="text-[11px] text-muted-foreground">Feriados nacionais fixos em lei (incl. Consciência Negra — Lei 14.759/2023) são sempre considerados. Feriados forenses locais NÃO estão inclusos — confira o calendário da comarca.</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3">
+                <Switch checked={comMoveis} onCheckedChange={setComMoveis} aria-label="Considerar recessos móveis" className="mt-0.5" />
+                <div>
+                  <Label className="text-xs font-medium">Feriados móveis (Carnaval, Sexta-feira da Paixão, Corpus Christi)</Label>
+                  <p className="text-[11px] text-muted-foreground">Feriados nacionais fixos em lei (incl. Consciência Negra — Lei 14.759/2023) são sempre considerados.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3">
+                <Switch checked={comRecesso} onCheckedChange={setComRecesso} aria-label="Considerar recesso do CPC art. 220" className="mt-0.5" />
+                <div>
+                  <Label className="text-xs font-medium">Recesso forense — 20/dez a 20/jan (CPC art. 220)</Label>
+                  <p className="text-[11px] text-muted-foreground">Suspensão de prazos processuais. Não aplique a prazos materiais ou administrativos.</p>
+                </div>
               </div>
             </div>
 
@@ -313,6 +344,11 @@ export function ToolsTab() {
                   {tipo === 'corridos' && Number(dias) >= 1 && (
                     <Badge variant="outline" className="text-[10px]">
                       ≈ {Math.max(1, Math.round((Number(dias) * 5) / 7))} dias úteis equivalentes
+                    </Badge>
+                  )}
+                  {resultado.diasRecesso !== null && resultado.diasRecesso > 0 && (
+                    <Badge variant="outline" className="border-blue-500/40 text-[10px] text-sky-700 dark:text-sky-400">
+                      + {resultado.diasRecesso} dias suspensos no recesso (CPC art. 220)
                     </Badge>
                   )}
                 </div>
