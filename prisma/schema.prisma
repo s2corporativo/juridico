@@ -41,6 +41,7 @@ model KnowledgeDocument {
   chunks         KnowledgeChunk[]
   relacaoOrigem  KnowledgeRelationship[] @relation("origem")
   relacaoDestino KnowledgeRelationship[] @relation("destino")
+  casos          CaseDocument[]
 
   @@index([tipoDocumento])
   @@index([area])
@@ -108,10 +109,39 @@ model RagTest {
 }
 
 // Controle de confidencialidade — segregação base geral x casos (item 25)
+// Casos privados do escritório — ficam APENAS no banco local (nunca saem do ambiente)
 model CaseWorkspace {
   id        String   @id @default(cuid())
   nome      String
   cliente   String?
   privado   Boolean  @default(true)
+  status    String   @default("ATIVO") // ATIVO | ARQUIVADO
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documentos CaseDocument[]
+  notas      CaseNote[]
+}
+
+// Documento da base geral vinculado a um caso privado (referência por FK —
+// o conteúdo NÃO é copiado, apenas a ligação + anotação do advogado)
+model CaseDocument {
+  id         String          @id @default(cuid())
+  caso       CaseWorkspace   @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  casoId     String
+  document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+  anotacao   String?
+  createdAt  DateTime        @default(now())
+
+  @@unique([casoId, documentId])
+}
+
+// Nota de acompanhamento do caso (timeline)
+model CaseNote {
+  id        String        @id @default(cuid())
+  caso      CaseWorkspace @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  casoId    String
+  texto     String
+  createdAt DateTime      @default(now())
 }

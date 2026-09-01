@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { consumirAcao, agendarAcao } from '@/lib/ejc/ui-actions';
-import { BrainCircuit, FileText, LayoutDashboard, Library, Network, FlaskConical, Search, Sparkles } from 'lucide-react';
+import { BrainCircuit, Briefcase, FileText, LayoutDashboard, Library, Network, FlaskConical, Rss, ScanSearch, Search, Sparkles, Wrench } from 'lucide-react';
 
 interface DocItem {
   slug: string;
@@ -19,7 +19,11 @@ const ABAS = [
   { valor: 'base', label: 'Base de Conhecimento', icone: Library },
   { valor: 'consulta', label: 'Consulta Jurídica (IA)', icone: BrainCircuit },
   { valor: 'grafo', label: 'Grafo', icone: Network },
+  { valor: 'ferramentas', label: 'Ferramentas', icone: Wrench },
+  { valor: 'casos', label: 'Casos Privados', icone: Briefcase },
+  { valor: 'fontes', label: 'Atualizações (Fontes)', icone: Rss },
   { valor: 'testes', label: 'Testes RAG', icone: FlaskConical },
+  { valor: 'integridade', label: 'Integridade da Curadoria', icone: ScanSearch },
 ];
 
 /** Remove diacríticos para busca ("sumula" encontra "Súmula"). */

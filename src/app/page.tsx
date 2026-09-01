@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   BookOpen,
   BrainCircuit,
+  Briefcase,
   Database,
   FlaskConical,
   LayoutDashboard,
@@ -25,6 +26,7 @@ import { AskTab } from '@/components/ejc/ask-tab';
 import { TestTab } from '@/components/ejc/test-tab';
 import { GraphTab } from '@/components/ejc/graph-tab';
 import { ToolsTab } from '@/components/ejc/tools-tab';
+import { CasosTab } from '@/components/ejc/casos-tab';
 import { CompendioTab } from '@/components/ejc/compendio-tab';
 import { FontesTab } from '@/components/ejc/fontes-tab';
 import { IntegridadeTab } from '@/components/ejc/integridade-tab';
@@ -143,6 +145,9 @@ export default function Home() {
               <TabsTrigger value="ferramentas" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
                 <Wrench className="size-4" /> Ferramentas
               </TabsTrigger>
+              <TabsTrigger value="casos" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
+                <Briefcase className="size-4" /> Casos
+              </TabsTrigger>
               <TabsTrigger value="fontes" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
                 <Rss className="size-4" /> Fontes
               </TabsTrigger>
@@ -179,6 +184,9 @@ export default function Home() {
                 </TabsContent>
                 <TabsContent value="ferramentas" forceMount className="mt-0 data-[state=inactive]:hidden">
                   <ToolsTab />
+                </TabsContent>
+                <TabsContent value="casos" forceMount className="mt-0 data-[state=inactive]:hidden">
+                  <CasosTab onNavegar={setAba} />
                 </TabsContent>
                 <TabsContent value="fontes" forceMount className="mt-0 data-[state=inactive]:hidden">
                   <FontesTab />
