@@ -164,7 +164,7 @@ export function DataJudChecker() {
           </p>
         )}
         <p className="text-[10px] leading-relaxed text-muted-foreground">
-          A chave pública do DataJud é gratuita (datajud-wiki.cnj.jus.br) e, sem ela configurada, o EJC não simula resultado — informa honestamente a indisponibilidade.
+          A chave pública do DataJud é gratuita (datajud-wiki.cnj.jus.br) e, sem ela configurada, o sistema não simula resultado — informa honestamente a indisponibilidade.
         </p>
       </CardContent>
     </Card>

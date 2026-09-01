@@ -1,4 +1,4 @@
-// EJC – Ecossistema Jurídico Clovis — Tipos centrais
+// Jurimetria DPT — Tipos centrais
 // Metadados obrigatórios (item 19 da missão) e sistema de confiança (item 33)
 
 export const TIPOS_DOCUMENTO = [

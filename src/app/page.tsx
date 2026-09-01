@@ -18,6 +18,7 @@ import {
   Rss,
   ScanSearch,
   Search,
+  TrendingUp,
   Wrench,
 } from 'lucide-react';
 import { OverviewTab } from '@/components/ejc/overview-tab';
@@ -30,6 +31,7 @@ import { CasosTab } from '@/components/ejc/casos-tab';
 import { CompendioTab } from '@/components/ejc/compendio-tab';
 import { FontesTab } from '@/components/ejc/fontes-tab';
 import { IntegridadeTab } from '@/components/ejc/integridade-tab';
+import { JurimetriaTab } from '@/components/ejc/jurimetria-tab';
 import { CommandPalette } from '@/components/ejc/command-palette';
 import { ThemeToggle } from '@/components/ejc/theme-toggle';
 import type { StatsInfo } from '@/components/ejc/types';
@@ -52,12 +54,13 @@ export default function Home() {
       {/* Filete dourado de marca */}
       <div aria-hidden className="h-[3px] w-full bg-marca-ouro" />
 
-      {/* Header */}
-      <header className="vidro sticky top-0 z-40 border-b">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+      {/* Header — verde institucional da marca (fundo do logotipo) com tipografia branca */}
+      <header className="bg-marca-verde sticky top-0 z-40 border-b border-black/20 shadow-[0_2px_16px_-6px_oklch(0.24_0.04_168/0.55)]">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.06] to-transparent" />
+        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            {/* Placa de marca com o logotipo oficial (blend screen sobre o verde) */}
-            <div className="relative flex h-14 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black bg-marca-verde borda-ouro shadow-sm transition-transform duration-300 hover:scale-[1.03] sm:w-40">
+            {/* Placa de marca com o logotipo oficial sobre o próprio verde */}
+            <div className="relative flex h-14 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black/30 borda-ouro brilho-ouro-suave shadow-sm ring-1 ring-white/10 transition-transform duration-300 hover:scale-[1.03] sm:w-40">
               <img
                 src="/logo-depaula-dark-wide.png"
                 alt="Logotipo De Paula Teixeira Advocacia — monograma PT em ouro"
@@ -65,12 +68,12 @@ export default function Home() {
               />
             </div>
             <div className="min-w-0">
-              <h1 className="text-base font-bold leading-tight tracking-tight sm:text-lg">
-                EJC — Ecossistema Jurídico Clovis
+              <h1 className="text-base font-bold leading-tight tracking-tight text-white sm:text-lg">
+                Jurimetria DPT
               </h1>
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground sm:text-xs">
-                <span className="font-medium text-primary">De Paula Teixeira Advocacia</span>
-                <span aria-hidden className="hidden text-border sm:inline">·</span>
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-white/70 sm:text-xs">
+                <span className="font-semibold texto-ouro-gradiente">De Paula Teixeira Advocacia</span>
+                <span aria-hidden className="hidden text-white/30 sm:inline">·</span>
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="size-3" aria-hidden />
                   Minas Gerais
@@ -79,27 +82,29 @@ export default function Home() {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle />
+            <div className="[&_button]:border-white/25 [&_button]:bg-white/10 [&_button]:text-white/90 [&_button]:hover:bg-white/20 [&_button]:hover:text-white">
+              <ThemeToggle />
+            </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPaletteAberta(true)}
-              className="h-8 gap-1.5 text-xs text-muted-foreground"
+              className="h-8 gap-1.5 border-white/25 bg-white/10 text-xs text-white/90 hover:bg-white/20 hover:text-white"
               aria-label="Abrir busca rápida (Ctrl+K)"
               title="Busca rápida (Ctrl+K)"
             >
               <Search className="size-3.5" />
               <span className="hidden sm:inline">Busca rápida</span>
-              <kbd className="hidden rounded border bg-muted px-1 py-0.5 font-mono text-[9px] md:inline">⌘K</kbd>
+              <kbd className="hidden rounded border border-white/30 bg-white/15 px-1 py-0.5 font-mono text-[9px] text-white md:inline">⌘K</kbd>
             </Button>
             {stats && (
-              <Badge variant="outline" className="borda-ouro text-[11px] transition-colors hover:bg-primary/10">
+              <Badge variant="outline" className="border-[--brand-gold]/50 bg-white/10 text-[11px] text-white transition-colors hover:bg-white/20">
                 <Library className="mr-1 size-3" />
                 {stats.total} documentos
               </Badge>
             )}
             {stats && (
-              <Badge variant="outline" className="hidden text-[11px] sm:inline-flex">
+              <Badge variant="outline" className="hidden border-white/25 bg-white/10 text-[11px] text-white/90 sm:inline-flex">
                 <Database className="mr-1 size-3" />
                 {stats.chunks} chunks RAG
               </Badge>
@@ -107,7 +112,7 @@ export default function Home() {
             {stats && (
               <Badge
                 variant="outline"
-                className="hidden border-primary/40 text-[11px] text-primary md:inline-flex"
+                className="hidden border-[--brand-gold]/50 bg-white/10 text-[11px] text-white md:inline-flex"
                 title="Lotes de abastecimento validados com CHECK 1-10"
               >
                 <FlaskConical className="mr-1 size-3" />
@@ -122,13 +127,16 @@ export default function Home() {
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
         {erro ? (
           <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-8 text-center text-sm text-red-600 dark:text-red-400">
-            Falha ao carregar os dados do EJC. Verifique o servidor e recarregue a página.
+            Falha ao carregar os dados do sistema. Verifique o servidor e recarregue a página.
           </div>
         ) : (
           <Tabs value={aba} onValueChange={setAba} className="space-y-5">
             <TabsList className="vidro h-auto w-full flex-wrap justify-start gap-1 rounded-xl border p-1 sm:w-auto">
               <TabsTrigger value="visao" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
                 <LayoutDashboard className="size-4" /> Visão Geral
+              </TabsTrigger>
+              <TabsTrigger value="jurimetria" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
+                <TrendingUp className="size-4" /> Jurimetria
               </TabsTrigger>
               <TabsTrigger value="compendio" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
                 <BookOpen className="size-4" /> Compêndio
@@ -169,6 +177,9 @@ export default function Home() {
               >
                 <TabsContent value="visao" forceMount className="mt-0 data-[state=inactive]:hidden">
                   {stats ? <OverviewTab stats={stats} onNavegar={setAba} /> : <p className="py-16 text-center text-sm text-muted-foreground">Carregando estatísticas...</p>}
+                </TabsContent>
+                <TabsContent value="jurimetria" forceMount className="mt-0 data-[state=inactive]:hidden">
+                  <JurimetriaTab />
                 </TabsContent>
                 <TabsContent value="compendio" forceMount className="mt-0 data-[state=inactive]:hidden">
                   <CompendioTab />
@@ -220,7 +231,7 @@ export default function Home() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">EJC — Ecossistema Jurídico Clovis.</span>{' '}
+                <span className="font-semibold text-foreground">Jurimetria DPT.</span>{' '}
                 <span className="font-medium text-primary">De Paula Teixeira Advocacia</span>
               </p>
             </div>

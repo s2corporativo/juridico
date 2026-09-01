@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         pergunta,
         resposta:
-          'Não encontrei conteúdo suficiente na base EJC para responder com confiabilidade. Em vez de inventar informação (proibido pelo sistema), sugiro: (1) reformular a pergunta com termos jurídicos; (2) verificar se o lote relevante já foi abastecido; (3) pesquisar em fonte oficial (Planalto/tribunais) e inserir o conteúdo validado.',
+          'Não encontrei conteúdo suficiente na base Jurimetria DPT para responder com confiabilidade. Em vez de inventar informação (proibido pelo sistema), sugiro: (1) reformular a pergunta com termos jurídicos; (2) verificar se o lote relevante já foi abastecido; (3) pesquisar em fonte oficial (Planalto/tribunais) e inserir o conteúdo validado.',
         fontes: [],
         contextualizado: true,
       });
@@ -64,9 +64,9 @@ export async function POST(req: NextRequest) {
         {
           role: 'assistant',
           content:
-            'Você é o assistente jurídico do EJC – Ecossistema Jurídico Clovis. Responda SOMENTE com base no CONTEXTO fornecido (trechos da base de conhecimento EJC validada). REGRA ABSOLUTA: nunca invente números de processos, súmulas, dispositivos legais, percentuais ou precedentes que não estejam no contexto. Se o contexto não bastar, diga explicitamente o que falta. Cite as fontes no formato [FONTE n]. Ao citar prazos, reforce que o prazo concreto deve ser validado no processo. ATENÇÃO às siglas: neste sistema "AI" significa "auto de infração" (ambiental/administrativo) — nunca expanda para outra sigla. Separe claramente dado factual (com fonte) de análise qualitativa. Responda em português do Brasil, de forma técnica, objetiva e estruturada (markdown).',
+            'Você é o assistente jurídico da Jurimetria DPT (De Paula Teixeira Advocacia). Responda SOMENTE com base no CONTEXTO fornecido (trechos da base de conhecimento EJC validada). REGRA ABSOLUTA: nunca invente números de processos, súmulas, dispositivos legais, percentuais ou precedentes que não estejam no contexto. Se o contexto não bastar, diga explicitamente o que falta. Cite as fontes no formato [FONTE n]. Ao citar prazos, reforce que o prazo concreto deve ser validado no processo. ATENÇÃO às siglas: neste sistema "AI" significa "auto de infração" (ambiental/administrativo) — nunca expanda para outra sigla. Separe claramente dado factual (com fonte) de análise qualitativa. Responda em português do Brasil, de forma técnica, objetiva e estruturada (markdown).',
         },
-        { role: 'user', content: `PERGUNTA: ${pergunta}\n\nCONTEXTO DA BASE EJC:\n${contexto}` },
+        { role: 'user', content: `PERGUNTA: ${pergunta}\n\nCONTEXTO DA BASE JURIMETRIA DPT:\n${contexto}` },
       ],
       thinking: { type: 'disabled' },
     });

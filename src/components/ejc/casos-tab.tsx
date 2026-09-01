@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { Archive, ArchiveRestore, Briefcase, FileText, Lock, NotebookPen, Plus, Search, StickyNote, Trash2, Unlink, X } from 'lucide-react';
+import { Archive, ArchiveRestore, Briefcase, FileDown, FileText, Loader2, Lock, NotebookPen, Plus, Search, StickyNote, Trash2, Unlink, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { agendarAcao } from '@/lib/ejc/ui-actions';
 
@@ -69,6 +69,7 @@ export function CasosTab({ onNavegar }: { onNavegar: (aba: string) => void }) {
   const [novoNome, setNovoNome] = useState('');
   const [novoCliente, setNovoCliente] = useState('');
   const [confirmandoExcluir, setConfirmandoExcluir] = useState(false);
+  const [exportando, setExportando] = useState(false);
   const [editando, setEditando] = useState(false);
   const [editNome, setEditNome] = useState('');
   const [editCliente, setEditCliente] = useState('');
@@ -160,6 +161,30 @@ export function CasosTab({ onNavegar }: { onNavegar: (aba: string) => void }) {
       toast({ title: 'Caso atualizado' });
     } catch {
       toast({ title: 'Falha ao atualizar caso', variant: 'destructive' });
+    }
+  };
+
+  // Exporta relatório executivo .docx — gerado 100% localmente (LGPD); download direto.
+  const exportarRelatorio = async () => {
+    if (!selecionado) return;
+    setExportando(true);
+    try {
+      const r = await fetch(`/api/ejc/casos/${selecionado.id}/relatorio`);
+      if (!r.ok) throw new Error();
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-${selecionado.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'caso'}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: 'Relatório gerado', description: 'Arquivo .docx salvo localmente — nenhum dado saiu do servidor.' });
+    } catch {
+      toast({ title: 'Falha ao gerar relatório', variant: 'destructive' });
+    } finally {
+      setExportando(false);
     }
   };
 
@@ -296,6 +321,9 @@ export function CasosTab({ onNavegar }: { onNavegar: (aba: string) => void }) {
                     <p className="mt-1 text-[11px] text-muted-foreground">Criado em {dt(selecionado.createdAt)}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={exportarRelatorio} disabled={exportando} title="Gera relatório executivo .docx localmente (LGPD)">
+                      {exportando ? <Loader2 className="size-3.5 animate-spin" /> : <FileDown className="size-3.5" />} Relatório
+                    </Button>
                     <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setEditNome(selecionado.nome); setEditCliente(selecionado.cliente ?? ''); setEditando(true); }}>
                       <NotebookPen className="size-3.5" /> Editar
                     </Button>

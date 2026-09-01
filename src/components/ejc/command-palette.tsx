@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { consumirAcao, agendarAcao } from '@/lib/ejc/ui-actions';
-import { BrainCircuit, Briefcase, FileText, LayoutDashboard, Library, Network, FlaskConical, Rss, ScanSearch, Search, Sparkles, Wrench } from 'lucide-react';
+import { BrainCircuit, Briefcase, FileText, LayoutDashboard, Library, Network, FlaskConical, Rss, ScanSearch, Search, Sparkles, TrendingUp, Wrench } from 'lucide-react';
 
 interface DocItem {
   slug: string;
@@ -16,6 +16,7 @@ interface DocItem {
 
 const ABAS = [
   { valor: 'visao', label: 'Visão Geral', icone: LayoutDashboard },
+  { valor: 'jurimetria', label: 'Jurimetria (cidades e varas)', icone: TrendingUp },
   { valor: 'base', label: 'Base de Conhecimento', icone: Library },
   { valor: 'consulta', label: 'Consulta Jurídica (IA)', icone: BrainCircuit },
   { valor: 'grafo', label: 'Grafo', icone: Network },
@@ -88,7 +89,7 @@ export function CommandPalette({ onNavegar, open, onOpenChange }: { onNavegar: (
     : docs.filter((d) => d.confiabilidade === 'A').slice(0, 6);
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} aria-label="Paleta de comandos EJC">
+    <CommandDialog open={open} onOpenChange={onOpenChange} aria-label="Paleta de comandos Jurimetria DPT">
       <CommandInput value={termo} onValueChange={setTermo} placeholder="Buscar documentos, abas ou perguntar à IA..." aria-label="Buscar na paleta de comandos" />
       <CommandList className="max-h-[70vh]">
         <CommandEmpty>Nenhum resultado. Tente outros termos jurídicos.</CommandEmpty>

@@ -216,7 +216,7 @@ export function KnowledgeTab() {
       const tema = doc.metadados?.tema_repetitivo ? ` (Tema ${doc.metadados.tema_repetitivo}/STJ)` : '';
       return `BRASIL. ${tribunal}${tema}. ${doc.titulo}. ${doc.fonte ?? ''}, consulta ${doc.dataConsulta ?? ''}. Disponível em: ${doc.urlFonte ?? ''}. Acesso em: ${doc.dataConsulta ?? ''}.`;
     }
-    return `${doc.titulo}. In: EJC — Ecossistema Jurídico Clovis. ${doc.fonte ?? 'Elaboração EJC'}, consulta ${doc.dataConsulta ?? ''}. Disponível em: ${doc.urlFonte ?? 'base interna EJC'}. Acesso em: ${doc.dataConsulta ?? ''}.`;
+    return `${doc.titulo}. In: Jurimetria DPT. ${doc.fonte ?? 'Elaboração EJC'}, consulta ${doc.dataConsulta ?? ''}. Disponível em: ${doc.urlFonte ?? 'base interna Jurimetria DPT'}. Acesso em: ${doc.dataConsulta ?? ''}.`;
   };
 
   const copiarCitacao = async (doc: DocDetail) => {
@@ -593,7 +593,7 @@ export function KnowledgeTab() {
         <div id="ejc-print" aria-hidden="true">
           <h1>{detalhe.titulo}</h1>
           <p className="meta">
-            {detalhe.tipoDocumento} · {detalhe.area}{detalhe.subarea ? ` · ${detalhe.subarea}` : ''} · confiança {detalhe.confiabilidade} · {detalhe.lote ?? ''} · consulta {detalhe.dataConsulta ?? ''} · EJC — Ecossistema Jurídico Clovis
+            {detalhe.tipoDocumento} · {detalhe.area}{detalhe.subarea ? ` · ${detalhe.subarea}` : ''} · confiança {detalhe.confiabilidade} · {detalhe.lote ?? ''} · consulta {detalhe.dataConsulta ?? ''} · Jurimetria DPT
           </p>
           {detalhe.fonte && <p className="meta">Fonte: {detalhe.fonte}{detalhe.urlFonte ? ` — ${detalhe.urlFonte}` : ''}</p>}
           <hr />

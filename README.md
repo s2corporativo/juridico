@@ -1,4 +1,4 @@
-# ⚖️ EJC — Ecossistema Jurídico Clovis
+# ⚖️ Jurimetria DPT
 
 Sistema de inteligência jurídica com base de conhecimento curada (RAG), compêndio estruturado e jurimetria — desenvolvido para a **De Paula Teixeira Advocacia** (grupo S2 Corporativo), com foco no estado de **Minas Gerais**.
 
@@ -10,9 +10,9 @@ Sistema de inteligência jurídica com base de conhecimento curada (RAG), compê
 
 | Métrica | Valor |
 |---|---|
-| Documentos curados | **639** |
-| Chunks semânticos (RAG) | **2.484** |
-| Lotes de ingestão | **29** |
+| Documentos curados | **668** |
+| Chunks semânticos (RAG) | **2.569** |
+| Lotes de ingestão | **30** |
 | Áreas do direito | **12** |
 | Capítulos do compêndio | **81** |
 | Score de integridade da curadoria | **98/100** |
@@ -22,6 +22,7 @@ Sistema de inteligência jurídica com base de conhecimento curada (RAG), compê
 - **Penal** — CP/CPP literais, teoria do crime, prisões cautelares, crimes patrimoniais e de honra
 - **Consumidor** — CDC literal, publicidade e oferta, cobrança, SAC, defesa em juízo
 - **Juizados Especiais** — Lei 9.099/12.153 literais, admissibilidade, recursos, jurimetria JEC (DataJud/CNJ)
+- **Recuperação Judicial e Falência** — Lei 11.101/2005 literal (arts. 1º-173, redações da Lei 14.112/2021 como consta), prazos consolidados, checklist de admissibilidade, fluxo, peça-modelo
 - Civil · Bancário · Processual · Ambiental · Trabalhista · LGPD · Licitações · Execução fiscal · Alienação fiduciária
 
 ### Rastreabilidade e anti-invenção
@@ -32,13 +33,15 @@ Sistema de inteligência jurídica com base de conhecimento curada (RAG), compê
 
 ## 🧩 Funcionalidades
 
-- **Dashboard SaaS** com marca, métricas da base e navegação em 9 abas
+- **Dashboard SaaS** com marca (cabeçalho verde institucional), métricas da base e navegação em 11 abas
+- **Jurimetria** — estatísticas processuais em tempo real por **cidade (IBGE), vara, classe, grau e ano** (DataJud/CNJ): métricas, distribuição anual, rankings clicáveis e amostra com timeline de movimentos
+- **Casos privados** — workspace por caso com documentos vinculados por referência, anotações e **relatório executivo .docx** gerado localmente
 - **Compêndio** navegável Área → Capítulo → Documento
 - **Consulta RAG** com recuperação semântica e stemmer PT-BR (singular/plural)
-- **Testes RAG** — suíte de 36 perguntas padrão com histórico persistido
+- **Testes RAG** — suíte de 39 perguntas padrão (inclui recuperação judicial) com histórico persistido
 - **Integridade** — auditoria da curadoria em 7 seções (estrutura, taxonomia, CHECK 1-10, LGPD, anti-invenção, duplicidade, saúde do RAG), reexecutável via UI/CLI/API
 - **Atualizações** — fontes públicas (API da Câmara dos Deputados) com *inteiro teor* oficial e anti-loop
-- **Jurimetria JEC** — agregados públicos DataJud/CNJ (índice TJMG), sem dados processuais pessoais
+- **Consulta processual** — metadados públicos por número CNJ (DataJud) sem injeção na base
 
 ## 🚀 Como rodar
 
@@ -54,7 +57,7 @@ bun run db:push
 
 # 4. (Opcional) Reconstruir a base a partir dos lotes versionados
 bun scripts/ejc-ingest.ts && bun scripts/ejc-ingest-6-7.ts   # ...demais lotes em scripts/
-# Alternativa: o banco db/custom.db já vem populado com as 639 entradas curadas
+# Alternativa: o banco db/custom.db já vem populado com as 668 entradas curadas
 
 # 5. Desenvolvimento
 bun run dev
@@ -67,7 +70,7 @@ bun run dev
 | Variável | Descrição |
 |---|---|
 | `DATABASE_URL` | Caminho do SQLite (ex.: `file:./db/custom.db`) |
-| `DATAJUD_API_KEY` | *(opcional)* Chave pública da API DataJud/CNJ para jurimetria em tempo real |
+| `DATAJUD_API_KEY` | Chave pública da API DataJud/CNJ para jurimetria e consulta processual (o `.env.example` já traz a chave pública divulgada na wiki oficial do CNJ) |
 
 ## 🔍 Auditoria da curadoria
 
@@ -80,10 +83,10 @@ Ou na UI: aba **Integridade** → *Re-auditar* (ou `GET /api/ejc/integridade?ref
 ## 📁 Estrutura
 
 ```
-src/app/            App Router (dashboard, 9 abas, APIs /api/ejc/*)
-src/components/ejc/ Componentes das abas (compêndio, consulta, testes, integridade…)
+src/app/            App Router (dashboard, 11 abas, APIs /api/ejc/*)
+src/components/ejc/ Componentes das abas (jurimetria, compêndio, consulta, casos…)
 src/lib/ejc/        RAG, taxonomia (81 capítulos), auditoria, ingestão
-data/ejc/           Lotes 001-029 versionados (fonte da base)
+data/ejc/           Lotes 001-030 versionados (fonte da base)
 scripts/            Ingestão idempotente por lote + auditoria CLI (CHECK 1-10)
 tmp-gen/            Geradores de lotes com injeção literal (origem documentada)
 prisma/             Schema do conhecimento jurídico

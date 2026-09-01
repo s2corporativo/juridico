@@ -53,7 +53,7 @@ export function OverviewTab({ stats, onNavegar }: { stats: StatsInfo; onNavegar?
             <CardDescription className="flex items-center gap-1.5"><span className="flex size-6 items-center justify-center rounded-md bg-amber-500/10"><Database className="size-3.5 text-amber-600" /></span> Documentos na base</CardDescription>
             <CardTitle className="text-3xl tabular-nums transition-colors group-hover:text-amber-700 dark:group-hover:text-amber-400">{stats.total}</CardTitle>
           </CardHeader>
-          <CardContent className="text-xs text-muted-foreground">Distribuídos nos 15 bancos do EJC</CardContent>
+          <CardContent className="text-xs text-muted-foreground">Distribuídos nos 15 bancos do sistema</CardContent>
         </Card>
         <Card className="group relative overflow-hidden border-amber-500/25 transition-all hover:shadow-md">
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-500/60 to-transparent" />

@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EJC — Ecossistema Jurídico Clovis · De Paula Teixeira Advocacia",
+  title: "Jurimetria DPT — De Paula Teixeira Advocacia",
   description:
-    "Ecossistema de Inteligência Jurídica da De Paula Teixeira Advocacia: compêndio de legislação, jurisprudência, teses, peças, contratos, checklists, fluxos e prazos com RAG rastreável até a fonte oficial, atualização diária por APIs públicas e foco em Minas Gerais.",
+    "Plataforma de Jurimetria e Inteligência Jurídica da De Paula Teixeira Advocacia: compêndio de legislação, jurisprudência, teses, peças, contratos, checklists, fluxos e prazos com RAG rastreável até a fonte oficial, atualização diária por APIs públicas e foco em Minas Gerais.",
   keywords: [
-    "EJC", "inteligência jurídica", "RAG jurídico", "jurisprudência", "legislação", "teses",
+    "Jurimetria DPT", "inteligência jurídica", "RAG jurídico", "jurisprudência", "legislação", "teses",
     "De Paula Teixeira Advocacia", "Minas Gerais", "juizados especiais", "direito tributário MG",
   ],
   icons: {
