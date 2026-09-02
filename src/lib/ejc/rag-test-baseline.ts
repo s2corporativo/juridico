@@ -10,6 +10,11 @@
  * expectativas tangenciais (lei-12153 competência Fazenda; sumula-376 MS) —
  * âncoras reais da pergunta são os docs jurimetria-jec-* (crowd-out legítimo
  * dos novos retratos DataJud de varas/cidades).
+ * Revisão 2026-09-02 (LOTE-033): mesma pergunta — removidas sumula-203-stj e
+ * jurimetria-jec-unidades-judiciarias (tangenciais); adicionada âncora real
+ * jrm-tjmg-belo-horizonte-panorama-areas-do-direito (JEC é a classe líder de BH,
+ * 744.348 processos — retrato DataJud LOTE-033). Crowd-out legítimo dos panoramas
+ * municipais das 4 comarcas (BH/Betim/Contagem/Igarapé).
  */
 
 export interface PerguntaPadrao {
@@ -210,8 +215,7 @@ export const PERGUNTAS_PADRAO: PerguntaPadrao[] = [
     "esperados": [
       "jurimetria-jec-visao-geral-bh-betim-2025-2026",
       "lei9099-art62-63-criterios-competencia",
-      "sumula-203-stj-sem-resp-contra-turma-recursal",
-      "jurimetria-jec-unidades-judiciarias"
+      "jrm-tjmg-belo-horizonte-panorama-areas-do-direito"
     ]
   },
   {
