@@ -108,6 +108,23 @@ model RagTest {
   createdAt              DateTime @default(now())
 }
 
+// Memos de pesquisa jurídica agêntica (fundamentação com citações rastreáveis).
+// NÃO armazena números de processo nem dados pessoais (LGPD) — apenas tese, memo,
+// slugs da base curada e metadados do agente.
+model PesquisaMemo {
+  id          String   @id @default(cuid())
+  pergunta    String
+  modo        String   @default("agente") // agente | degradado
+  motor       String?
+  iteracoes   String? // JSON — IteracaoPesquisa[]
+  memo        String // JSON — MemoPesquisa
+  fontes      String? // JSON — resumo das fontes (slug, titulo, urlFonte, confiabilidade)
+  totalFontes Int      @default(0)
+  tempoMs     Int?
+  createdAt   DateTime @default(now())
+}
+
+
 // Controle de confidencialidade — segregação base geral x casos (item 25)
 // Casos privados do escritório — ficam APENAS no banco local (nunca saem do ambiente)
 model CaseWorkspace {
