@@ -10,12 +10,12 @@ Sistema de inteligência jurídica com base de conhecimento curada (RAG), compê
 
 | Métrica | Valor |
 |---|---|
-| Documentos curados | **668** |
-| Chunks semânticos (RAG) | **2.569** |
-| Lotes de ingestão | **30** |
+| Documentos curados | **703** |
+| Chunks semânticos (RAG) | **2.716** |
+| Lotes de ingestão | **34** |
 | Áreas do direito | **12** |
-| Capítulos do compêndio | **81** |
-| Score de integridade da curadoria | **98/100** |
+| Capítulos do compêndio | **90** |
+| Score de integridade da curadoria | **100/100** |
 
 ### Temas cobertos (com foco MG)
 - **Tributário** — CF/CTN/LC 116/LC 123 literais, compensação, transação, imunidades, ICMS×ISS
@@ -33,12 +33,14 @@ Sistema de inteligência jurídica com base de conhecimento curada (RAG), compê
 
 ## 🧩 Funcionalidades
 
-- **Dashboard SaaS** com marca (cabeçalho verde institucional), métricas da base e navegação em 11 abas
+- **Dashboard SaaS** com marca (cabeçalho verde institucional), métricas da base e navegação em 12 abas · PWA instalável · tour guiado de boas-vindas · paleta de comandos ⌘K
 - **Jurimetria** — estatísticas processuais em tempo real por **cidade (IBGE), vara, classe, grau e ano** (DataJud/CNJ): métricas, distribuição anual, rankings clicáveis e amostra com timeline de movimentos
 - **Casos privados** — workspace por caso com documentos vinculados por referência, anotações e **relatório executivo .docx** gerado localmente
 - **Compêndio** navegável Área → Capítulo → Documento
-- **Consulta RAG** com recuperação semântica e stemmer PT-BR (singular/plural)
-- **Testes RAG** — suíte de 39 perguntas padrão (inclui recuperação judicial) com histórico persistido
+- **Consulta RAG** com recuperação híbrida BM25 + embeddings e stemmer PT-BR (singular/plural), respostas com citações `[FONTE n]` rastreáveis
+- **Pesquisa agêntica** — planeja, busca, critica e sintetiza em iterações um **memo de fundamentação** com contra-argumentos e exportação **.docx**
+- **Verificação de citação** — checksum CNJ (ISO 7064), súmulas/precedentes na base e consulta **DataJud ao vivo**, com veredictos honestos (`CONFIRMADA_BASE` / `NAO_INDEXADO` / `NAO_LOCALIZADA`) e link para a página dos autos
+- **Testes RAG** — suíte de 39 perguntas-âncora com **Recall@10, MRR e Hit Rate** e histórico persistido
 - **Integridade** — auditoria da curadoria em 7 seções (estrutura, taxonomia, CHECK 1-10, LGPD, anti-invenção, duplicidade, saúde do RAG), reexecutável via UI/CLI/API
 - **Atualizações** — fontes públicas (API da Câmara dos Deputados) com *inteiro teor* oficial e anti-loop
 - **Consulta processual** — metadados públicos por número CNJ (DataJud) sem injeção na base
@@ -57,7 +59,7 @@ bun run db:push
 
 # 4. (Opcional) Reconstruir a base a partir dos lotes versionados
 bun scripts/ejc-ingest.ts && bun scripts/ejc-ingest-6-7.ts   # ...demais lotes em scripts/
-# Alternativa: o banco db/custom.db já vem populado com as 668 entradas curadas
+# Alternativa: o banco db/custom.db já vem populado com as 703 entradas curadas
 
 # 5. Desenvolvimento
 bun run dev
@@ -83,10 +85,10 @@ Ou na UI: aba **Integridade** → *Re-auditar* (ou `GET /api/ejc/integridade?ref
 ## 📁 Estrutura
 
 ```
-src/app/            App Router (dashboard, 11 abas, APIs /api/ejc/*)
+src/app/            App Router (dashboard, 12 abas, APIs /api/ejc/*)
 src/components/ejc/ Componentes das abas (jurimetria, compêndio, consulta, casos…)
-src/lib/ejc/        RAG, taxonomia (81 capítulos), auditoria, ingestão
-data/ejc/           Lotes 001-030 versionados (fonte da base)
+src/lib/ejc/        RAG (BM25+embeddings), taxonomia (90 capítulos), auditoria, ingestão
+data/ejc/           Lotes 001-034 versionados (fonte da base)
 scripts/            Ingestão idempotente por lote + auditoria CLI (CHECK 1-10)
 tmp-gen/            Geradores de lotes com injeção literal (origem documentada)
 prisma/             Schema do conhecimento jurídico
