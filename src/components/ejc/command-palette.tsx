@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { consumirAcao, agendarAcao } from '@/lib/ejc/ui-actions';
-import { BrainCircuit, Briefcase, FileText, LayoutDashboard, Library, Network, FlaskConical, Rss, ScanSearch, Search, Sparkles, TrendingUp, Wrench } from 'lucide-react';
+import { abrirTour } from './tour-guiado';
+import { BrainCircuit, Briefcase, Compass, FileText, LayoutDashboard, Library, Network, FlaskConical, Rss, ScanSearch, Search, Sparkles, TrendingUp, Wrench } from 'lucide-react';
 
 interface DocItem {
   slug: string;
@@ -110,6 +111,17 @@ export function CommandPalette({ onNavegar, open, onOpenChange }: { onNavegar: (
               {a.label}
             </CommandItem>
           ))}
+          <CommandItem
+            value="tour guiado primeiros passos ajuda"
+            onSelect={() => {
+              onOpenChange(false);
+              abrirTour();
+            }}
+            className="gap-2"
+          >
+            <Compass className="size-4 text-amber-600" />
+            Tour guiado pela plataforma
+          </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading={termo.trim() ? `Documentos (${docsFiltrados.length} de ${docs.length})` : 'Documentos nível A — destaque'}>

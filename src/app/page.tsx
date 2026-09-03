@@ -9,6 +9,7 @@ import {
   BookOpen,
   BrainCircuit,
   Briefcase,
+  Compass,
   Database,
   FileSearch,
   FlaskConical,
@@ -36,6 +37,7 @@ import { IntegridadeTab } from '@/components/ejc/integridade-tab';
 import { JurimetriaTab } from '@/components/ejc/jurimetria-tab';
 import { CommandPalette } from '@/components/ejc/command-palette';
 import { ThemeToggle } from '@/components/ejc/theme-toggle';
+import { TourGuiado, abrirTour } from '@/components/ejc/tour-guiado';
 import type { StatsInfo } from '@/components/ejc/types';
 
 export default function Home() {
@@ -87,6 +89,17 @@ export default function Home() {
             <div className="[&_button]:border-white/25 [&_button]:bg-white/10 [&_button]:text-white/90 [&_button]:hover:bg-white/20 [&_button]:hover:text-white">
               <ThemeToggle />
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={abrirTour}
+              className="h-8 gap-1.5 border-white/25 bg-white/10 text-xs text-white/90 hover:bg-white/20 hover:text-white"
+              aria-label="Tour guiado pela plataforma"
+              title="Tour guiado pela plataforma"
+            >
+              <Compass className="size-3.5" />
+              <span className="hidden sm:inline">Tour</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -224,6 +237,9 @@ export default function Home() {
 
       {/* Paleta de comandos (⌘K) — navegação e salto direto a documentos */}
       <CommandPalette onNavegar={setAba} open={paletteAberta} onOpenChange={setPaletteAberta} />
+
+      {/* Tour guiado — 1ª visita (localStorage) ou botão "Tour" / paleta ⌘K */}
+      <TourGuiado onNavegar={setAba} />
 
       {/* Footer — fixado ao rodapé (mt-auto) e respeitando safe-area */}
       <footer className="mt-auto border-t bg-muted/40 pb-[env(safe-area-inset-bottom)]">

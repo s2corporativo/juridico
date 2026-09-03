@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -22,10 +22,28 @@ export const metadata: Metadata = {
     "Jurimetria DPT", "inteligência jurídica", "RAG jurídico", "jurisprudência", "legislação", "teses",
     "De Paula Teixeira Advocacia", "Minas Gerais", "juizados especiais", "direito tributário MG",
   ],
-  icons: {
-    icon: "/icon-256.png",
-    apple: "/icon-256.png",
+  manifest: "/manifest.webmanifest",
+  applicationName: "Jurimetria DPT",
+  appleWebApp: {
+    capable: true,
+    title: "Jurimetria DPT",
+    statusBarStyle: "black-translucent",
   },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icon-192.png",
+  },
+};
+
+// PWA — cor de tema = verde institucional da marca (fundo do logotipo).
+export const viewport: Viewport = {
+  themeColor: "#17352c",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

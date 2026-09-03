@@ -100,5 +100,16 @@ export interface TesteInfo {
   acertos: number;
   score: number;
   status: string;
+  /** Recíproco do rank do 1º esperado encontrado (0 se nenhum) — métrica MRR do teste. */
+  mrr?: number;
+  /** Rank (1-based) do 1º esperado no top-10; null se nenhum acerto. */
+  primeiroAcertoRank?: number | null;
   registros: { slug: string; titulo: string; score: number; confiabilidade: string }[];
+}
+
+/** Agregados IR da suíte (Recall@10 macro, MRR médio, Hit Rate). */
+export interface MetricasIR {
+  recallAt10: number;
+  mrr: number;
+  hitRate: number;
 }

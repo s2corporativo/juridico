@@ -1,0 +1,35 @@
+{
+  "name": "Jurimetria DPT — De Paula Teixeira Advocacia",
+  "short_name": "Jurimetria DPT",
+  "description": "Plataforma de Jurimetria e Inteligência Jurídica da De Paula Teixeira Advocacia: compêndio curado, jurisprudência, teses, peças e prazos com RAG rastreável até a fonte oficial, foco em Minas Gerais.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8faf8",
+  "theme_color": "#17352c",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["legal", "productivity", "business"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

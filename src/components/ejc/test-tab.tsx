@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, FlaskConical, History, MinusCircle, XCircle } from 'lucide-react';
-import type { TesteInfo } from './types';
+import { CheckCircle2, Crosshair, FlaskConical, History, MinusCircle, Target, TrendingUp, XCircle } from 'lucide-react';
+import type { MetricasIR, TesteInfo } from './types';
 
 function icone(status: string) {
   if (status === 'SUCESSO') return <CheckCircle2 className="size-4 text-emerald-600" />;
@@ -26,6 +26,7 @@ interface TestePersistido {
 export function TestTab() {
   const [resultados, setResultados] = useState<TesteInfo[] | null>(null);
   const [media, setMedia] = useState<number | null>(null);
+  const [metricas, setMetricas] = useState<MetricasIR | null>(null);
   const [executando, setExecutando] = useState(false);
   const [historico, setHistorico] = useState<TestePersistido[]>([]);
   const [totalTestes, setTotalTestes] = useState<number | null>(null);
@@ -52,6 +53,7 @@ export function TestTab() {
       const d = await r.json();
       setResultados(d.resultados ?? []);
       setMedia(d.mediaScore ?? null);
+      setMetricas(d.metricas ?? null);
       carregarHistorico();
     } finally {
       setExecutando(false);
@@ -80,6 +82,38 @@ export function TestTab() {
         </CardContent>
       </Card>
 
+      {metricas && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Card className="transition-shadow hover:shadow-md">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10"><Target className="size-5 text-emerald-600" /></div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold tabular-nums leading-none">{Math.round(metricas.recallAt10 * 100)}%</p>
+                <p className="mt-1 truncate text-xs text-muted-foreground" title="Fração média das âncoras recuperadas no top-10 (macro-média da suíte)">Recall@10 — âncoras no top-10</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="transition-shadow hover:shadow-md">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10"><TrendingUp className="size-5 text-amber-600" /></div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold tabular-nums leading-none">{metricas.mrr.toFixed(3)}</p>
+                <p className="mt-1 truncate text-xs text-muted-foreground" title="Média de 1/rank do 1º documento esperado encontrado (1,0 = sempre em 1º lugar)">MRR — posição do 1º acerto</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="transition-shadow hover:shadow-md">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10"><Crosshair className="size-5 text-primary" /></div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold tabular-nums leading-none">{Math.round(metricas.hitRate * 100)}%</p>
+                <p className="mt-1 truncate text-xs text-muted-foreground" title="Fração de perguntas com pelo menos 1 documento esperado no top-10">Hit Rate — perguntas com ≥ 1 âncora</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {resultados && (
         <div className="space-y-3">
           {resultados.map((r, i) => (
@@ -95,7 +129,14 @@ export function TestTab() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="shrink-0 tabular-nums">{Math.round(r.score * 100)}%</Badge>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <Badge variant="outline" className="tabular-nums">{Math.round(r.score * 100)}%</Badge>
+                    {typeof r.mrr === 'number' && (
+                      <Badge variant="secondary" className="tabular-nums text-[10px] font-normal" title="Recíproco do rank do 1º esperado (MRR do teste)">
+                        MRR {r.mrr.toFixed(2)}{r.primeiroAcertoRank ? ` · rk ${r.primeiroAcertoRank}` : ''}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="scrollbar-thin mt-3 max-h-24 overflow-y-auto">
                   <div className="flex flex-wrap gap-1.5">
