@@ -46,7 +46,9 @@ local-*
 *.log
 dev.log
 dev.out.log
-test
+/test
+/test.js
+/test.*.js
 prompt
 
 server.log

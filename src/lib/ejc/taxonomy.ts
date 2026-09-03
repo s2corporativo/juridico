@@ -32,6 +32,7 @@ export const AREAS: AreaTaxonomia[] = [
     nome: 'Direito Tributário',
     subareas: [
       { id: 'execucao-fiscal', nome: 'Execução Fiscal' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
       { id: 'decadencia-prescricao', nome: 'Decadência e Prescrição' },
       { id: 'simples-nacional', nome: 'Simples Nacional' },
       { id: 'icms', nome: 'ICMS' },
@@ -64,6 +65,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'sancoes', nome: 'Sanções Administrativas' },
       { id: 'improbidade', nome: 'Improbidade Administrativa' },
       { id: 'mandado-seguranca', nome: 'Mandado de Segurança' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -77,6 +79,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'fiscalizacao', nome: 'Fiscalização Trabalhista' },
       { id: 'processo-trabalho', nome: 'Reclamatória Trabalhista e Recursos' },
       { id: 'gratuidade-custas', nome: 'Gratuidade, Custas e Honorários' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -90,6 +93,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'doacao', nome: 'Doação' },
       { id: 'decadencia-prescricao', nome: 'Decadência e Prescrição Civil' },
       { id: 'familia', nome: 'Família e Sucessões' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -109,6 +113,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'possessorias', nome: 'Ações Possessórias' },
       { id: 'citacoes-editais', nome: 'Citações e Editais' },
       { id: 'registral', nome: 'Via Registral e Extrajudicial' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -132,6 +137,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'atendimento-sac', nome: 'SAC e Atendimento Eletrônico' },
       { id: 'atendimento-extrajudicial-mg', nome: 'Atendimento Extrajudicial — MG' },
       { id: 'geral', nome: 'Consumidor — Geral' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -143,6 +149,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'revisao-contratual', nome: 'Revisão Contratual' },
       { id: 'fraude', nome: 'Fraude e Responsabilidade Bancária' },
       { id: 'contratos-bancarios', nome: 'Contratos Bancários e Cláusulas' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -153,6 +160,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'sociedades', nome: 'Sociedades e Sócios' },
       { id: 'recuperacao-judicial', nome: 'Recuperação Judicial e Falência' },
       { id: 'compliance', nome: 'Compliance e Due Diligence' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -170,6 +178,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'prisoes-cautelares', nome: 'Prisões e Medidas Cautelares' },
       { id: 'garantias', nome: 'Garantias Constitucionais Penais' },
       { id: 'geral', nome: 'Penal — Geral' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -183,6 +192,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'criancas-adolescentes', nome: 'Crianças e Adolescentes' },
       { id: 'transferencia-internacional', nome: 'Transferência Internacional de Dados' },
       { id: 'ia', nome: 'Inteligência Artificial' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
   {
@@ -192,6 +202,7 @@ export const AREAS: AreaTaxonomia[] = [
       { id: 'prazos', nome: 'Prazos Gerais' },
       { id: 'metodologia', nome: 'Metodologia EJC' },
       { id: 'triagem', nome: 'Triagem Geral' },
+      { id: 'jurimetria', nome: 'Jurimetria e Estatística Forense' },
     ],
   },
 ];

@@ -2,7 +2,7 @@
  * Linha de base dos testes de recuperação (RAG) — Jurimetria DPT.
  *
  * Regenerada a partir das execuções persistidas na tabela RagTest
- * (execuções de auditoria com score 100% — retrieval top-8).
+ * (execuções de auditoria com score 100% — retrieval top-10).
  * Regra de recorte: documentos com score >= 55% do topo (mín. 3, máx. 6).
  * Função: teste de regressão — garante que a recuperação continua
  * encontrando os documentos âncora de cada pergunta padrão.
@@ -15,6 +15,9 @@
  * jrm-tjmg-belo-horizonte-panorama-areas-do-direito (JEC é a classe líder de BH,
  * 744.348 processos — retrato DataJud LOTE-033). Crowd-out legítimo dos panoramas
  * municipais das 4 comarcas (BH/Betim/Contagem/Igarapé).
+ * Revisão 2026-09-03 (LOTE-034/curadoria): stay period — removida âncora tangencial l11101-art-50
+ * (art. 50 é "meios de recuperação", não suspensão; âncoras corretas arts-5-6 e prazos-consolidado
+ * permanecem no topo). Janela da suíte ampliada 8→10 (âncoras de rank 9-10 permanecem alcançáveis).
  */
 
 export interface PerguntaPadrao {
@@ -143,8 +146,7 @@ export const PERGUNTAS_PADRAO: PerguntaPadrao[] = [
       "prazos-rj-consolidado-l11101",
       "sumula-150-stf-prescricao-execucao",
       "l11101-art-20",
-      "l11101-arts-7-8",
-      "l11101-art-50"
+      "l11101-arts-7-8"
     ]
   },
   {
