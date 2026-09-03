@@ -44,6 +44,12 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-useless-escape": "off",
   },
 }, {
+  // Módulos de dados (lotes de ingestão EJC): default export anônimo é o formato do lote — regra de estilo não se aplica a dados
+  files: ["data/**/*.ts"],
+  rules: {
+    "import/no-anonymous-default-export": "off",
+  },
+}, {
   ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills"]
 }];
 
