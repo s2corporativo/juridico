@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import {
-  BadgeCheck, Copy, ExternalLink, FileSearch, History, Loader2, Quote, ScrollText,
+  BadgeCheck, Copy, ExternalLink, FileDown, FileSearch, History, Loader2, Quote, ScrollText,
   ShieldCheck, Sparkles, XCircle, AlertTriangle,
 } from 'lucide-react';
 
@@ -29,6 +29,44 @@ interface MemoUI {
 interface PesquisaUI {
   pergunta: string; motor: string; iteracoes: IteracaoUI[]; fontes: HitHibridoUI[];
   fontesWeb: FonteWebUI[]; memo: MemoUI; tempoMs: number;
+}
+
+// Memo persistido no banco (GET /api/ejc/pesquisa) — fontes guardadas com campos reduzidos
+interface MemoSalvo {
+  id: string; pergunta: string; modo: string; motor: string; totalFontes: number;
+  tempoMs: number; createdAt: string;
+  memo: MemoUI | null;
+  iteracoes: IteracaoUI[] | null;
+  fontes: { slug: string; titulo: string; urlFonte: string | null; confiabilidade: string; status: string }[] | null;
+}
+
+// Reconstrói a visão completa a partir do memo salvo (campos não persistidos recebem default honesto)
+function memoSalvoParaUI(m: MemoSalvo): PesquisaUI | null {
+  if (!m.memo) return null;
+  return {
+    pergunta: m.pergunta,
+    motor: m.motor,
+    iteracoes: Array.isArray(m.iteracoes) ? m.iteracoes : [],
+    fontes: (m.fontes ?? []).map((f) => ({
+      slug: f.slug,
+      titulo: f.titulo,
+      tipoDocumento: '—',
+      area: '—',
+      confiabilidade: f.confiabilidade ?? 'B',
+      status: f.status ?? 'ATIVO',
+      fonte: null,
+      urlFonte: f.urlFonte ?? null,
+      dataConsulta: null,
+      chunkTexto: '',
+      scoreBm25: 0,
+      scoreEmb: 0,
+      score: 0,
+      motor: m.motor,
+    })),
+    fontesWeb: [],
+    memo: m.memo,
+    tempoMs: m.tempoMs ?? 0,
+  };
 }
 interface VerificacaoUI {
   tipo: string; citacao: string; veredicto: string; detalhe: string;
@@ -73,7 +111,8 @@ export function PesquisaTab() {
   const [verificando, setVerificando] = useState(false);
   const [verificacoes, setVerificacoes] = useState<VerificacaoUI[] | null>(null);
   const [copiado, setCopiado] = useState(false);
-  const [historico, setHistorico] = useState<{ id: string; pergunta: string; modo: string; totalFontes: number; createdAt: string }[]>([]);
+  const [baixando, setBaixando] = useState(false);
+  const [historico, setHistorico] = useState<MemoSalvo[]>([]);
 
   useEffect(() => {
     fetch('/api/ejc/pesquisa')
@@ -114,6 +153,51 @@ export function PesquisaTab() {
     setTimeout(() => setCopiado(false), 2000);
   }
 
+  async function baixarDocx() {
+    if (!pesquisa || baixando) return;
+    setBaixando(true);
+    try {
+      const r = await fetch('/api/ejc/pesquisa/docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pergunta: pesquisa.pergunta,
+          motor: pesquisa.motor,
+          tempoMs: pesquisa.tempoMs,
+          memo: pesquisa.memo,
+          fontes: pesquisa.fontes.map((f) => ({
+            slug: f.slug, titulo: f.titulo, confiabilidade: f.confiabilidade,
+            status: f.status, fonte: f.fonte, urlFonte: f.urlFonte, dataConsulta: f.dataConsulta,
+          })),
+          fontesWeb: pesquisa.fontesWeb,
+        }),
+      });
+      if (!r.ok) return;
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cd = r.headers.get('Content-Disposition') ?? '';
+      a.download = /filename="([^"]+)"/.exec(cd)?.[1] ?? 'memo-fundamentacao.docx';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      /* download é acessório — silencioso */
+    } finally {
+      setBaixando(false);
+    }
+  }
+
+  function abrirMemoSalvo(m: MemoSalvo) {
+    const ui = memoSalvoParaUI(m);
+    if (ui) {
+      setPesquisa(ui);
+      setPergunta(m.pergunta);
+    } else {
+      setPergunta(m.pergunta);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <Card className="border-[--brand-green]/25">
@@ -139,9 +223,14 @@ export function PesquisaTab() {
             {pesquisa && <Badge variant="outline" className="text-[11px]">{pesquisa.motor}</Badge>}
             {pesquisa && <Badge variant="outline" className="text-[11px]">{(pesquisa.tempoMs / 1000).toFixed(1)}s</Badge>}
             {pesquisa && (
-              <Button variant="outline" size="sm" onClick={copiarFundamentacao} className="ml-auto gap-1.5">
-                {copiado ? <BadgeCheck className="size-4 text-emerald-600" /> : <Copy className="size-4" />} Copiar fundamentação (Markdown)
-              </Button>
+              <div className="ml-auto flex gap-2">
+                <Button variant="outline" size="sm" onClick={copiarFundamentacao} className="gap-1.5">
+                  {copiado ? <BadgeCheck className="size-4 text-emerald-600" /> : <Copy className="size-4" />} Copiar (Markdown)
+                </Button>
+                <Button variant="outline" size="sm" onClick={baixarDocx} disabled={baixando} className="gap-1.5" title="Gera documento .docx localmente (LGPD: nada sai do servidor)">
+                  {baixando ? <Loader2 className="size-4 animate-spin" /> : <FileDown className="size-4" />} Baixar (.docx)
+                </Button>
+              </div>
             )}
           </div>
 
@@ -244,7 +333,7 @@ export function PesquisaTab() {
               <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><History className="size-3.5" /> Memos recentes</p>
               <div className="flex flex-wrap gap-2">
                 {historico.map((m) => (
-                  <button key={m.id} onClick={() => setPergunta(m.pergunta)} className="max-w-xs truncate rounded-full border bg-background px-3 py-1 text-[11px] transition-colors hover:border-[--brand-green] hover:text-[--brand-green]" title={m.pergunta}>
+                  <button key={m.id} onClick={() => abrirMemoSalvo(m)} className="max-w-xs truncate rounded-full border bg-background px-3 py-1 text-[11px] transition-colors hover:border-[--brand-green] hover:text-[--brand-green]" title={`Abrir memo completo (${m.totalFontes} fontes) · ${new Date(m.createdAt).toLocaleString('pt-BR')}`}>
                     {m.pergunta} · {m.totalFontes} fontes · {m.modo}
                   </button>
                 ))}
