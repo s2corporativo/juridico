@@ -49,6 +49,10 @@ export async function buscarReferencias(termo: string, maximo = 10): Promise<Ite
     const res = await fetchComRetry(url, { headers: { Accept: 'application/xml' } });
     if (!res.ok) throw new ErroIntegracao('lexml', `HTTP ${res.status}`, res.status);
     const xml = await res.text();
+    // Desafio anti-bot (Senado) — estado honesto, sem tentativa de burlar o controle.
+    if (/Verifica[çc][ãa]o de seguran[çc]a/i.test(xml) && /Senado/i.test(xml)) {
+      throw new ErroIntegracao('lexml', 'fonte sob verificação de segurança do Senado Federal, indisponível para consulta automatizada neste ambiente');
+    }
     const itens = extrairItens(xml);
     if (!itens.length && /<diagnostics[\s\S]*?<message>([^<]+)/i.test(xml)) {
       throw new ErroIntegracao('lexml', `SRU reportou: ${xml.match(/<message>([^<]+)/i)?.[1]}`);

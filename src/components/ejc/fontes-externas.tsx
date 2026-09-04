@@ -38,6 +38,13 @@ const CIDADES: { id: string; nome: string }[] = [
   { id: '3129301', nome: 'Igarapé/MG' },
 ];
 
+/** Mensagens de erro brutas da rede → texto honesto e legível. */
+function friendly(erro: string | undefined): string | undefined {
+  if (!erro) return undefined;
+  if (/fetch failed/i.test(erro)) return 'Fonte indisponível a partir deste ambiente (falha de rede na saída) — tente novamente mais tarde.';
+  return erro;
+}
+
 export function FontesExternas() {
   // LexML
   const [termoLexml, setTermoLexml] = useState('');
@@ -69,7 +76,7 @@ export function FontesExternas() {
       const r = await fetch(`/api/ejc/lexml?query=${encodeURIComponent(termoLexml)}&max=8`);
       const d = await r.json();
       if (!r.ok || d.error) {
-        setLexmlErro(d.error ?? 'Falha na consulta ao LexML.');
+        setLexmlErro(friendly(d.error) ?? 'Falha na consulta ao LexML.');
         setLexmlEstado('erro');
         return;
       }
@@ -88,7 +95,7 @@ export function FontesExternas() {
       const r = await fetch(`/api/ejc/querido-diario?municipio=${cidade}&termo=${encodeURIComponent(termoQd)}`);
       const d = await r.json();
       if (!r.ok || d.error) {
-        setQdErro(d.error ?? 'Falha na consulta ao Querido Diário.');
+        setQdErro(friendly(d.error) ?? 'Falha na consulta ao Querido Diário.');
         setQdEstado('erro');
         return;
       }

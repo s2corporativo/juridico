@@ -82,10 +82,23 @@ bun scripts/ejc-audit-curadoria.ts   # CLI reproduzível — score 0-100
 
 Ou na UI: aba **Integridade** → *Re-auditar* (ou `GET /api/ejc/integridade?refresh=1`).
 
+## 🔌 Integrações públicas gratuitas
+
+| Fonte | Uso no sistema | Estado |
+|---|---|---|
+| **DataJud (CNJ)** — P1 | Monitoramento de processos por número CNJ (classe, órgão, movimentações ao vivo) — aba Ferramentas · cron diário de sincronização | ✅ ATIVA |
+| **BrasilAPI** — P2 | Due diligence de CNPJ (situação, endereço, QSA) e CEP — aba Ferramentas · cache 24h/7d | ✅ ATIVA |
+| **Querido Diário** — P3 | Diários oficiais municipais (BH, Betim, Contagem, Igarapé) — aba Fontes | ⚠️ depende de saída de rede do ambiente |
+| **LexML Brasil** — P4 | Descoberta de referências normativas (SRU) — aba Fontes | ⚠️ sob verificação anti-bot do Senado neste ambiente |
+| **INLABS (DOU)** — P5 | Texto integral do DOU — exige cadastro pessoal do(a) usuário(a) (`INTEGR_INLABS_*` no .env) | 🔑 não configurado |
+| **TSE Dados Abertos** — P6 | Contencioso eleitoral — prioridade baixa (perfil de atuação atual) | 📋 adiado |
+
+Princípios das integrações: cache em memória com TTL por fonte · retentativa com backoff · **estados honestos** (fonte bloqueada é exibida como bloqueada — nada é simulado) · nenhuma credencial versionada · dados de partes nunca persistidos (LGPD) · nada é injetado automaticamente na base RAG (anti-loop).
+
 ## 📁 Estrutura
 
 ```
-src/app/            App Router (dashboard, 12 abas, APIs /api/ejc/*)
+src/app/            App Router (dashboard, 13 abas, APIs /api/ejc/*)
 src/components/ejc/ Componentes das abas (jurimetria, compêndio, consulta, casos…)
 src/lib/ejc/        RAG (BM25+embeddings), taxonomia (90 capítulos), auditoria, ingestão
 data/ejc/           Lotes 001-034 versionados (fonte da base)
