@@ -5,7 +5,7 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 import { Badge } from '@/components/ui/badge';
 import { consumirAcao, agendarAcao } from '@/lib/ejc/ui-actions';
 import { abrirTour } from './tour-guiado';
-import { BrainCircuit, Briefcase, Compass, FileText, LayoutDashboard, Library, Network, FlaskConical, Rss, ScanSearch, Search, Sparkles, TrendingUp, Wrench } from 'lucide-react';
+import { BrainCircuit, Briefcase, Compass, FileSignature, FileText, LayoutDashboard, Library, Network, FlaskConical, Rss, ScanSearch, Search, Sparkles, TrendingUp, Wrench } from 'lucide-react';
 
 interface DocItem {
   slug: string;
@@ -20,6 +20,8 @@ const ABAS = [
   { valor: 'jurimetria', label: 'Jurimetria (cidades e varas)', icone: TrendingUp },
   { valor: 'base', label: 'Base de Conhecimento', icone: Library },
   { valor: 'consulta', label: 'Consulta Jurídica (IA)', icone: BrainCircuit },
+  { valor: 'pesquisa', label: 'Pesquisa Agêntica', icone: Search },
+  { valor: 'minutas', label: 'Minutas IA (gerar peças)', icone: FileSignature },
   { valor: 'grafo', label: 'Grafo', icone: Network },
   { valor: 'ferramentas', label: 'Ferramentas', icone: Wrench },
   { valor: 'casos', label: 'Casos Privados', icone: Briefcase },

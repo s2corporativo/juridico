@@ -12,6 +12,7 @@ import {
   Compass,
   Database,
   FileSearch,
+  FileSignature,
   FlaskConical,
   LayoutDashboard,
   Library,
@@ -27,6 +28,7 @@ import { OverviewTab } from '@/components/ejc/overview-tab';
 import { KnowledgeTab } from '@/components/ejc/knowledge-tab';
 import { AskTab } from '@/components/ejc/ask-tab';
 import { PesquisaTab } from '@/components/ejc/pesquisa-tab';
+import { MinutasTab } from '@/components/ejc/minutas-tab';
 import { TestTab } from '@/components/ejc/test-tab';
 import { GraphTab } from '@/components/ejc/graph-tab';
 import { ToolsTab } from '@/components/ejc/tools-tab';
@@ -165,6 +167,9 @@ export default function Home() {
               <TabsTrigger value="pesquisa" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
                 <FileSearch className="size-4" /> Pesquisa
               </TabsTrigger>
+              <TabsTrigger value="minutas" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
+                <FileSignature className="size-4" /> Minutas IA
+              </TabsTrigger>
               <TabsTrigger value="grafo" className="gap-1.5 rounded-lg data-[state=active]:shadow-sm">
                 <Network className="size-4" /> Grafo
               </TabsTrigger>
@@ -210,6 +215,9 @@ export default function Home() {
                 </TabsContent>
                 <TabsContent value="pesquisa" forceMount className="mt-0 data-[state=inactive]:hidden">
                   <PesquisaTab />
+                </TabsContent>
+                <TabsContent value="minutas" forceMount className="mt-0 data-[state=inactive]:hidden">
+                  <MinutasTab />
                 </TabsContent>
                 <TabsContent value="grafo" forceMount className="mt-0 data-[state=inactive]:hidden">
                   <GraphTab />

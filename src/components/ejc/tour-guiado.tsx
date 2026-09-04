@@ -15,6 +15,7 @@ import {
   Briefcase,
   Compass,
   FileSearch,
+  FileSignature,
   FlaskConical,
   LayoutDashboard,
   Library,
@@ -85,6 +86,13 @@ const PASSOS: Passo[] = [
     descricao:
       'O agente planeja, busca, critica e sintetiza em iterações um memo de fundamentação com verificação de citação (checksum CNJ, súmulas, DataJud ao vivo) e exportação .docx para a peça.',
     icone: FileSearch,
+  },
+  {
+    aba: 'minutas',
+    titulo: 'Minutas IA — geração de peças',
+    descricao:
+      'Gere petições, contestações, recursos e contratos a partir dos fatos do caso. Os dados sensíveis recebem tarja de anonimização antes da IA (mapa auditável), os fundamentos saem da base curada com [FONTE n] e a minuta é editável e exportável em .docx.',
+    icone: FileSignature,
   },
   {
     aba: 'grafo',
