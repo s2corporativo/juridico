@@ -21,7 +21,7 @@ export interface TarjaResultado {
 const RE_CPF = /\b\d{3}\.?\d{3}\.?\d{3}[- ]?\d{2}\b/g;
 const RE_CNPJ = /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g;
 const RE_CEP = /\b\d{5}-?\d{3}\b/g;
-const RE_TELEFONE = /\b(?:\+?55[- ]?)?\(?\d{2}\)?[- ]?9?\d{4}[- ]?\d{4}\b/g;
+const RE_TELEFONE = /(?<![\w-])(?:\+?55[- ]?)?\(?\d{2}\)?[- ]?9?\d{4}[- ]?\d{4}\b/g;
 const RE_EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/gi;
 const RE_VALOR = /R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{2})?/g;
 // Endereço: logradouro conhecido + trecho até vírgula/ponto/linha (conservador).
@@ -57,43 +57,67 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** Aplica a tarja: substitui dados sensíveis por marcadores determinísticos. */
-export function anonimizar(texto: string, nomesConhecidos: string[] = []): TarjaResultado {
+/**
+ * Tarja sobre MÚLTIPLOS campos com contadores e mapa COMPARTILHADOS:
+ * o mesmo valor (mesma pessoa/CPF/telefone…) recebe o MESMO marcador em todos
+ * os campos — sem isso o modelo não distingue as partes (bug da mistura já
+ * observado: [NOME_1] de dois campos diferentes apontando para pessoas distintas).
+ * Ordem: padrões estruturados primeiro (CNPJ/CPF/email/endereço/CEP/telefone/
+ * valor), depois nomes conhecidos e tratamento — endereço antes de nome evita
+ * que o extrator de nomes quebre um logradouro pela metade.
+ */
+export function anonimizarMultiplos(
+  campos: Record<string, string>,
+  nomesConhecidos: string[] = [],
+): { tarjado: Record<string, string>; marcadores: MarcadorTarja[] } {
   const marcadores: MarcadorTarja[] = [];
   const contagem = new Map<string, number>();
+  const porOriginal = new Map<string, string>(); // "TIPO::valor" → marcador (dedupe global)
   const novoMarcador = (tipo: MarcadorTarja['tipo'], original: string): string => {
+    const chave = `${tipo}::${original}`;
+    const existente = porOriginal.get(chave);
+    if (existente) return existente;
     const prox = (contagem.get(tipo) ?? 0) + 1;
     contagem.set(tipo, prox);
     const marcador = `[${tipo}_${prox}]`;
     marcadores.push({ marcador, original, tipo });
+    porOriginal.set(chave, marcador);
     return marcador;
   };
 
-  let saida = texto;
-  const substituir = (tipo: MarcadorTarja['tipo'], re: RegExp) => {
-    const global = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
-    const achados = [...new Set(saida.match(global) ?? [])];
-    for (const achado of achados) {
-      if (!achado.trim()) continue;
-      saida = saida.split(achado).join(novoMarcador(tipo, achado));
+  const aplicarTarja = (valor: string): string => {
+    let saida = valor;
+    const substituir = (tipo: MarcadorTarja['tipo'], re: RegExp) => {
+      const global = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+      const achados = [...new Set(saida.match(global) ?? [])];
+      for (const achado of achados) {
+        if (!achado.trim()) continue;
+        saida = saida.split(achado).join(novoMarcador(tipo, achado));
+      }
+    };
+    // 1. Padrões estruturados (ordem importa: endereço antes de CEP; CNPJ/CPF antes de telefone).
+    substituir('CNPJ', RE_CNPJ);
+    substituir('CPF', RE_CPF);
+    substituir('EMAIL', RE_EMAIL);
+    substituir('ENDERECO', RE_ENDERECO);
+    substituir('CEP', RE_CEP);
+    substituir('TELEFONE', RE_TELEFONE);
+    substituir('VALOR', RE_VALOR);
+    // 2. Nomes conhecidos (campos do formulário — mais confiáveis; do maior para o menor).
+    const nomesUnicos = [...new Set(nomesConhecidos)].sort((a, b) => b.length - a.length);
+    for (const nome of nomesUnicos) {
+      substituir('NOME', new RegExp(escapeRe(nome), 'g'));
     }
+    substituir('NOME', RE_TRATAMENTO);
+    return saida;
   };
 
-  // 1. Nomes conhecidos (campos do formulário — mais confiáveis; do maior para o menor).
-  const nomesUnicos = [...new Set(nomesConhecidos)].sort((a, b) => b.length - a.length);
-  for (const nome of nomesUnicos) {
-    substituir('NOME', new RegExp(escapeRe(nome), 'g'));
+  const tarjado: Record<string, string> = {};
+  for (const [campo, valor] of Object.entries(campos)) {
+    if (!valor?.trim()) continue;
+    tarjado[campo] = aplicarTarja(valor);
   }
-  // 2. Padrões estruturados (ordem importa: CNPJ/CPF antes de telefone; endereço antes de CEP).
-  substituir('CNPJ', RE_CNPJ);
-  substituir('CPF', RE_CPF);
-  substituir('EMAIL', RE_EMAIL);
-  substituir('ENDERECO', RE_ENDERECO);
-  substituir('CEP', RE_CEP);
-  substituir('TELEFONE', RE_TELEFONE);
-  substituir('VALOR', RE_VALOR);
-  substituir('NOME', RE_TRATAMENTO);
-  return { texto: saida, marcadores };
+  return { tarjado, marcadores };
 }
 
 /** Restaura os valores originais no texto gerado (usa os marcadores encontrados). */
@@ -107,12 +131,14 @@ export function desanonimizar(texto: string, marcadores: MarcadorTarja[]): strin
 
 const PADROES_INJECTION: RegExp[] = [
   /ignore (?:as |as anteriores |todas as )?instru[çc][õo]es/gi,
+  /ignor(?:ando|e)\s+(?:as\s+)?(?:anteriores\s+)?instru[çc][õo]es/gi,
   /desconsidere (?:o |as |as instru)/gi,
   /voc[êe] (?:agora )?(?:[ée] |ser[áa] |deve )/gi,
   /(?:system|assistant|role)\s*:/gi,
   /\{\{[\s\S]{0,80}\}\}/g,
   /<\/?(?:system|instruction|prompt)>/gi,
   /(?:n[ãa]o )?(?:revele|revelar|mostre) (?:suas )?(?:instru[çc][õo]es|o prompt)/gi,
+  /nova instrução|new instruction|override as rules/gi,
 ];
 
 export interface GuardaResultado {

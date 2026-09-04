@@ -20,6 +20,7 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { FontesExternas } from './fontes-externas';
 
 interface EstadoFonte {
   id: string;
@@ -267,6 +268,9 @@ export function FontesTab() {
       <p className="text-[11px] leading-relaxed text-muted-foreground">
         {snap?.politica?.confiabilidade} {snap?.politica?.antiduplicacao}
       </p>
+
+      {/* Fontes públicas externas: LexML · Querido Diário · INLABS (guia de integrações P3–P5) */}
+      <FontesExternas />
     </div>
   );
 }

@@ -162,3 +162,19 @@ model CaseNote {
   texto     String
   createdAt DateTime      @default(now())
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Integrações públicas — monitoramento processual (guia de integrações, P1).
+// Armazena SOMENTE metadados públicos: número CNJ + alias do tribunal + rótulo
+// livre. Nenhuma parte, CPF, endereço ou dado pessoal é persistido (LGPD);
+// movimentações são consultadas ao vivo no DataJud e cacheadas em memória.
+model ProcessoMonitorado {
+  id             String    @id @default(cuid())
+  numeroProcesso String    @unique // 20 dígitos, padrão CNJ
+  tribunalAlias  String    // ex.: api_publica_tjmg
+  rotulo         String?   // descrição livre do acompanhamento (sem dados pessoais)
+  ativo          Boolean   @default(true)
+  ultimaConsulta DateTime?
+  ultimoResumo   String?   // última movimentação (nome + data) para a lista
+  createdAt      DateTime  @default(now())
+}

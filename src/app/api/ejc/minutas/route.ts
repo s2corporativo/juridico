@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { buildIndex, retrieveFromIndex, type DocParaRetrieval } from '@/lib/ejc/rag';
 import { tipoPorId } from '@/lib/ejc/minutas-tipos';
-import { anonimizar, desanonimizar, guardaInjection, blocoDados, extrairNomesDeCampos, type MarcadorTarja } from '@/lib/ejc/minutas-ia';
+import { anonimizarMultiplos, desanonimizar, guardaInjection, blocoDados, extrairNomesDeCampos, type MarcadorTarja } from '@/lib/ejc/minutas-ia';
 import ZAI from 'z-ai-web-dev-sdk';
 
 export const dynamic = 'force-dynamic';
@@ -41,16 +41,9 @@ export async function POST(req: NextRequest) {
     const camposTexto = ['fatos', 'pedidos', 'provas', 'observacoes', 'autor', 'reu', 'advogado'];
     const guarda = guardaInjection(camposTexto.map((c) => valores[c] ?? '').join('\n'));
 
-    // ── 2. Tarja: nomes dos campos + anonimização determinística ──
+    // ── 2. Tarja: mapa COMPARTILHADO entre campos (mesmo valor → mesmo marcador) ──
     const nomes = extrairNomesDeCampos(valores);
-    const tarjado: Record<string, string> = {};
-    const todosMarcadores: MarcadorTarja[] = [];
-    for (const [k, v] of Object.entries(valores)) {
-      if (!v?.trim()) continue;
-      const r = anonimizar(v, nomes);
-      tarjado[k] = r.texto;
-      todosMarcadores.push(...r.marcadores);
-    }
+    const { tarjado, marcadores: todosMarcadores } = anonimizarMultiplos(valores, nomes);
     // CPF remanescente após a tarja (máscara fora do padrão) → o LLM veria o
     // dado: sinaliza para revisão manual do mapa de anonimização.
     const tarjaFatos = tarjado.fatos ?? '';

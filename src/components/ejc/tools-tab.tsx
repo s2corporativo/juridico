@@ -14,6 +14,8 @@ import { AlcadaChecker } from '@/components/ejc/alcada-checker';
 import { PrescricaoChecker } from '@/components/ejc/prescricao-checker';
 import { UsucapiaoChecker } from '@/components/ejc/usucapiao-checker';
 import { DataJudChecker } from '@/components/ejc/datajud-checker';
+import { MonitorProcessos } from '@/components/ejc/monitor-processos';
+import { DueDiligence } from '@/components/ejc/due-diligence';
 
 // ---------------------------------------------------------------------------
 // Fundamento do cálculo (conteúdo já validado na base EJC):
@@ -409,6 +411,12 @@ export function ToolsTab() {
 
       {/* Consulta processual pública DataJud/CNJ (foco MG) */}
       <DataJudChecker />
+
+      {/* Processos monitorados — DataJud (guia de integrações P1) */}
+      <MonitorProcessos />
+
+      {/* Due diligence cadastral — BrasilAPI (guia de integrações P2) */}
+      <DueDiligence />
 
       {/* Feriados próximos */}
       <Card>
