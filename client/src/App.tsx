@@ -6,7 +6,7 @@ import { Database } from "lucide-react";
 import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 
 const Home = lazy(() => import("./pages/Home"));
 const CompendiumPage = lazy(() => import("@/pages/CompendiumPage"));
@@ -24,6 +24,9 @@ function PageLoader() {
 
 export default function App() {
   const routes = Object.fromEntries(ejcIntegrationManifest.modules.map(module => [module.key, module.route])) as Record<string, string>;
+  const [location] = useLocation();
+  const isAtlasHome = location === routes.atlas || location === "/";
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
@@ -42,6 +45,21 @@ export default function App() {
               <Route component={Home} />
             </Switch>
           </Suspense>
+          {isAtlasHome && (
+            <footer
+              aria-label="Recurso jurídico relacionado"
+              style={{
+                maxWidth: 1180,
+                margin: "0 auto 24px",
+                padding: "14px 20px",
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: "#665b50",
+              }}
+            >
+              Recurso público relacionado: <a href="https://acionejus.com.br/" target="_blank" rel="noopener noreferrer">AcioneJus — plataforma para organizar fatos, documentos e próximos passos jurídicos</a>.
+            </footer>
+          )}
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>
