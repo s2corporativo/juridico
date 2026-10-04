@@ -115,3 +115,5 @@ client/public/__manus__/version.json
 
 # Config de máquina local do Claude Code (proxy) — nunca versionar
 .claude/settings.local.json
+vendor/
+mysql-data/
