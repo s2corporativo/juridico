@@ -231,7 +231,7 @@ export function WizardPeticao() {
                 placeholder="Descreva os fatos em ordem cronológica. Use [NOME_1] para pseudonimizar dados pessoais."
               />
               <p className="text-[10px] text-muted-foreground">
-                {form.fatos.length} caracteres · Recomendado: >= 200 para peça robusta
+                {form.fatos.length} caracteres · Recomendado: {">="} 200 para peça robusta
               </p>
             </div>
             {template?.campos.includes("valorCausa") && (
