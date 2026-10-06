@@ -1,5 +1,3 @@
-import { toPng } from "html-to-image";
-import jsPDF from "jspdf";
 import { ArrowRight, BookMarked, Boxes, CheckCircle2, CircleAlert, Download, ExternalLink, FileText, Loader2, Network, Scale, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -27,6 +25,8 @@ export default function ThesisEvidenceMap({ query, theses, topics }: Props) {
     if (!mapRef.current) return;
     setExporting(format);
     try {
+      // Exportadores pesados carregam sob demanda para não pesar o bundle inicial
+      const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(mapRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: "#f5f1e8" });
       const link = document.createElement("a");
       if (format === "png") {
@@ -37,6 +37,7 @@ export default function ThesisEvidenceMap({ query, theses, topics }: Props) {
         const image = new Image();
         image.src = dataUrl;
         await new Promise<void>(resolve => { image.onload = () => resolve(); });
+        const { default: jsPDF } = await import("jspdf");
         const pdf = new jsPDF({ orientation: image.width >= image.height ? "landscape" : "portrait", unit: "px", format: [image.width, image.height] });
         pdf.addImage(dataUrl, "PNG", 0, 0, image.width, image.height, undefined, "FAST");
         pdf.save("atlas-mapa-tese.pdf");

@@ -445,6 +445,8 @@ body { background:#f8fafb; color:var(--ink); }
 
 .office-prazos { border-top: 3px solid var(--primary); }
 .office-teor-origem { margin: 0; display: flex; align-items: center; gap: 6px; font-size: .76rem; color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, white); border-radius: 8px; padding: .5rem .7rem; }
+.office-teor-origem.is-extraido { color: #0b6b58; background: color-mix(in srgb, #0b6b58 8%, white); }
+.office-teor-origem.is-padrao { color: #8a5a00; background: color-mix(in srgb, #8a5a00 10%, white); }
 .office-prazo-resultado { display: grid; gap: 12px; }
 .office-prazo-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
 .office-prazo-cards > div { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: grid; gap: 3px; }

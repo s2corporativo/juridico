@@ -167,6 +167,19 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // doc-pdf (jspdf ~581 kB) é lazy: só baixa ao exportar; limite maior evita aviso falso
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return undefined;
+          if (/[\\/](recharts|victory-vendor|d3-[\\w]+)[\\/]/.test(id)) return "charts";
+          if (id.includes("jspdf")) return "doc-pdf";
+          if (id.includes("html-to-image")) return "doc-image";
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     host: true,

@@ -6,6 +6,7 @@ import {
   CalendarClock,
   Calculator,
   CheckCircle2,
+  CircleAlert,
   Clock,
   Inbox,
   Landmark,
@@ -85,7 +86,7 @@ export default function OfficeComunicacoesPage() {
   // ----------------------------- Prazos -------------------------------------
   const [calc, setCalc] = useState({ dataChave: chaveData(new Date()), dias: 15, termo: "dje" as "dje" | "portal" | "ciencia", contagem: "uteis" as "uteis" | "corridos", emDobro: false, motivoDobro: "mp" as "mp" | "fazenda" | "defensoria" | "litisconsortes", autosEletronicos: true, feriados: "" });
   const [resultado, setResultado] = useState<ReturnType<typeof calcularPrazo> | null>(null);
-  const [origemTeor, setOrigemTeor] = useState<string | null>(null);
+  const [origemTeor, setOrigemTeor] = useState<{ kind: "extraido" | "padrao"; texto: string } | null>(null);
 
   function calcular() {
     try {
@@ -119,8 +120,8 @@ export default function OfficeComunicacoesPage() {
     setCalc(prev => ({ ...prev, dataChave: chaveData(dataEvento), dias, termo, contagem }));
     setOrigemTeor(
       extraido
-        ? `Prazo extraído do teor: ${extraido.dias} dias${extraido.unidade ? ` (${extraido.unidade})` : ""}.`
-        : `Sem prazo declarado no teor — usando ${c.deadlineDays ?? 15} dias (padrão do escritório).`
+        ? { kind: "extraido", texto: `Extraído do teor: ${extraido.dias} dias${extraido.unidade ? ` (${extraido.unidade})` : ""}.` }
+        : { kind: "padrao", texto: `Fallback — sem prazo no teor: padrão do escritório aplicado (${c.deadlineDays ?? 15} dias). Confira o despacho.` }
     );
     try {
       setResultado(calcularPrazo({
@@ -277,7 +278,11 @@ export default function OfficeComunicacoesPage() {
       <section className="office-panel office-prazos" ref={prazosRef} id="prazos">
         <h2><CalendarClock size={16} /> Ferramentas de prazo · motor portado do LexValida</h2>
         <p className="office-panel-sub">Cálculo determinístico com memória auditável (CPC 219/220/224; Lei 11.419/2006; CPP 798). Feriados locais devem ser informados pelo usuário.</p>
-        {origemTeor && <p className="office-teor-origem"><Sparkles size={14} /> {origemTeor}</p>}
+        {origemTeor && (
+          <p className={`office-teor-origem ${origemTeor.kind === "extraido" ? "is-extraido" : "is-padrao"}`} role="status">
+            {origemTeor.kind === "extraido" ? <Sparkles size={14} /> : <CircleAlert size={14} />} {origemTeor.texto}
+          </p>
+        )}
         <div className="office-form-grid">
           <label className="office-field">
             <span>Data do evento (disponibilização/envio/ciência)</span>
