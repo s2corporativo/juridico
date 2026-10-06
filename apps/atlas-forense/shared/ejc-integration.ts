@@ -1,13 +1,16 @@
 /**
- * Contrato de integração EJC — agora ATIVO.
- * EJC (JuridIA) is now the active OIDC identity provider.
- * Atlas Forense valida os JWTs emitidos pela JuridIA via /api/auth/oidc/verify.
- * Integração por rotas e metadados públicos; qualquer vínculo a caso do EJC
- * exige base legal, autorização e revisão humana.
+ * Contrato de integração EJC — planejado e NÃO ativo.
+ *
+ * A ponte de identidade permanece DESABILITADA: nenhuma rota OIDC está
+ * registrada no servidor Atlas (/api/ejc-sso/callback e /api/auth/oidc/*
+ * ainda não existem) e nenhum JWT é emitido ou validado entre os apps.
+ * A ativação exige decisão do titular, administrador real, configuração
+ * via ambiente (EJC_OIDC_ISSUER, EJC_OIDC_CLIENT_ID, EJC_OIDC_CLIENT_SECRET),
+ * issuer HTTPS validado e revisão humana — ver server/ejc-sso-config.ts.
  */
 export const ejcIntegrationManifest = {
   product: "Atlas Forense + JuridIA (EJC) Unified System",
-  integrationMode: "active" as const, // <- CHANGED from "pending_approval"
+  integrationMode: "pending_approval" as const,
   modules: [
     { key: "atlas", label: "Atlas Forense", route: "/", app: "atlas-forense", access: "authenticated_or_public_policy" },
     { key: "compendium", label: "Compêndio Jurídico", route: "/compendio", app: "atlas-forense", access: "public_metadata" },
@@ -19,9 +22,9 @@ export const ejcIntegrationManifest = {
     { key: "pipeline", label: "Pipeline LexValida", route: "/api/lexvalida/pipeline", app: "juridia", access: "authenticated" },
   ],
   identity: {
-    // EJC (JuridIA) is now the active OIDC identity provider.
-    provider: "juridia-oidc" as const,
-    protocol: "oidc_authorization_code" as const,
+    currentProvider: "Sessão Atlas (cookie app_session_id)",
+    plannedProvider: "juridia-oidc",
+    plannedProtocol: "oidc_authorization_code" as const,
     allowedRoles: ["admin", "user", "advogado", "promotor", "juiz"] as const,
   },
   confidentiality: {
@@ -31,23 +34,22 @@ export const ejcIntegrationManifest = {
 } as const;
 
 export const ejcAuthBridge = {
-  mode: "enabled" as const, // <- CHANGED from "disabled"
+  mode: "disabled" as const,
   provider: "juridia-oidc",
   protocol: "oidc_authorization_code" as const,
-  // EJC (JuridIA) is now the active OIDC identity provider.
-  issuerUrl: "http://localhost:3000/api/auth/oidc" as const, // JuridIA issues
   callbackPath: "/api/ejc-sso/callback",
-  tokenEndpoint: "http://localhost:3000/api/auth/oidc/token",
-  jwksEndpoint: "http://localhost:3000/api/auth/oidc/jwks",
-  claims: ["iss", "sub", "aud", "exp", "role", "auth_time", "persona"] as const,
-  activationRule: "OIDC bridge active. EJC (JuridIA) issues JWT, Atlas validates via JWKS.",
+  plannedClaims: ["iss", "sub", "aud", "exp", "role", "auth_time", "persona"] as const,
+  activationRule: "Exige decisão do titular, issuer HTTPS do EJC, discovery OIDC validado, cliente registrado, mapeamento de identidade, escopo de sigilo aprovado e revisão humana.",
 } as const;
 
 export function getEjcIntegrationStatus() {
   return {
     mode: ejcIntegrationManifest.integrationMode,
+    currentProvider: ejcIntegrationManifest.identity.currentProvider,
     authBridgeMode: ejcAuthBridge.mode,
-    provider: ejcAuthBridge.provider,
+    authBridgeProtocol: ejcAuthBridge.protocol,
+    callbackPath: ejcAuthBridge.callbackPath,
     routes: ejcIntegrationManifest.modules.map(m => ({ key: m.key, route: m.route, app: m.app, access: m.access })),
+    activationRule: ejcAuthBridge.activationRule,
   };
 }
