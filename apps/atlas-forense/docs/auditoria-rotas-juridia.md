@@ -27,17 +27,20 @@
 
 ## 3. Matriz de rotas (depois da auditoria)
 
-### Públicas por design (9)
+### Públicas por design (6)
 
 | Rota | Justificativa |
 | --- | --- |
-| `GET /api` | índice/health informativo, sem dado |
 | `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` | autenticação em si (rate-limited) |
 | `GET /api/auth/oidc` · `/.well-known/openid-configuration` | discovery OIDC (503 sem configuração) |
 | `GET /api/auth/oidc/jwks` | chave pública do IdP |
-| `GET /api/skills` · `GET /api/legal-sources` | metadados públicos (manifest EJC: `public_metadata`) |
 | `GET /api/fontes/ibge` · `GET /api/fontes/querido-diario` | dados públicos externos, sem dado do escritório |
 | `GET /api/news` | conteúdo público editorial |
+
+> Revisão 2026-10-07 (refatoração/paridade MinutaIA): `GET /api/skills` e `GET /api/legal-sources`
+> deixaram de ser públicos — skills são conteúdo proprietário e a base curada alimenta o
+> Citation Gate; `POST/PATCH/DELETE /api/legal-sources` passaram a exigir `role=admin`.
+> O stub `GET /api` ("Hello, world!") foi removido.
 
 ### Somente admin (2 arquivos)
 
@@ -45,6 +48,7 @@
 | --- | --- |
 | `/api/advogados` | `POST`/`PUT`/`PATCH`/`DELETE` exigem `role=admin`; `GET` autenticado |
 | `/api/audit` | todos os métodos exigem `role=admin` (trilha de auditoria) |
+| `/api/legal-sources` | `POST`/`PATCH`/`DELETE` exigem `role=admin` (base curada do Citation Gate); `GET` autenticado |
 
 ### Autenticadas (43 arquivos — todo o acervo e IA)
 

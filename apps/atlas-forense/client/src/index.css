@@ -3,7 +3,61 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-:root { --paper:#f5f1e8; --paper-deep:#e8e0d2; --ink:#29221e; --muted:#6a5e52; --petrol:#154b4a; --petrol-soft:#cce0db; --copper:#b56f2c; --clay:#a64f35; --line:#d8d2c6; --white:#fffdf8; }
+/* ── Paleta canônica Atlas (única fonte de verdade — não duplicar :root) ───── */
+:root {
+  --paper:#f8fafb; --paper-deep:#eef3f2; --ink:#172322; --muted:#5f6f6d;
+  --petrol:#0d4b49; --petrol-soft:#dceceb; --copper:#a8612d; --clay:#a64f35;
+  --line:#dbe4e2; --white:#ffffff;
+
+  /* Tokens semânticos (shadcn) mapeados à paleta Atlas — antes UNDEFINED,
+     quebrando ~160 usos de var(--primary)/var(--border)/etc. */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--white);
+  --card-foreground: var(--ink);
+  --popover: var(--white);
+  --popover-foreground: var(--ink);
+  --primary: var(--petrol);
+  --primary-foreground: #f2f7f5;
+  --secondary: var(--paper-deep);
+  --secondary-foreground: var(--ink);
+  --accent: var(--petrol-soft);
+  --accent-foreground: var(--petrol);
+  --destructive: var(--clay);
+  --destructive-foreground: #fff5f2;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--petrol);
+  --radius: 0.5rem;
+}
+
+/* Liga os utilitários Tailwind v4 (bg-primary, text-muted-foreground, border-border...)
+   aos tokens semânticos acima. OBS: --color-muted usa --paper-deep (superfície),
+   enquanto --muted (texto cinza) continua com a semântica tipográfica do Atlas. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--paper-deep);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); font-family: 'Source Sans 3', sans-serif; }
@@ -235,7 +289,8 @@ button { cursor: pointer; }
 @media (max-width: 640px) { .thesis-map-heading, .thesis-map-detail-head, .thesis-related-heading { flex-direction: column; } .thesis-map-actions { width: 100%; justify-content: flex-start; } .thesis-map-actions svg { display: none; } .control-topbar-actions { width: 100%; } }
 
 /* Atlas white dashboard refresh */
-:root { --paper:#f8fafb; --paper-deep:#eef3f2; --ink:#172322; --muted:#5f6f6d; --petrol:#0d4b49; --petrol-soft:#dceceb; --copper:#a8612d; --clay:#a64f35; --line:#dbe4e2; --white:#ffffff; }
+
+/* (paleta canônica movida para o :root único no topo do arquivo) */
 body { background:#f8fafb; color:var(--ink); }
 .atlas-shell { background:#f8fafb; }
 .atlas-sidebar { background-color:#ffffff !important; background-image:none !important; color:#183b3a; border-right:1px solid #dbe4e2; box-shadow:12px 0 32px rgba(18,55,53,.05); }
@@ -499,3 +554,17 @@ body { background:#f8fafb; color:var(--ink); }
 .trein-faq-item { border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; }
 .trein-faq-item summary { cursor: pointer; font-size: .8rem; font-weight: 600; color: var(--foreground); }
 .trein-faq-item p { margin: 8px 0 0; font-size: .76rem; line-height: 1.6; color: var(--muted-foreground); }
+
+/* ── Navegação global unificada (SiteNav) — adapta-se a rails claros/escuros ── */
+.site-nav { display:grid; gap:12px; margin-top:22px; padding-top:18px; border-top:1px solid color-mix(in srgb, currentColor 14%, transparent); }
+.site-nav-heading { color:color-mix(in srgb, currentColor 60%, transparent); font:700 9px/1 'Source Sans 3',sans-serif; letter-spacing:.14em; text-transform:uppercase; }
+.site-nav-group { display:grid; gap:2px; }
+.site-nav-group-title { margin-top:8px; padding:0 9px; color:color-mix(in srgb, currentColor 52%, transparent); font:700 9px/1.4 'Source Sans 3',sans-serif; letter-spacing:.12em; text-transform:uppercase; }
+.site-nav-link { display:flex; align-items:center; gap:8px; padding:7px 9px; color:inherit; opacity:.82; border-radius:6px; font-size:12.5px; font-weight:600; text-decoration:none; transition:background .15s ease, opacity .15s ease; }
+.site-nav-link svg { opacity:.7; }
+.site-nav-link:hover { opacity:1; background:color-mix(in srgb, currentColor 8%, transparent); }
+.site-nav-link.active { opacity:1; background:color-mix(in srgb, currentColor 12%, transparent); }
+.site-breadcrumb { display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; }
+.site-breadcrumb-link { display:inline-flex; align-items:center; gap:5px; color:var(--petrol); text-decoration:none; }
+.site-breadcrumb-link:hover { text-decoration:underline; }
+.site-breadcrumb-current { color:color-mix(in srgb, currentColor 62%, transparent); }

@@ -58,12 +58,54 @@ export interface GenerateMinutaRequest {
   skillSlugs: string[];
   title?: string;
   batchId?: string;
+  /** Contexto estratégico vindo do Cérebro Jurídico (é pseudonimizado antes da IA) */
+  brainContext?: string;
+  /** Perfil de estilo: formal | objetivo | tecnico */
+  writingStyle?: string;
+}
+
+export interface ReferenceUsed {
+  diploma: string;
+  numero: string;
+  tribunal: string | null;
+  urlOficial: string | null;
+  score: number;
+}
+
+export interface PipelineStageInfo {
+  stage: string; // outline | draft | review
+  ok: boolean;
+  ms: number;
+  tokens: number;
+  note?: string;
+}
+
+export interface ValidationViolationDTO {
+  rule: string;
+  severity: "error" | "warning";
+  detail: string;
+  excerpt?: string;
 }
 
 export interface GenerateMinutaResponse {
   document: DocumentDTO;
   rawMarkers: Record<string, string>;
   tokensUsed?: number;
+  /** Validação deontológica visível ao advogado (antes só virava metadado) */
+  validation?: {
+    valid: boolean;
+    violations: ValidationViolationDTO[];
+    markedAsDraft: boolean;
+  };
+  /** Fontes normativas rastreáveis usadas na fundamentação (RAG na base curada) */
+  references?: ReferenceUsed[];
+  /** Telemetria do pipeline multi-etapas */
+  pipeline?: {
+    stages: PipelineStageInfo[];
+    degraded: boolean; // true = IA falhou em etapa essencial (usado fallback)
+    skillsAutoRouted: string[];
+    reviewCorrections: { applied: number; skipped: number };
+  };
 }
 
 export interface JurisprudenceResult {

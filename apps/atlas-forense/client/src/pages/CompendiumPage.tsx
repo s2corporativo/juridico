@@ -6,6 +6,7 @@ import {
 import { useMemo, useState } from "react";
 import { buildTopicLabels } from "@shared/compendium-presentation";
 import ThesisEvidenceMap from "@/components/ThesisEvidenceMap";
+import { SiteNav } from "@/components/SiteNav";
 import "../quality.css";
 import "../document-freshness.css";
 
@@ -130,6 +131,7 @@ export default function CompendiumPage() {
           <a href="#qualidade"><span>05</span>Qualidade</a>
           <a href="#auditoria"><span>06</span>Auditoria</a>
         </nav>
+        <SiteNav heading="Atlas Forense" />
         <div className="compendium-rail-foot"><ShieldCheck size={16} /><p>Sem partes, CPF, endereço ou documento pessoal no modelo público.</p></div>
       </aside>
 

@@ -84,6 +84,9 @@ export function getEjcSsoReadiness(env: EnvSource = process.env) {
     enabled: status === "enabled",
     status,
     configurationComplete: missingConfiguration.length === 0,
+    // URL pública do EJC (não é segredo) — usada pelo SiteNav como atalho
+    // "Minutas · JuridIA" quando o runtime está enabled (fail-closed).
+    issuer,
     protocol: "oidc_authorization_code" as const,
     callbackPath: "/api/ejc-sso/callback",
     requiredClaims: ["iss", "sub", "aud", "exp"] as const,

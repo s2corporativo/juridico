@@ -69,6 +69,7 @@ export function Generator() {
     user,
     brainContext,
     setBrainContext,
+    writingStyle,
   } = useAppStore();
 
   const [templates, setTemplates] = useState<TemplateDTO[]>([]);
@@ -141,32 +142,53 @@ export function Generator() {
           fields,
           skillSlugs: selectedSkillSlugs,
           title: title || undefined,
+          brainContext: brainContext || undefined,
+          writingStyle: writingStyle || undefined,
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `HTTP ${res.status}`);
+      }
       const data: GenerateMinutaResponse = await res.json();
       setStep("restoring");
       await delay(400);
       setStep("idle");
       setResult(data);
       setCurrentDocId(data.document.id);
-      toast({
-        title: "Minuta gerada!",
-        description: `${current.name} criada e marcadores restaurados localmente.`,
-      });
-      setAppTab("editor");
+      const hasErrors =
+        data.validation?.violations?.some((v) => v.severity === "error") ||
+        data.pipeline?.degraded;
+      if (hasErrors) {
+        toast({
+          title: "Minuta gerada com ressalvas",
+          description: "Verifique o relatório de conformidade antes de usar a peça.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Minuta gerada!",
+          description: "Pipeline em 3 etapas concluído e marcadores restaurados localmente.",
+        });
+        setAppTab("editor");
+      }
     } catch (e) {
       setStep("idle");
-      toast({ title: "Erro ao gerar minuta", variant: "destructive" });
+      toast({
+        title: "Erro ao gerar minuta",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   }
 
   const stepLabels: Record<string, string> = {
-    anon: "1. Anonimizando localmente (tarja-1)...",
-    skills: "2. Combinando perfis de IA e habilidades...",
-    llm: "3. Gerando minuta com IA...",
-    restoring: "4. Restaurando marcadores localmente...",
+    anon: "1. Pseudonimizando localmente (tarja-1)...",
+    skills: "2. Roteando habilidades e fontes normativas...",
+    llm: "3. Pipeline IA: roteiro → redação → revisão...",
+    restoring: "4. Reidratando marcadores e validando...",
     idle: "",
   };
 
@@ -182,7 +204,7 @@ export function Generator() {
         </div>
         {user && (
           <Badge variant="secondary" className="text-xs">
-            Plano {user.plan === "individual_2" ? "Individual II" : (user.plan ?? "não informado")} · {Math.max(0, 200 - 47)} minutas restantes
+            Plano {user.plan === "individual_2" ? "Individual II" : (user.plan ?? "não informado")}
           </Badge>
         )}
       </div>
@@ -207,6 +229,93 @@ export function Generator() {
           </pre>
         </div>
       )}
+
+      {/* Relatório de conformidade — visível quando há ressalvas ou falha de pipeline */}
+      {result && (result.pipeline?.degraded || (result.validation?.violations?.length ?? 0) > 0) && (
+        <Card className="mb-4 border-destructive/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base text-destructive">
+              <ShieldAlert className="h-4 w-4" />
+              Relatório de conformidade da geração
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {result.pipeline?.degraded && (
+              <p className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">
+                A IA ficou indisponível em etapa essencial e a peça foi gerada como
+                esqueleto offline. Refaça a geração quando o serviço normalizar.
+              </p>
+            )}
+            {result.validation?.violations?.length ? (
+              <ul className="space-y-1.5">
+                {result.validation.violations.map((v, i) => (
+                  <li key={i} className="text-xs">
+                    <Badge variant={v.severity === "error" ? "destructive" : "secondary"} className="mr-2 text-[10px]">
+                      {v.severity === "error" ? "erro" : "atenção"}
+                    </Badge>
+                    <span className="font-medium">{v.rule}</span> — {v.detail}
+                    {v.excerpt ? <span className="block pl-1 text-muted-foreground">Trecho: “{v.excerpt}”</span> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted-foreground">Nenhuma violação deontológica detectada.</p>
+            )}
+            <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+              {result.pipeline?.stages?.map((s) => (
+                <span key={s.stage} className="rounded border px-1.5 py-0.5">
+                  {s.stage}: {s.ok ? "ok" : "falhou"} · {(s.ms / 1000).toFixed(1)}s{s.note ? ` · ${s.note}` : ""}
+                </span>
+              ))}
+              {result.pipeline?.reviewCorrections?.applied ? (
+                <span className="rounded border px-1.5 py-0.5">
+                  revisor: {result.pipeline.reviewCorrections.applied} correção(ões) aplicada(s)
+                </span>
+              ) : null}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setAppTab("editor")}>
+                Abrir no editor mesmo assim
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Referências rastreáveis usadas na fundamentação (RAG base curada) */}
+      {result?.references?.length ? (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Landmark className="h-4 w-4 text-primary" />
+              Fontes normativas correlatas ({result.references.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-1 text-xs text-muted-foreground">
+              {result.references.map((r, i) => (
+                <li key={i}>
+                  <span className="font-medium text-foreground">
+                    {r.diploma} {r.numero}
+                  </span>
+                  {r.tribunal ? ` — ${r.tribunal}` : ""}
+                  {r.urlOficial ? (
+                    <>
+                      {" · "}
+                      <a href={r.urlOficial} target="_blank" rel="noreferrer" className="text-primary underline">
+                        fonte oficial
+                      </a>
+                    </>
+                  ) : null}
+                  <span className="ml-2 rounded bg-secondary px-1 py-0.5 text-[10px]">
+                    score {r.score.toFixed(3)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Coluna principal */}

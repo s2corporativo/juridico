@@ -11,7 +11,7 @@ import { getEjcSsoReadiness } from "./ejc-sso-config";
 import { REVIEW_DECISIONS, REVIEW_PRIORITIES, REVIEW_STATUSES } from "./evidence-review";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   createAttendance,
   createClient,
@@ -81,16 +81,16 @@ export const appRouter = router({
   }),
   office: router({
     clients: router({
-      list: publicProcedure.query(() => listClients()),
-      get: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getClient(input.id)),
-      create: publicProcedure.input(z.object({
+      list: protectedProcedure.query(() => listClients()),
+      get: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getClient(input.id)),
+      create: protectedProcedure.input(z.object({
         name: z.string().trim().min(2).max(191),
         document: z.string().trim().max(32).optional(),
         email: z.string().trim().email().max(191).optional(),
         phone: z.string().trim().max(32).optional(),
         note: z.string().trim().max(2000).optional(),
       })).mutation(({ input }) => createClient(input)),
-      update: publicProcedure.input(z.object({
+      update: protectedProcedure.input(z.object({
         id: z.number().int().positive(),
         name: z.string().trim().min(2).max(191).optional(),
         document: z.string().trim().max(32).nullable().optional(),
@@ -100,8 +100,8 @@ export const appRouter = router({
       })).mutation(({ input }) => updateClient(input.id, input)),
     }),
     matters: router({
-      list: publicProcedure.input(z.object({ clientId: z.number().int().positive().optional() }).optional()).query(({ input }) => listMatters(input?.clientId)),
-      create: publicProcedure.input(z.object({
+      list: protectedProcedure.input(z.object({ clientId: z.number().int().positive().optional() }).optional()).query(({ input }) => listMatters(input?.clientId)),
+      create: protectedProcedure.input(z.object({
         clientId: z.number().int().positive(),
         title: z.string().trim().min(2).max(255),
         cnjNumber: z.string().trim().max(32).optional(),
@@ -110,8 +110,8 @@ export const appRouter = router({
       })).mutation(({ input }) => createMatter(input)),
     }),
     attendances: router({
-      list: publicProcedure.input(z.object({ clientId: z.number().int().positive().optional() }).optional()).query(({ input }) => listAttendances(input?.clientId)),
-      create: publicProcedure.input(z.object({
+      list: protectedProcedure.input(z.object({ clientId: z.number().int().positive().optional() }).optional()).query(({ input }) => listAttendances(input?.clientId)),
+      create: protectedProcedure.input(z.object({
         clientId: z.number().int().positive(),
         matterId: z.number().int().positive().nullable().optional(),
         channel: z.string().trim().max(64).optional(),
@@ -119,9 +119,9 @@ export const appRouter = router({
       })).mutation(({ input }) => createAttendance(input)),
     }),
     comms: router({
-      list: publicProcedure.input(z.object({ status: z.enum(["nova", "lida", "arquivada"]).optional() }).optional()).query(({ input }) => listCommunications(input?.status)),
-      updateStatus: publicProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["nova", "lida", "arquivada"]) })).mutation(({ input }) => updateCommunicationStatus(input.id, input.status)),
-      registerManual: publicProcedure.input(z.object({
+      list: protectedProcedure.input(z.object({ status: z.enum(["nova", "lida", "arquivada"]).optional() }).optional()).query(({ input }) => listCommunications(input?.status)),
+      updateStatus: protectedProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["nova", "lida", "arquivada"]) })).mutation(({ input }) => updateCommunicationStatus(input.id, input.status)),
+      registerManual: protectedProcedure.input(z.object({
         cnjNumber: z.string().trim().max(32).optional(),
         kind: z.string().trim().max(32).optional(),
         title: z.string().trim().min(2).max(255),
@@ -130,8 +130,8 @@ export const appRouter = router({
       })).mutation(({ input }) => registerManualCommunication(input)),
     }),
     djen: router({
-      settings: publicProcedure.query(() => getDjenSettings()),
-      updateSettings: publicProcedure.input(z.object({
+      settings: protectedProcedure.query(() => getDjenSettings()),
+      updateSettings: protectedProcedure.input(z.object({
         enabled: z.boolean().optional(),
         lawyerName: z.string().trim().max(120).nullable().optional(),
         oabNumber: z.string().trim().max(16).nullable().optional(),
@@ -142,11 +142,11 @@ export const appRouter = router({
         windowDays: z.number().int().min(1).max(90).optional(),
         defaultDeadlineDays: z.number().int().min(1).max(365).optional(),
       })).mutation(({ input }) => updateDjenSettings(input)),
-      sync: publicProcedure.mutation(() => syncDjenNow()),
+      sync: protectedProcedure.mutation(() => syncDjenNow()),
     }),
     jurisprudencia: router({
-      settings: publicProcedure.query(() => getJurisSettings()),
-      updateSettings: publicProcedure.input(z.object({
+      settings: protectedProcedure.query(() => getJurisSettings()),
+      updateSettings: protectedProcedure.input(z.object({
         enabled: z.boolean().optional(),
         query: z.string().trim().max(160).optional(),
         lexmlEndpoint: z.string().trim().max(512).optional(),
@@ -154,11 +154,11 @@ export const appRouter = router({
         autoSyncEnabled: z.boolean().optional(),
         intervalMinutes: z.number().int().min(30).max(1440).optional(),
       })).mutation(({ input }) => updateJurisSettings(input)),
-      sync: publicProcedure.mutation(() => syncJurisprudencia()),
-      list: publicProcedure.input(z.object({ status: z.enum(["nova", "destacada", "aplicada", "descartada"]).optional(), tribunal: z.string().trim().max(64).optional() }).optional()).query(({ input }) => listJurisprudencia(input)),
-      updateStatus: publicProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["nova", "destacada", "aplicada", "descartada"]) })).mutation(({ input }) => updateJurisStatus(input.id, input.status)),
-      link: publicProcedure.input(z.object({ id: z.number().int().positive(), matterId: z.number().int().positive().nullable() })).mutation(({ input }) => linkJurisToMatter(input.id, input.matterId)),
-      manual: publicProcedure.input(z.object({
+      sync: protectedProcedure.mutation(() => syncJurisprudencia()),
+      list: protectedProcedure.input(z.object({ status: z.enum(["nova", "destacada", "aplicada", "descartada"]).optional(), tribunal: z.string().trim().max(64).optional() }).optional()).query(({ input }) => listJurisprudencia(input)),
+      updateStatus: protectedProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["nova", "destacada", "aplicada", "descartada"]) })).mutation(({ input }) => updateJurisStatus(input.id, input.status)),
+      link: protectedProcedure.input(z.object({ id: z.number().int().positive(), matterId: z.number().int().positive().nullable() })).mutation(({ input }) => linkJurisToMatter(input.id, input.matterId)),
+      manual: protectedProcedure.input(z.object({
         externalId: z.string().trim().min(3).max(191),
         tribunal: z.string().trim().min(1).max(64),
         orgao: z.string().trim().max(128).optional(),
@@ -197,8 +197,8 @@ export const appRouter = router({
       pageSize: z.number().int().min(1).max(50).optional(),
     })).query(({ input }) => searchCompendium(input)),
     dossier: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).query(({ input }) => getCitationDossier(input.externalId)),
-    aiSummary: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).mutation(({ ctx, input }) => summarizePublicDecision(input.externalId, ctx.req.ip || "anonymous")),
-    aiCompareRelated: publicProcedure.input(z.object({ externalIds: z.array(z.string().trim().min(1).max(191)).min(2).max(4) })).mutation(({ ctx, input }) => comparePublicRelatedDecisions(input.externalIds, ctx.req.ip || "anonymous")),
+    aiSummary: protectedProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).mutation(({ ctx, input }) => summarizePublicDecision(input.externalId, ctx.req.ip || "anonymous")),
+    aiCompareRelated: protectedProcedure.input(z.object({ externalIds: z.array(z.string().trim().min(1).max(191)).min(2).max(4) })).mutation(({ ctx, input }) => comparePublicRelatedDecisions(input.externalIds, ctx.req.ip || "anonymous")),
     thesisRelated: publicProcedure.input(z.object({ thesisId: z.number().int().positive() })).query(({ input }) => getThesisRelatedDocuments(input.thesisId)),
     decisionRelated: publicProcedure.input(z.object({ externalId: z.string().trim().min(1).max(191) })).query(({ input }) => getDecisionRelatedDocuments(input.externalId)),
     reviewQueue: router({

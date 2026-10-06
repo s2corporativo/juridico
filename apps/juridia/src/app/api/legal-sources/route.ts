@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET: lista fontes jurídicas curadas (com filtros opcionais)
 export async function GET(req: NextRequest) {
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+
   const url = new URL(req.url);
   const tipo = url.searchParams.get("tipo");
   const diploma = url.searchParams.get("diploma");
@@ -40,8 +44,11 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// POST: cria nova fonte jurídica
+// POST: cria nova fonte jurídica (GATE ADMIN — base curada afeta o Citation Gate)
 export async function POST(req: NextRequest) {
+  const __auth = await requireAuth(req, { admin: true });
+  if (!__auth.ok) return __auth.response;
+
   let body: {
     tipo?: string;
     diploma?: string;
@@ -108,8 +115,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH: atualiza fonte (ex: marcar como não vigente)
+// PATCH: atualiza fonte (ex: marcar como não vigente) — GATE ADMIN
 export async function PATCH(req: NextRequest) {
+  const __auth = await requireAuth(req, { admin: true });
+  if (!__auth.ok) return __auth.response;
+
   let body: {
     id?: string;
     textoTrecho?: string;
@@ -158,8 +168,11 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// DELETE: exclui fonte
+// DELETE: exclui fonte — GATE ADMIN
 export async function DELETE(req: NextRequest) {
+  const __auth = await requireAuth(req, { admin: true });
+  if (!__auth.ok) return __auth.response;
+
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });

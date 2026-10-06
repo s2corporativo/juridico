@@ -34,6 +34,7 @@ import { AdvancedEvidencePanel } from "@/components/AdvancedEvidencePanel";
 import CivilConsumerPanel from "@/components/CivilConsumerPanel";
 import EditorialUpdatesPanel from "@/components/EditorialUpdatesPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { SiteNav } from "@/components/SiteNav";
 import { trpc } from "@/lib/trpc";
 import { buildCompendiumHomeStats } from "@shared/compendium-home";
 
@@ -350,6 +351,8 @@ export default function Home() {
           <a href="#tempo"><span>06</span>Tempo observado</a>
           <a href="#metodo"><span>07</span>Metodologia</a>
         </nav>
+
+        <SiteNav />
 
         <div className="sidebar-footnote">
           <ShieldCheck size={16} />
