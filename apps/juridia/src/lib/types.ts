@@ -58,6 +58,12 @@ export interface GenerateMinutaRequest {
   skillSlugs: string[];
   title?: string;
   batchId?: string;
+  /**
+   * Minuta-molde já aprovada pelo advogado (geração em lote).
+   * Quando presente, o redator segue a estrutura/tom da molde, adaptando
+   * os dados ao caso atual. Limitada a 60k caracteres (normalizeMoldContent).
+   */
+  moldContent?: string;
   /** Contexto estratégico vindo do Cérebro Jurídico (é pseudonimizado antes da IA) */
   brainContext?: string;
   /** Perfil de estilo: formal | objetivo | tecnico */

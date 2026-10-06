@@ -32,7 +32,7 @@
 | Rota | Justificativa |
 | --- | --- |
 | `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` | autenticação em si (rate-limited) |
-| `GET /api/auth/oidc` · `/.well-known/openid-configuration` | discovery OIDC (503 sem configuração) |
+| `GET /api/auth/oidc` · `GET /api/auth/oidc/.well-known/openid-configuration` | discovery OIDC (200 ativo / 503 sem configuração) — o discovery vive sob o prefixo do issuer |
 | `GET /api/auth/oidc/jwks` | chave pública do IdP |
 | `GET /api/fontes/ibge` · `GET /api/fontes/querido-diario` | dados públicos externos, sem dado do escritório |
 | `GET /api/news` | conteúdo público editorial |
@@ -70,3 +70,9 @@ Sem sessão válida: **401** (`{"error":"unauthenticated"}`), verificado por smo
 4. **Variáveis novas** (definir no ambiente protegido do JuridIA): `JURIDIA_SESSION_SECRET`, `JURIDIA_OIDC_ISSUER`, `EJC_OIDC_CLIENT_ID`, `EJC_OIDC_CLIENT_SECRET`, `EJC_OIDC_REDIRECT_URIS`; opcional `EJC_ADMIN_EMAIL/PASSWORD/NAME` para o seed do administrador (`scripts/seed-admin.ts`).
 5. **Admin do JuridIA**: criar apenas com identidade real do escritório; não há seed de demonstração.
 6. Se o bot reescrever estes arquivos, a matriz da seção 3 é o contrato mínimo a preservar; divergências devem ser reportadas ao titular antes do merge.
+7. **Revisão 2026-10-07 (fechamento de paridade):** rotas novas `POST /api/generate-minuta/stream`
+   (SSE, autenticada — mesma guard da clássica) e invariáveis do pipeline registradas no
+   **contrato operacional do bot**: `apps/juridia/docs/contrato-operacional-bot.md`.
+   Verificação automatizada pós-deploy: `node scripts/contract-check.mjs http://127.0.0.1:3005`
+   (executado em 2026-10-07: CONTRATO ÍNTEGRO). Segredos de produção definidos em
+   `docs/segredos-producao-vps.md`.

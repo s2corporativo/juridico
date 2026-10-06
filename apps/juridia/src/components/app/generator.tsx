@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
@@ -19,6 +19,8 @@ import {
   Image,
   Mail,
   Brain,
+  Layers,
+  FileEdit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +46,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppStore } from "@/lib/store";
 import type { TemplateDTO, SkillDTO, GenerateMinutaResponse } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
+import { BatchPanel } from "./batch-panel";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
@@ -77,8 +80,13 @@ export function Generator() {
   const [fields, setFields] = useState<Record<string, string>>({});
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"idle" | "anon" | "skills" | "llm" | "restoring">("idle");
+  const [step, setStep] = useState<
+    "idle" | "prepare" | "outline" | "draft" | "review" | "finalize"
+  >("idle");
+  const [liveDraft, setLiveDraft] = useState("");
+  const [mode, setMode] = useState<"individual" | "lote">("individual");
   const [result, setResult] = useState<GenerateMinutaResponse | null>(null);
+  const liveRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
     fetch("/api/templates")
@@ -108,6 +116,48 @@ export function Generator() {
       s.slug === "lgpd-dados-sensiveis"
   );
 
+  /** Lê a resposta SSE do servidor, evento a evento. */
+  async function readSse(
+    res: Response,
+    handlers: {
+      onStage?: (e: { stage: string; status: string; note?: string }) => void;
+      onDraft?: (text: string) => void;
+      onDone?: (data: GenerateMinutaResponse) => void;
+      onError?: (msg: string) => void;
+    }
+  ) {
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error("resposta sem corpo de stream");
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value as unknown as ArrayBuffer, { stream: true });
+      let sep: number;
+      while ((sep = buffer.indexOf("\n\n")) !== -1) {
+        const frame = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        let event = "message";
+        let data = "";
+        for (const line of frame.split("\n")) {
+          if (line.startsWith("event: ")) event = line.slice(7).trim();
+          else if (line.startsWith("data: ")) data += line.slice(6);
+        }
+        if (!data) continue;
+        try {
+          const json = JSON.parse(data);
+          if (event === "stage") handlers.onStage?.(json);
+          else if (event === "draft") handlers.onDraft?.(json.text || "");
+          else if (event === "done") handlers.onDone?.(json as GenerateMinutaResponse);
+          else if (event === "error") handlers.onError?.(json.error || "falha na geração");
+        } catch {
+          // frame parcial — ignora
+        }
+      }
+    }
+  }
+
   async function generate() {
     if (!current) {
       toast({ title: "Selecione um template", variant: "destructive" });
@@ -124,36 +174,10 @@ export function Generator() {
     }
     setLoading(true);
     setResult(null);
+    setLiveDraft("");
+    setStep("prepare");
 
-    // Animação das etapas
-    setStep("anon");
-    await delay(400);
-    setStep("skills");
-    await delay(500);
-    setStep("llm");
-    await delay(800);
-
-    try {
-      const res = await fetch("/api/generate-minuta", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          templateSlug: current.slug,
-          fields,
-          skillSlugs: selectedSkillSlugs,
-          title: title || undefined,
-          brainContext: brainContext || undefined,
-          writingStyle: writingStyle || undefined,
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `HTTP ${res.status}`);
-      }
-      const data: GenerateMinutaResponse = await res.json();
-      setStep("restoring");
-      await delay(400);
-      setStep("idle");
+    const applyResult = (data: GenerateMinutaResponse) => {
       setResult(data);
       setCurrentDocId(data.document.id);
       const hasErrors =
@@ -172,6 +196,53 @@ export function Generator() {
         });
         setAppTab("editor");
       }
+    };
+
+    try {
+      const payload = {
+        templateSlug: current.slug,
+        fields,
+        skillSlugs: selectedSkillSlugs,
+        title: title || undefined,
+        brainContext: brainContext || undefined,
+        writingStyle: writingStyle || undefined,
+      };
+      const res = await fetch("/api/generate-minuta/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.headers.get("content-type")?.includes("text/event-stream")) {
+        let failure: string | null = null;
+        await readSse(res, {
+          onStage: (e) => {
+            setStep(e.stage as typeof step);
+          },
+          onDraft: (text) => {
+            setStep("draft");
+            setLiveDraft((prev) => (prev + text).slice(-4000));
+          },
+          onDone: applyResult,
+          onError: (msg) => {
+            failure = msg;
+          },
+        });
+        if (failure) throw new Error(failure);
+      } else {
+        // Rota de streaming indisponível (404 em deploy antigo) → clássica.
+        const classic = await fetch("/api/generate-minuta", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!classic.ok) {
+          const err = await classic.json().catch(() => ({}));
+          throw new Error(err?.error || `HTTP ${classic.status}`);
+        }
+        applyResult((await classic.json()) as GenerateMinutaResponse);
+      }
+      setStep("idle");
     } catch (e) {
       setStep("idle");
       toast({
@@ -181,16 +252,32 @@ export function Generator() {
       });
     } finally {
       setLoading(false);
+      setLiveDraft("");
     }
   }
 
   const stepLabels: Record<string, string> = {
-    anon: "1. Pseudonimizando localmente (tarja-1)...",
-    skills: "2. Roteando habilidades e fontes normativas...",
-    llm: "3. Pipeline IA: roteiro → redação → revisão...",
-    restoring: "4. Reidratando marcadores e validando...",
+    prepare: "1. Pseudonimizando, roteando habilidades e fontes...",
+    outline: "2. Estrategista: planejando a peça...",
+    draft: "3. Redator sênior: redigindo (ao vivo)...",
+    review: "4. Revisor sênior: 2ª passada...",
+    finalize: "5. Reidratando marcadores e validando...",
     idle: "",
   };
+
+  const stepProgress: Record<string, number> = {
+    prepare: 15,
+    outline: 30,
+    draft: 60,
+    review: 85,
+    finalize: 95,
+    idle: 0,
+  };
+
+  // Auto-scroll do texto ao vivo
+  useEffect(() => {
+    if (liveRef.current) liveRef.current.scrollTop = liveRef.current.scrollHeight;
+  }, [liveDraft]);
 
   return (
     <div className="container-juridia py-8">
@@ -207,6 +294,26 @@ export function Generator() {
             Plano {user.plan === "individual_2" ? "Individual II" : (user.plan ?? "não informado")}
           </Badge>
         )}
+      </div>
+
+      {/* Alternância de modo: individual × lote (molde) */}
+      <div className="mb-5 flex gap-2">
+        <Button
+          variant={mode === "individual" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMode("individual")}
+        >
+          <FileEdit className="mr-1.5 h-4 w-4" />
+          Individual
+        </Button>
+        <Button
+          variant={mode === "lote" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMode("lote")}
+        >
+          <Layers className="mr-1.5 h-4 w-4" />
+          Em lote (molde)
+        </Button>
       </div>
 
       {/* Brain context banner */}
@@ -317,49 +424,60 @@ export function Generator() {
         </Card>
       ) : null}
 
+      {/* Template selector — compartilhado entre os modos */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4 text-primary" />
+            Template da minuta
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {templates.map((t) => {
+              const Icon = ICONS[t.icon] || FileText;
+              const active = t.slug === selectedTemplateSlug;
+              return (
+                <button
+                  key={t.slug}
+                  onClick={() => {
+                    setSelectedTemplateSlug(t.slug);
+                    setFields({});
+                    setResult(null);
+                  }}
+                  className={`flex flex-col items-start gap-2 rounded-lg border p-3 text-left transition-all ${
+                    active
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                      : "border-border bg-card hover:border-primary/40"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="text-sm font-semibold">{t.name}</div>
+                  <div className="text-xs text-muted-foreground line-clamp-2">
+                    {t.description}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {mode === "lote" ? (
+        current ? (
+          <BatchPanel
+            template={current}
+            skillSlugs={selectedSkillSlugs}
+            writingStyle={writingStyle}
+            brainContext={brainContext}
+          />
+        ) : null
+      ) : (
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Coluna principal */}
         <div className="space-y-6">
-          {/* Template selector */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="h-4 w-4 text-primary" />
-                Template da minuta
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {templates.map((t) => {
-                  const Icon = ICONS[t.icon] || FileText;
-                  const active = t.slug === selectedTemplateSlug;
-                  return (
-                    <button
-                      key={t.slug}
-                      onClick={() => {
-                        setSelectedTemplateSlug(t.slug);
-                        setFields({});
-                        setResult(null);
-                      }}
-                      className={`flex flex-col items-start gap-2 rounded-lg border p-3 text-left transition-all ${
-                        active
-                          ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                          : "border-border bg-card hover:border-primary/40"
-                      }`}
-                    >
-                      <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="text-sm font-semibold">{t.name}</div>
-                      <div className="text-xs text-muted-foreground line-clamp-2">
-                        {t.description}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Fields */}
           {current && (
@@ -537,10 +655,19 @@ export function Generator() {
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     {stepLabels[step]}
                   </div>
-                  <Progress value={step === "anon" ? 15 : step === "skills" ? 30 : step === "llm" ? 60 : 90} />
-                  <p className="text-xs text-muted-foreground">
-                    A IA está processando o caso com os marcadores locais.
-                  </p>
+                  <Progress value={stepProgress[step] ?? 0} />
+                  {liveDraft ? (
+                    <pre
+                      ref={liveRef}
+                      className="max-h-48 overflow-y-auto whitespace-pre-wrap rounded border border-border bg-secondary/50 p-2 font-mono text-[11px] leading-relaxed scrollbar-juridia"
+                    >
+                      {liveDraft.slice(-1200)}
+                    </pre>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      A IA está processando o caso com os marcadores locais.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <Button
@@ -557,10 +684,7 @@ export function Generator() {
           </Card>
         </div>
       </div>
+      )}
     </div>
   );
-}
-
-function delay(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
 }

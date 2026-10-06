@@ -291,6 +291,8 @@ export interface DraftInput {
   outlineText: string;
   brainContext: string;
   styleDirective: string;
+  /** Minuta-molde aprovada pelo advogado (geração em lote — paridade MinutaIA) */
+  moldText?: string;
 }
 
 export function buildDraftUserPrompt(inp: DraftInput): string {
@@ -298,6 +300,9 @@ export function buildDraftUserPrompt(inp: DraftInput): string {
     ? `\n\n## Análise prévia do caso (Cérebro Jurídico — use como contexto estratégico)\n${inp.brainContext}`
     : "";
   const outline = `\n\n## Plano estrutural aprovado (siga esta ordem de seções)\n${inp.outlineText}`;
+  const mold = inp.moldText
+    ? `\n\n## Minuta-molde aprovada pelo advogado (geração em lote)\nSiga DE PERTO a estrutura, a ordem das seções, o nível de detalhe e o tom desta minuta-molde,\nadaptando os dados ao caso ATUAL. Os marcadores da molde pertencem a OUTRO caso — use apenas\nos marcadores fornecidos nos dados deste caso; onde a molde tiver dados próprios, use os\nequivalentes do caso atual ou ____ (sublinhado).\n\n--- INÍCIO DA MOLDE ---\n${inp.moldText}\n--- FIM DA MOLDE ---`
+    : "";
   return `Redija a minuta completa em Markdown, pronta para revisão humana.
 
 ## Tipo de minuta
@@ -310,7 +315,7 @@ ${inp.templateDirectives}
 ${inp.styleDirective}
 
 ## Dados do caso (pseudonimizados — só marcadores)
-${inp.anonymizedFacts || "(sem fatos informados — redija com ____ nos campos essenciais)"}${brain}${outline}${inp.skillsBlock}${inp.referencesBlock}${inp.markerList}
+${inp.anonymizedFacts || "(sem fatos informados — redija com ____ nos campos essenciais)"}${brain}${outline}${mold}${inp.skillsBlock}${inp.referencesBlock}${inp.markerList}
 
 ## Instruções de redação
 - Português jurídico brasileiro, completo e formal, em Markdown (##, listas, ênfase).

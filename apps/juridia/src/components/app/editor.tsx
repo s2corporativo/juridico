@@ -37,6 +37,7 @@ import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { MoldeMode } from "./molde-mode";
 import { CitationChecker } from "./citation-checker";
+import { PaginatedPreview, LetterheadDialog } from "./paginated-preview";
 
 export function Editor() {
   const { currentDocId, setAppTab, writingStyle } = useAppStore();
@@ -486,6 +487,7 @@ export function Editor() {
           </Dialog>
 
           <CitationChecker content={content} documentId={doc.id} />
+          <LetterheadDialog />
           <Button variant="outline" size="sm" onClick={printPdf}>
             <Printer className="mr-1.5 h-4 w-4" /> PDF
           </Button>
@@ -517,6 +519,9 @@ export function Editor() {
             </TabsTrigger>
             <TabsTrigger value="preview" className="gap-1.5">
               <Wand2 className="h-3.5 w-3.5" /> Visualizar
+            </TabsTrigger>
+            <TabsTrigger value="paginated" className="gap-1.5">
+              <Printer className="h-3.5 w-3.5" /> Paginado
             </TabsTrigger>
             <TabsTrigger value="anon" className="gap-1.5">
               <Search className="h-3.5 w-3.5" /> Marcadores
@@ -580,6 +585,10 @@ export function Editor() {
               return <p key={i} className="mb-2 text-justify">{line}</p>;
             })}
           </div>
+        </TabsContent>
+
+        <TabsContent value="paginated" className="mt-4">
+          <PaginatedPreview title={title} content={content} />
         </TabsContent>
 
         <TabsContent value="anon" className="mt-4">
