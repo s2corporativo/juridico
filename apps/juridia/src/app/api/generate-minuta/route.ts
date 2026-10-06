@@ -180,9 +180,9 @@ ${markerListStr}
 
   return NextResponse.json({
     document: documentDTO,
-    rawMarkers: pseudonymization.map.reverse,
+    rawMarkers: Object.fromEntries(pseudonymization.map.reverse),
     tokensUsed,
-  } as GenerateMinutaResponse);
+  } satisfies GenerateMinutaResponse);
 }
 
 async function ensureDemoUser() {

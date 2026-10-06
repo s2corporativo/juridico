@@ -144,7 +144,7 @@ export function CalculadoraJuridica() {
       } else if (activeTool === "valor-causa") {
         const v = Number(valorCausaForm.valor.replace(/\./g, "").replace(",", "."));
         const obs = checkValorCausa(v, valorCausaForm.pedidos, valorCausaForm.area);
-        setResult({ tool: "valor-causa", payload: { valor: v, area: valorCausaForm.area, ...obs.payload }, observacoes: obs.observacoes });
+        setResult({ tool: "valor-causa", payload: { area: valorCausaForm.area, ...obs.payload }, observacoes: obs.observacoes });
       } else if (activeTool === "triagem") {
         const obs = triagemRisco(triagemForm);
         setResult({ tool: "triagem", payload: { ...obs.payload, area: triagemForm.area }, observacoes: obs.observacoes });

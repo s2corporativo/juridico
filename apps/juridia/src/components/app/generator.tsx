@@ -182,7 +182,7 @@ export function Generator() {
         </div>
         {user && (
           <Badge variant="secondary" className="text-xs">
-            Plano {user.plan === "individual_2" ? "Individual II" : user.plan} · {Math.max(0, 200 - 47)} minutas restantes
+            Plano {user.plan === "individual_2" ? "Individual II" : (user.plan ?? "não informado")} · {Math.max(0, 200 - 47)} minutas restantes
           </Badge>
         )}
       </div>

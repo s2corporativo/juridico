@@ -153,7 +153,7 @@ export function Homologacao() {
             adherence: data.verificacaoAderencia?.classificacao || "—",
             vulnerabilities: data.analiseAdversarial?.vulnerabilidades?.length || 0,
             distinguishing: data.distinguishing?.conclusao || "—",
-            auditConfidence: data.auditoria?.confianca != null ? Math.round(data.auditoria.confianca * 100) : null,
+            auditConfidence: data.auditoria?.confianca != null ? Math.round(data.auditoria.confianca * 100) : undefined,
             durationMs,
           };
         }

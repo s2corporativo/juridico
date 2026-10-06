@@ -121,7 +121,7 @@ export function detect(input: string): { type: string; count: number; sample: st
   for (const { type, regex } of PATTERNS) {
     const matches = input.match(regex) || [];
     if (matches.length) {
-      found.push({ type, count: matches.length, sample: matches[0] });
+      found.push({ type, count: matches.length, sample: matches[0] ?? "" });
     }
   }
   const names = input.match(NAME_REGEX) || [];

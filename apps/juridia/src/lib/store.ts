@@ -19,25 +19,49 @@ export interface LawyerProfile {
   address: string;
 }
 
+export type AppTab =
+  | "assistente"
+  | "dashboard"
+  | "biblioteca"
+  | "calculadora"
+  | "cerebro"
+  | "intelligence"
+  | "pipeline"
+  | "generator"
+  | "editor"
+  | "homologacao"
+  | "visuallaw"
+  | "datajud"
+  | "grafo"
+  | "settings";
+
+// Ids legados usados por componentes (header, paleta, dashboard) que foram
+// consolidados em tabs renderizáveis — evita navegar para uma tab sem view.
+const APP_TAB_ALIASES: Record<string, AppTab> = {
+  documents: "editor",
+  clients: "dashboard",
+  jurisprudence: "biblioteca",
+  "case-analysis": "assistente",
+  batch: "generator",
+  audit: "settings",
+};
+
+export function resolveAppTab(t: string): AppTab {
+  if (t in APP_TAB_ALIASES) return APP_TAB_ALIASES[t];
+  return (APP_TABS as readonly string[]).includes(t) ? (t as AppTab) : "dashboard";
+}
+
+const APP_TABS: AppTab[] = [
+  "assistente", "dashboard", "biblioteca", "calculadora", "cerebro",
+  "intelligence", "pipeline", "generator", "editor", "homologacao",
+  "visuallaw", "datajud", "grafo", "settings",
+];
+
 interface AppState {
   view: View;
   setView: (v: View) => void;
-  appTab:
-    | "assistente"
-    | "dashboard"
-    | "biblioteca"
-    | "calculadora"
-    | "cerebro"
-    | "intelligence"
-    | "pipeline"
-    | "generator"
-    | "editor"
-    | "homologacao"
-    | "visuallaw"
-    | "datajud"
-    | "grafo"
-    | "settings";
-  setAppTab: (t: AppState["appTab"]) => void;
+  appTab: AppTab;
+  setAppTab: (t: string) => void;
   currentDocId: string | null;
   setCurrentDocId: (id: string | null) => void;
   currentCaseId: string | null;
@@ -51,8 +75,8 @@ interface AppState {
   clearSkills: () => void;
   authOpen: boolean;
   setAuthOpen: (b: boolean) => void;
-  user: { email: string; name: string | null } | null;
-  setUser: (u: { email: string; name: string | null } | null) => void;
+  user: { email: string; name: string | null; plan?: string | null } | null;
+  setUser: (u: { email: string; name: string | null; plan?: string | null } | null) => void;
   // Perfil e estilo
   profile: LawyerProfile;
   setProfile: (p: Partial<LawyerProfile>) => void;
@@ -78,7 +102,7 @@ export const useAppStore = create<AppState>()(
       view: "app",
       setView: (view) => set({ view }),
       appTab: "dashboard",
-      setAppTab: (appTab) => set({ appTab }),
+      setAppTab: (appTab) => set({ appTab: resolveAppTab(appTab) }),
       currentDocId: null,
       setCurrentDocId: (currentDocId) => set({ currentDocId }),
       currentCaseId: null,

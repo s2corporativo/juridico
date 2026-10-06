@@ -127,7 +127,7 @@ export async function PATCH(req: NextRequest) {
   const existing = await db.user.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Advogado não encontrado" }, { status: 404 });
 
-  const data: { name?: string; oabNumero?: string; oabEstado?: string; plan?: string; minutasLimit?: number } = {};
+  const data: { name?: string | null; oabNumero?: string | null; oabEstado?: string | null; plan?: string; minutasLimit?: number } = {};
   if (name !== undefined) data.name = name.trim() || null;
   if (oabNumero !== undefined || oabEstado !== undefined) {
     const numero = normalizeOAB(oabNumero ?? existing.oabNumero ?? "");

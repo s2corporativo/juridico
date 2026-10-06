@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   const cases = caseIds.size > 0
     ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) } }, select: { id: true, title: true, number: true, responsavel: true } })
     : [];
-  const caseMap = new Map(cases.map((c) => [c.id, c]));
+  const caseMap = new Map<string, { id: string; title: string; number: string | null; responsavel: string | null }>(cases.map((c) => [c.id, c] as const));
 
   interface AgendaItem {
     data: string;

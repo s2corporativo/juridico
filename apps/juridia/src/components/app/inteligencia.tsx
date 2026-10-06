@@ -24,7 +24,6 @@ import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
 import { GraphVisual } from "./graph-visual";
-import type { EpistemicState } from "@/lib/citation_gate";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 type AssertionKind = "fact" | "inference" | "gap" | "risk" | "rule" | "precedent" | "conclusion";
