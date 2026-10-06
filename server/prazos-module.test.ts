@@ -222,3 +222,143 @@ describe("Utilidades de calendário", () => {
     expect(chaveData(seguinte)).toBe("2026-10-05"); // pula sábado e domingo
   });
 });
+
+// ---------------------------------------------------------------------------
+// Treinamento do motor (Task 10): cenários avançados com valores verificados
+// no calendário real — recesso do art. 220, feriados de novembro, dobra da
+// Fazenda, portal no limite e extração com teores reais do acervo demo.
+// ---------------------------------------------------------------------------
+
+describe("Treinamento: recesso do art. 220 (20/12 a 20/01)", () => {
+  it("ciência 15/12/2026 + 15 úteis cruza o recesso e vence em 05/02/2027", () => {
+    const r = calcularPrazo({
+      dataEvento: dataDe("2026-12-15"),
+      dias: 15,
+      termo: "ciencia",
+      contagem: "uteis",
+      calendario: { feriadosExtras: {}, usarDiasForensesUsuais: false, aplicarSuspensaoArt220: true },
+    });
+    expect(chaveData(r.vencimento)).toBe("2027-02-05");
+  });
+
+  it("com aplicarSuspensaoArt220: false o mesmo prazo vence em 07/01/2027", () => {
+    const r = calcularPrazo({
+      dataEvento: dataDe("2026-12-15"),
+      dias: 15,
+      termo: "ciencia",
+      contagem: "uteis",
+      calendario: { feriadosExtras: {}, usarDiasForensesUsuais: false, aplicarSuspensaoArt220: false },
+    });
+    expect(chaveData(r.vencimento)).toBe("2027-01-07");
+  });
+});
+
+describe("Treinamento: feriados de novembro na contagem útil", () => {
+  it("15/11 (República) e 20/11 (Consciência Negra, Lei 14.759/2023) não são úteis", () => {
+    expect(ehUtil(dataDe("2026-11-15"))).toBe(false);
+    expect(ehUtil(dataDe("2026-11-20"))).toBe(false);
+    expect(ehUtil(dataDe("2026-11-23"))).toBe(true);
+  });
+
+  it("contagem de 10 úteis com evento 12/11/2026 salta 15/11 e 20/11 e vence em 27/11/2026", () => {
+    const r = calcularPrazo({
+      dataEvento: dataDe("2026-11-12"),
+      dias: 10,
+      termo: "ciencia",
+      contagem: "uteis",
+      calendario: { feriadosExtras: {}, usarDiasForensesUsuais: false, aplicarSuspensaoArt220: true },
+    });
+    expect(chaveData(r.vencimento)).toBe("2026-11-27");
+  });
+});
+
+describe("Treinamento: dobra da Fazenda Pública (CPC, art. 183)", () => {
+  it("dobra 5 úteis para 10 dias computados e cita a base normativa na memória", () => {
+    const r = calcularPrazo({
+      dataEvento: dataDe("2026-10-06"),
+      dias: 5,
+      termo: "dje",
+      contagem: "uteis",
+      emDobro: true,
+      motivoDobro: "fazenda",
+      autosEletronicos: true,
+      calendario: { feriadosExtras: {}, usarDiasForensesUsuais: false, aplicarSuspensaoArt220: true },
+    });
+    expect(r.diasComputados).toBe(10);
+    expect(r.emDobro).toBe(true);
+    expect(r.memoria.join(" ")).toMatch(/183/);
+  });
+});
+
+describe("Treinamento: portal eletrônico no limite (Lei 11.419/2006, art. 5º)", () => {
+  it("expedição 01/10/2026: intimação presumida no 10º dia corrido (11/10, ainda tempestiva) e contagem iniciada no dia útil seguinte", () => {
+    const r = calcularPrazo({
+      dataEvento: dataDe("2026-10-01"),
+      dias: 10,
+      termo: "portal",
+      contagem: "corridos",
+      autosEletronicos: true,
+      calendario: { feriadosExtras: {}, usarDiasForensesUsuais: false, aplicarSuspensaoArt220: true },
+    });
+    // 11/10 (10º dia corrido) é o limite tempestivo de consulta; cai no domingo e é
+    // prorrogado para 13/10 (12/10 é feriado nacional); contagem inicia em 14/10.
+    expect(chaveData(r.dataIntimacao)).toBe("2026-10-13");
+    expect(chaveData(r.inicioContagem)).toBe("2026-10-14");
+    expect(r.diasComputados).toBe(10);
+    expect(r.memoria.join(" ")).toMatch(/10 dias corridos/);
+  });
+});
+
+describe("Treinamento: vencimento corrido no Natal (CPP, art. 798, § 3º)", () => {
+  it("evento 15/12/2026 + 10 corridos vence em 25/12 (Natal) e prorroga para 28/12/2026", () => {
+    const r = calcularPrazo({
+      dataEvento: dataDe("2026-12-15"),
+      dias: 10,
+      termo: "ciencia",
+      contagem: "corridos",
+      autosEletronicos: true,
+      calendario: { feriadosExtras: {}, usarDiasForensesUsuais: false, aplicarSuspensaoArt220: false },
+    });
+    expect(chaveData(r.vencimento)).toBe("2026-12-28");
+  });
+});
+
+describe("Treinamento: extração com teores reais do acervo demo (Task 10)", () => {
+  it("despacho de laudo pericial: 'no prazo de quinze dias úteis' → 15 úteis", () => {
+    expect(extrairPrazoDoTeor(
+      "Intimem-se as partes, no prazo de quinze dias úteis, para manifestar-se sobre o laudo pericial juntado aos autos."
+    )).toEqual({ dias: 15, unidade: "uteis" });
+  });
+
+  it("decisão de réplica: 'no prazo de vinte dias úteis' → 20 úteis", () => {
+    expect(extrairPrazoDoTeor(
+      "Defiro a inversão do ônus da prova. Intime-se a parte autora para, no prazo de vinte dias úteis, apresentar réplica aos esclarecimentos oferecidos pela ré."
+    )).toEqual({ dias: 20, unidade: "uteis" });
+  });
+
+  it("intimação com dígitos e parêntese: 'no prazo de 5 (cinco) dias úteis' → 5 úteis", () => {
+    expect(extrairPrazoDoTeor(
+      "Fica a parte autora intimada para, no prazo de 5 (cinco) dias úteis, especificar as provas que pretenda produzir em audiência."
+    )).toEqual({ dias: 5, unidade: "uteis" });
+  });
+
+  it("edital de citação: 'compareça no prazo de trinta dias' → 30 dias sem unidade declarada", () => {
+    const d = extrairPrazoDoTeor(
+      "Edital de citação para réu em lugar incerto: compareça no prazo de trinta dias, contados da última publicação, sob pena de revelia."
+    );
+    expect(d?.dias).toBe(30);
+    expect(d?.unidade).toBeNull();
+  });
+
+  it("'prazo de quarenta e oito horas' → null (horas não são dias)", () => {
+    expect(extrairPrazoDoTeor(
+      "Intime-se a parte para, no prazo de quarenta e oito horas, cumprir a ordem judicial."
+    )).toBeFalsy();
+  });
+
+  it("acórdão sem prazo declarado → null (o sistema não presume)", () => {
+    expect(extrairPrazoDoTeor(
+      "Publicação de acórdão com juntada do julgado. As partes ficam intimadas do inteiro teor, sem prazo processual declarado nesta comunicação."
+    )).toBeFalsy();
+  });
+});

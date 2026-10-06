@@ -96,6 +96,7 @@ export default function OfficeJurisprudenciaPage() {
           <a href="/escritorio/clientes">Clientes</a>
           <a href="/escritorio/comunicacoes">Comunicações</a>
           <a href="/escritorio/jurisprudencia" className="active">Jurisprudência</a>
+          <a href="/escritorio/treinamento">Treinamento</a>
           <a href="/">Atlas Forense</a>
         </nav>
       </header>

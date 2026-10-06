@@ -31,6 +31,7 @@ export default function OfficeClientesPage() {
           <a href="/escritorio/clientes" className="active">Clientes</a>
           <a href="/escritorio/comunicacoes">Comunicações</a>
           <a href="/escritorio/jurisprudencia">Jurisprudência</a>
+          <a href="/escritorio/treinamento">Treinamento</a>
           <a href="/">Atlas Forense</a>
         </nav>
       </header>
