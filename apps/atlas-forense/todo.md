@@ -1,0 +1,249 @@
+# Evolução do painel Atlas Forense
+
+- [x] Mapear movimentos públicos com datas para a série mensal de distribuição e baixa.
+- [x] Consolidar assuntos CNJ e órgãos julgadores para filtros avançados.
+- [x] Implementar filtros avançados e gráfico temporal no painel.
+- [x] Implementar exportação do recorte em CSV e PDF de impressão.
+- [x] Validar filtros, exportações, responsividade e métricas metodológicas.
+- [x] Consultar e validar a série mensal censitária de distribuições e baixas no DataJud.
+- [x] Implementar seleção múltipla de assuntos CNJ e comparação de até três órgãos.
+- [x] Criar um modo de relatório para impressão PDF com capa, filtros e anexos metodológicos.
+- [x] Validar a atualização completa do painel e as exportações finais.
+- [x] Mapear limites de data e regras de cobertura para o recorte personalizado.
+- [x] Implementar seleção inicial e final de datas nos filtros do painel.
+- [x] Aplicar o período aos gráficos, comparações, CSV e relatório PDF.
+- [x] Validar os limites, mensagens metodológicas e responsividade do seletor.
+- [x] Atualizar a habilidade de jurimetria com o fluxo de painel censitário e recorte temporal.
+- [x] Validar e entregar a versão atualizada da habilidade reutilizável.
+- [x] Confirmar aliases, cobertura e comparabilidade nacional do JEC no DataJud.
+- [x] Extrair e validar censo mensal nacional por tribunal e unidade federativa.
+- [x] Consolidar causas e órgãos comparáveis para a visão nacional.
+- [x] Adaptar painel, filtros, exportações e relatório para recorte Brasil.
+- [x] Implementar filtros nacionais por período e tribunal sobre métricas agregadas reais.
+- [x] Implementar exportação CSV nacional com fonte, escopo, cobertura e limitações metodológicas.
+- [x] Implementar relatório imprimível do recorte nacional sem taxas ou baixas inexistentes.
+- [x] Separar visualmente as facetas de período integral do recorte filtrado na rota nacional.
+- [x] Incluir cobertura e estado de execução como metadados explícitos no CSV nacional.
+- [x] Validar recorte filtrado, CSV e impressão com consistência de filtros e limitações.
+- [x] Confirmar no arquivo CSV baixado os metadados de cobertura, estado, escopo e ausência de baixas.
+- [x] Confirmar em visualização de impressão a ocultação de controles e as limitações do recorte nacional.
+- [x] Validar em pré-visualização ou impressão nativa que o relatório preserva filtro, cobertura e ressalvas metodológicas.
+- [x] Extrair do PDF nacional evidência textual de filtro, cobertura, estado e ressalvas metodológicas.
+- [x] Formalizar a decisão de manter facetas integrais fora do recorte ativo e validar a sinalização correspondente.
+- [x] Validar e entregar a versão nacional do Atlas Forense.
+- [x] Inspecionar o ZIP jurisprudencial, inventariar formatos e identificar riscos de dados pessoais.
+- [x] Definir modelo de taxonomia, evidência, tese e vínculo de julgados do Compêndio Nacional.
+- [x] Habilitar infraestrutura de dados e autenticação para o acervo jurídico.
+- [x] Implementar navegação de compêndio, busca jurisprudencial e fichas de tese.
+- [x] Importar apenas metadados públicos validados do acervo anexado com trilha de auditoria.
+- [x] Validar privacidade, pesquisa e apresentação do Compêndio Nacional.
+- [x] Definir a arquitetura interna de módulos do Atlas Forense e do Compêndio Jurídico.
+- [x] Criar uma navegação estruturada com áreas de panorama, pesquisa, teses, taxonomia e auditoria.
+- [x] Definir controles de acesso e política de papéis para ingestão, revisão e consulta do acervo.
+- [x] Implementar fluxo de ingestão controlada com validação, deduplicação, rejeição de dados pessoais e revisão humana.
+- [x] Evoluir a pesquisa do Compêndio para consulta escalável no servidor, preservando filtros e trilha de evidência.
+- [x] Consolidar documentação operacional, limites metodológicos e critérios de expansão nacional.
+- [x] Validar documentação, disponibilidade e licença das APIs públicas DataJud, STJ Dados Abertos e LexML.
+- [x] Criar catálogo auditável de fontes públicas, com cobertura, autenticação, termos e nível de integração.
+- [x] Implementar conector seguro para o catálogo aberto do STJ, sem persistir arquivos ou texto integral sem revisão.
+- [x] Formalizar a política de credencial temporária do DataJud e aprovar ou restringir a resolução dinâmica pública.
+- [x] Implementar e validar status de cobertura por tribunal e alias antes da coleta nacional.
+- [x] Registrar em teste e rota administrativa a política final de credencial, alias e cobertura do DataJud.
+- [x] Executar coleta mensal agregada de distribuições JEC nos 27 TJs, com confirmação de total exato e sem dados pessoais.
+- [x] Persistir somente métricas agregadas e manifesto de execução, mantendo baixas como camada separada até validação específica.
+- [x] Expor na prontidão nacional as distribuições reais agregadas, mantendo baixas e conclusões comparativas explicitamente indisponíveis.
+- [ ] Coletar e validar baixas definitivas do coorte nacional sem transformar a série em estoque ou taxa de clearance.
+- [x] Projetar e validar uma extração paginada de baixas com correlação exata de movimento, processo e mês antes da coleta nacional completa.
+- [x] Implementar coletor controlado de baixas com paginação por alias, descarte de identificadores e manifesto sem dados individuais.
+- [x] Cobrir em testes a parada de paginação, falhas por alias, cobertura parcial e descarte após agregação.
+- [x] Executar somente um dry-run de estrutura da paginação, sem processos, antes de solicitar autorização para a coleta completa.
+- [ ] Executar o coletor autorizado e validar no manifesto real os contadores por alias, páginas e cobertura, sem placeholders.
+- [ ] Persistir apenas as baixas nacionais agregadas após validar o manifesto autorizado e a deduplicação por processo+mês.
+- [x] Executar piloto limitado de um alias e poucas páginas para validar scroll, deduplicação e descarte antes de escalar a coleta.
+- [x] Coletar e consolidar assuntos CNJ e órgãos julgadores nacionais como facetas agregadas, sem processos individuais.
+- [x] Paginar as facetas DataJud por alias e validar que não há truncamento silencioso de buckets.
+- [x] Documentar e testar a completude operacional das facetas agregadas antes de apresentá-las como consolidadas.
+- [x] Registrar como consulta manual as fontes sem API documentada, sem scraping ou contorno de controles.
+- [x] Exibir na interface as fontes integradas, seu escopo probatório e suas limitações de uso.
+- [x] Confirmar em fonte oficial os termos ou a licença aplicável ao Webservice LexML.
+- [x] Executar consulta SRU LexML bem-sucedida ou registrar evidência oficial do bloqueio técnico antes de automatizar a fonte.
+- [x] Criar manifesto técnico de integração com o EJC, incluindo rotas, módulos, papéis e limites de sigilo.
+- [x] Consumir o manifesto do EJC na navegação e expor status técnico sem ativar vínculo externo.
+- [x] Implementar contrato tipado de ponte de autenticação futura, com integração externa desativada e teste de isolamento.
+- [x] Criar modelo auditável para execuções e séries mensais do censo nacional DataJud.
+- [x] Exibir painel de prontidão e cobertura nacional sem simular estatísticas inexistentes.
+- [x] Inventariar rotas, contratos, tabelas, migrações e documentação do Atlas Forense.
+- [x] Auditar privacidade, permissões, conectores públicos e inconsistências metodológicas.
+- [x] Reconciliar o histórico de migrações com o banco aplicado e eliminar alertas técnicos objetivos.
+- [x] Validar todas as rotas principais em desktop e móvel, incluindo estados vazios e acesso restrito.
+- [x] Consolidar o relatório de revisão e registrar bloqueios externos remanescentes.
+- [x] Resolver ou documentar tecnicamente a incompatibilidade do plugin de localização JSX com Vite 7.
+- [x] Eliminar o aviso de build do selo Atlas servido por storage persistente.
+- [x] Pesquisar amplamente em fontes oficiais os requisitos públicos, aliases e regras de uso do DataJud.
+- [x] Validar de modo seguro a chave pública encontrada, sem registrá-la em arquivos, logs ou banco.
+- [x] Atualizar a documentação operacional com requisitos DataJud confirmados e limites de cobertura.
+- [x] Refazer a validação pública do DataJud sem usar arquivo temporário, mantendo a chave somente em memória.
+- [x] Mapear plataformas comparáveis de jurimetria, pesquisa jurídica e inteligência de precedentes.
+- [x] Avaliar funcionalidades, governança, evidências e limites das referências encontradas.
+- [x] Priorizar melhorias aplicáveis ao Atlas Forense com estimativa de valor, risco e esforço.
+- [x] Modelar o ciclo de revisão humana para evidências, com estados, decisão fundamentada e trilha de auditoria.
+- [x] Implementar procedimentos administrativos protegidos para aprovar, rejeitar ou devolver evidências à revisão.
+- [x] Criar fila administrativa de revisão com filtros, evidência mínima e estado vazio seguro.
+- [x] Criar dossiê de citação exportável por julgado, com fontes, teses, taxonomia e ressalvas metodológicas.
+- [x] Validar publicamente auditoria, exportação e responsividade dos novos módulos, mantendo a validação de papel admin no teste autenticado separado.
+- [ ] Executar validação operacional autenticada da fila com um administrador, sem criar conteúdo fictício.
+- [ ] Validar em perfil admin os filtros, enfileiramento, decisão e eventos de auditoria usando somente registro real já catalogado.
+- [x] Adicionar filtros da fila por status, prioridade e tribunal, sem expor dados pessoais.
+- [x] Validar a exportação Markdown e a impressão do dossiê com registro real já catalogado.
+- [x] Definir score documental objetivo com critérios visíveis e sem inferência de mérito jurídico.
+- [x] Calcular níveis de qualidade para julgados e teses a partir de metadados já auditados.
+- [x] Criar painel de cobertura por fonte, tribunal, status e período de evidência.
+- [x] Exibir score e cobertura na consulta do Compêndio, com limites metodológicos explícitos.
+- [x] Validar cálculos, responsividade e ausência de dados pessoais no módulo de qualidade documental.
+- [x] Executar e registrar testes explícitos de score, média, níveis, cobertura e resposta pública sem dados pessoais.
+- [x] Inspecionar a VPS, serviços existentes e recursos antes da publicação externa.
+- [x] Preparar configuração de produção e estratégia de reversão sem registrar segredos no repositório.
+- [x] Criar ou sincronizar o repositório privado ATLAS-EJC no GitHub.
+- [x] Implantar o Atlas na VPS com serviço de processo, proxy reverso e firewall mínimo.
+- [x] Validar saúde, acesso externo, logs sanitizados e retorno seguro após a publicação.
+- [x] Configurar o domínio atlas.depaulateixeira.adv.br para o proxy HTTPS da VPS autorizada.
+- [x] Criar banco, usuário de aplicação e variáveis de produção isolados para o Atlas.
+- [x] Carregar na VPS somente metadados jurídicos auditados e séries nacionais agregadas, sem respostas brutas ou identificadores temporários.
+- [x] Instalar serviço systemd e proxy reverso exclusivos do Atlas, com inicialização automática e rollback documentado.
+- [x] Localizar a zona DNS de depaulateixeira.adv.br em integração configurada e criar o registro A de atlas.
+- [x] Instalar e configurar proxy HTTPS persistente para atlas.depaulateixeira.adv.br com upstream exclusivo do Atlas.
+- [x] Abrir e validar somente as portas 80/443, emitir TLS e testar acesso externo com logs sanitizados.
+- [x] Extrair a média agregada para helper puro e testar o resultado esperado com dataset controlado.
+- [x] Definir critérios autônomos de qualidade documental para teses antes de atribuir-lhes pontuação.
+- [x] Implementar e exibir score de completude documental próprio para as teses, separado do score de julgados.
+- [x] Completar seed idempotente dos metadados públicos do Compêndio na VPS, incluindo taxonomia, teses, vínculos e auditoria sanitizada.
+- [x] Restringir explicitamente o servidor de produção do Atlas a 127.0.0.1 e confirmar que a porta 3010 não é exposta.
+- [x] Remover a dependência de runtime do Vite em produção e validar instalação exclusiva de dependências de produção na VPS.
+- [x] Reconciliar cautelosamente o histórico de migrações Drizzle já aplicadas no MariaDB isolado, sem executar DDL duplicado.
+- [ ] Rotacionar o token de Cloudflare enviado em conversa e manter somente token de escopo mínimo fora do projeto e da VPS.
+- [x] Reduzir a exposição residual da unidade systemd Atlas sem impedir rede local, MariaDB, logs ou reinicialização automática.
+- [x] Parametrizar o coletor de baixas para saída controlada, pausa entre páginas, teto por execução e encerramento seguro em falha.
+- [x] Reconciliar a documentação da coleta de baixas com a paginação efetivamente usada e os limites do piloto.
+- [x] Executar na VPS um único piloto TJMG de baixas, com poucas páginas, telemetria sanitizada e sem persistir identificadores.
+- [x] Avaliar o manifesto do piloto antes de habilitar nova coleta ou importação de totais agregados.
+- [x] Adicionar retentativas exponenciais limitadas, erro sanitizado e telemetria de tentativas ao coletor DataJud de baixas TJMG.
+- [x] Cobrir em teste o cálculo de retentativa, a parada após o limite e a ausência de dados de processos nos erros registrados.
+- [x] Validar no fluxo do coletor que falhas repetidas encerram no limite de retentativas sem expor identificadores no manifesto.
+- [x] Criar painel editorial na página inicial com estatísticas reais de temas, teses, autoridades e julgados do Compêndio.
+- [x] Exibir Betim/MG e Igarapé/MG como comarcas do recorte, distinguindo evidência catalogada de ausência de acervo confirmado.
+- [x] Validar a nova página inicial em desktop e móvel, dados reais, privacidade e publicação externa.
+- [x] Inspecionar as capturas desktop e móvel da Home e registrar que o painel do Compêndio, Betim/MG e Igarapé/MG renderizam corretamente.
+- [x] Validar a Home hidratada no domínio publicado, incluindo os cartões novos e a ausência de PII exposta.
+- [x] Eliminar a dependência circular entre os bundles de gráficos e React que impede a hidratação da Home em produção.
+- [x] Integrar ao painel inicial os órgãos JEC de Betim/MG e Igarapé/MG disponíveis nas facetas agregadas oficiais, sem somar órgãos não equivalentes nem inferir censo completo.
+- [x] Validar por contratos e navegação pública que as áreas administrativas permanecem inacessíveis sem OAuth/SSO e sem expor registros de revisão.
+- [x] Consolidar documento operacional com critérios explícitos de retomada para token Cloudflare, chave DataJud e administrador real.
+- [x] Registrar e validar no domínio publicado o estado consolidado de segurança, dados públicos e bloqueios externos.
+- [x] Revalidar a disponibilidade da página oficial de chave pública DataJud a partir da VPS antes de repetir o piloto TJMG limitado.
+- [x] Validar explicitamente no dossiê público a renderização dos eventos de auditoria com registros já catalogados, sem dados pessoais.
+- [x] Mapear o contrato atual de autenticação, papéis, callbacks e variáveis do Atlas para a ponte EJC/SSO.
+- [x] Criar configuração externa versionada e reversível para OAuth/SSO, sem credenciais no repositório ou na interface pública.
+- [x] Preparar a unidade VPS e a documentação para receber segredos OAuth/SSO exclusivamente por ambiente protegido.
+- [ ] Validar com usuário administrativo real a sessão, os filtros, a fila, as decisões e a auditoria antes de liberar a Central de Controle.
+- [x] Sanitizar o status público EJC/SSO para não expor nomes de variáveis, requisitos de segredo ou detalhes de configuração.
+- [x] Revalidar externamente o status público EJC/SSO com somente estado abstrato de prontidão e sem nomes de variáveis.
+- [x] Documentar o procedimento seguro de inclusão e validação das credenciais EJC/SSO no ambiente protegido da VPS.
+- [x] Confirmar no domínio publicado que o painel inicial apresenta as estatísticas do Compêndio e as facetas oficiais de Betim e Igarapé.
+- [x] Adaptar o coletor de baixas TJMG para receber uma lista limitada de códigos de órgão julgador, mantendo o recorte e a telemetria sanitizados.
+- [x] Cobrir em teste a serialização do filtro territorial, a rejeição de códigos não permitidos e a ausência de identificadores em erros e manifestos.
+- [x] Corrigir o helper de filtro territorial para receber explicitamente o tamanho de página, preservando seu uso isolado nos testes.
+- [x] Executar somente o pré-teste TJMG para os órgãos oficiais de Betim e Igarapé, com até três páginas e sem persistir processos individuais.
+- [x] Segregar os totais de baixas por órgão julgador e mês, evitando apresentar Betim e Igarapé como uma única contagem territorial.
+- [x] Corrigir a verificação de privacidade na VPS para ler arquivos do diretório restrito com privilégio e confirmar que somente agregados foram persistidos.
+- [x] Adicionar teste automatizado do manifesto territorial que comprove a ausência de números de processo, PII, HMACs e respostas brutas persistidas.
+- [x] Formalizar o Atlas como controlador do seu banco MariaDB isolado, sem réplica ou sincronização de dados jurídicos com o EJC.
+- [x] Restringir o escopo futuro do EJC/SSO à autenticação, identidade e papel, preservando a independência operacional do Atlas.
+- [x] Revalidar na VPS o banco, o usuário de aplicação e o serviço isolados após formalizar a fronteira arquitetural.
+- [x] Inspecionar o esquema e os importadores para armazenar o piloto territorial TJMG somente como métrica agregada no banco Atlas isolado.
+- [x] Criar importação idempotente das células de baixas por órgão e mês, com manifesto sanitizado e sem dados individuais.
+- [x] Corrigir o acionamento do importador territorial quando executado pelo caminho simbólico `/opt/atlas-ejc/current` na VPS.
+- [x] Corrigir a parametrização da criação da execução territorial no MariaDB antes de repetir a importação idempotente.
+- [x] Distinguir no importador territorial a rejeição de órgão não autorizado da rejeição de métrica agregada malformada.
+- [x] Validar marcadores proibidos por estrutura de dados no manifesto, sem rejeitar uma descrição textual de política de privacidade.
+- [x] Executar e consultar o teste de importação isolada para Betim e Igarapé, sem expor ou sincronizar dados com o EJC.
+- [x] Validar que o painel público não apresenta os totais de baixas do piloto sem revisão metodológica e aprovação de publicação.
+- [x] Impedir que uma execução territorial parcial se torne a fonte padrão da página nacional após a importação no banco isolado.
+- [x] Definir a lista oficial de municípios da Região Metropolitana de Belo Horizonte e registrar seus códigos IBGE para o recorte Atlas.
+- [x] Cobrir em teste a composição legal de 34 municípios da RMBH e a rejeição de códigos IBGE ausentes.
+- [x] Definir ramos jurídicos prioritários, classes CNJ e limites de competência para a expansão inicial do Atlas.
+- [x] Mapear órgãos julgadores e disponibilidade DataJud/TJMG para Betim, Belo Horizonte, Contagem, Igarapé e demais municípios metropolitanos.
+- [x] Impedir o uso de facetas nacionais sem alias como prova de órgão TJMG, preservando a proveniência tribunal-município antes da expansão metropolitana.
+- [x] Modelar uma camada territorial e temática que mantenha separados censo, piloto de baixas, facetas e acervo jurisprudencial.
+- [x] Criar tabelas próprias para execuções e facetas territoriais RMBH, preservando alias TJMG, código IBGE, órgão, período, fonte e estado de cobertura.
+- [x] Importar idempotentemente as facetas RMBH TJMG com proveniência, sem transpor processos, respostas brutas ou dados pessoais.
+- [x] Ampliar o painel e as exportações com filtros metropolitanos e de ramo, exibindo somente cobertura e dados confirmados.
+- [x] Criar rota pública RMBH com cobertura TJMG por município, ramos do Direito, filtros e exportação CSV metodológica.
+- [x] Expor contrato público sanitizado para a cobertura RMBH, preservando a separação entre mapeamento de órgãos e métricas processuais.
+- [x] Corrigir e validar a resolução da rota pública RMBH após a inclusão da nova página metropolitana.
+- [x] Qualificar na cobertura RMBH os órgãos retornados por classe 436 cujo rótulo institucional não identifica unidade JEC, sem inferir competência pelo nome do município.
+- [x] Validar a expansão em desktop e móvel, privacidade, fontes oficiais, exportação e ausência de inferências indevidas.
+- [x] Comparar a especificação recebida do Compêndio com a arquitetura Atlas e registrar requisitos incorporados, adaptados ou recusados por segurança e privacidade.
+- [x] Modelar a governança de vigência de teses e julgados no banco Atlas isolado, sem importar casos, notas internas ou dados pessoais para a área pública.
+- [x] Implementar indicadores de verificação e citação copiável no Compêndio a partir de fontes oficiais já catalogadas.
+- [x] Criar cálculo público de situação documental baseado exclusivamente na última verificação de fonte ou revisão de tese, sem declarar vigência jurídica.
+- [x] Expor resumo sanitizado de situação documental no Compêndio e adicionar ação de copiar referência no dossiê público.
+- [x] Cobrir em testes os limiares de revisão documental e a formatação da referência copiável.
+- [x] Adicionar e migrar data explícita de verificação em fontes de evidência, mantendo registros existentes como não verificados até revisão humana.
+- [x] Preservar funcionalidades administrativas internas propostas pela especificação atrás de autenticação real, sem senha coletiva ou exposição pública.
+- [x] Validar as melhorias do Compêndio em dados reais, responsividade, privacidade e publicação externa.
+- [ ] Revalidar por fonte primária DataJud/TJMG os códigos e órgãos Cível/Consumidor antes de qualquer piloto, descartando mapeamentos sem identificador jurisdicional comprovado.
+- [ ] Manter fora do piloto Cível/Consumidor municípios com fonte apenas indicativa, URL não segura ou competência não comprovada.
+- [x] Criar pré-teste agregado DataJud/TJMG de Cível/Consumidor com `size: 0`, classes, assuntos e órgãos, sem recuperação de processos individuais.
+- [x] Confirmar no retorno agregado se as raízes TPU 899 e 1156 são indexadas de forma utilizável antes de gravar qualquer métrica do piloto.
+- [x] Diagnosticar o HTTP 400 do pré-teste Cível/Consumidor com uma única consulta base `size: 0`, sem `_source`, hits, identificadores ou persistência de resposta bruta.
+- [x] Isolar incrementalmente a agregação e o filtro de `assuntos.codigo` após a aceitação da consulta-base, sem repetir a consulta temática completa às cegas.
+- [x] Construir árvore versionada de descendentes oficiais TPU para as raízes 899 e 1156, com fonte, versão e regra explícita de inclusão.
+- [x] Confrontar a árvore TPU oficial com a indexação agregada do DataJud/TJMG, sem inferir descendentes ou consultar processos individuais.
+- [x] Validar o filtro temático futuro contra privacidade, exclusão de município não confirmado e separação do censo nacional.
+- [x] Executar uma única pré-consulta DataJud/TJMG agregada para testar a indexação dos 405 códigos TPU, com `size: 0`, `_source: false` e manifesto exclusivamente sanitizado.
+- [ ] Definir camada de métricas agregadas Cível/Consumidor por categoria TPU, período e comarca DataJud confirmada, sem confundir o piloto com o censo nacional.
+- [x] Criar componente visual público para volume agregado por categoria principal TPU, com proveniência, recorte e limitação visíveis.
+- [x] Adicionar filtros interativos de período e comarca que só habilitem combinações efetivamente coletadas e auditáveis.
+- [x] Modernizar a experiência visual do painel no padrão SaaS jurídico-tech, com responsividade, contraste e acessibilidade preservados.
+- [x] Corrigir a importação ausente de `createHash` no coletor temático antes da execução real na VPS.
+- [ ] Executar e importar as células agregadas categoria × órgão × mês na camada temática isolada.
+- [ ] Implementar e validar a consulta pública com filtros e o componente visual SaaS em dados reais.
+- [x] Testar a interface em desktop e móvel, revisar logs e salvar checkpoint publicado.
+
+- [x] Corrigir a consulta temática para reutilizar exatamente o contrato DataJud já comprovado (`match` para grau, `terms` de classe e timestamp completo), evitando interpretar zero documentos como ausência de indexação.
+- [x] Corrigir a importação ausente de `readFile` no importador temático antes de carregar as 74 células agregadas.
+- [x] Definir fontes públicas oficiais, periodicidade, escopo editorial e revisão humana para atualizações de julgados, legislação e fontes relevantes.
+- [x] Configurar atualização recorrente idempotente, com falhas sanitizadas, sem publicação automática de conteúdo não revisado.
+- [x] Implementar mapa contextual para teses pesquisadas, usando apenas relações taxonômicas e evidências públicas disponíveis.
+- [x] Validar privacidade, governança, acessibilidade e separação entre conteúdo novo, Compêndio e métricas DataJud.
+
+- [x] Fixar a rotina diária aprovada para 06:00 UTC (03:00 em Brasília), com fila de revisão humana e sem publicação automática.
+- [x] Selecionar e documentar fontes públicas oficiais para julgados, legislação e atualizações relevantes, com escopo inicial conservador.
+- [x] Implementar fila de revisão e deduplicação por fonte, identificador público sanitizado e hash de conteúdo permitido.
+- [x] Criar callback diário protegido em `/api/scheduled/` e preparar o cadastro da rotina após checkpoint e deploy.
+- [x] Implementar mapa contextual acionado por pesquisa de tese, limitado a relações taxonômicas e evidências já catalogadas.
+
+- [x] Corrigir a callback editorial para responder 403 de forma sanitizada a chamadas públicas não autenticadas, sem transformar falha de autenticação em 500.
+- [x] Criar página dedicada de revisão editorial rápida, protegida por papel admin, com filtros e ações de decisão auditáveis.
+- [x] Adicionar expansão interativa de nós do mapa de teses com detalhes e documentos relacionados já catalogados.
+- [x] Adicionar exportação do mapa de teses em imagem e PDF com filtros, fonte e nota metodológica.
+- [x] Entregar e validar a habilidade reutilizável `atlas-forense-piloto-auditavel`.
+
+- [x] Reorganizar a experiência do Atlas como Compêndio Jurídico real, inspirado em compêndios técnicos sem adotar analogias clínicas no conteúdo jurídico.
+- [x] Criar uma página de consulta por fichas jurídicas, com tema, tese, autoridade, fonte, situação documental e alertas metodológicos.
+- [x] Reorientar a Home para priorizar pesquisa, taxonomia e acesso a fichas do Compêndio, preservando o painel jurimétrico como módulo separado.
+- [x] Validar linguagem, privacidade, responsividade e links de proveniência do novo Compêndio Jurídico.
+
+- [x] Adicionar resumo assistido por IA às fichas públicas, limitado a campos agregados e metadados já exibidos.
+- [x] Validar contrato de privacidade, resposta estruturada, falha segura e experiência responsiva do resumo assistido.
+- [x] Adicionar seção pública “Julgados Relacionados” às fichas, baseada apenas em vínculos já catalogados de tese ou classificação.
+- [x] Validar limite, sanitização, links de fonte e responsividade da nova seção.
+
+- [x] Adicionar seleção múltipla e botão de comparação assistida por IA aos julgados relacionados.
+- [x] Gerar saída estruturada com semelhanças, diferenças, divergências de resultado e limites documentais.
+- [x] Validar que a comparação usa somente campos públicos sanitizados e não produz conclusão jurídica ou prognóstico.
+- [x] Testar responsividade, estados de erro, limites de quantidade e publicar a melhoria.
+
+
+- [x] Recriar o repositório privado no destino `s2corporativo/jurídico` com nome de repositório GitHub válido.
+- [x] Sincronizar a branch de trabalho e validar que nenhum segredo ou arquivo de ambiente foi publicado.

@@ -1,0 +1,255 @@
+{
+  "title": "Escopo confirmado para piloto Cível/Consumidor RMBH",
+  "version": "2026-08-28-rmbh-civil-consumer-scope-v1",
+  "sourceKey": "rmbh-tjmg-facets-20260828",
+  "source": "CNJ/DataJud API Pública; facetas RMBH previamente coletadas",
+  "selectionRule": "Inclui apenas rótulos institucionais com termo cível/civel e exclui rótulos criminais; não infere competência por município.",
+  "municipalities": [
+    "Belo Horizonte",
+    "Betim",
+    "Contagem",
+    "Igarapé",
+    "Lagoa Santa",
+    "Santa Luzia"
+  ],
+  "bodies": [
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17283",
+      "judgingBodyLabel": "1ª Unidade Jurisdicional Cível - 1º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 6944
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17284",
+      "judgingBodyLabel": "10ª Unidade Jurisdicional Cível - 30º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 6315
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17285",
+      "judgingBodyLabel": "11ª Unidade Jurisdicional Cível - Barreiro - 34º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 4893
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17289",
+      "judgingBodyLabel": "2ª Unidade Jurisdicional Cível - 4º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 8448
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17292",
+      "judgingBodyLabel": "3ª Unidade Jurisdicional Cível - 7º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 9356
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17293",
+      "judgingBodyLabel": "4ª Unidade Jurisdicional Cível - 11º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 8937
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17294",
+      "judgingBodyLabel": "5ª Unidade Jurisdicional Cível - 15º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 9462
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17295",
+      "judgingBodyLabel": "6ª Unidade Jurisdicional Cível - 16º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 6121
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17296",
+      "judgingBodyLabel": "7ª Unidade Jurisdicional Cível - 21º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 5741
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17297",
+      "judgingBodyLabel": "8ª Unidade Jurisdicional Cível - 22º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 3963
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "17298",
+      "judgingBodyLabel": "9ª Unidade Jurisdicional Cível - 26º JD da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 8696
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3186",
+      "judgingBodyLabel": "3ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3828",
+      "judgingBodyLabel": "4ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3838",
+      "judgingBodyLabel": "6ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3868",
+      "judgingBodyLabel": "10ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3896",
+      "judgingBodyLabel": "15ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 2
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3925",
+      "judgingBodyLabel": "18ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3929",
+      "judgingBodyLabel": "19ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3935",
+      "judgingBodyLabel": "20ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3943",
+      "judgingBodyLabel": "21ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 2
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "3963",
+      "judgingBodyLabel": "24ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "4030",
+      "judgingBodyLabel": "30ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "4036",
+      "judgingBodyLabel": "31ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Belo Horizonte",
+      "municipalityIbgeCode": "3106200",
+      "judgingBodyCode": "4044",
+      "judgingBodyLabel": "33ª Vara Cível da Comarca de Belo Horizonte",
+      "sourceFacetAmount": 2
+    },
+    {
+      "municipality": "Betim",
+      "municipalityIbgeCode": "3106705",
+      "judgingBodyCode": "11730",
+      "judgingBodyLabel": "2ª Vara Cível da Comarca de Betim da Comarca de Betim",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Betim",
+      "municipalityIbgeCode": "3106705",
+      "judgingBodyCode": "5261",
+      "judgingBodyLabel": "5ª Vara Cível da Comarca de Betim",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Betim",
+      "municipalityIbgeCode": "3106705",
+      "judgingBodyCode": "5266",
+      "judgingBodyLabel": "1ª Vara Cível da Comarca de Betim",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Contagem",
+      "municipalityIbgeCode": "3118601",
+      "judgingBodyCode": "11048",
+      "judgingBodyLabel": "2ª Vara Cível da Comarca de Contagem",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Igarapé",
+      "municipalityIbgeCode": "3130101",
+      "judgingBodyCode": "8161",
+      "judgingBodyLabel": "Juizado Especial Cível da Comarca de Igarapé",
+      "sourceFacetAmount": 1328
+    },
+    {
+      "municipality": "Lagoa Santa",
+      "municipalityIbgeCode": "3137601",
+      "judgingBodyCode": "81660",
+      "judgingBodyLabel": "1ª Vara Cível da Comarca de Lagoa Santa",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Lagoa Santa",
+      "municipalityIbgeCode": "3137601",
+      "judgingBodyCode": "81661",
+      "judgingBodyLabel": "2ª Vara Cível da Comarca de Lagoa Santa",
+      "sourceFacetAmount": 9
+    },
+    {
+      "municipality": "Santa Luzia",
+      "municipalityIbgeCode": "3157807",
+      "judgingBodyCode": "9233",
+      "judgingBodyLabel": "1ª Vara Cível da Comarca de Santa Luzia",
+      "sourceFacetAmount": 1
+    },
+    {
+      "municipality": "Santa Luzia",
+      "municipalityIbgeCode": "3157807",
+      "judgingBodyCode": "9236",
+      "judgingBodyLabel": "3ª Vara Cível da Comarca de Santa Luzia",
+      "sourceFacetAmount": 1
+    }
+  ],
+  "limits": {
+    "maximumBodiesPerExecution": 24,
+    "noProcessHits": true,
+    "noRawResponses": true,
+    "noPersonalData": true,
+    "municipalityIsLabelBased": true
+  }
+}

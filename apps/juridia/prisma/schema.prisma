@@ -1,0 +1,568 @@
+// Prisma schema — JuridIA (clone do MinutaIA)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  oabNumero String?  // número de inscrição na OAB (somente dígitos, ex: "123456")
+  oabEstado String?  // UF da inscrição (ex: "SP", "RJ", "MG")
+  plan      String   @default("free") // free | individual_1 | individual_2 | individual_3 | enterprise
+  minutasUsed     Int      @default(0)
+  minutasLimit    Int      @default(3)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  documents Document[]
+  clients   Client[]
+
+  @@unique([oabEstado, oabNumero])
+  @@index([oabEstado, oabNumero])
+}
+
+// Clientes do escritório (uso pessoal, não SaaS)
+model Client {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  phone     String?
+  document  String?  // CPF/CNPJ
+  notes     String?
+  color     String   @default("") // cor para identificação visual
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cases     Case[]
+}
+
+// Casos/processos do escritório (ERP — dados operacionais)
+model Case {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title         String
+  number        String?  // número do processo principal
+  area          String   @default("civil")
+  responsavel   String?  // advogado responsável
+  prioridade    String   @default("media") // alta | media | baixa
+  valor         String?  // valor da causa (R$)
+  status        String   @default("ativo") // ativo | suspenso | encerrado
+  dataDistribuicao DateTime?
+  dataEncerramento DateTime?
+  resultado     String?  // procedente | improcedente | acordo | extinto | parcial
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  documents     Document[]
+  movimentos    CaseMovement[]
+  audiencias    CaseHearing[]
+  processosVinculados String @default("[]") // JSON array de números de processo vinculados
+
+  @@index([clientId])
+  @@index([status])
+  @@index([area])
+  @@index([prioridade])
+}
+
+// Movimentações processuais (andamentos)
+model CaseMovement {
+  id          String   @id @default(cuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  data        DateTime @default(now())
+  tipo        String   // petition | despacho | decisao | sentenca | recurso | audiencia | outro
+  descricao   String
+  numeroProc  String?  // processo ao qual se refere (se diferente do principal)
+  criadoPor   String?  // usuario
+  createdAt   DateTime @default(now())
+
+  @@index([caseId])
+  @@index([data])
+}
+
+// Audiências
+model CaseHearing {
+  id          String   @id @default(cuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  data        DateTime
+  tipo        String   // conciliacao | instrucao | julgamento | oitiva | outra
+  local       String?
+  orgao       String?  // vara/comarca
+  status      String   @default("agendada") // agendada | realizada | cancelada | redesignada
+  resultado   String?  // acordo | sem_acordo | adiada | realizada
+  observacoes String?
+  createdAt   DateTime @default(now())
+
+  @@index([caseId])
+  @@index([data])
+}
+
+model Template {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  category    String   // peticao | sentenca | despacho | contrato | parecer | recurso
+  description String
+  prompt      String   // system prompt base
+  fields      String   // JSON string com campos do formulário
+  icon        String   @default("FileText")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  category    String   // civil | penal | trabalhista | tributario | consumer | family
+  description String
+  content     String   // texto legivel que orienta o modelo (estilo "habilidades")
+  locked      Boolean  @default(false) // # fixa inegociável
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Document {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  templateSlug     String
+  templateName     String
+  rawFacts         String   // fatos brutos informados pelo usuário
+  anonymizedFacts String   // fatos com marcadores [NOME_0001] etc.
+  markers          String   // JSON mapa marcador -> valor original
+  generatedContent String   // minuta gerada (com marcadores restaurados)
+  skillSlugs       String   // JSON array de skills usadas
+  status           String   @default("draft") // draft | generated | archived
+  batchId          String?
+  caseId           String?
+  case             Case?    @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  tags             String   @default("[]") // JSON array de tags livres
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([batchId])
+  @@index([caseId])
+}
+
+model JurisprudenceSearch {
+  id        String   @id @default(cuid())
+  userId    String?
+  query     String
+  mode      String   @default("ai") // ai | keyword
+  results   String   // JSON array
+  createdAt DateTime @default(now())
+}
+
+// Base curada de fontes jurídicas para o Citation Gate (anti-alucinação)
+model LegalSource {
+  id              String   @id @default(cuid())
+  tipo             String   // artigo_lei | sumula | jurisprudencia | doutrina
+  diploma         String   // CC | CPC | CLT | CP | CDC | CTN | CF | Lei X
+  numero          String   // art. 927 / 308 / 1.009 | Súmula 308 | REsp 1.234.567
+  tribunal        String?  // STJ | STF | TST | TJ | TRT | null para legislação
+  textoTrecho      String   // trecho do texto da norma/súmula (para pertinência)
+  vigente          Boolean  @default(true)
+  urlOficial       String?
+  hashConteudo     String?  // SHA-256 do snapshot
+  dataConsulta     DateTime?
+  revisadoPor      String?  // curador
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([tipo, diploma, numero, tribunal])
+  @@index([diploma, numero])
+  @@index([tipo, vigente])
+}
+
+model NewsItem {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  summary     String
+  body        String
+  category    String   // recurso | novoproduto | recado | parceria
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Resumo avançado estruturado de um caso (cards: partes, cronologia, pedidos, etc.)
+model CaseAnalysis {
+  id          String   @id @default(cuid())
+  userId      String?
+  title       String
+  factsInput  String   // fatos brutos informados
+  parties     String   // JSON array de {role, name?, type}
+  timeline    String   // JSON array de {date, event}
+  requests    String   // JSON array de strings
+  proofs      String   // JSON array de strings
+  decisions   String   // JSON array de strings
+  values      String   // JSON array de {label, amount}
+  risks       String   // JSON array of {level, description}
+  nextSteps   String   // JSON array de strings
+  createdAt   DateTime @default(now())
+}
+
+// Modo Molde: alterações estruturadas propostas pela IA sobre um documento-base
+model MoldeChange {
+  id          String   @id @default(cuid())
+  documentId  String
+  operation   String   // replace | add | remove
+  anchor      String   // trecho exato do documento-base
+  replacement String?  // novo trecho (para replace/add)
+  reason      String   // justificativa
+  status      String   @default("pending") // pending | accepted | rejected
+  createdAt   DateTime @default(now())
+  appliedAt   DateTime?
+}
+
+// Eventos de auditoria imutáveis (todo ação relevante)
+model AuditEvent {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String   // generate | edit | export | delete | search | login | anonymize | etc.
+  resource    String   // document | case | jurisprudence | settings
+  resourceId  String?
+  metadata    String   // JSON com detalhes (template, tokens, etc.)
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Ledger de uso/créditos imutável (débito, crédito, estorno)
+model UsageLedger {
+  id          String   @id @default(cuid())
+  userId      String?
+  type        String   // debit | credit | refund | adjustment
+  operation   String   // minuta | connect_interaction | search | suggest
+  amount      Int      // positivo para crédito, negativo para débito
+  balance     Int      // saldo após esta operação
+  reason      String
+  metadata    String   // JSON
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ── NÚCLEO DE INTELIGÊNCIA JURÍDICA VERIFICÁVEL ─────────────────────────────
+// Adaptado do "PROMPT MESTRE" para SQLite/Prisma (sem pgvector, sem PostgreSQL)
+
+// EvidenceRef — proveniência central: cada afirmação aponta para um trecho de documento
+model EvidenceRef {
+  id              String   @id @default(cuid())
+  caseId          String   @default("default-case")
+  documentId      String?  // referência ao documento (se houver upload)
+  pageNumber      Int?
+  sectionLabel    String?
+  charStart       Int?
+  charEnd         Int?
+  quote           String   // trecho literal normalizado
+  quoteHash       String   // SHA-256 do quote normalizado (dedup + integridade)
+  documentHash    String?
+  sourceKind      String   // text | ocr | manual | llm_extracted
+  retrievalMethod String   // deterministic | llm | manual
+  metadata        String   @default("{}") // JSON
+  verified        Boolean  @default(false)
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  @@unique([caseId, documentId, pageNumber, quoteHash])
+  @@index([caseId])
+  @@index([quoteHash])
+}
+
+// LegalAssertion — 3 dimensões independentes (kind, support, review)
+model LegalAssertion {
+  id              String   @id @default(cuid())
+  caseId          String   @default("default-case")
+  text            String   // a afirmação
+  kind            String   // fact | inference | gap | risk | rule | precedent | conclusion
+  supportStatus   String   @default("absent") // supported | partial | absent | conflicting
+  reviewStatus    String   @default("pending") // pending | confirmed | corrected | rejected
+  createdByAi      Boolean  @default(false)
+  createdByRunId  String?
+  evidenceIds     String   @default("[]") // JSON array de EvidenceRef IDs
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([caseId])
+  @@index([reviewStatus])
+}
+
+// GraphNode — nó do grafo jurídico (pessoa, fato, evento, regra, tese, risco...)
+model GraphNode {
+  id                String   @id @default(cuid())
+  caseId            String   @default("default-case")
+  nodeType          String   // person | entity | document | fact | event | contract | obligation | request | requirement | evidence | rule | precedent | thesis | risk
+  label             String
+  description       String?
+  payload           String   @default("{}") // JSON
+  confidence        Float?
+  status            String   @default("candidate") // candidate | confirmed | rejected
+  sourceEvidenceId  String?
+  createdByRunId    String?
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime @default(now())
+
+  @@index([caseId])
+  @@index([status])
+}
+
+// GraphEdge — aresta do grafo jurídico (proves, alleges, supports, contradicts...)
+model GraphEdge {
+  id                String   @id @default(cuid())
+  caseId            String   @default("default-case")
+  fromNodeId        String
+  toNodeId          String
+  edgeType          String   // party_to | represents | signed | obligated_to | occurred_at | proves | alleges | admits | denies | supports | contradicts | grounds | requires | depends_on | results_in | has_request | has_risk
+  polarity          String   @default("neutral") // positive | negative | neutral
+  weight            Float?
+  status            String   @default("candidate")
+  sourceEvidenceId  String?
+  createdByRunId    String?
+  createdAt         DateTime @default(now())
+
+  @@index([caseId])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+}
+
+// AgentRun — auditoria de toda execução de IA
+model AgentRun {
+  id              String   @id @default(cuid())
+  caseId          String   @default("default-case")
+  userId          String?
+  agentSlug       String   // case_mapper | legal_brain | legal_research | legal_draft | agent_loop
+  taskType        String   // map | analyze | research | draft | review | loop
+  status          String   @default("queued") // queued | running | paused_hitl | completed | failed | cancelled | expired
+  inputHash       String   // hash do input (idempotência)
+  idempotencyKey  String?
+  providerSnapshot String  @default("{}") // JSON: provider, model, tokens, cost
+  contractVersion String?
+  promptVersion   String?
+  budgetBrl       Float    @default(5.0)
+  costBrl         Float    @default(0)
+  tokensIn        Int      @default(0)
+  tokensOut       Int      @default(0)
+  tokensBudget    Int      @default(20000) // orçamento de tokens da execução
+  resultSnapshotId String?
+  errorCode       String?
+  hitlReason      String?  // motivo da pausa HITL (ex: "confirm_thesis", "approve_research")
+  hitlData        String   @default("{}") // JSON com dados para o humano revisar
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdAt       DateTime @default(now())
+  steps           AgentRunStep[]
+
+  @@index([caseId])
+  @@index([status])
+  @@unique([caseId, agentSlug, inputHash, contractVersion])
+}
+
+// AgentRunStep — cada passo do loop do agente (tool call, LLM call, HITL pause)
+model AgentRunStep {
+  id          String   @id @default(cuid())
+  runId       String
+  run         AgentRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  stepNo      Int      // número sequencial do passo
+  kind        String   // llm_call | tool_call | hitl_pause | hitl_resume | observation | thought
+  toolName    String?  // nome da tool chamada (rag_search, web_search, create_evidence, etc.)
+  status      String   @default("pending") // pending | running | done | error | paused
+  inputHash   String?  // hash do input deste passo
+  outputHash  String?  // hash do output deste passo
+  output      String   @default("{}") // JSON com resultado do passo
+  provider    String?  // qual provider foi usado
+  model       String?  // qual modelo foi usado
+  tokensIn    Int      @default(0)
+  tokensOut   Int      @default(0)
+  costBrl     Float    @default(0)
+  durationMs  Int?     // duração em milissegundos
+  requiresHuman Boolean @default(false) // se este passo exige revisão humana
+  createdAt   DateTime @default(now())
+
+  @@index([runId])
+  @@index([status])
+}
+
+// IntelligenceSnapshot — append-only, não sobrescrever versão aprovada
+model IntelligenceSnapshot {
+  id          String   @id @default(cuid())
+  caseId      String   @default("default-case")
+  version     Int      @default(1)
+  payload     String   // JSON com fatos, eventos, afirmações, grafo, etc.
+  isDraft     Boolean  @default(true)
+  approvedBy  String?
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([caseId])
+}
+
+// SkillVersion — skills versionadas (draft/review/approved/retired)
+// Somente `approved` pode orientar execução de produção.
+model SkillVersion {
+  id              String   @id @default(cuid())
+  slug            String   // cpc-estrutura-peticao, dano-moral-parameters, etc.
+  version         Int      @default(1)
+  area            String   // civil | penal | trabalhista | etc.
+  description     String
+  content         String   // texto legível que orienta o modelo
+  triggers        String   @default("{}") // JSON: keywords/context
+  requiredSources String   @default("[]") // JSON: fontes obrigatórias
+  requiredEvidence String  @default("[]") // JSON: tipos de evidência
+  rules           String   @default("[]") // JSON: regras jurídicas
+  exceptions      String   @default("[]") // JSON: exceções
+  forbiddenClaims String   @default("[]") // JSON: vedações
+  allowedTools    String   @default("[]") // JSON: ferramentas permitidas
+  outputSchema    String   @default("{}") // JSON: schema de saída
+  status          String   @default("draft") // draft | review | approved | retired
+  contentHash     String   // SHA-256 do conteúdo (versionamento)
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([slug, version])
+  @@index([slug])
+  @@index([status])
+  @@index([area])
+}
+
+// BrainAnalysis — memória jurídica por processo: persiste análises do Cérebro vinculadas a um caso
+// Permite ao advogado ver a evolução do entendimento sobre o caso ao longo do tempo
+model BrainAnalysis {
+  id          String   @id @default(cuid())
+  caseId      String   @default("default-case")
+  title       String
+  factsInput  String   // fatos que foram analisados
+  result      String   // JSON completo do resultado do Cérebro (8 etapas)
+  ramoJuridico String?
+  hypothesis  String?  // favorável | incerto | desfavorável
+  tokensUsed  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([caseId])
+  @@index([createdAt])
+}
+
+// ── SISTEMA SUPERIOR: diferenciais sobre MinutaIA ──────────────────────────
+
+// PrecedentStatus — status de vigência/superação de precedentes (art. 927 §§2-4 CPC)
+// Diferencial: MinutaIA não tem controle público de superação
+model PrecedentStatus {
+  id              String   @id @default(cuid())
+  legalSourceId   String?  // FK para LegalSource (se a fonte for um precedente)
+  sourceLabel     String   // "REsp 1.234.567/SP" ou "Tema 1076"
+  status          String   @default("vigente") // vigente | superado | cancelado | modulado | afetado | pendente_suspensao
+  supersededBy    String?  // ID do precedente que superou (se aplicável)
+  supersededAt    DateTime? // data da superação
+  supersededReason String? // "Recurso repetitivo julgado", "Tema novo", etc.
+  modulacao       String?  // descrição da modulação dos efeitos
+  verificadoPor   String?
+  verificadoEm    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([legalSourceId])
+  @@index([status])
+}
+
+// NormVersion — versão da norma à época dos fatos (vigência temporal)
+// Diferencial: MinutaIA verifica texto atual; não controla versão histórica
+model NormVersion {
+  id              String   @id @default(cuid())
+  diploma         String   // CC, CPC, CLT, CP, CDC, CTN, etc.
+  numero          String   // art. 927
+  versionLabel    String   // "Lei 10.406/2002 (vigente)" ou "Lei 8.666/93 (revogada pela Lei 14.133/21)"
+  textoTrecho     String   // texto da versão específica
+  vigenteDesde    DateTime? // quando entrou em vigor
+  vigenteAte      DateTime? // quando foi revogada/alterada (null = vigente)
+  revogadaPor     String?  // diploma que revogou
+  urlOficial      String?
+  verificadoPor   String?
+  verificadoEm    DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([diploma, numero])
+  @@index([vigenteDesde, vigenteAte])
+}
+
+// ProofMatrix — matriz fato→prova→ônus (art. 373 CPC, art. 6 VIII CDC, art. 818 CLT)
+// Diferencial: MinutaIA liga fato à página, não ao ônus probatório
+model ProofMatrix {
+  id              String   @id @default(cuid())
+  caseId          String   @default("default-case")
+  factId          String?  // FK para GraphNode do tipo fact
+  factText        String   // o fato alegado
+  hasProof        Boolean  @default(false)
+  proofType       String?  // documental | testemunhal | pericial | presuncao
+  proofDescription String? // descrição da prova (ou ausência)
+  burdenOfProof    String   // autor | reu | distribuido | invertido (CDC art. 6 VIII)
+  burdenReason    String?  // "hipossuficiência técnica do consumidor" etc.
+  riskLevel       String   @default("medio") // baixo | medio | alto
+  riskDescription String?
+  evidenceRefId   String?  // FK para EvidenceRef (se há prova)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([caseId])
+  @@index([factId])
+}
+
+// CaseDeadline — prazo processual calculado deterministicamente
+// Diferencial: MinutaIA não calcula prazos; IA nunca confirma prazo
+model CaseDeadline {
+  id              String   @id @default(cuid())
+  caseId          String   @default("default-case")
+  tipo            String   // contestacao | recurso | intimacao | audiencia | outro
+  descricao       String
+  marcoInicial    DateTime // data do ato que inicia o prazo
+  prazoDias       Int      // número de dias (úteis ou corridos)
+  tipoContagem    String   @default("uteis") // uteis | corridos
+  vencimento      DateTime // data calculada (sem feriados — requer calendário)
+  observacoes     String?
+  createdAt       DateTime @default(now())
+
+  @@index([caseId])
+  @@index([vencimento])
+}
+
+// JudgeSimulation — simulação do julgador (admissibilidade + mérito)
+// Diferencial: MinutaIA simula o adversário, não o julgador
+model JudgeSimulation {
+  id              String   @id @default(cuid())
+  caseId          String   @default("default-case")
+  documentId      String?  // minuta avaliada
+  competência     String?  // juízo competente?
+  legitimidade   String?  // partes legítimas?
+  interesse       String?  // interesse processual?
+  condicaoAcao    String?  // condições da ação verificadas?
+  valorCausa      String?  // valor adequado?
+  prescricao      String?  // prescrição verificada?
+  preliminares    String?  // preliminares do art. 337 CPC
+  meritoProb      String?  // probabilidade de procedência (hipótese)
+  risksIdentified String   @default("[]") // JSON array de riscos
+  recommendation  String?  // recomendacao final
+  createdAt       DateTime @default(now())
+
+  @@index([caseId])
+}

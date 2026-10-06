@@ -1,0 +1,496 @@
+import { index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+
+/**
+ * Core user table backing auth flow.
+ * Extend this file with additional tables as your product grows.
+ * Columns use camelCase to match both database fields and generated types.
+ */
+export const users = mysqlTable("users", {
+  /**
+   * Surrogate primary key. Auto-incremented numeric value managed by the database.
+   * Use this for relations between tables.
+   */
+  id: int("id").autoincrement().primaryKey(),
+  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  name: text("name"),
+  email: varchar("email", { length: 320 }),
+  loginMethod: varchar("loginMethod", { length: 64 }),
+  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+
+export const legalTopics = mysqlTable("legal_topics", {
+  id: int("id").autoincrement().primaryKey(),
+  parentId: int("parentId"),
+  kind: mysqlEnum("kind", ["area", "subarea", "instituto", "tema", "subtema", "questao"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 191 }).notNull(),
+  pathKey: varchar("pathKey", { length: 767 }).notNull().unique(),
+  summary: text("summary"),
+  synonyms: text("synonyms"),
+  cnjCodes: text("cnjCodes"),
+  sourceStatus: mysqlEnum("sourceStatus", ["official_confirmed", "attachment_reviewed", "editorial_review", "secondary_pending"]).default("editorial_review").notNull(),
+  version: int("version").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("legal_topics_parent_slug_unique").on(table.parentId, table.slug),
+  index("legal_topics_kind_idx").on(table.kind),
+]);
+
+export const evidenceSources = mysqlTable("evidence_sources", {
+  id: int("id").autoincrement().primaryKey(),
+  label: varchar("label", { length: 255 }).notNull(),
+  sourceType: mysqlEnum("sourceType", ["official_document", "official_url", "attachment", "secondary", "manual"]).notNull(),
+  sourceUrl: varchar("sourceUrl", { length: 1024 }),
+  hashSha256: varchar("hashSha256", { length: 64 }),
+  publicStatus: mysqlEnum("publicStatus", ["official_confirmed", "official_without_number", "attachment_reviewed", "secondary_pending", "not_for_use"]).notNull(),
+  note: text("note"),
+  /** Momento de conferência da fonte; ausência não permite declarar verificação atual. */
+  lastVerifiedAt: timestamp("lastVerifiedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("evidence_sources_status_idx").on(table.publicStatus)]);
+
+/** Catálogo institucional de APIs, dados abertos e fontes de consulta aprovadas. */
+export const publicDataSources = mysqlTable("public_data_sources", {
+  id: int("id").autoincrement().primaryKey(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull().unique(),
+  label: varchar("label", { length: 255 }).notNull(),
+  maintainer: varchar("maintainer", { length: 255 }).notNull(),
+  sourceType: mysqlEnum("sourceType", ["api", "catalog", "webservice", "manual"]).notNull(),
+  baseUrl: varchar("baseUrl", { length: 1024 }).notNull(),
+  documentationUrl: varchar("documentationUrl", { length: 1024 }).notNull(),
+  authentication: mysqlEnum("authentication", ["none", "api_key", "manual"]).notNull(),
+  integrationStatus: mysqlEnum("integrationStatus", ["integrated", "ready", "credential_required", "manual_only", "not_integrated"]).notNull(),
+  /** Prioridade editorial de cobertura: p0 obrigatória, p1 desejável, p2 eventual. */
+  priority: mysqlEnum("priority", ["p0_obrigatoria", "p1_desejavel", "p2_eventual"]).default("p2_eventual").notNull(),
+  coverage: text("coverage").notNull(),
+  contentScope: text("contentScope").notNull(),
+  usageNote: text("usageNote").notNull(),
+  citationText: varchar("citationText", { length: 500 }).notNull(),
+  privacyNote: text("privacyNote").notNull(),
+  lastVerifiedAt: timestamp("lastVerifiedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("public_data_sources_status_idx").on(table.integrationStatus)]);
+
+/** Execuções rastreáveis de censo DataJud; a chave e o corpo de consulta não são armazenados. */
+export const nationalCensusRuns = mysqlTable("national_census_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  runKey: varchar("runKey", { length: 191 }).notNull().unique(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull(),
+  status: mysqlEnum("status", ["planned", "running", "partial", "completed", "failed", "rejected"]).notNull(),
+  scope: varchar("scope", { length: 128 }).notNull(),
+  periodStart: varchar("periodStart", { length: 7 }).notNull(),
+  periodEnd: varchar("periodEnd", { length: 7 }).notNull(),
+  expectedTribunals: int("expectedTribunals").notNull(),
+  respondedTribunals: int("respondedTribunals").default(0).notNull(),
+  methodologyVersion: varchar("methodologyVersion", { length: 64 }).notNull(),
+  queryFingerprint: varchar("queryFingerprint", { length: 64 }),
+  coverageNote: text("coverageNote").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("national_census_runs_status_idx").on(table.status)]);
+
+/** Série agregada mensal por tribunal, sem números de processos ou dados pessoais. */
+export const nationalCensusMetrics = mysqlTable("national_census_metrics", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  tribunalAlias: varchar("tribunalAlias", { length: 64 }).notNull(),
+  tribunal: varchar("tribunal", { length: 128 }).notNull(),
+  uf: varchar("uf", { length: 2 }).notNull(),
+  month: varchar("month", { length: 7 }).notNull(),
+  metric: mysqlEnum("metric", ["distribution", "baixa"]).notNull(),
+  classCode: varchar("classCode", { length: 32 }).notNull().default(""),
+  subjectCode: varchar("subjectCode", { length: 32 }).notNull().default(""),
+  judgingBodyCode: varchar("judgingBodyCode", { length: 64 }).notNull().default(""),
+  amount: int("amount").notNull(),
+  sourceObservedAt: timestamp("sourceObservedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("national_census_metric_unique").on(table.runId, table.tribunalAlias, table.month, table.metric, table.classCode, table.subjectCode, table.judgingBodyCode),
+  index("national_census_metrics_month_idx").on(table.month),
+  index("national_census_metrics_tribunal_idx").on(table.tribunalAlias),
+]);
+
+/** Facetas nacionais agregadas do recorte, sem processos concretos ou dados de partes. */
+export const nationalCensusFacets = mysqlTable("national_census_facets", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  kind: mysqlEnum("kind", ["subject", "judging_body"]).notNull(),
+  code: varchar("code", { length: 64 }).notNull(),
+  label: varchar("label", { length: 500 }).notNull(),
+  amount: int("amount").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("national_census_facets_unique").on(table.runId, table.kind, table.code),
+  index("national_census_facets_kind_idx").on(table.kind),
+]);
+
+/** Execuções rastreáveis de cobertura territorial RMBH, sempre distintas do censo nacional. */
+export const metropolitanCoverageRuns = mysqlTable("metropolitan_coverage_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  runKey: varchar("runKey", { length: 191 }).notNull().unique(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull(),
+  tribunalAlias: varchar("tribunalAlias", { length: 64 }).notNull(),
+  status: mysqlEnum("status", ["planned", "running", "partial", "completed", "failed", "rejected"]).notNull(),
+  scope: varchar("scope", { length: 128 }).notNull(),
+  periodStart: varchar("periodStart", { length: 7 }).notNull(),
+  periodEnd: varchar("periodEnd", { length: 7 }).notNull(),
+  expectedMunicipalities: int("expectedMunicipalities").notNull(),
+  mappedMunicipalities: int("mappedMunicipalities").default(0).notNull(),
+  methodologyVersion: varchar("methodologyVersion", { length: 64 }).notNull(),
+  queryFingerprint: varchar("queryFingerprint", { length: 64 }),
+  coverageNote: text("coverageNote").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("metropolitan_coverage_runs_status_idx").on(table.status)]);
+
+/** Facetas DataJud agregadas por órgão e município RMBH, com alias de tribunal preservado. */
+export const metropolitanJudgingBodyFacets = mysqlTable("metropolitan_judging_body_facets", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  tribunalAlias: varchar("tribunalAlias", { length: 64 }).notNull(),
+  municipalityName: varchar("municipalityName", { length: 128 }).notNull(),
+  municipalityIbgeCode: varchar("municipalityIbgeCode", { length: 16 }).notNull(),
+  judgingBodyCode: varchar("judgingBodyCode", { length: 64 }).notNull(),
+  judgingBodyLabel: varchar("judgingBodyLabel", { length: 500 }).notNull(),
+  amount: int("amount").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("metropolitan_body_facet_unique").on(table.runId, table.tribunalAlias, table.municipalityIbgeCode, table.judgingBodyCode),
+  index("metropolitan_body_facet_municipality_idx").on(table.municipalityIbgeCode),
+  index("metropolitan_body_facet_alias_idx").on(table.tribunalAlias),
+]);
+
+/** Execuções isoladas do piloto agregado Cível/Consumidor RMBH. */
+export const rmbhCivilConsumerRuns = mysqlTable("rmbh_civil_consumer_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  runKey: varchar("runKey", { length: 191 }).notNull().unique(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull(),
+  tribunalAlias: varchar("tribunalAlias", { length: 64 }).notNull(),
+  status: mysqlEnum("status", ["planned", "running", "partial", "completed", "failed", "rejected"]).notNull(),
+  scope: varchar("scope", { length: 128 }).notNull(),
+  periodStart: varchar("periodStart", { length: 10 }).notNull(),
+  periodEnd: varchar("periodEnd", { length: 10 }).notNull(),
+  subjectTreeVersion: varchar("subjectTreeVersion", { length: 128 }).notNull(),
+  termsCount: int("termsCount").notNull(),
+  queryFingerprint: varchar("queryFingerprint", { length: 64 }),
+  coverageNote: text("coverageNote").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("rmbh_civil_consumer_runs_status_idx").on(table.status)]);
+
+/** Células mensais e por órgão do piloto, sempre agregadas e sem identificadores processuais. */
+export const rmbhCivilConsumerMetrics = mysqlTable("rmbh_civil_consumer_metrics", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  tribunalAlias: varchar("tribunalAlias", { length: 64 }).notNull(),
+  municipalityName: varchar("municipalityName", { length: 128 }).notNull(),
+  municipalityIbgeCode: varchar("municipalityIbgeCode", { length: 16 }).notNull(),
+  judgingBodyCode: varchar("judgingBodyCode", { length: 64 }).notNull(),
+  judgingBodyLabel: varchar("judgingBodyLabel", { length: 500 }).notNull(),
+  month: varchar("month", { length: 7 }).notNull(),
+  categoryCode: varchar("categoryCode", { length: 32 }).notNull(),
+  categoryLabel: varchar("categoryLabel", { length: 255 }).notNull(),
+  amount: int("amount").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("rmbh_civil_consumer_metric_unique").on(table.runId, table.tribunalAlias, table.municipalityIbgeCode, table.judgingBodyCode, table.month, table.categoryCode),
+  index("rmbh_civil_consumer_metrics_month_idx").on(table.month),
+  index("rmbh_civil_consumer_metrics_municipality_idx").on(table.municipalityIbgeCode),
+  index("rmbh_civil_consumer_metrics_category_idx").on(table.categoryCode),
+]);
+
+export const legalTheses = mysqlTable("legal_theses", {
+  id: int("id").autoincrement().primaryKey(),
+  topicId: int("topicId").notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  position: mysqlEnum("position", ["favoravel", "contraria", "condicionada", "em_debate"]).notNull(),
+  description: text("description").notNull(),
+  legalBasis: text("legalBasis"),
+  proofNotes: text("proofNotes"),
+  adverseFacts: text("adverseFacts"),
+  sourceStatus: mysqlEnum("sourceStatus", ["official_confirmed", "attachment_reviewed", "editorial_review", "secondary_pending"]).default("editorial_review").notNull(),
+  lastReviewedAt: timestamp("lastReviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("legal_theses_topic_idx").on(table.topicId), index("legal_theses_position_idx").on(table.position)]);
+
+export const ingestionBatches = mysqlTable("ingestion_batches", {
+  id: int("id").autoincrement().primaryKey(),
+  batchKey: varchar("batchKey", { length: 191 }).notNull().unique(),
+  sourceLabel: varchar("sourceLabel", { length: 255 }).notNull(),
+  sourceHash: varchar("sourceHash", { length: 64 }),
+  status: mysqlEnum("status", ["planned", "reviewed", "imported", "partial", "rejected"]).notNull(),
+  itemsDiscovered: int("itemsDiscovered").default(0).notNull(),
+  itemsImported: int("itemsImported").default(0).notNull(),
+  itemsExcluded: int("itemsExcluded").default(0).notNull(),
+  method: text("method").notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("ingestion_batches_status_idx").on(table.status)]);
+
+export const jurisprudenceRecords = mysqlTable("jurisprudence_records", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 191 }).notNull().unique(),
+  batchId: int("batchId").notNull(),
+  sourceId: int("sourceId").notNull(),
+  cnjNumber: varchar("cnjNumber", { length: 80 }),
+  tribunal: varchar("tribunal", { length: 64 }).notNull(),
+  justice: varchar("justice", { length: 64 }).notNull(),
+  city: varchar("city", { length: 128 }),
+  comarca: varchar("comarca", { length: 128 }),
+  court: varchar("court", { length: 255 }),
+  judgingBody: varchar("judgingBody", { length: 255 }),
+  decisionType: varchar("decisionType", { length: 64 }).notNull(),
+  decisionDate: timestamp("decisionDate"),
+  publicationDate: timestamp("publicationDate"),
+  legalArea: varchar("legalArea", { length: 255 }),
+  theme: varchar("theme", { length: 500 }),
+  outcomeOrigin: varchar("outcomeOrigin", { length: 255 }),
+  outcomeAppeal: varchar("outcomeAppeal", { length: 255 }),
+  dispositionType: varchar("dispositionType", { length: 255 }),
+  moralDamageValue: varchar("moralDamageValue", { length: 64 }),
+  reasoningSummary: text("reasoningSummary"),
+  validationNote: text("validationNote"),
+  sourceStatus: mysqlEnum("sourceStatus", ["official_confirmed", "official_without_number", "attachment_reviewed", "secondary_pending", "movement_observed", "search_thematic"]).notNull(),
+  recordVersion: int("recordVersion").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("jurisprudence_tribunal_idx").on(table.tribunal),
+  index("jurisprudence_city_idx").on(table.city),
+  index("jurisprudence_theme_idx").on(table.theme),
+  index("jurisprudence_status_idx").on(table.sourceStatus),
+]);
+
+/** Execuções do pipeline editorial diário; erros são resumidos e respostas brutas não são persistidas. */
+export const editorialUpdateRuns = mysqlTable("editorial_update_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  runKey: varchar("runKey", { length: 191 }).notNull().unique(),
+  status: mysqlEnum("status", ["running", "completed", "partial", "failed"]).notNull(),
+  sourceCount: int("sourceCount").default(0).notNull(),
+  discoveredCount: int("discoveredCount").default(0).notNull(),
+  queuedCount: int("queuedCount").default(0).notNull(),
+  failedCount: int("failedCount").default(0).notNull(),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  finishedAt: timestamp("finishedAt"),
+  errorSummary: varchar("errorSummary", { length: 500 }),
+}, table => [index("editorial_update_runs_status_idx").on(table.status)]);
+
+/** Metadados oficiais aguardando revisão; não contém íntegra de decisão, PDF ou resposta bruta. */
+export const editorialUpdates = mysqlTable("editorial_updates", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  sourceKey: varchar("sourceKey", { length: 191 }).notNull(),
+  externalKey: varchar("externalKey", { length: 191 }).notNull(),
+  kind: mysqlEnum("kind", ["jurisprudence", "legislation", "official_update"]).notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  summary: varchar("summary", { length: 1_000 }),
+  canonicalUrl: varchar("canonicalUrl", { length: 1_024 }).notNull(),
+  publishedAt: timestamp("publishedAt"),
+  contentHash: varchar("contentHash", { length: 64 }).notNull(),
+  status: mysqlEnum("status", ["pending_review", "approved", "rejected", "superseded"]).default("pending_review").notNull(),
+  reviewedByUserId: int("reviewedByUserId"),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewNote: varchar("reviewNote", { length: 1_000 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("editorial_updates_source_external_unique").on(table.sourceKey, table.externalKey),
+  index("editorial_updates_status_idx").on(table.status),
+  index("editorial_updates_kind_idx").on(table.kind),
+  index("editorial_updates_published_idx").on(table.publishedAt),
+]);
+
+/** Configuração do job diário; o task UID é a única referência para manutenção do agendamento. */
+export const editorialUpdateSchedules = mysqlTable("editorial_update_schedules", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull().unique(),
+  cronExpression: varchar("cronExpression", { length: 32 }).notNull(),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }).unique(),
+  enabled: int("enabled").default(1).notNull(),
+  lastRunAt: timestamp("lastRunAt"),
+  lastStatus: mysqlEnum("lastStatus", ["never", "completed", "partial", "failed"]).default("never").notNull(),
+  lastErrorCode: varchar("lastErrorCode", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("editorial_schedule_task_uid_idx").on(table.scheduleCronTaskUid)]);
+
+/** Fila de revisão humana de registros já catalogados; decisões anteriores permanecem nos eventos de auditoria. */
+export const evidenceReviewItems = mysqlTable("evidence_review_items", {
+  id: int("id").autoincrement().primaryKey(),
+  jurisprudenceId: int("jurisprudenceId").notNull().unique(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "returned"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["routine", "elevated", "urgent"]).default("routine").notNull(),
+  requestedReason: text("requestedReason").notNull(),
+  assignedToUserId: int("assignedToUserId"),
+  decisionNote: text("decisionNote"),
+  reviewedByUserId: int("reviewedByUserId"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("evidence_review_status_idx").on(table.status),
+  index("evidence_review_priority_idx").on(table.priority),
+]);
+
+export const jurisprudenceTopics = mysqlTable("jurisprudence_topics", {
+  id: int("id").autoincrement().primaryKey(),
+  jurisprudenceId: int("jurisprudenceId").notNull(),
+  topicId: int("topicId").notNull(),
+  relevance: mysqlEnum("relevance", ["primary", "secondary"]).default("primary").notNull(),
+}, table => [
+  uniqueIndex("jurisprudence_topics_unique").on(table.jurisprudenceId, table.topicId),
+  index("jurisprudence_topics_topic_idx").on(table.topicId),
+]);
+
+export const thesisAuthorities = mysqlTable("thesis_authorities", {
+  id: int("id").autoincrement().primaryKey(),
+  thesisId: int("thesisId").notNull(),
+  jurisprudenceId: int("jurisprudenceId").notNull(),
+  stance: mysqlEnum("stance", ["supports", "opposes", "context"]).notNull(),
+  note: text("note"),
+}, table => [
+  uniqueIndex("thesis_authorities_unique").on(table.thesisId, table.jurisprudenceId),
+  index("thesis_authorities_thesis_idx").on(table.thesisId),
+]);
+
+export const auditEvents = mysqlTable("audit_events", {
+  id: int("id").autoincrement().primaryKey(),
+  entityType: varchar("entityType", { length: 64 }).notNull(),
+  entityKey: varchar("entityKey", { length: 191 }).notNull(),
+  action: varchar("action", { length: 128 }).notNull(),
+  sourceStatus: varchar("sourceStatus", { length: 64 }),
+  actorLabel: varchar("actorLabel", { length: 128 }).notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("audit_events_entity_idx").on(table.entityType, table.entityKey)]);
+
+// ---------------------------------------------------------------------------
+// Módulos do Escritório (Painel JEC BH e Betim)
+// ---------------------------------------------------------------------------
+
+/** Clientes do escritório. */
+export const officeClients = mysqlTable("office_clients", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 191 }).notNull(),
+  document: varchar("document", { length: 32 }),
+  email: varchar("email", { length: 191 }),
+  phone: varchar("phone", { length: 32 }),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("office_clients_name_idx").on(table.name)]);
+
+/** Matérias/casos por cliente, com vínculo opcional a processo CNJ. */
+export const officeMatters = mysqlTable("office_matters", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  cnjNumber: varchar("cnjNumber", { length: 32 }),
+  area: varchar("area", { length: 128 }),
+  status: mysqlEnum("status", ["ativo", "suspenso", "arquivado", "encerrado"]).default("ativo").notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("office_matters_client_idx").on(table.clientId),
+  index("office_matters_cnj_idx").on(table.cnjNumber),
+]);
+
+/** Atendimentos registrados por cliente/matéria. */
+export const officeAttendances = mysqlTable("office_attendances", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(),
+  matterId: int("matterId"),
+  occurredAt: timestamp("occurredAt").defaultNow().notNull(),
+  channel: varchar("channel", { length: 64 }).default("presencial").notNull(),
+  summary: text("summary").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("office_attendances_client_idx").on(table.clientId)]);
+
+/** Caixa de comunicações (DJEN automático + registro manual), LGPD desde a origem. */
+export const officeCommunications = mysqlTable("office_communications", {
+  id: int("id").autoincrement().primaryKey(),
+  cnjNumber: varchar("cnjNumber", { length: 32 }),
+  kind: varchar("kind", { length: 32 }).default("outro").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  status: mysqlEnum("status", ["nova", "lida", "arquivada"]).default("nova").notNull(),
+  channel: varchar("channel", { length: 64 }).default("manual").notNull(),
+  sourceKey: varchar("sourceKey", { length: 191 }),
+  sourceExternalId: varchar("sourceExternalId", { length: 191 }).unique(),
+  receivedAt: timestamp("receivedAt").defaultNow().notNull(),
+  deadlineAt: timestamp("deadlineAt"),
+  deadlineDays: int("deadlineDays"),
+  matterId: int("matterId"),
+  content: text("content"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("office_communications_status_idx").on(table.status),
+  index("office_communications_cnj_idx").on(table.cnjNumber),
+  index("office_communications_received_idx").on(table.receivedAt),
+]);
+
+/** Configuração única do Conector DJEN (linha única id=1). */
+export const officeDjenSettings = mysqlTable("office_djen_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  enabled: int("enabled").default(1).notNull(),
+  lawyerName: varchar("lawyerName", { length: 120 }),
+  oabNumber: varchar("oabNumber", { length: 16 }),
+  oabUf: varchar("oabUf", { length: 2 }),
+  tribunal: varchar("tribunal", { length: 64 }).default("TJMG").notNull(),
+  autoSyncEnabled: int("autoSyncEnabled").default(1).notNull(),
+  intervalMinutes: int("intervalMinutes").default(180).notNull(),
+  windowDays: int("windowDays").default(10).notNull(),
+  defaultDeadlineDays: int("defaultDeadlineDays").default(15).notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  lastSyncStatus: mysqlEnum("lastSyncStatus", ["never", "success", "partial", "failed", "not_configured"]).default("never").notNull(),
+  lastSyncMessage: varchar("lastSyncMessage", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/** Acervo de jurisprudência do escritório (STJ/LexML automáticos + registro manual TJMG). */
+export const officeJurisprudencia = mysqlTable("office_jurisprudencia", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 191 }).notNull().unique(),
+  provider: varchar("provider", { length: 64 }).notNull(),
+  tribunal: varchar("tribunal", { length: 64 }).notNull(),
+  orgao: varchar("orgao", { length: 128 }),
+  cnjNumber: varchar("cnjNumber", { length: 32 }),
+  ementa: text("ementa").notNull(),
+  url: varchar("url", { length: 1024 }),
+  decisionDate: varchar("decisionDate", { length: 10 }),
+  status: mysqlEnum("status", ["nova", "destacada", "aplicada", "descartada"]).default("nova").notNull(),
+  matterId: int("matterId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("office_juris_status_idx").on(table.status),
+  index("office_juris_tribunal_idx").on(table.tribunal),
+]);
+
+/** Configuração única do conector de jurisprudência (linha única id=1). */
+export const officeJurisprudenciaSettings = mysqlTable("office_jurisprudencia_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  enabled: int("enabled").default(1).notNull(),
+  query: varchar("query", { length: 160 }).default("consumidor boa fe").notNull(),
+  lexmlEndpoint: varchar("lexmlEndpoint", { length: 512 }).default("http://lexml.gov.br/busca/sru").notNull(),
+  maxItems: int("maxItems").default(5).notNull(),
+  autoSyncEnabled: int("autoSyncEnabled").default(1).notNull(),
+  intervalMinutes: int("intervalMinutes").default(240).notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  lastSyncState: varchar("lastSyncState", { length: 500 }),
+  lastSyncStatus: mysqlEnum("lastSyncStatus", ["never", "success", "partial", "failed"]).default("never").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});

@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "scope": "rmbh_legal_34_municipalities",
+  "source": {
+    "legalComposition": "Lei Complementar MG nº 89, de 12/01/2006",
+    "legalUrl": "https://www.almg.gov.br/legislacao-mineira/texto/LCP/89/2006/?cons=1",
+    "codesUrl": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/31/municipios"
+  },
+  "refreshedAt": "2026-08-28T12:55:01.687Z",
+  "municipalities": [
+    {
+      "name": "Baldim",
+      "ibgeCode": 3105004
+    },
+    {
+      "name": "Belo Horizonte",
+      "ibgeCode": 3106200
+    },
+    {
+      "name": "Betim",
+      "ibgeCode": 3106705
+    },
+    {
+      "name": "Brumadinho",
+      "ibgeCode": 3109006
+    },
+    {
+      "name": "Caeté",
+      "ibgeCode": 3110004
+    },
+    {
+      "name": "Capim Branco",
+      "ibgeCode": 3112505
+    },
+    {
+      "name": "Confins",
+      "ibgeCode": 3117876
+    },
+    {
+      "name": "Contagem",
+      "ibgeCode": 3118601
+    },
+    {
+      "name": "Esmeraldas",
+      "ibgeCode": 3124104
+    },
+    {
+      "name": "Florestal",
+      "ibgeCode": 3126000
+    },
+    {
+      "name": "Ibirité",
+      "ibgeCode": 3129806
+    },
+    {
+      "name": "Igarapé",
+      "ibgeCode": 3130101
+    },
+    {
+      "name": "Itaguara",
+      "ibgeCode": 3132206
+    },
+    {
+      "name": "Itatiaiuçu",
+      "ibgeCode": 3133709
+    },
+    {
+      "name": "Jaboticatubas",
+      "ibgeCode": 3134608
+    },
+    {
+      "name": "Juatuba",
+      "ibgeCode": 3136652
+    },
+    {
+      "name": "Lagoa Santa",
+      "ibgeCode": 3137601
+    },
+    {
+      "name": "Mário Campos",
+      "ibgeCode": 3140159
+    },
+    {
+      "name": "Mateus Leme",
+      "ibgeCode": 3140704
+    },
+    {
+      "name": "Matozinhos",
+      "ibgeCode": 3141108
+    },
+    {
+      "name": "Nova Lima",
+      "ibgeCode": 3144805
+    },
+    {
+      "name": "Nova União",
+      "ibgeCode": 3136603
+    },
+    {
+      "name": "Pedro Leopoldo",
+      "ibgeCode": 3149309
+    },
+    {
+      "name": "Raposos",
+      "ibgeCode": 3153905
+    },
+    {
+      "name": "Ribeirão das Neves",
+      "ibgeCode": 3154606
+    },
+    {
+      "name": "Rio Acima",
+      "ibgeCode": 3154804
+    },
+    {
+      "name": "Rio Manso",
+      "ibgeCode": 3155306
+    },
+    {
+      "name": "Sabará",
+      "ibgeCode": 3156700
+    },
+    {
+      "name": "Santa Luzia",
+      "ibgeCode": 3157807
+    },
+    {
+      "name": "São Joaquim de Bicas",
+      "ibgeCode": 3162922
+    },
+    {
+      "name": "São José da Lapa",
+      "ibgeCode": 3162955
+    },
+    {
+      "name": "Sarzedo",
+      "ibgeCode": 3165537
+    },
+    {
+      "name": "Taquaraçu de Minas",
+      "ibgeCode": 3168309
+    },
+    {
+      "name": "Vespasiano",
+      "ibgeCode": 3171204
+    }
+  ]
+}

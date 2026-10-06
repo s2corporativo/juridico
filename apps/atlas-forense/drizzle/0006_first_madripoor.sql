@@ -1,0 +1,1 @@
+ALTER TABLE `evidence_sources` ADD `lastVerifiedAt` timestamp;

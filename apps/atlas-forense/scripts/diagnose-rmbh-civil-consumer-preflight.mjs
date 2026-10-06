@@ -1,0 +1,140 @@
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  buildCivilConsumerBaseDiagnosticQuery,
+  buildCivilConsumerDescendantFilterDiagnosticQuery,
+  buildCivilConsumerSubjectAggregationDiagnosticQuery,
+  buildCivilConsumerSubjectFilterDiagnosticQuery,
+  summarizeCivilConsumerBaseDiagnostic,
+  summarizeCivilConsumerDescendantFilterDiagnostic,
+  summarizeCivilConsumerSubjectAggregationDiagnostic,
+  summarizeCivilConsumerSubjectFilterDiagnostic,
+} from "./rmbh-civil-consumer-preflight-runtime.mjs";
+
+const ACCESS_URL = "https://datajud-wiki.cnj.jus.br/api-publica/acesso/";
+const BASE_URL = "https://api-publica.datajud.cnj.jus.br";
+const ALIAS = "tjmg";
+const EXECUTE = process.argv.includes("--execute");
+const AUTHORIZED = process.env.RMBH_CIVIL_CONSUMER_AUTHORIZATION === "approved";
+const requestedStage = process.argv.find((argument) => argument.startsWith("--stage="))?.slice("--stage=".length) ?? "base";
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(scriptDir, "..");
+const descendantFilterPath = path.resolve(projectRoot, "data", "rmbh-civil-consumer-descendant-filter.json");
+const outputDir = process.env.RMBH_CIVIL_CONSUMER_DIAGNOSTIC_OUTPUT_DIR ?? path.resolve(projectRoot, "data", "rmbh-civil-consumer-preflight-diagnostic");
+const stages = {
+  base: {
+    query: buildCivilConsumerBaseDiagnosticQuery,
+    summarize: summarizeCivilConsumerBaseDiagnostic,
+    excludes: ["assuntos", "agregações", "_source", "hits"],
+  },
+  subject_aggregation: {
+    query: buildCivilConsumerSubjectAggregationDiagnosticQuery,
+    summarize: summarizeCivilConsumerSubjectAggregationDiagnostic,
+    excludes: ["filtro de assuntos", "_source", "hits"],
+  },
+  subject_filter: {
+    query: buildCivilConsumerSubjectFilterDiagnosticQuery,
+    summarize: summarizeCivilConsumerSubjectFilterDiagnostic,
+    excludes: ["agregações", "_source", "hits"],
+  },
+  descendant_filter: {
+    query: async () => {
+      const filter = JSON.parse(await readFile(descendantFilterPath, "utf8"));
+      if (filter?.scope !== "rmbh_civil_consumer_descendant_filter_preparation" || filter?.readiness?.datajudValidation !== "pending" || filter?.readiness?.eligibleForSingleTermsClause !== true || !Array.isArray(filter?.subjectCodes)) {
+        throw new Error("Filtro de descendentes TPU sem contrato metodológico válido.");
+      }
+      return buildCivilConsumerDescendantFilterDiagnosticQuery(filter.subjectCodes);
+    },
+    summarize: summarizeCivilConsumerDescendantFilterDiagnostic,
+    excludes: ["agregações", "_source", "hits", "processos individuais"],
+  },
+};
+const stage = stages[requestedStage];
+const ALLOWED_FIELD_MARKERS = ["grau", "classe.codigo", "dataAjuizamento", "assuntos.codigo"];
+
+async function publicKeyInMemory() {
+  const response = await fetch(ACCESS_URL, { headers: { Accept: "text/html" }, signal: AbortSignal.timeout(15_000) });
+  if (!response.ok) throw new Error(`Acesso público DataJud indisponível (HTTP ${response.status}).`);
+  const text = (await response.text()).replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ");
+  const marker = text.indexOf("Authorization: APIKey");
+  const key = marker < 0 ? null : text.slice(marker, marker + 280).match(/[A-Za-z0-9_-]{40,}={0,2}/)?.[0];
+  if (!key) throw new Error("Chave pública DataJud indisponível.");
+  return key;
+}
+
+function collectSafeErrorTypes(value, types = new Set()) {
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectSafeErrorTypes(item, types));
+    return types;
+  }
+  if (!value || typeof value !== "object") return types;
+  const type = value.type;
+  if (typeof type === "string" && /^[a-z_]{2,80}$/u.test(type)) types.add(type);
+  Object.values(value).forEach((item) => collectSafeErrorTypes(item, types));
+  return types;
+}
+
+function sanitizeErrorDiagnostic(payload, status) {
+  const serialized = JSON.stringify(payload ?? {});
+  return {
+    httpStatus: status,
+    errorTypes: [...collectSafeErrorTypes(payload)].sort().slice(0, 8),
+    implicatedQueryFields: ALLOWED_FIELD_MARKERS.filter((field) => serialized.includes(field)),
+    responseBodyPersisted: false,
+  };
+}
+
+async function readJsonSafely(response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function main() {
+  await mkdir(outputDir, { recursive: true });
+  if (!stage) throw new Error("Etapa de diagnóstico inválida.");
+  const query = await stage.query();
+  const manifestBase = {
+    title: "Diagnóstico agregado de consulta-base TJMG — Cível/Consumidor JEC",
+    source: "CNJ/DataJud API Pública",
+    collectedAt: new Date().toISOString(),
+    alias: ALIAS,
+    scope: { degree: "JE", classCode: 436, diagnosticStage: requestedStage, period: "2025-01 a 2026-08 (2026 parcial até 26/08)", descendantTerms: requestedStage === "descendant_filter" ? 405 : null, excludes: stage.excludes },
+    queryFingerprint: createHash("sha256").update(JSON.stringify(query)).digest("hex"),
+    privacy: "Consulta única size=0 e _source=false; não solicita, registra ou imprime processos, partes, documentos, resposta bruta ou chave pública.",
+    limitation: requestedStage === "descendant_filter" ? "Teste técnico de indexação de códigos TPU mapeados. Não produz métrica territorial ou temática e não valida competência municipal ou órgão." : "Diagnóstico técnico da consulta-base. Não confirma indexação de assunto nem produz métrica territorial ou temática.",
+  };
+  if (!(EXECUTE && AUTHORIZED)) {
+    await writeFile(path.join(outputDir, `manifesto_diagnostico_rmbh_civel_consumidor_${requestedStage}.json`), `${JSON.stringify({ ...manifestBase, mode: "dry_run", authorization: "required_for_execution" }, null, 2)}\n`, "utf8");
+    console.log("RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO_DRY_RUN: execução bloqueada até autorização explícita.");
+    return;
+  }
+  let key = await publicKeyInMemory();
+  const response = await fetch(`${BASE_URL}/api_publica_${ALIAS}/_search`, {
+    method: "POST",
+    headers: { Authorization: `APIKey ${key}`, "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(query),
+    signal: AbortSignal.timeout(45_000),
+  });
+  key = undefined;
+  const payload = await readJsonSafely(response);
+  if (!response.ok) {
+    const diagnostic = sanitizeErrorDiagnostic(payload, response.status);
+    await writeFile(path.join(outputDir, `manifesto_diagnostico_rmbh_civel_consumidor_${requestedStage}.json`), `${JSON.stringify({ ...manifestBase, mode: "execute", authorization: "approved", state: `query_${requestedStage}_rejected`, diagnostic }, null, 2)}\n`, "utf8");
+    console.log(`RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO: etapa=${requestedStage}; estado=rejected; http=${response.status}; tipos=${diagnostic.errorTypes.join(",") || "indisponível"}.`);
+    process.exitCode = 1;
+    return;
+  }
+  const summary = stage.summarize(payload);
+  await writeFile(path.join(outputDir, `manifesto_diagnostico_rmbh_civel_consumidor_${requestedStage}.json`), `${JSON.stringify({ ...manifestBase, mode: "execute", authorization: "approved", state: `query_${requestedStage}_accepted`, summary }, null, 2)}\n`, "utf8");
+  console.log(`RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO: etapa=${requestedStage}; estado=accepted; total=${summary.observedProcessCount}; relacao=${summary.totalRelation}.`);
+}
+
+main().catch((error) => {
+  console.error(`RMBH_CIVEL_CONSUMIDOR_DIAGNOSTICO_ERRO: ${error instanceof Error ? error.message : "erro desconhecido"}`);
+  process.exitCode = 1;
+});
