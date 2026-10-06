@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,12 @@ function rowToHonorario(h: { id: string; action: string; resourceId: string | nu
 }
 
 // GET /api/financeiro?caseId=xxx&status=yyy&export=csv
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId");
   const status = url.searchParams.get("status");
@@ -75,7 +81,7 @@ export async function GET(req: NextRequest) {
       ].join(",")
     );
     const csv = header + linhas.join("\n");
-    return new Response(csv, {
+    return new NextResponse(csv, {
       headers: {
         "content-type": "text/csv; charset=utf-8",
         "content-disposition": "attachment; filename=honorarios.csv",
@@ -94,7 +100,12 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/financeiro
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{
     caseId?: string;
     descricao?: string;
@@ -139,7 +150,12 @@ export async function POST(req: NextRequest) {
 }
 
 // PATCH /api/financeiro
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{
     id?: string;
     caseId?: string;
@@ -188,7 +204,12 @@ export async function PATCH(req: NextRequest) {
 }
 
 // DELETE /api/financeiro?id=xxx
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });

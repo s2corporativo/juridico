@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { buildSystemGraph, buildCaseGraph } from "@/lib/graph-agent";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/grafo?view=system|case&caseId=xxx
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const view = url.searchParams.get("view") || "system";
   const caseId = url.searchParams.get("caseId") || "";

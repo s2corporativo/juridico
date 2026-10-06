@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET: lista eventos de auditoria
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req, { admin: true });
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 200);
   const action = url.searchParams.get("action");
@@ -33,7 +39,12 @@ export async function GET(req: NextRequest) {
 }
 
 // POST: registra novo evento de auditoria (chamado por outras APIs)
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req, { admin: true });
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   let body: {
     action?: string;
     resource?: string;

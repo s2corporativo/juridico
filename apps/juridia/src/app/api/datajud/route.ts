@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,12 @@ interface DatajudResultado {
 }
 
 // GET /api/datajud?cnj=xxx — consulta pública por número CNJ
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const cnj = url.searchParams.get("cnj");
   if (!cnj) return NextResponse.json({ error: "cnj obrigatório" }, { status: 400 });
@@ -82,7 +88,12 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/datajud — busca geral em lote (json query) ou por CNJ
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{ cnj?: string; query?: Record<string, unknown> }>(req);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 

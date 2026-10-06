@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import type { DocumentDTO } from "@/lib/types";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const docs = await db.document.findMany({
     orderBy: { updatedAt: "desc" },
     take: 100,
@@ -26,7 +32,12 @@ export async function GET() {
   return NextResponse.json({ documents: dtos });
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
@@ -44,7 +55,12 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const body = (await req.json().catch(() => null)) as { id?: string; content?: string; title?: string } | null;
   if (!body?.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
   const data: { generatedContent?: string; title?: string } = {};

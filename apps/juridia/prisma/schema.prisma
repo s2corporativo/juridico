@@ -18,6 +18,10 @@ model User {
   plan      String   @default("free") // free | individual_1 | individual_2 | individual_3 | enterprise
   minutasUsed     Int      @default(0)
   minutasLimit    Int      @default(3)
+  // Autenticação local + SSO (scrypt; jamais senha em claro)
+  passwordHash   String?
+  role           String   @default("advogado") // admin | advogado | user | promotor | juiz
+  lastSignedIn   DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   documents Document[]
@@ -25,6 +29,35 @@ model User {
 
   @@unique([oabEstado, oabNumero])
   @@index([oabEstado, oabNumero])
+}
+
+// Chave de assinatura do IdP OIDC (RS256) — gerada na primeira inicialização.
+// A privada permanece no servidor do JuridIA; a pública é exposta via /jwks.
+model OidcKey {
+  id            String   @id @default(cuid())
+  kid           String   @unique
+  publicKeyPem  String
+  privateKeyPem String
+  createdAt     DateTime @default(now())
+}
+
+// Código de autorização OIDC (Authorization Code Flow + PKCE).
+// Single-use, TTL curto (120 s), vinculado a client_id + redirect_uri + challenge.
+model OidcAuthCode {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  clientId            String
+  sub                 String   // identidade do usuário autenticado (email)
+  redirectUri         String
+  scope               String   @default("openid profile email role persona")
+  nonce               String?
+  codeChallenge       String?
+  codeChallengeMethod String?
+  expiresAt           DateTime
+  used                Boolean  @default(false)
+  createdAt           DateTime @default(now())
+
+  @@index([expiresAt])
 }
 
 // Clientes do escritório (uso pessoal, não SaaS)

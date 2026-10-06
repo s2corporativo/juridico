@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -11,7 +12,12 @@ interface MoldeChange {
   reason: string;        // justificativa
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   let body: {
     baseDocument?: string;
     instruction?: string;

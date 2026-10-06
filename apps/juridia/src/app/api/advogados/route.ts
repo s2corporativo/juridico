@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import {
@@ -15,7 +16,12 @@ import {
 export const dynamic = "force-dynamic";
 
 // GET /api/advogados — lista advogados cadastrados
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const plan = url.searchParams.get("plan");
   const uf = url.searchParams.get("uf")?.toUpperCase();
@@ -52,7 +58,12 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/advogados — cadastra novo advogado
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req, { admin: true });
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{
     email?: string;
     name?: string;
@@ -111,7 +122,12 @@ export async function POST(req: NextRequest) {
 }
 
 // PATCH /api/advogados — atualiza dados do advogado
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req, { admin: true });
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{
     id?: string;
     name?: string;

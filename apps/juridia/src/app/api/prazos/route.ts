@@ -3,11 +3,17 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody, MAX_PRAZO_DIAS } from "@/lib/api-helpers";
 import { calculateDeadline } from "@/lib/legal_calculator";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/prazos?caseId=xxx — lista deadlines
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId");
   const from = url.searchParams.get("from");
@@ -46,7 +52,12 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/prazos — calcula prazo e armazena
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{
     caseId?: string;
     tipo?: string;
@@ -114,7 +125,12 @@ export async function POST(req: NextRequest) {
 }
 
 // PATCH /api/prazos
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{
     id?: string;
     tipo?: string;
@@ -175,7 +191,12 @@ export async function PATCH(req: NextRequest) {
 }
 
 // DELETE /api/prazos?id=xxx
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });

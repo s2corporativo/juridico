@@ -3,11 +3,17 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody } from "@/lib/api-helpers";
 import { extrairEntidades } from "@/lib/assistente";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/intimacoes — lista intimações registradas (via AuditEvent action=intimacao_djen)
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const oabEstado = url.searchParams.get("oabEstado")?.toUpperCase();
   const oabNumero = url.searchParams.get("oabNumero");
@@ -45,7 +51,12 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/intimacoes — registra intimação colada (texto da DJEN), extrai prazo + OAB
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{ conteudo?: string; caseId?: string }>(req);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 

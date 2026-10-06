@@ -3,6 +3,7 @@ import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -68,7 +69,12 @@ const STEPS = [
   { id: "strategy", name: "Estratégia recomendada" },
 ] as const;
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   let body: { facts?: string; title?: string; caseId?: string } = {};
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
@@ -245,7 +251,12 @@ export async function POST(req: NextRequest) {
 }
 
 // GET /api/brain — lista histórico de análises por caso
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId") || "default-case";
 

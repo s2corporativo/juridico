@@ -1,20 +1,26 @@
-// OIDC provider root — returns a minimal info + points to discovery.
-// The full OIDC discovery document lives at /.well-known/openid-configuration.
+// OIDC provider root — informação + ponteiro para discovery.
+// Estado honesto: "active" somente com cliente registrado e issuer válido.
 import { NextResponse } from "next/server";
-import { discoveryDocument, OIDC_ISSUER } from "@/lib/oidc";
+import { getIssuerConfig } from "@/lib/oidc";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
+export async function GET() {
+  const cfg = getIssuerConfig();
+  if ("error" in cfg) {
+    return NextResponse.json({ provider: "juridia-oidc", mode: "not_configured", error: cfg.error }, { status: 503 });
+  }
   return NextResponse.json({
-    issuer: OIDC_ISSUER,
+    issuer: cfg.issuer,
     provider: "juridia-oidc",
     mode: "active",
-    discovery: `${OIDC_ISSUER}/.well-known/openid-configuration`,
-    token_endpoint: `${OIDC_ISSUER}/token`,
-    jwks_endpoint: `${OIDC_ISSUER}/jwks`,
-    verify_endpoint: `${OIDC_ISSUER}/verify`,
-    note:
-      "EJC (JuridIA) is the active OIDC identity provider for the Atlas Forense + JuridIA monorepo.",
+    signing: "RS256",
+    pkce: "S256",
+    discovery: `${cfg.issuer}/.well-known/openid-configuration`,
+    token_endpoint: `${cfg.issuer}/token`,
+    jwks_endpoint: `${cfg.issuer}/jwks`,
+    verify_endpoint: `${cfg.issuer}/verify`,
+    registered_redirect_uris: cfg.redirectUris,
+    note: "EJC (JuridIA) é o provedor de identidade OIDC do sistema unificado Atlas Forense + JuridIA.",
   });
 }

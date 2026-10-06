@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/alertas — alertas urgentes (prazos/audiências/honorários ≤3 dias)
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const dias = Math.min(parseInt(url.searchParams.get("dias") || "3", 10), 30);
   const agora = new Date();
@@ -60,7 +66,7 @@ export async function GET(req: NextRequest) {
   const cases = caseIds.size > 0
     ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) } }, select: { id: true, title: true, number: true } })
     : [];
-  const caseMap = new Map<string, { id: string; title: string; number: string }>(cases.map((c) => [c.id, c] as const));
+  const caseMap = new Map<string, { id: string; title: string; number: string | null }>(cases.map((c) => [c.id, c] as const));
 
   const alertas = [
     ...prazos.map((p) => ({
@@ -104,8 +110,9 @@ export async function GET(req: NextRequest) {
       status: h.status,
     })),
   ].sort((a, b) => {
-    const va = new Date(a.vencimento).getTime();
-    const vb = new Date(b.vencimento).getTime();
+    // vencimento é garantido pelo filtro de honorariosAlertas; `?? 0` cobre o tipo.
+    const va = new Date(a.vencimento ?? 0).getTime();
+    const vb = new Date(b.vencimento ?? 0).getTime();
     return va - vb;
   });
 

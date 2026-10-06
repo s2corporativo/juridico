@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildProofMatrix } from "@/lib/proof_matrix";
 import { logAuditEvent } from "@/lib/audit";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   let body: {
     assertions?: { text: string; kind: string; evidenceRefIds: string[] }[];
     area?: string;

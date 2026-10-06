@@ -7,11 +7,17 @@ import {
   checkPrescription,
 } from "@/lib/legal_calculator";
 import { parseJsonBody, MAX_PRAZO_DIAS } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/calculadora-juridica — tipo=prazo|correcao|juros|prescricao
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const parsed = await parseJsonBody<{ type?: string; [k: string]: unknown }>(req);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 

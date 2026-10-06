@@ -4,12 +4,18 @@ import { db } from "@/lib/db";
 import { mapCaseDeterministic, validateMapperOutput, identifyIssues, type CaseMapperOutput } from "@/lib/legal_brain";
 import { canonicalHash } from "@/lib/evidence";
 import { logAuditEvent } from "@/lib/audit";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
 
 // POST /api/intelligence/map — executa Case Mapper (determinístico + LLM)
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   let body: { facts?: string; caseId?: string } = {};
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
@@ -210,7 +216,12 @@ REGRAS:
 }
 
 // GET /api/intelligence/map — lista snapshots de um caso
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
+  const __auth = await requireAuth(req);
+  if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
+
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId") || "default-case";
 
