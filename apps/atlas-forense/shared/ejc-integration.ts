@@ -1,12 +1,15 @@
 /**
- * Contrato de integração EJC — planejado e NÃO ativo.
+ * Contrato de integração EJC — planejado, com ativação POR AMBIENTE.
  *
- * A ponte de identidade permanece DESABILITADA: nenhuma rota OIDC está
- * registrada no servidor Atlas (/api/ejc-sso/callback e /api/auth/oidc/*
- * ainda não existem) e nenhum JWT é emitido ou validado entre os apps.
- * A ativação exige decisão do titular, administrador real, configuração
- * via ambiente (EJC_OIDC_ISSUER, EJC_OIDC_CLIENT_ID, EJC_OIDC_CLIENT_SECRET),
- * issuer HTTPS validado e revisão humana — ver server/ejc-sso-config.ts.
+ * Postura estática (este arquivo): pending_approval / disabled — é o estado de
+ * qualquer implantação sem as variáveis de ativação. O estado REAL é publicado
+ * em runtime pelo tRPC integration.ejcStatus, que sobrepõe mode/authBridgeMode
+ * somente quando getEjcSsoRuntime() reporta "enabled" (EJC_SSO_ENABLED=true +
+ * EJC_OIDC_ISSUER/CLIENT_ID/CLIENT_SECRET + issuer HTTPS em produção).
+ *
+ * A ponte implementada (server/_core/ejc-sso.ts + IdP em apps/juridia) usa
+ * Authorization Code Flow + PKCE S256 + state assinado + nonce + validação
+ * JWKS (RS256) — conforme docs/ejc-sso-preparacao.md e docs/ejc-sso-ativacao.md.
  */
 export const ejcIntegrationManifest = {
   product: "Atlas Forense + JuridIA (EJC) Unified System",

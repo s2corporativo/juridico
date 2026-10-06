@@ -5,6 +5,7 @@ import net from "net";
 import httpProxy from "http-proxy";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { registerEjcSsoRoutes } from "./ejc-sso";
 import { registerStorageProxy } from "./storageProxy";
 import { getServerListenOptions } from "./network";
 import { appRouter } from "../routers";
@@ -44,6 +45,7 @@ async function startServer() {
   app.get("/healthz", (_req, res) => res.status(200).json(ATLAS_HEALTH_RESPONSE));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  registerEjcSsoRoutes(app);
   registerEditorialScheduledRoute(app);
   // tRPC API
   app.use(

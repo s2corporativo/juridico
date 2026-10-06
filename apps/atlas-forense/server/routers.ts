@@ -66,7 +66,18 @@ export const appRouter = router({
     coverage: adminProcedure.input(z.object({ aliases: z.array(z.enum(NATIONAL_DATAJUD_ALIASES)).min(1).max(NATIONAL_DATAJUD_ALIASES.length).optional() })).mutation(({ input }) => checkDataJudCoverage(input.aliases)),
   }),
   integration: router({
-    ejcStatus: publicProcedure.query(() => ({ ...getEjcIntegrationStatus(), sso: getEjcSsoReadiness() })),
+    ejcStatus: publicProcedure.query(() => {
+      const sso = getEjcSsoReadiness();
+      const base = getEjcIntegrationStatus();
+      // Estado de runtime sobrepõe o manifest estático: a ponte só aparece como
+      // ativa quando o ambiente completo está presente e aprovado (fail-closed).
+      return {
+        ...base,
+        mode: sso.enabled ? ("active" as const) : ("pending_approval" as const),
+        authBridgeMode: sso.enabled ? ("enabled" as const) : ("disabled" as const),
+        sso,
+      };
+    }),
   }),
   office: router({
     clients: router({
