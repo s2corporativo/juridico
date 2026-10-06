@@ -19,7 +19,7 @@ export const ejcIntegrationManifest = {
   },
   confidentiality: {
     prohibitedTransfer: ["credenciais", "partes", "CPF", "telefone", "endereço", "documentos privados"],
-    principle: "Integração por rotas e metadados públicos; qualquer vínculo a caso do EJC exige base legal, autorização e revisão humana.",
+    principle: "Integração limitada a identidade, navegação e metadados públicos; sem vínculo a casos ou administração do escritório.",
   },
 } as const;
 

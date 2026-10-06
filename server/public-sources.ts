@@ -1,6 +1,48 @@
 const STJ_CKAN_API = "https://dadosabertos.web.stj.jus.br/api/3/action/package_search";
 const STJ_CACHE_MS = 10 * 60 * 1000;
 
+// Metadados públicos canônicos. Neutralizam notas antigas até a migração de dados
+// ser aplicada, sem tocar nas tabelas legadas que aguardam transferência segura.
+const atlasSourceScope: Record<string, {
+  integrationStatus: "integrated" | "not_integrated" | "manual_only";
+  contentScope?: string;
+  usageNote: string;
+  privacyNote: string;
+}> = {
+  "cnj-djen-comunica": {
+    integrationStatus: "not_integrated",
+    contentScope: "Referência institucional ao Diário de Justiça Eletrônico Nacional; sem coleta de comunicações pelo Atlas.",
+    usageNote: "Consulte o portal oficial. O Atlas não coleta nem armazena comunicações individualizadas.",
+    privacyNote: "O Atlas não armazena teor de comunicações do DJEN.",
+  },
+  lexml: {
+    integrationStatus: "not_integrated",
+    usageNote: "Referência ao serviço público LexML; consulta automatizada não habilitada nesta versão.",
+    privacyNote: "O Atlas não armazena documentos individualizados desta fonte.",
+  },
+  "stj-dados-abertos": {
+    integrationStatus: "integrated",
+    usageNote: "O Atlas consulta apenas metadados do catálogo CKAN; confirme o inteiro teor no portal oficial do STJ.",
+    privacyNote: "O Atlas armazena apenas metadados públicos aprovados para o catálogo.",
+  },
+  "tjmg-jurisprudencia": {
+    integrationStatus: "manual_only",
+    usageNote: "Consulta manual nos formulários oficiais do tribunal; sem importação automática nesta versão.",
+    privacyNote: "O catálogo do Atlas não importa dados de processos individuais desta fonte.",
+  },
+  "imprensa-oficial-mg": {
+    integrationStatus: "not_integrated",
+    contentScope: "Diário eletrônico do Executivo e atos públicos oficiais.",
+    usageNote: "Consulta manual no portal oficial; confira atos e datas na origem.",
+    privacyNote: "O Atlas não importa publicações individualizadas desta fonte.",
+  },
+};
+
+export function applyAtlasPublicSourceScope<T extends { sourceKey: string }>(source: T): T {
+  const override = atlasSourceScope[source.sourceKey];
+  return override ? { ...source, ...override } : source;
+}
+
 type StjResource = { id?: string; format?: string; name?: string; url?: string };
 type StjPackage = {
   id?: string;

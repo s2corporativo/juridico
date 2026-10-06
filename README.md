@@ -2,6 +2,11 @@
 
 Projeto público de apoio à organização e consulta de informações relacionadas aos Juizados Especiais, com foco operacional e informativo em Belo Horizonte e Betim/MG.
 
+O Atlas é uma ferramenta de pesquisa e análise jurídica. Não administra o
+escritório: não cadastra clientes, casos, atendimentos ou comunicações, e não
+sincroniza intimações por OAB. Dados de módulos antigos estão preservados fora
+do produto até migração segura, conforme [política de dados](docs/politica-de-dados.md).
+
 ## Escopo
 
 - organização de informações e referências do Juizado Especial;

@@ -55,10 +55,10 @@ dias" não era extraído e o cálculo caía no fallback. A extensão
 
 ## Validação executada em 04/10/2026
 
-- 25 testes dedicados em `server/prazos-module.test.ts` (casos portados do
-  `tests/test_nucleo.py` com mesmos valores esperados + casos novos de extenso,
-  portal, dobra e intercorrente) e 19 em `server/office-connector.test.ts` (CNJ mod 97,
-  LGPD, SRU, CKAN, dedupe, registro manual). Suíte total **145/145**.
+- Testes dedicados em `server/prazos-module.test.ts` cobrem casos portados do
+  `tests/test_nucleo.py`, extração por extenso, portal, dobra e intercorrente.
+  O motor permanece como biblioteca de cálculo jurídico, sem cadastro de casos,
+  comunicação processual ou rota de administração do escritório no Atlas.
 - Casos de ponta conferidos manualmente:
   - disponibilização 28/09/2026 + 15 úteis DJe → **21/10/2026** (exclui 12/10);
   - disponibilização 29/09/2026 + 10 úteis DJe ("no prazo de dez dias") → **15/10/2026**;
@@ -66,9 +66,8 @@ dias" não era extraído e o cálculo caía no fallback. A extensão
   - ciência 29/09/2026 + 15 úteis → **21/10/2026**; ciência 26/09 + 15 úteis → **19/10/2026**;
   - reparação civil 04/05/2022 em 01/10/2026 → **PRESCRITA** (termo final 04/05/2025);
   - portal: consulta em sábado com feriado 07/09 → intimação 08/09/2026 (art. 5º § 2º).
-- UI: botão "Calcular pelo teor" na comunicação do despacho pré-preencheu 29/09/2026,
-  10 dias (extração por extenso) e exibiu memória auditável com a exclusão do 12/10
-  (evidência `download/sincronizar-agora-djen.png`).
+- A antiga interface de comunicações foi retirada do produto. Resultados do
+  motor exigem conferência humana e calendário local antes de uso jurídico.
 
 ## Limites herdados e não portados
 

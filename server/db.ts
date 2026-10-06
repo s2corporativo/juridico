@@ -10,6 +10,7 @@ import { INITIAL_LEGAL_BRANCHES, RMBH_MUNICIPALITIES } from "@shared/atlas-expan
 import { buildMetropolitanCoverageRows } from "@shared/metropolitan-coverage";
 import { describeDocumentFreshness, summarizeDocumentFreshness } from "@shared/document-freshness";
 import { THESIS_MAP_RELATED_LIMIT } from "@shared/thesis-map-contract";
+import { applyAtlasPublicSourceScope } from "./public-sources";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -100,7 +101,8 @@ export async function getUserByOpenId(openId: string) {
 export async function getPublicDataSources() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  return db.select().from(publicDataSources).orderBy(asc(publicDataSources.label));
+  const rows = await db.select().from(publicDataSources).orderBy(asc(publicDataSources.label));
+  return rows.map(applyAtlasPublicSourceScope);
 }
 
 export async function getNationalCensusReadiness() {

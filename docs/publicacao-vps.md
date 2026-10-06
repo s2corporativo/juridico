@@ -14,7 +14,7 @@ O Atlas será instalado de modo isolado em `/opt/atlas-ejc/current`, executado p
 
 ## Variáveis e limites
 
-O arquivo `/etc/atlas-ejc/atlas.env` terá permissão `0640`, proprietário `root:atlas`, e não será versionado. Ele conterá somente porta, URL do banco local e segredo de sessão. A integração OAuth/Manus não será habilitada na VPS nesta primeira publicação: a rota de login exige URI de retorno e política de SSO próprios do EJC. O painel público, fontes e relatórios continuam disponíveis; os fluxos administrativos permanecem bloqueados até a configuração posterior.
+O arquivo `/etc/atlas-ejc/atlas.env` terá permissão `0640`, proprietário `root:atlas`, e não será versionado. Ele conterá somente porta, URL do banco local e segredo de sessão. A integração OAuth/Manus não será habilitada na VPS nesta primeira publicação: a rota de login exige URI de retorno e política de SSO próprios do EJC. O painel público, fontes e relatórios continuam disponíveis; a curadoria administrativa permanece bloqueada até a configuração posterior. O Atlas não publica rotas de administração do escritório. Antes da publicação, executar o roteiro de isolamento de dados legados em [`dados-legados-isolados.md`](dados-legados-isolados.md).
 
 ## Reversão
 

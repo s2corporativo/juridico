@@ -11,8 +11,6 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { ATLAS_HEALTH_RESPONSE } from "@shared/deployment";
 import { registerEditorialScheduledRoute } from "../editorial-scheduled";
-import { startDjenAutoSync } from "../djen";
-import { startJurisprudenciaAutoSync } from "../jurisprudencia";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -67,8 +65,6 @@ async function startServer() {
 
   server.listen(getServerListenOptions(port, process.env.HOST), () => {
     console.log(`Server running on http://localhost:${port}/`);
-    startDjenAutoSync();
-    startJurisprudenciaAutoSync();
   });
 }
 

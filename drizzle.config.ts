@@ -6,7 +6,8 @@ if (!connectionString) {
 }
 
 export default defineConfig({
-  schema: "./drizzle/schema.ts",
+  // Include archived tables for migration diffs without importing them at runtime.
+  schema: ["./drizzle/schema.ts", "./drizzle/legacy-office-schema.ts"],
   out: "./drizzle",
   dialect: "mysql",
   dbCredentials: {

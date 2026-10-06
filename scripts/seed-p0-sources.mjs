@@ -1,7 +1,7 @@
 /**
  * Seed das 7 fontes P0 do Atlas Forense (Painel JEC BH e Betim):
- * define priority='p0_obrigatoria', atualiza notas de uso dos conectores
- * (DJEN, LexML SRU, STJ Dados Abertos) e insere fontes ausentes.
+ * define priority='p0_obrigatoria', descreve apenas o catálogo público
+ * e insere fontes ausentes.
  * Idempotente (upsert por sourceKey).
  */
 import mysql from "mysql2/promise";
@@ -38,12 +38,12 @@ const p0 = [
     baseUrl: "https://comunicapi.cnj.jus.br/api/v1/comunicacao",
     documentationUrl: "https://datajud-wiki.cnj.jus.br/djen-comunicacao/",
     authentication: "none",
-    integrationStatus: "integrated",
+    integrationStatus: "not_integrated",
     coverage: "Intimações, citações e editais publicados no DJEN (Diário de Justiça Eletrônico Nacional).",
-    contentScope: "Comunicações processuais por inscrição OAB; teor sanitizado conforme LGPD.",
-    usageNote: "Conector automático do Escritório configurado em /escritorio/comunicacoes: informe OAB/UF e use 'Sincronizar agora' ou deixe o ciclo automático armado.",
+    contentScope: "Referência institucional ao Diário de Justiça Eletrônico Nacional; sem coleta de comunicações pelo Atlas.",
+    usageNote: "Consulte o portal oficial. O Atlas não coleta nem armazena comunicações individualizadas.",
     citationText: "Comunica CNJ — DJEN",
-    privacyNote: "Teor das comunicações é sanitizado (mascaramento LGPD) antes de gravar no caixa do Escritório.",
+    privacyNote: "O Atlas não armazena teor de comunicações do DJEN.",
   },
   {
     sourceKey: "lexml",
@@ -53,12 +53,12 @@ const p0 = [
     baseUrl: "http://lexml.gov.br/busca/sru",
     documentationUrl: "https://www.lexml.gov.br/documentacao/SRU-2.0.pdf",
     authentication: "none",
-    integrationStatus: "integrated",
+    integrationStatus: "not_integrated",
     coverage: "Legislação, jurisprudência e documentos públicos indexados no LexML Brasil.",
     contentScope: "Protocolo SRU (SearchRetrieve) com URNs LexML, títulos e descrições.",
-    usageNote: "Conector do Escritório (/escritorio/jurisprudencia) consulta o SRU com endpoint configurável; challenge anti-bot é diagnosticado como LEXML_RESPOSTA_NAO_SRU.",
+    usageNote: "Referência ao serviço público LexML; consulta automatizada não habilitada nesta versão.",
     citationText: "LexML Brasil — Senado Federal",
-    privacyNote: "Documentos públicos; sem dados pessoais armazenados.",
+    privacyNote: "O Atlas não armazena documentos individualizados desta fonte.",
   },
   {
     sourceKey: "stj-dados-abertos",
@@ -71,9 +71,9 @@ const p0 = [
     integrationStatus: "integrated",
     coverage: "Catálogo de acórdãos e decisões publicados pelo STJ em dados abertos.",
     contentScope: "package_search (CKAN): títulos, descrições e URLs de datasets de julgados.",
-    usageNote: "Conector do Escritório (/escritorio/jurisprudencia) pesquisa o catálogo CKAN; para inteiro teor use a consulta manual no portal do STJ.",
+    usageNote: "O Atlas consulta apenas metadados do catálogo CKAN; confirme o inteiro teor no portal oficial do STJ.",
     citationText: "Dados Abertos do STJ",
-    privacyNote: "Catálogo público; sem dados pessoais armazenados.",
+    privacyNote: "O Atlas armazena apenas metadados públicos aprovados para o catálogo.",
   },
   {
     sourceKey: "tjmg-jurisprudencia",
@@ -86,9 +86,9 @@ const p0 = [
     integrationStatus: "manual_only",
     coverage: "Acórdãos e decisões do TJMG (BH, Betim e comarcas da RMBH).",
     contentScope: "Busca unificada do TJMG; sem API pública de consulta automática.",
-    usageNote: "Consulta manual nos formulários do tribunal; o julgado pode ser registrado com auditoria em /escritorio/jurisprudencia (validação de CNJ pela Resolução 65/2008).",
+    usageNote: "Consulta manual nos formulários oficiais do tribunal; sem importação automática nesta versão.",
     citationText: "Jurisprudência TJMG",
-    privacyNote: "Registro manual auditável; ementa sanitizada conforme LGPD.",
+    privacyNote: "O catálogo do Atlas não importa dados de processos individuais desta fonte.",
   },
   {
     sourceKey: "tjmg-esaj",
@@ -115,10 +115,10 @@ const p0 = [
     authentication: "manual",
     integrationStatus: "not_integrated",
     coverage: "Publicações oficiais do Estado de Minas Gerais (atos, editais, deliberacoes).",
-    contentScope: "Diário eletrônico do Executivo e atos de interesse do escritório.",
-    usageNote: "Consulta manual no portal oficial; usar para conferências pontuais e prazos administrativos.",
+    contentScope: "Diário eletrônico do Executivo e atos públicos oficiais.",
+    usageNote: "Consulta manual no portal oficial; confira atos e datas na origem.",
     citationText: "Imprensa Oficial do Estado de Minas Gerais",
-    privacyNote: "Documentos públicos; sem dados pessoais armazenados.",
+    privacyNote: "O Atlas não importa publicações individualizadas desta fonte.",
   },
 ];
 
