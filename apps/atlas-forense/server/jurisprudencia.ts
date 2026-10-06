@@ -15,6 +15,7 @@ import {
   officeJurisprudenciaSettings,
 } from "../drizzle/schema";
 import { getDb } from "./db";
+import { voidEmitNotification } from "./realtime/emit-notification";
 import {
   buildLexmlSearchUrl,
   buildStjCkanUrl,
@@ -289,6 +290,31 @@ export async function syncJurisprudencia(): Promise<JurisSyncResult> {
       .where(eq(officeJurisprudenciaSettings.id, 1));
   }
   await auditJuris("sync", message);
+  if (status === "failed") {
+    voidEmitNotification({
+      target: "office:global",
+      event: "notification:new",
+      data: {
+        title: "Jurisprudência · coleta falhou",
+        content: message.slice(0, 300),
+        level: "error",
+        link: "/escritorio/jurisprudencia",
+        category: "jurisprudencia",
+      },
+    });
+  } else if (stats && stats.novos > 0) {
+    voidEmitNotification({
+      target: "office:global",
+      event: "notification:new",
+      data: {
+        title: "Jurisprudência · nova coleta",
+        content: `${stats.novos} novo(s) julgado(s) disponível(is) na biblioteca do escritório.`,
+        level: "success",
+        link: "/escritorio/jurisprudencia",
+        category: "jurisprudencia",
+      },
+    });
+  }
   return { status, message, diagnosticos, stats };
 }
 

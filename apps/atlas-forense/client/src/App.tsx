@@ -6,6 +6,7 @@ import { Database } from "lucide-react";
 import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { useRealtimeNotifications } from "./hooks/useRealtimeNotifications";
 import { Route, Switch, useLocation } from "wouter";
 
 const Home = lazy(() => import("./pages/Home"));
@@ -31,6 +32,8 @@ export default function App() {
   const routes = Object.fromEntries(ejcIntegrationManifest.modules.map(module => [module.key, module.route])) as Record<string, string>;
   const [location] = useLocation();
   const isAtlasHome = location === routes.atlas || location === "/";
+  // Notificações em tempo real (WebSocket autenticado, rota fixa /socket.io/).
+  useRealtimeNotifications();
 
   return (
     <ErrorBoundary>

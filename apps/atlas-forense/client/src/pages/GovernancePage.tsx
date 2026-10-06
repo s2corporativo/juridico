@@ -33,7 +33,7 @@ export default function GovernancePage() {
           <div className="governance-mark"><Network size={24} /><span>ARQUITETURA<br />PRIMEIRO</span><b>01</b></div>
         </section>
 
-        <section className="ejc-bridge-status"><div><span className="eyebrow">PONTE EJC · NÃO ATIVA</span><h2>Rotas e identidade estão prontas para a decisão de vínculo.</h2><p>{ejcStatus.data?.activationRule ?? "Verificando o contrato de integração…"}</p></div><div>{ejcIntegrationManifest.modules.map(module => <p key={module.key}><b>{module.label}</b><code>{module.route}</code><small>{module.access}</small></p>)}</div></section>
+        <section className="ejc-bridge-status"><div><span className="eyebrow">PONTE EJC · NÃO ATIVA</span><h2>Rotas e identidade estão prontas para a decisão de vínculo.</h2><p>{ejcStatus.data?.sso?.activationRule ?? "Verificando o contrato de integração…"}</p></div><div>{ejcIntegrationManifest.modules.map(module => <p key={module.key}><b>{module.label}</b><code>{module.route}</code><small>{module.access}</small></p>)}</div></section>
 
         <section className="governance-modules" id="modulos">
           <div className="governance-section-heading"><Database size={20} /><div><span>MAPA DE MÓDULOS</span><h2>Camadas que não se confundem.</h2></div></div>

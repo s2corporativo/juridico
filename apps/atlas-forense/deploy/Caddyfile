@@ -1,4 +1,8 @@
 atlas.depaulateixeira.adv.br {
   encode zstd gzip
+  # Rota fixa do serviço de notificação (WebSocket) — porta interna nunca é
+  # escolhida dinamicamente pelo usuário. Única rota com destino próprio.
+  reverse_proxy /socket.io/* 127.0.0.1:3003
+  # Aplicação principal (todas as demais rotas).
   reverse_proxy 127.0.0.1:3010
 }

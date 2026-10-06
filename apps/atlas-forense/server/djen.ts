@@ -10,6 +10,7 @@ import {
   officeDjenSettings,
 } from "../drizzle/schema";
 import { getDb } from "./db";
+import { voidEmitNotification } from "./realtime/emit-notification";
 import {
   DJEN_SOURCE_KEY,
   janelaDjen,
@@ -234,8 +235,21 @@ export async function syncDjenNow(): Promise<SyncResult> {
     const plano = planDjenIngestion(itens, existentes);
     await persistComunicacoes(plano.itens, settings.defaultDeadlineDays);
     const msg = `Sincronização concluída: ${plano.stats.recebidas} recebidas, ${plano.stats.novas} novas, ${plano.stats.duplicadas} duplicadas, ${plano.stats.invalidas} inválidas.`;
-    await marcarSync(plano.stats.recebidas === 0 ? "success" : "success", msg);
+    await marcarSync("success", msg);
     await auditDjen("sync", msg);
+    if (plano.stats.novas > 0) {
+      voidEmitNotification({
+        target: "office:global",
+        event: "notification:new",
+        data: {
+          title: "DJEN · novas comunicações",
+          content: `${plano.stats.novas} nova(s) intimação(ões) disponível(is) na Caixa de Comunicações.`,
+          level: "success",
+          link: "/escritorio/comunicacoes",
+          category: "djen",
+        },
+      });
+    }
     return { status: "success", message: msg, stats: plano.stats };
   } catch (err) {
     const motivo =
@@ -247,6 +261,17 @@ export async function syncDjenNow(): Promise<SyncResult> {
     const msg = `Falha na consulta DJEN: ${motivo}`;
     await marcarSync("failed", msg);
     await auditDjen("sync:failed", msg);
+    voidEmitNotification({
+      target: "office:global",
+      event: "notification:new",
+      data: {
+        title: "DJEN · sincronização falhou",
+        content: msg.slice(0, 300),
+        level: "error",
+        link: "/escritorio/comunicacoes",
+        category: "djen",
+      },
+    });
     return { status: "failed", message: msg };
   }
 }

@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import httpProxy from "http-proxy";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
@@ -13,6 +14,7 @@ import { ATLAS_HEALTH_RESPONSE } from "@shared/deployment";
 import { registerEditorialScheduledRoute } from "../editorial-scheduled";
 import { startDjenAutoSync } from "../djen";
 import { startJurisprudenciaAutoSync } from "../jurisprudencia";
+import { startNotificationService } from "../realtime/notification-service";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -52,6 +54,65 @@ async function startServer() {
     })
   );
   // development mode uses Vite, production mode uses static files
+  // (a rota fixa do WebSocket é registrada antes do middleware catch-all do Vite)
+
+  // Serviço de notificação (WebSocket) em porta fixa de loopback, iniciado ANTES do
+  // servidor principal para que a porta 3003 já esteja reservada quando o app
+  // procurar a própria porta. Falha aqui não derruba o aplicativo.
+  let notificationPort: number | null = null;
+  try {
+    const notification = await startNotificationService();
+    notificationPort = notification.port;
+    console.log(
+      `[Realtime] notificações em http://127.0.0.1:${notification.port}/socket.io/ (rota fixa)`
+    );
+  } catch (error) {
+    console.error(
+      "[Realtime] serviço de notificação não iniciado:",
+      error instanceof Error ? error.message : error
+    );
+  }
+
+  // Rota fixa interna do WebSocket: /socket.io/* → 127.0.0.1:<porta fixa>.
+  // Fixo→fixo, sem qualquer parâmetro de request escolhendo a porta de destino
+  // (a arquitetura ?XTransformPort=XXXX é proibida). Em produções com proxy
+  // reverso externo (Caddy) a rota externa é idêntica e o proxy interno fica
+  // como segunda camada, inofensiva.
+  if (notificationPort !== null) {
+    const notificationProxy = httpProxy.createProxyServer({
+      target: `http://127.0.0.1:${notificationPort}`,
+      ws: true,
+    });
+    notificationProxy.on("error", (error, _req, res) => {
+      console.warn(`[Realtime] proxy falhou: ${error.message}`);
+      if (res && "writeHead" in res && typeof res.writeHead === "function") {
+        try {
+          res.writeHead(502, { "content-type": "application/json" });
+          res.end('{"ok":false,"error":"notification_service_unavailable"}');
+        } catch {
+          // socket já encerrado
+        }
+      }
+    });
+    const isSocketIoPath = (url: string | undefined) =>
+      url === "/socket.io" || url?.startsWith("/socket.io/") === true;
+    app.use((req, res, next) => {
+      if (isSocketIoPath(req.url)) {
+        notificationProxy.web(req, res);
+        return;
+      }
+      next();
+    });
+    server.on("upgrade", (req, socket, head) => {
+      if (isSocketIoPath(req.url)) {
+        notificationProxy.ws(req, socket, head);
+      }
+    });
+    console.log(
+      `[Realtime] rota fixa /socket.io/* → 127.0.0.1:${notificationPort} registrada`
+    );
+  }
+
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
