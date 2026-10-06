@@ -17,5 +17,16 @@
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "sharp@0.35.5": true,
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true,
+    "@prisma/client@6.19.3": true,
+    "prisma@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "@parcel/watcher@2.6.0": true,
+    "@swc/core@1.16.13": true
   }
 }
