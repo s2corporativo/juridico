@@ -16,6 +16,7 @@ import {
   Sparkles,
   Shield,
   BookOpen,
+  Gavel,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppStore } from "@/lib/store";
@@ -33,6 +34,8 @@ import { VisualLaw } from "./visual-law";
 import { DataJudBusca } from "./datajud-busca";
 import { GrafoSistema } from "./grafo-sistema";
 import { BibliotecaJuridica } from "./biblioteca-juridica";
+import { Tribunal } from "./tribunal";
+import { WizardPeticao } from "./wizard-peticao";
 
 // ── Zona ÚNICA: Cérebro Jurídico (foco em conhecimento, sem ERP) ────────────
 // Antes: ERP (10 tabs) + IA (10 tabs) = 20 tabs (com componentes operacionais)
@@ -45,7 +48,9 @@ const TABS = [
   { id: "biblioteca" as const, label: "Biblioteca", icon: BookOpen, key: "b" },
   { id: "cerebro" as const, label: "1. Cérebro", icon: Brain, key: "e" },
   { id: "intelligence" as const, label: "2. Inteligência", icon: Network, key: "i" },
-  { id: "pipeline" as const, label: "3. Pipeline", icon: GitBranch, key: "p" },
+  { id: "tribunal" as const, label: "3. Tribunal", icon: Gavel, key: "t" },
+  { id: "wizard" as const, label: "4. Petição", icon: FileText, key: "w" },
+  { id: "pipeline" as const, label: "5. Pipeline", icon: GitBranch, key: "p" },
   { id: "generator" as const, label: "5. Produção", icon: Wand2, key: "g" },
   { id: "editor" as const, label: "Editor", icon: FileText, key: "m" },
   { id: "homologacao" as const, label: "Homologação", icon: ClipboardCheck, key: "h" },
@@ -104,6 +109,8 @@ export function AppShell() {
         {appTab === "biblioteca" && <BibliotecaJuridica />}
         {appTab === "cerebro" && <Cerebro />}
         {appTab === "intelligence" && <Inteligencia />}
+        {appTab === "tribunal" && <Tribunal />}
+        {appTab === "wizard" && <WizardPeticao />}
         {appTab === "pipeline" && <Pipeline />}
         {appTab === "generator" && <Generator />}
         {appTab === "editor" && <Editor />}
