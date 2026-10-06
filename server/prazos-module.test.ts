@@ -226,7 +226,7 @@ describe("Utilidades de calendário", () => {
 // ---------------------------------------------------------------------------
 // Treinamento do motor (Task 10): cenários avançados com valores verificados
 // no calendário real — recesso do art. 220, feriados de novembro, dobra da
-// Fazenda, portal no limite e extração com teores reais do acervo demo.
+// Fazenda, portal no limite e extração com teores de referência (fixtures).
 // ---------------------------------------------------------------------------
 
 describe("Treinamento: recesso do art. 220 (20/12 a 20/01)", () => {
@@ -323,7 +323,7 @@ describe("Treinamento: vencimento corrido no Natal (CPP, art. 798, § 3º)", () 
   });
 });
 
-describe("Treinamento: extração com teores reais do acervo demo (Task 10)", () => {
+describe("Treinamento: extração com teores de referência (fixtures)", () => {
   it("despacho de laudo pericial: 'no prazo de quinze dias úteis' → 15 úteis", () => {
     expect(extrairPrazoDoTeor(
       "Intimem-se as partes, no prazo de quinze dias úteis, para manifestar-se sobre o laudo pericial juntado aos autos."

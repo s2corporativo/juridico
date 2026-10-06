@@ -47,7 +47,7 @@ async function main() {
     for (const record of records) {
       await connection.query(
         "INSERT INTO evidence_sources (label, sourceType, sourceUrl, publicStatus, note) VALUES (?, 'official_url', ?, 'official_confirmed', ?) ON DUPLICATE KEY UPDATE sourceUrl=VALUES(sourceUrl), publicStatus='official_confirmed', note=VALUES(note)",
-        [`${record.tribunal} · ${record.numero_cnj}`, record.fonte_url, "URL oficial vinculada ao acórdão validado no lote piloto."],
+        [record.numero_cnj ? `${record.tribunal} · ${record.numero_cnj}` : record.tribunal, record.fonte_url, "URL oficial vinculada ao acórdão validado no lote piloto."],
       );
       const [[source]] = await connection.query("SELECT id FROM evidence_sources WHERE sourceUrl = ?", [record.fonte_url]);
       await connection.query(

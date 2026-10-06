@@ -198,7 +198,6 @@ async function persistComunicacoes(itens: ReturnType<typeof planDjenIngestion>["
         sourceExternalId: plano.item.idComunicacao,
         receivedAt: plano.receivedAt ?? new Date(),
         deadlineDays: plano.deadlineDays ?? deadlineDays,
-        isDemoData: 0,
         content: plano.content,
       });
       novas += 1;

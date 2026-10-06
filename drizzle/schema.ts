@@ -386,7 +386,6 @@ export const officeClients = mysqlTable("office_clients", {
   email: varchar("email", { length: 191 }),
   phone: varchar("phone", { length: 32 }),
   note: text("note"),
-  isDemoData: int("isDemoData").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [index("office_clients_name_idx").on(table.name)]);
@@ -432,7 +431,6 @@ export const officeCommunications = mysqlTable("office_communications", {
   deadlineAt: timestamp("deadlineAt"),
   deadlineDays: int("deadlineDays"),
   matterId: int("matterId"),
-  isDemoData: int("isDemoData").default(0).notNull(),
   content: text("content"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -474,7 +472,6 @@ export const officeJurisprudencia = mysqlTable("office_jurisprudencia", {
   decisionDate: varchar("decisionDate", { length: 10 }),
   status: mysqlEnum("status", ["nova", "destacada", "aplicada", "descartada"]).default("nova").notNull(),
   matterId: int("matterId"),
-  isDemoData: int("isDemoData").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [

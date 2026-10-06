@@ -126,7 +126,7 @@ const FAQ = [
   { pergunta: "O conector de jurisprudência retornou erro 403 no catálogo do STJ. É defeito?", resposta: "Não. O catálogo Dados Abertos do STJ pode aplicar bloqueio anti-automação (HTTP 403). O sistema degrada com elegância: registra o diagnóstico por provedor e segue operando com LexML e registro manual. Em ambiente sem acesso à rede judicial (DNS bloqueado), todas as coletas externas falham com \"fetch failed\" — comportamento esperado." },
   { pergunta: "A memória de cálculo pode substituir a conferência humana?", resposta: "Não. A memória é auditável e cita a base normativa de cada passo, mas feriados locais e portarias de suspensão do tribunal devem ser conferidos no calendário oficial (CPC, art. 216). O prazo calculado é apoio à decisão, não decisão." },
   { pergunta: "Posso editar o prazo calculado manualmente?", resposta: "O prazo declarado no teor tem prioridade e o padrão do escritório só entra como fallback. Ajustes de interpretação (por exemplo, prazo em dobro comprovado) são feitos na conferência humana e registrados nos atendimentos da matéria." },
-  { pergunta: "Os dados de demonstração são de clientes reais?", resposta: "Não. Todo o acervo demo (clientes, matérias, comunicações e julgados com ementas) é fictício, marcado com isDemoData = 1 e gerado para treinamento. Dados reais só entram por cadastro próprio ou sincronização autenticada, sob política LGPD." },
+  { pergunta: "O sistema contém dados fictícios ou de demonstração?", resposta: "Não. O Atlas Forense opera apenas com dados reais: cadastro próprio do escritório, comunicações efetivamente recebidas pelo conector DJEN e julgados de fonte declarada (conectores oficiais ou registro manual auditável). Nenhum dado fictício é gerado pelo sistema — a política completa está em docs/politica-de-dados.md." },
 ];
 
 const CHAVE_CHECKLIST = "atlas-treinamento-checklist-v1";
@@ -217,7 +217,7 @@ export default function OfficeTreinamentoPage() {
             </div>
           ))}
         </div>
-        <div className="trein-badge-demo">
+        <div className="trein-badge-exemplo">
           <span className="office-teor-origem is-extraido"><BadgeCheck size={12} /> Extraído do teor — prazo declarado na comunicação (ex.: “quinze dias úteis”)</span>
           <span className="office-teor-origem is-padrao"><CircleAlert size={12} /> Fallback — sem prazo no teor: padrão do escritório aplicado; confira o despacho</span>
         </div>
@@ -229,7 +229,7 @@ export default function OfficeTreinamentoPage() {
           <li>Cadastre apenas dados necessários à finalidade (princípio da necessidade): documento, contato e notas essenciais.</li>
           <li>O sistema nunca transfere dados do escritório para as camadas públicas — jurisimetria e acervo público usam somente metadados públicos.</li>
           <li>Comunicações e clientes cadastrados podem ser arquivados; o histórico de atendimentos mantém rastro de quem orientou o quê.</li>
-          <li>Dados de demonstração (isDemoData) são fictícios e seguros para treinamento — nunca use clientes reais em teste.</li>
+          <li>Todo registro no sistema é real e de responsabilidade do escritório — o aprendizado acontece nesta página (quiz, checklist e regras), sem gravar nada no banco.</li>
         </ul>
       </section>
 
