@@ -20,6 +20,7 @@ import { legalSearch } from "@/lib/legal_retrieval";
 import { atlasKnowledgeSearch } from "@/lib/atlas_knowledge_retrieval";
 import { verifyCitations } from "@/lib/citation_gate";
 import { buildCaseEvidenceContext, verifyEvidenceMarkers } from "@/lib/case_context";
+import { wrapUntrustedDocument } from "@/lib/document_security";
 import {
   buildSystemPrompt,
   buildOutlineUserPrompt,
@@ -254,7 +255,7 @@ export async function runMinutaPipeline(
   }
   const atlasKnowledgeBlock = atlasKnowledge.length
     ? "\n\n## ACERVO JURÍDICO INTERNO\n" + atlasKnowledge.map((x) =>
-        `### ${x.title} [${x.documentType} · ${x.area} · conf. ${x.reliability}]\nFonte: ${x.source || "elaboração interna"}${x.sourceUrl ? ` — ${x.sourceUrl}` : ""}\nTrecho: ${x.text.slice(0, 450)}\nScore híbrido: ${x.score.toFixed(3)}${x.semanticScore == null ? " (sem vetor disponível)" : ` · semântico ${x.semanticScore.toFixed(3)}`}`
+        `### ${x.title} [${x.documentType} · ${x.area} · conf. ${x.reliability}]\nFonte: ${x.source || "elaboração interna"}${x.sourceUrl ? ` — ${x.sourceUrl}` : ""}\n${wrapUntrustedDocument(x.text.slice(0, 450), `acervo:${x.slug}`)}\nScore híbrido: ${x.score.toFixed(3)}${x.semanticScore == null ? " (sem vetor disponível)" : ` · semântico ${x.semanticScore.toFixed(3)}`}`
       ).join("\n\n")
     : "";
 
