@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { aiGatewayJson } from "@/lib/ai_gateway";
-import { runIterativeLegalResearch } from "@/lib/iterative_research";
+import { runIterativeLegalResearch, type IterativeResearchResult } from "@/lib/iterative_research";
 import { routeSkills } from "@/lib/skill_router";
 import { buildFactsBlock } from "@/lib/minuta_pipeline";
 import { runMinutaPipeline } from "@/lib/minuta_run";
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   if ((body?.phase || "plan") === "plan") {
     const routed = await routeSkills(facts);
     const issues = routed.issues.length ? routed.issues.slice(0, 3) : [{ key: "questao_principal", title: input.templateSlug, area: routed.area || "civil" }];
-    const research = [];
+    const research: IterativeResearchResult[] = [];
     for (const issue of issues) {
       research.push(await runIterativeLegalResearch({ issue: issue.title, area: issue.area, taskType: issue.area === "penal" ? "criminal" : "pesquisa", maxCycles: 3 }));
     }
