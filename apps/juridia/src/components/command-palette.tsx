@@ -20,7 +20,6 @@ import {
   FolderOpen,
   Sun,
   Moon,
-  Home,
   Sparkles,
   HelpCircle,
   Printer,
@@ -42,14 +41,10 @@ interface CommandItemDef {
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
-  const { setView, setAppTab, setAuthOpen } = useAppStore();
+  const { setAppTab, setAuthOpen } = useAppStore();
   const { setTheme, resolvedTheme } = useTheme();
 
-  const go = useCallback((view: "landing" | "app", tab?: "dashboard" | "generator" | "editor" | "case-analysis" | "jurisprudence" | "batch" | "documents" | "audit" | "settings") => {
-    setView(view);
-    if (tab) setAppTab(tab);
-    setOpen(false);
-  }, [setView, setAppTab]);
+  const go = useCallback((tab: string) => { setAppTab(tab); setOpen(false); }, [setAppTab]);
 
   // Keyboard shortcut Cmd+K / Ctrl+K
   useEffect(() => {
@@ -65,16 +60,15 @@ export function CommandPalette() {
   }, []);
 
   const items: CommandItemDef[] = [
-    { icon: Home, label: "Ir para o site (Landing)", group: "Navegação", onSelect: () => go("landing") },
-    { icon: LayoutDashboard, label: "Dashboard", group: "Plataforma", onSelect: () => go("app", "dashboard") },
-    { icon: Wand2, label: "Gerar nova minuta", shortcut: "G", group: "Plataforma", onSelect: () => go("app", "generator") },
-    { icon: FileText, label: "Abrir editor", shortcut: "E", group: "Plataforma", onSelect: () => go("app", "editor") },
-    { icon: Search, label: "Pesquisar jurisprudência", shortcut: "J", group: "Plataforma", onSelect: () => go("app", "jurisprudence") },
-    { icon: FileSearch, label: "Resumo avançado do caso", shortcut: "C", group: "Plataforma", onSelect: () => go("app", "case-analysis") },
-    { icon: ShieldCheck, label: "Auditoria & créditos", shortcut: "A", group: "Plataforma", onSelect: () => go("app", "audit") },
-    { icon: Layers, label: "Geração em lote", shortcut: "B", group: "Plataforma", onSelect: () => go("app", "batch") },
-    { icon: FolderOpen, label: "Minutas salvas", shortcut: "D", group: "Plataforma", onSelect: () => go("app", "documents") },
-    { icon: Settings, label: "Configurações do perfil", shortcut: ",", group: "Plataforma", onSelect: () => go("app", "settings") },
+    { icon: LayoutDashboard, label: "Dashboard", group: "Plataforma", onSelect: () => go("dashboard") },
+    { icon: Wand2, label: "Gerar nova minuta", shortcut: "G", group: "Plataforma", onSelect: () => go("generator") },
+    { icon: FileText, label: "Abrir editor", shortcut: "E", group: "Plataforma", onSelect: () => go("editor") },
+    { icon: Search, label: "Pesquisar jurisprudência", shortcut: "J", group: "Plataforma", onSelect: () => go("jurisprudence") },
+    { icon: FileSearch, label: "Resumo avançado do caso", shortcut: "C", group: "Plataforma", onSelect: () => go("case-analysis") },
+    { icon: ShieldCheck, label: "Auditoria & créditos", shortcut: "A", group: "Plataforma", onSelect: () => go("audit") },
+    { icon: Layers, label: "Geração em lote", shortcut: "B", group: "Plataforma", onSelect: () => go("batch") },
+    { icon: FolderOpen, label: "Minutas salvas", shortcut: "D", group: "Plataforma", onSelect: () => go("documents") },
+    { icon: Settings, label: "Configurações do perfil", shortcut: ",", group: "Plataforma", onSelect: () => go("settings") },
     { icon: Sparkles, label: "Login / Criar conta", group: "Conta", onSelect: () => { setAuthOpen(true); setOpen(false); } },
     resolvedTheme === "dark"
       ? { icon: Sun, label: "Mudar para tema claro", group: "Aparência", onSelect: () => { setTheme("light"); setOpen(false); } }

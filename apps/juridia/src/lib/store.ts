@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type View = "landing" | "app";
-
 export type WritingStyle =
   | "formal"      // formal técnico (padrão)
   | "sintetico"   // conciso e direto
@@ -62,8 +60,6 @@ const APP_TABS: AppTab[] = [
 ];
 
 interface AppState {
-  view: View;
-  setView: (v: View) => void;
   appTab: AppTab;
   setAppTab: (t: string) => void;
   currentDocId: string | null;
@@ -103,8 +99,6 @@ const DEFAULT_PROFILE: LawyerProfile = {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      view: "app",
-      setView: (view) => set({ view }),
       appTab: "dashboard",
       setAppTab: (appTab) => set({ appTab: resolveAppTab(appTab) }),
       currentDocId: null,
@@ -145,9 +139,8 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: "juridia-store",
+      name: "atlas-juridico-store",
       partialize: (s) => ({
-        view: s.view,
         appTab: s.appTab,
         user: s.user,
         selectedSkillSlugs: s.selectedSkillSlugs,
