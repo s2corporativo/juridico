@@ -5,6 +5,7 @@ import { mapCaseDeterministic, validateMapperOutput, identifyIssues, type CaseMa
 import { canonicalHash } from "@/lib/evidence";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { canAccessCase } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -20,7 +21,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   const facts = (body.facts || "").trim();
-  const caseId = body.caseId || "default-case";
+  const caseId = (body.caseId || "").trim();
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   if (facts.length < 30) {
     return NextResponse.json({ error: "Texto insuficiente (mín. 30 caracteres)" }, { status: 400 });
@@ -225,7 +228,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const caseId = url.searchParams.get("caseId") || "default-case";
+  const caseId = (url.searchParams.get("caseId") || "").trim();
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   const snapshots = await db.intelligenceSnapshot.findMany({
     where: { caseId },
