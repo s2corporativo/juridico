@@ -12,6 +12,42 @@ import { pseudonymize } from "@/lib/pseudonymizer";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
+type AgentPlan = {
+  resumo: string;
+  perguntas: string[];
+  estrategia: string;
+  roteiro: { titulo: string; objetivo: string; fontesNecessarias: string[] }[];
+  riscos: string[];
+  pesquisaInsuficiente: string[];
+};
+
+function deterministicPlan(
+  templateSlug: string,
+  issues: { title: string; area: string; question?: string; risks?: string[] }[],
+  research: IterativeResearchResult[],
+): AgentPlan {
+  const missing = [...new Set(research.flatMap((r) => r.coverage.missing || []))];
+  const risks = [...new Set(issues.flatMap((i) => i.risks || []))].slice(0, 8);
+  const issueNames = issues.map((i) => i.title).join(", ") || "questão principal";
+  return {
+    resumo: `Planejamento de ${templateSlug} para tratar: ${issueNames}.`,
+    perguntas: [
+      "Há algum fato relevante ou documento do caso ainda não inserido no sistema?",
+      ...(missing.length ? ["Há informação adicional capaz de suprir as lacunas de pesquisa/evidência indicadas no plano?"] : []),
+    ],
+    estrategia: "Partir dos fatos comprovados, vincular afirmações às evidências dos autos, aplicar somente fontes jurídicas verificadas e vigentes, considerar precedentes favoráveis e contrários e manter em rascunho qualquer ponto não confirmado.",
+    roteiro: [
+      { titulo: "Fatos e evidências", objetivo: "Expor apenas fatos comprovados e indicar documento/página/evidence_ref_id.", fontesNecessarias: ["evidências do caso"] },
+      { titulo: "Enquadramento jurídico", objetivo: "Aplicar legislação vigente aos fatos relevantes.", fontesNecessarias: ["fontes oficiais"] },
+      { titulo: "Jurisprudência e aderência", objetivo: "Confrontar precedentes favoráveis e contrários com os fatos.", fontesNecessarias: ["tribunais oficiais"] },
+      { titulo: "Riscos e contrapontos", objetivo: "Registrar lacunas, distinções e argumentos adversos relevantes.", fontesNecessarias: ["pesquisa bilateral"] },
+      { titulo: "Pedidos e providências", objetivo: "Formular pedidos compatíveis com fatos, provas e fundamentos verificados.", fontesNecessarias: ["legislação aplicável"] },
+    ],
+    riscos,
+    pesquisaInsuficiente: missing,
+  };
+}
+
 function sha(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
@@ -75,14 +111,14 @@ export async function POST(req: NextRequest) {
       area: r.area,
       coverage: r.coverage,
       insufficient: r.insufficient,
-      laws: r.laws.slice(0, 4).map((x) => ({
+      laws: r.laws.slice(0, 2).map((x) => ({
         id: x.source.id,
         diploma: x.source.diploma,
         numero: x.source.numero,
         urlOficial: x.source.urlOficial,
         vigente: x.source.vigente,
       })),
-      atlasKnowledge: r.atlasKnowledge.slice(0, 4).map((x) => ({
+      atlasKnowledge: r.atlasKnowledge.slice(0, 2).map((x) => ({
         documentId: x.documentId,
         slug: x.slug,
         title: x.title,
@@ -91,11 +127,11 @@ export async function POST(req: NextRequest) {
         source: x.source,
         sourceUrl: x.sourceUrl,
         reliability: x.reliability,
-        excerpt: x.text.slice(0, 320),
+        excerpt: x.text.slice(0, 180),
         score: x.score,
         semanticScore: x.semanticScore,
       })),
-      precedents: r.precedents.slice(0, 4).map((x) => ({
+      precedents: r.precedents.slice(0, 2).map((x) => ({
         name: x.name,
         url: x.url,
         favorable: x.favorable,
@@ -104,28 +140,42 @@ export async function POST(req: NextRequest) {
       })),
     }));
 
-    const { data: plan, response } = await aiGatewayJson<{
-      resumo: string;
-      perguntas: string[];
-      estrategia: string;
-      roteiro: { titulo: string; objetivo: string; fontesNecessarias: string[] }[];
-      riscos: string[];
-      pesquisaInsuficiente: string[];
-    }>({
-      taskType: routed.area === "penal" ? "criminal" : "analise_caso",
-      temperature: 0.15,
-      maxTokens: 1800,
-      messages: [
-        {
-          role: "system",
-          content: "Planeje a peça antes de redigir. Use somente os fatos informados e as fontes retornadas pela pesquisa, incluindo o acervo jurídico interno. Faça perguntas se houver lacunas. Não redija a peça. Não invente fonte. Diferencie fonte oficial de síntese interna. Responda JSON com resumo, perguntas, estrategia, roteiro, riscos e pesquisaInsuficiente.",
-        },
-        {
-          role: "user",
-          content: JSON.stringify({ template: input.templateSlug, facts, issues, skills: routed.matches.slice(0, 8).map((s) => s.slug), research: researchContext }),
-        },
-      ],
-    });
+    let plan: AgentPlan = deterministicPlan(input.templateSlug, issues, research);
+    let planProvider = { provider: "deterministic", model: "agentic-plan-v2", inputTokens: 0, outputTokens: 0 };
+    if (process.env.AGENTIC_PLAN_LLM !== "false") {
+      try {
+        const llmPlan = await aiGatewayJson<AgentPlan>({
+          taskType: routed.area === "penal" ? "criminal" : "analise_caso",
+          temperature: 0.1,
+          maxTokens: 650,
+          messages: [
+            {
+              role: "system",
+              content: "Enriqueça o plano determinístico sem inventar fatos ou fontes. Preserve a exigência de documento/página/evidence_ref_id, pesquisa bilateral e revisão humana. Responda apenas JSON com resumo, perguntas, estrategia, roteiro, riscos e pesquisaInsuficiente.",
+            },
+            {
+              role: "user",
+              content: JSON.stringify({
+                template: input.templateSlug,
+                facts: facts.slice(0, 1800),
+                deterministicPlan: plan,
+                issues: issues.map((i) => ({ title: i.title, area: i.area })),
+                research: researchContext,
+              }),
+            },
+          ],
+        });
+        plan = { ...plan, ...llmPlan.data };
+        planProvider = {
+          provider: llmPlan.response.provider,
+          model: llmPlan.response.model,
+          inputTokens: llmPlan.response.inputTokens,
+          outputTokens: llmPlan.response.outputTokens,
+        };
+      } catch {
+        // O plano determinístico permanece válido e auditável.
+      }
+    }
 
     const inputHash = sha({ templateSlug: input.templateSlug, fields: input.fields, caseId: input.caseId || null });
     const storedPlan = pseudonymize(JSON.stringify(plan)).text;
@@ -137,10 +187,10 @@ export async function POST(req: NextRequest) {
         taskType: "draft",
         status: "paused_hitl",
         inputHash: sha({ inputHash, nonce: crypto.randomUUID() }),
-        contractVersion: "agentic_draft_v1",
-        providerSnapshot: JSON.stringify({ provider: response.provider, model: response.model }),
-        tokensIn: response.inputTokens,
-        tokensOut: response.outputTokens,
+        contractVersion: "agentic_draft_v2",
+        providerSnapshot: JSON.stringify({ provider: planProvider.provider, model: planProvider.model }),
+        tokensIn: planProvider.inputTokens,
+        tokensOut: planProvider.outputTokens,
         tokensBudget: 30000,
         hitlReason: "approve_plan",
         hitlData: JSON.stringify({
