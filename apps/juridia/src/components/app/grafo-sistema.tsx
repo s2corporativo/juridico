@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { useAppStore } from "@/lib/store";
 
 interface CaseItem { id: string; title: string; }
 
@@ -166,24 +167,35 @@ function layout(nodes: GraphNode[], edges: GraphEdge[], width: number, height: n
 }
 
 export function GrafoSistema() {
+  const { currentCaseId, setCurrentCaseId } = useAppStore();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedCaseId, setSelectedCaseId] = useState<string>("default-case");
+  const [selectedCaseId, setSelectedCaseId] = useState<string>(currentCaseId || "");
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/cases")
       .then((r) => r.json())
       .then((d) => {
-        const list: CaseItem[] = [{ id: "default-case", title: "Caso padrão (default-case)" }, ...(d.cases || []).map((c: { id: string; title: string }) => ({ id: c.id, title: c.title }))];
+        const list: CaseItem[] = (d.cases || []).map((item: { id: string; title: string }) => ({ id: item.id, title: item.title }));
         setCases(list);
+        if (!selectedCaseId && list.length) {
+          setSelectedCaseId(list[0].id);
+          setCurrentCaseId(list[0].id);
+        }
       })
-      .catch(() => setCases([{ id: "default-case", title: "Caso padrão" }]));
+      .catch(() => setCases([]));
   }, []);
 
   useEffect(() => {
+    if (!selectedCaseId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
+    setLoading(true);
     fetch(`/api/intelligence/graph?caseId=${encodeURIComponent(selectedCaseId)}`)
       .then((r) => r.json())
       .then((d: GraphData) => { if (!cancelled) setData(d); })
@@ -247,8 +259,8 @@ export function GrafoSistema() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
-              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <Select value={selectedCaseId || undefined} onValueChange={(value) => { setSelectedCaseId(value); setCurrentCaseId(value); }}>
+              <SelectTrigger className="w-[220px]"><SelectValue placeholder="Selecione um caso" /></SelectTrigger>
               <SelectContent>
                 {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
               </SelectContent>
