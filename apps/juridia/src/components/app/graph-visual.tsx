@@ -43,7 +43,7 @@ const NODE_LABELS: Record<string, string> = {
   risk: "Risco", evidence: "Evidência", thesis: "Tese", precedent: "Precedente",
 };
 
-export function GraphVisual({ caseId = "default-case" }: { caseId?: string }) {
+export function GraphVisual({ caseId }: { caseId: string }) {
   const [nodes, setNodes] = useState<GraphNodeData[]>([]);
   const [edges, setEdges] = useState<GraphEdgeData[]>([]);
   const [loading, setLoading] = useState(true);
