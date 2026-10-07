@@ -53,7 +53,11 @@ export async function POST(req: NextRequest) {
 
   if ((body?.phase || "plan") === "plan") {
     const routed = await routeSkills(facts);
-    const issues = routed.issues.length ? routed.issues.slice(0, 3) : [{ key: "questao_principal", title: input.templateSlug, area: routed.area || "civil" }];
+    const configuredIssueLimit = Number(process.env.AGENTIC_ISSUE_LIMIT || 3);
+    const issueLimit = Number.isFinite(configuredIssueLimit) ? Math.max(1, Math.min(configuredIssueLimit, 3)) : 3;
+    const issues = routed.issues.length
+      ? routed.issues.slice(0, issueLimit)
+      : [{ key: "questao_principal", title: input.templateSlug, area: routed.area || "civil" }];
     const research: IterativeResearchResult[] = [];
     const configuredCycles = Number(process.env.AGENTIC_RESEARCH_MAX_CYCLES || 3);
     const maxCycles = Number.isFinite(configuredCycles) ? Math.max(1, Math.min(configuredCycles, 4)) : 3;
@@ -71,9 +75,33 @@ export async function POST(req: NextRequest) {
       area: r.area,
       coverage: r.coverage,
       insufficient: r.insufficient,
-      laws: r.laws.slice(0, 8).map((x) => ({ id: x.source.id, diploma: x.source.diploma, numero: x.source.numero, urlOficial: x.source.urlOficial, vigente: x.source.vigente })),
-      atlasKnowledge: r.atlasKnowledge.slice(0, 10).map((x) => ({ documentId: x.documentId, slug: x.slug, title: x.title, type: x.documentType, area: x.area, source: x.source, sourceUrl: x.sourceUrl, reliability: x.reliability, excerpt: x.text.slice(0, 700), score: x.score, semanticScore: x.semanticScore })),
-      precedents: r.precedents.slice(0, 10).map((x) => ({ name: x.name, url: x.url, favorable: x.favorable, relevance: x.relevance, official: x.verified })),
+      laws: r.laws.slice(0, 4).map((x) => ({
+        id: x.source.id,
+        diploma: x.source.diploma,
+        numero: x.source.numero,
+        urlOficial: x.source.urlOficial,
+        vigente: x.source.vigente,
+      })),
+      atlasKnowledge: r.atlasKnowledge.slice(0, 4).map((x) => ({
+        documentId: x.documentId,
+        slug: x.slug,
+        title: x.title,
+        type: x.documentType,
+        area: x.area,
+        source: x.source,
+        sourceUrl: x.sourceUrl,
+        reliability: x.reliability,
+        excerpt: x.text.slice(0, 320),
+        score: x.score,
+        semanticScore: x.semanticScore,
+      })),
+      precedents: r.precedents.slice(0, 4).map((x) => ({
+        name: x.name,
+        url: x.url,
+        favorable: x.favorable,
+        relevance: x.relevance,
+        official: x.verified,
+      })),
     }));
 
     const { data: plan, response } = await aiGatewayJson<{
