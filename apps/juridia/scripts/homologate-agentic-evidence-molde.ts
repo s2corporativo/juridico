@@ -154,8 +154,9 @@ async function main() {
   assert(draftRes.status === 200, `redação agêntica falhou: ${JSON.stringify(draftBody)}`);
   assert(draftBody.status === "completed", "AgentRun não foi concluído");
   assert(draftBody.result?.document?.id, "documento final não foi persistido");
+  assert(Array.isArray(draftBody.result?.document?.skillSlugs) && draftBody.result.document.skillSlugs.length > 0, "nenhuma skill jurídica foi aplicada à geração");
   assert(Array.isArray(draftBody.result?.evidenceReferences) && draftBody.result.evidenceReferences.length >= 2, "resultado não expôs referências probatórias");
-  assert(draftBody.result.evidenceReferences.every((x: { fileName?: string | null; pageNumber?: number | null }) => x.fileName && x.pageNumber), "referência sem documento/página");
+  assert(draftBody.result.evidenceReferences.every((x: { documentId?: string | null; fileName?: string | null; pageNumber?: number | null }) => x.documentId && x.fileName && x.pageNumber), "referência sem documentId/documento/página");
   assert(draftBody.result?.evidenceGate, "Evidence Gate ausente");
   if (draftBody.result.evidenceGate.total === 0) {
     assert(draftBody.result.evidenceGate.bloquear === true, "minuta sem marcador de evidência deveria falhar fechado");
@@ -230,6 +231,7 @@ async function main() {
       evidenceGate: draftBody.result.evidenceGate,
       citationGate: draftBody.result.citationGate,
       documentStatus: draftBody.result.document.status,
+      skillSlugs: draftBody.result.document.skillSlugs,
     },
     molde: {
       changes: moldeBody.changes.length,
