@@ -1,17 +1,5 @@
-// OIDC core do JuridIA (EJC Identity Provider) — implementação profissional.
-//
-// Conforme docs/ejc-sso-preparacao.md (regra de ativação do Atlas):
-// - Authorization Code Flow com PKCE (S256) — sem fluxo implícito, sem token na URL.
-// - ID Token assinado com RS256; chave privada nunca sai do servidor; JWKS público.
-// - Issuer por env (JURIDIA_OIDC_ISSUER); HTTPS obrigatório em produção (fail-closed).
-// - Cliente registrado por env (EJC_OIDC_CLIENT_ID/SECRET/REDIRECT_URI) — sem
-//   registro configurado, o endpoint de token fica indisponível (fail-closed).
-// - Papel (role) sempre do registro do usuário autenticado — nunca aceito do
-//   chamador; papel desconhecido degrada para "user" (allowlist do Atlas).
-//
-// Compatibilidade: a versão anterior (HS256 com fallback de segredo inseguro e
-// /token aberto que emitia JWT "admin" para qualquer e-mail) foi removida por
-// permitir fabricação de identidade — vulnerabilidade corrigida nesta versão.
+// OIDC Identity Provider do JuridIA para o Atlas Jurídico.
+// Authorization Code + PKCE S256, tokens RS256 e configuração fail-closed.
 
 import { createHash, createPublicKey, createSign, createVerify, generateKeyPairSync, randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -21,7 +9,7 @@ const KEY_KID = "juridia-rs256-1";
 const ID_TOKEN_TTL_SECONDS = 600; // 10 min — curto: só para o handshake SSO
 const CODE_TTL_SECONDS = 120; // código single-use, curto
 
-export const OIDC_AUDIENCE = "atlas-forense";
+export const OIDC_AUDIENCE = "atlas-juridico";
 export const OIDC_SCOPES = ["openid", "profile", "email", "role", "persona"];
 export const OIDC_SUPPORTED_ROLES = ["admin", "advogado", "user", "promotor", "juiz"];
 
@@ -37,25 +25,25 @@ export interface OidcIssuerConfig {
 /**
  * Configuração do IdP. Em produção exige JURIDIA_OIDC_ISSUER HTTPS e o cliente
  * registrado; sem isso, authorize/token retornam 503 (nunca segredo padrão).
- * Em desenvolvimento, um issuer localhost e um cliente "atlas-forense" local
- * podem ser usados para homologação, desde que EJC_SSO_DEV_ALLOW_LOCAL=1.
+ * Em desenvolvimento, um issuer localhost e um cliente "atlas-juridico" local
+ * podem ser usados para homologação, desde que JURIDIA_OIDC_DEV_ALLOW_LOCAL=1.
  */
 export function getIssuerConfig(): OidcIssuerConfig | { error: string } {
   const issuer = process.env.JURIDIA_OIDC_ISSUER?.trim().replace(/\/$/, "");
-  const clientId = process.env.EJC_OIDC_CLIENT_ID?.trim();
-  const clientSecret = process.env.EJC_OIDC_CLIENT_SECRET?.trim();
-  const redirectUris = (process.env.EJC_OIDC_REDIRECT_URIS ?? "")
+  const clientId = process.env.ATLAS_OIDC_CLIENT_ID?.trim();
+  const clientSecret = process.env.ATLAS_OIDC_CLIENT_SECRET?.trim();
+  const redirectUris = (process.env.ATLAS_OIDC_REDIRECT_URIS ?? "")
     .split(",").map(s => s.trim()).filter(Boolean);
-  const devAllow = process.env.EJC_SSO_DEV_ALLOW_LOCAL === "1" && process.env.NODE_ENV !== "production";
+  const devAllow = process.env.JURIDIA_OIDC_DEV_ALLOW_LOCAL === "1" && process.env.NODE_ENV !== "production";
 
   if (!issuer || !clientId || !clientSecret || redirectUris.length === 0) {
     if (devAllow) {
       const localIssuer = "http://localhost:3005/api/auth/oidc";
       return {
         issuer: localIssuer,
-        clientId: "atlas-forense",
-        clientSecret: "atlas-forense-local-secret",
-        redirectUris: ["http://localhost:3000/api/ejc-sso/callback"],
+        clientId: "atlas-juridico",
+        clientSecret: "atlas-juridico-local-secret",
+        redirectUris: ["http://localhost:3000/api/sso/callback"],
       };
     }
     return { error: "sso_not_configured" };

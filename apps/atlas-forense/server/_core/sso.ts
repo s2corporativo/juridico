@@ -40,7 +40,7 @@ function b64u(buf: Buffer): string {
 }
 
 function getStateSecret(): string {
-  const secret = ENV.cookieSecret || process.env.SESSION_SECRET || "";
+  const secret = ENV.sessionSecret;
   if (secret) return secret;
   if (ENV.isProduction) {
     throw new Error("JWT_SECRET ausente — impossível assinar o state do SSO em produção");
@@ -125,8 +125,7 @@ function notEnabled(res: Response, runtime: ReturnType<typeof getAtlasSsoRuntime
 
 /**
  * GET /api/sso/start — inicia o fluxo: gera state+PKCE, grava cookie e
- * redireciona ao /authorize do JuridIA. Aprovação do titular já concedida; a
- * ativação operacional depende somente do ambiente (fail-closed).
+ * redireciona ao endpoint de autorização do JuridIA. A ativação é fail-closed e depende da configuração do ambiente.
  */
 export async function ssoStart(req: Request, res: Response): Promise<void> {
   const runtime = getAtlasSsoRuntime(callbackUri(req));
@@ -231,7 +230,7 @@ export async function ssoCallback(req: Request, res: Response): Promise<void> {
     const jwks = getJwks(discovery.jwks_uri);
     const { payload } = await jwtVerify(tokens.id_token, jwks, {
       issuer: runtime.issuer,
-      audience: "atlas-forense",
+      audience: "atlas-juridico",
       clockTolerance: 30,
     });
     // Anti-replay: o nonce do token deve bater com o state assinado (jose 6
@@ -248,10 +247,7 @@ export async function ssoCallback(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Regra documentada (docs/juridia-sso-preparacao.md): "claim ausente, desconhecida
-    // ou divergente resulta em user; nunca elevar privilégio por padrão" e a
-    // promoção a admin é MANUAL (etapa 5, após primeira sessão válida e revisão
-    // humana). A claim `role` é apenas registrada nos logs para essa revisão.
+    // Privilégio recebido do IdP nunca promove automaticamente o usuário no Atlas. A promoção administrativa é local e explícita.
     const claimedRole = typeof payload.role === "string" ? payload.role.toLowerCase() : "";
     const role = "user" as const;
 

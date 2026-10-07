@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { ejcIntegrationManifest } from "@shared/ejc-integration";
+import { atlasIntegrationManifest } from "@shared/integration";
 import { ArrowLeft, ArrowUpRight, BookOpenCheck, CircleAlert, Database, FileSearch, KeyRound, Landmark, Scale, ShieldCheck, Wifi } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -21,7 +21,7 @@ export default function PublicSourcesPage() {
   const dataJud = trpc.datajud.status.useQuery();
   const [query, setQuery] = useState("jurisprudência");
   const [deferredQuery, setDeferredQuery] = useState(query);
-  const routes = useMemo(() => Object.fromEntries(ejcIntegrationManifest.modules.map(module => [module.key, module.route])) as Record<string, string>, []);
+  const routes = useMemo(() => Object.fromEntries(atlasIntegrationManifest.modules.map(module => [module.key, module.route])) as Record<string, string>, []);
   useEffect(() => {
     const timer = window.setTimeout(() => setDeferredQuery(query), 300);
     return () => window.clearTimeout(timer);
@@ -33,7 +33,7 @@ export default function PublicSourcesPage() {
 
   return <div className="sources-shell">
     <aside className="sources-rail">
-      <a className="compendium-brand" href="/"><span className="brand-crest"><Scale size={20} /></span><span><small>Atlas Forense · JEC</small><strong>Fontes<br />Públicas</strong></span></a>
+      <a className="compendium-brand" href="/"><span className="brand-crest"><Scale size={20} /></span><span><small>Atlas Jurídico · JEC</small><strong>Fontes<br />Públicas</strong></span></a>
       <div className="sources-rail-copy"><span className="eyebrow">MATRIZ DE FONTE</span><p>O que está integrado, o que depende de credencial e o que exige consulta humana.</p></div>
       <nav className="sources-nav" aria-label="Navegação de fontes públicas"><a href="#matriz"><span>01</span>Matriz de fontes</a><a href="#stj"><span>02</span>Catálogo STJ</a><a href="#limites"><span>03</span>Limites de uso</a></nav>
       <div className="sources-rail-foot"><ShieldCheck size={16} /><p>Sem scraping, sem contorno de CAPTCHA e sem publicação automática de conteúdo externo.</p></div>

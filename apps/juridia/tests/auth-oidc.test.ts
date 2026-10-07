@@ -83,7 +83,7 @@ function assert(condition: boolean, name: string, detail?: string) {
 // ── Config do IdP (fail-closed) ──────────────────────────────────────────────
 {
   const prevEnv = process.env.NODE_ENV;
-  for (const k of ["JURIDIA_OIDC_ISSUER", "EJC_OIDC_CLIENT_ID", "EJC_OIDC_CLIENT_SECRET", "EJC_OIDC_REDIRECT_URIS", "EJC_SSO_DEV_ALLOW_LOCAL"]) {
+  for (const k of ["JURIDIA_OIDC_ISSUER", "ATLAS_OIDC_CLIENT_ID", "ATLAS_OIDC_CLIENT_SECRET", "ATLAS_OIDC_REDIRECT_URIS", "JURIDIA_OIDC_DEV_ALLOW_LOCAL"]) {
     delete process.env[k];
   }
   Object.assign(process.env, { NODE_ENV: "production" });
@@ -96,23 +96,23 @@ function assert(condition: boolean, name: string, detail?: string) {
   }
 
   process.env.JURIDIA_OIDC_ISSUER = "http://sso.inseguro.example/api/auth/oidc";
-  process.env.EJC_OIDC_CLIENT_ID = "atlas-forense";
-  process.env.EJC_OIDC_CLIENT_SECRET = "segredo-producao";
-  process.env.EJC_OIDC_REDIRECT_URIS = "https://atlas.exemplo.org/api/ejc-sso/callback";
+  process.env.ATLAS_OIDC_CLIENT_ID = "atlas-juridico";
+  process.env.ATLAS_OIDC_CLIENT_SECRET = "segredo-producao";
+  process.env.ATLAS_OIDC_REDIRECT_URIS = "https://atlas.exemplo.org/api/sso/callback";
   const insecure = getIssuerConfig();
   assert("error" in insecure && insecure.error === "insecure_issuer_https_required", "issuer HTTP em produção é rejeitado");
 
   process.env.JURIDIA_OIDC_ISSUER = "https://sso.exemplo.org/api/auth/oidc";
   const cfg = getIssuerConfig();
   assert(!("error" in cfg) && cfg.issuer.startsWith("https://"), "issuer HTTPS é aceito em produção");
-  assert(!("error" in cfg) && cfg.redirectUris.includes("https://atlas.exemplo.org/api/ejc-sso/callback"), "redirect_uri registrada é aceita");
+  assert(!("error" in cfg) && cfg.redirectUris.includes("https://atlas.exemplo.org/api/sso/callback"), "redirect_uri registrada é aceita");
 
   Object.assign(process.env, { NODE_ENV: prevEnv });
 }
 
 // ── Audiência fixa do Atlas ──────────────────────────────────────────────────
 {
-  assert(OIDC_AUDIENCE === "atlas-forense", "audiência do ID Token é atlas-forense");
+  assert(OIDC_AUDIENCE === "atlas-juridico", "audiência do ID Token é atlas-juridico");
 }
 
 console.log("\n=== RESULTADO ===");

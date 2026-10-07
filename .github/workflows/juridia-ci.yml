@@ -35,6 +35,8 @@ jobs:
           NODE_ENV: production
           JURIDIA_SESSION_SECRET: ci-only-not-production-secret-0123456789
           JWT_SECRET: ci-only-not-production-secret-0123456789
-          EJC_OIDC_CLIENT_SECRET: ci-only-not-production-secret
-          EJC_OIDC_ISSUER: https://example.invalid
+          ATLAS_OIDC_CLIENT_SECRET: ci-only-not-production-secret
+          JURIDIA_OIDC_ISSUER: https://example.invalid
+          ATLAS_OIDC_CLIENT_ID: atlas-juridico
+          ATLAS_OIDC_REDIRECT_URIS: https://atlas.example.invalid/api/sso/callback
         run: bun run build

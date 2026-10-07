@@ -1,5 +1,5 @@
 [Unit]
-Description=Atlas Forense EJC
+Description=Atlas Jurídico
 After=network-online.target mariadb.service
 Wants=network-online.target
 
@@ -7,8 +7,8 @@ Wants=network-online.target
 Type=simple
 User=atlas
 Group=atlas
-WorkingDirectory=/opt/atlas-ejc/current
-EnvironmentFile=/etc/atlas-ejc/atlas.env
+WorkingDirectory=/opt/atlas-juridico/current/apps/atlas-forense
+EnvironmentFile=/etc/atlas-juridico/atlas.env
 Environment=HOST=127.0.0.1
 ExecStart=/usr/bin/node dist/index.js
 Restart=on-failure
@@ -30,7 +30,7 @@ RestrictRealtime=true
 RestrictNamespaces=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 SystemCallArchitectures=native
-ReadWritePaths=/var/lib/atlas-ejc
+ReadWritePaths=/var/lib/atlas-juridico
 
 [Install]
 WantedBy=multi-user.target

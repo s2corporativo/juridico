@@ -13,6 +13,7 @@ export interface AtlasSsoRuntime {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+  appUrl: string;
 }
 
 type EnvSource = Record<string, string | undefined>;
@@ -24,6 +25,7 @@ export function getAtlasSsoRuntime(redirectUri?: string): AtlasSsoRuntime {
   const clientId = env.ATLAS_OIDC_CLIENT_ID?.trim() ?? "";
   const clientSecret = env.ATLAS_OIDC_CLIENT_SECRET?.trim() ?? "";
   const configuredRedirect = env.ATLAS_SSO_REDIRECT_URI?.trim() ?? "";
+  const appUrl = env.JURIDIA_APP_URL?.trim().replace(/\/$/, "") ?? "";
   const missingConfiguration = ATLAS_SSO_REQUIRED_ENV.filter((key) => !env[key]?.trim());
 
   const base = {
@@ -32,6 +34,7 @@ export function getAtlasSsoRuntime(redirectUri?: string): AtlasSsoRuntime {
     clientId,
     clientSecret,
     redirectUri: configuredRedirect || redirectUri || "",
+    appUrl,
   };
 
   if (!explicitlyEnabled) return { ...base, status: "disabled" };
@@ -49,6 +52,7 @@ export function getAtlasSsoReadiness(env: EnvSource = process.env) {
   const missingConfiguration = ATLAS_SSO_REQUIRED_ENV.filter((key) => !env[key]?.trim());
   const enabled = env.ATLAS_SSO_ENABLED?.trim() === "true";
   const issuer = env.JURIDIA_OIDC_ISSUER?.trim() ?? "";
+  const appUrl = env.JURIDIA_APP_URL?.trim().replace(/\/$/, "") ?? "";
   const localHttp = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(issuer);
 
   let status: string;
@@ -62,6 +66,7 @@ export function getAtlasSsoReadiness(env: EnvSource = process.env) {
     status,
     configurationComplete: missingConfiguration.length === 0,
     issuer,
+    appUrl,
     protocol: "oidc_authorization_code" as const,
     callbackPath: "/api/sso/callback",
     requiredClaims: ["iss", "sub", "aud", "exp"] as const,

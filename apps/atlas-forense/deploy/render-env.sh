@@ -14,14 +14,14 @@
 #   - Backup do arquivo anterior é feito antes de reescrever (0600).
 set -euo pipefail
 
-ATLAS_ENV="${ATLAS_ENV:-/etc/atlas-ejc/atlas.env}"
+ATLAS_ENV="${ATLAS_ENV:-/etc/atlas-juridico/atlas.env}"
 ATLAS_GROUP="${ATLAS_GROUP:-atlas}"
 JURIDIA_ENV="${JURIDIA_ENV:-/etc/juridia/juridia.env}"
 JURIDIA_GROUP="${JURIDIA_GROUP:-juridia}"
 
-# Domínio público do Atlas e issuer OIDC do EJC — AJUSTE PARA OS VALORES REAIS.
+# Domínio público do Atlas e issuer OIDC do JuridIA — AJUSTE PARA OS VALORES REAIS.
 ATLAS_PUBLIC_URL="${ATLAS_PUBLIC_URL:-https://atlas.depaulateixeira.adv.br}"
-EJC_ISSUER="${EJC_ISSUER:-https://sso.dominio-do-ejc.adv.br/api/auth/oidc}"
+JURIDIA_ISSUER="${JURIDIA_ISSUER:-https://sso.juridia.depaulateixeira.adv.br/api/auth/oidc}"
 
 MODE=""; FORCE_VAR=""
 for arg in "$@"; do
@@ -48,25 +48,25 @@ is_strong() { # >=32 chars
 entries=(
   "A|NODE_ENV|lit|production"
   "A|PORT|lit|3010"
-  "A|DATABASE_URL|ext|mysql://atlas_app:SENHA@127.0.0.1:3306/atlas_ejc"
+  "A|DATABASE_URL|ext|mysql://atlas_app:SENHA@127.0.0.1:3306/atlas_juridico"
   "A|JWT_SECRET|gen|"
-  "A|SESSION_SECRET|gen|"
   "A|NOTIFICATION_SERVICE_PORT|lit|3003"
   "A|NOTIFICATION_INTERNAL_SECRET|gen|"
   "A|ATLAS_ALLOWED_ORIGINS|lit|$ATLAS_PUBLIC_URL"
   "A|DATAJUD_API_KEY|ext|"
-  "A|EJC_SSO_ENABLED|lit|true"
-  "A|EJC_OIDC_ISSUER|lit|$EJC_ISSUER"
-  "A|EJC_OIDC_CLIENT_ID|lit|atlas-forense"
-  "A|EJC_OIDC_CLIENT_SECRET|gen|"
+  "A|ATLAS_SSO_ENABLED|lit|true"
+  "A|JURIDIA_APP_URL|lit|${JURIDIA_ISSUER%/api/auth/oidc}"
+  "A|JURIDIA_OIDC_ISSUER|lit|$JURIDIA_ISSUER"
+  "A|ATLAS_OIDC_CLIENT_ID|lit|atlas-juridico"
+  "A|ATLAS_OIDC_CLIENT_SECRET|gen|"
   "J|NODE_ENV|lit|production"
   "J|PORT|lit|3005"
   "J|DATABASE_URL|ext|file:/opt/juridia/data/juridia.db"
   "J|JURIDIA_SESSION_SECRET|gen|"
-  "J|JURIDIA_OIDC_ISSUER|lit|$EJC_ISSUER"
-  "J|EJC_OIDC_CLIENT_ID|lit|atlas-forense"
-  "J|EJC_OIDC_CLIENT_SECRET|gen|"
-  "J|EJC_OIDC_REDIRECT_URIS|lit|$ATLAS_PUBLIC_URL/api/ejc-sso/callback"
+  "J|JURIDIA_OIDC_ISSUER|lit|$JURIDIA_ISSUER"
+  "J|ATLAS_OIDC_CLIENT_ID|lit|atlas-juridico"
+  "J|ATLAS_OIDC_CLIENT_SECRET|gen|"
+  "J|ATLAS_OIDC_REDIRECT_URIS|lit|$ATLAS_PUBLIC_URL/api/sso/callback"
 )
 
 get_var() { # $1=arquivo $2=VAR -> imprime valor ou vazio
@@ -85,7 +85,7 @@ set_env_file() { # $1=arquivo $2=VAR $3=valor
 }
 
 # CLIENT_SECRET e issuer são COMPARTILHADOS (mesmo cliente OIDC nos dois apps)
-SHARED_SECRET_VARS="EJC_OIDC_CLIENT_SECRET"
+SHARED_SECRET_VARS="ATLAS_OIDC_CLIENT_SECRET"
 
 STATUS=0
 declare -a ACTIONS
@@ -145,16 +145,16 @@ for entry in "${entries[@]}"; do
 done
 
 # Perigos: variáveis proibidas em produção
-[ -f "$JURIDIA_ENV" ] && grep -q "^[[:space:]]*EJC_SSO_DEV_ALLOW_LOCAL=1" "$JURIDIA_ENV" && {
-  echo "PERIGO   J EJC_SSO_DEV_ALLOW_LOCAL=1 presente em produção — REMOVA"; STATUS=1; } || true
+[ -f "$JURIDIA_ENV" ] && grep -q "^[[:space:]]*JURIDIA_OIDC_DEV_ALLOW_LOCAL=1" "$JURIDIA_ENV" && {
+  echo "PERIGO   J JURIDIA_OIDC_DEV_ALLOW_LOCAL=1 presente em produção — REMOVA"; STATUS=1; } || true
 
 if [ "$MODE" = "render" ]; then
   printf '%s\n' "${ACTIONS[@]:-nenhuma ação necessária}"
   echo
   echo "Próximos passos:"
   echo "  1. Confira DATABASE_URL (senha do MariaDB) e DATAJUD_API_KEY — são fornecidas, não geradas."
-  echo "  2. Ajuste EJC_OIDC_ISSUER/EJC_OIDC_REDIRECT_URIS se o domínio do EJC mudar."
-  echo "  3. systemctl restart atlas-ejc  (e o serviço do JuridIA, porta 3005)"
+  echo "  2. Ajuste JURIDIA_OIDC_ISSUER/ATLAS_OIDC_REDIRECT_URIS se o domínio do JuridIA mudar."
+  echo "  3. systemctl restart atlas-juridico  (e o serviço do JuridIA, porta 3005)"
   echo "  4. Valide: curl -fsS http://127.0.0.1:3010/healthz e /healthz do JuridIA"
   echo "  5. Rode: apps/juridia/scripts/contract-check.mjs contra a porta 3005"
 else
