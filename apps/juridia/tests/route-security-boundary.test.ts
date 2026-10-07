@@ -43,16 +43,16 @@ describe("route security boundary", () => {
     expect(violations).toEqual([]);
   });
 
-  test("não há default-case ou usuário demo no código operacional/schema", () => {
+  test("não há default-case, usuário demo ou bypass allowUnsafe no código operacional/schema", () => {
     const violations: string[] = [];
     for (const path of walk(SRC).filter((p) => /\.(ts|tsx)$/.test(p))) {
       const source = readFileSync(path, "utf8");
-      if (/default-case|demo@juridia/i.test(source)) {
+      if (/default-case|demo@juridia|allowUnsafe/i.test(source)) {
         violations.push(relative(SRC, path).replaceAll("\\", "/"));
       }
     }
     const schema = readFileSync(SCHEMA, "utf8");
-    if (/default-case|demo@juridia/i.test(schema)) violations.push("prisma/schema.prisma");
+    if (/default-case|demo@juridia|allowUnsafe/i.test(schema)) violations.push("prisma/schema.prisma");
     expect(violations).toEqual([]);
   });
 });
