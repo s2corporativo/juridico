@@ -86,7 +86,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .update(normalizedPages.map((p) => `p.${p.pageNumber}\n${p.text}`).join("\n\f\n"))
     .digest("hex");
 
-  const evidence = [];
+  const evidence: Awaited<ReturnType<typeof createEvidence>>[] = [];
   for (const page of normalizedPages) {
     const report = security.find((x) => x.pageNumber === page.pageNumber)!.report;
     const chunks = page.text
