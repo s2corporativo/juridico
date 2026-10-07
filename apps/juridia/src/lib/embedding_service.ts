@@ -12,7 +12,7 @@ function baseUrl(): string {
 }
 
 export function embeddingModel(): string {
-  return process.env.OLLAMA_EMBEDDING_MODEL?.trim() || "embeddinggemma";
+  return process.env.OLLAMA_EMBEDDING_MODEL?.trim() || "nomic-embed-text";
 }
 
 export function embeddingsEnabled(): boolean {
@@ -28,7 +28,7 @@ export async function embedTexts(input: string[]): Promise<EmbeddingBatchResult 
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ model, input, truncate: true }),
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(300_000),
   });
   if (!resp.ok) throw new Error(`Embedding provider ${resp.status}: ${await resp.text()}`);
   const data = await resp.json() as { model?: string; embeddings?: number[][] };

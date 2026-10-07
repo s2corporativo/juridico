@@ -222,6 +222,77 @@ model LegalSource {
   @@index([tipo, vigente])
 }
 
+// Acervo jurídico legado EJC/Atlas — preservado sem perda de proveniência.
+model KnowledgeDocument {
+  id                            String   @id @default(cuid())
+  slug                          String   @unique
+  titulo                        String
+  tipoDocumento                 String
+  area                          String
+  subarea                       String?
+  assunto                       String?
+  subassunto                    String?
+  prioridade                    String   @default("P2")
+  lote                          String?
+  conteudo                      String
+  metadados                     String?
+  tags                          String?
+  fonte                         String?
+  urlFonte                      String?
+  dataConsulta                  String?
+  confiabilidade                String   @default("B")
+  vigente                       Boolean  @default(true)
+  status                        String   @default("ATIVO")
+  dadosFicticios                Boolean  @default(false)
+  versao                        Int      @default(1)
+  dataUltimaVerificacao         String?
+  proximaVerificacaoRecomendada String?
+  municipio                     String?
+  codigoIbgeMunicipio           String?
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+
+  chunks         KnowledgeChunk[]
+  relacaoOrigem  KnowledgeRelationship[] @relation("origem")
+  relacaoDestino KnowledgeRelationship[] @relation("destino")
+
+  @@index([tipoDocumento])
+  @@index([area])
+  @@index([prioridade])
+  @@index([confiabilidade])
+  @@index([status, vigente, dadosFicticios])
+}
+
+model KnowledgeChunk {
+  id             String            @id @default(cuid())
+  documentId     String
+  document       KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  ordem          Int
+  contexto       String
+  texto          String
+  palavras       Int               @default(0)
+  embedding      String?
+  embeddingModel String?
+  embeddedAt     DateTime?
+
+  @@index([documentId])
+  @@index([embeddingModel])
+}
+
+model KnowledgeRelationship {
+  id        String            @id @default(cuid())
+  origemId  String
+  origem    KnowledgeDocument @relation("origem", fields: [origemId], references: [id], onDelete: Cascade)
+  destinoId String
+  destino   KnowledgeDocument @relation("destino", fields: [destinoId], references: [id], onDelete: Cascade)
+  tipo      String
+  descricao String?
+
+  @@index([origemId])
+  @@index([destinoId])
+  @@index([tipo])
+}
+
 model NewsItem {
   id          String   @id @default(cuid())
   slug        String   @unique
