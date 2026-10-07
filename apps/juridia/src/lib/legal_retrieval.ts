@@ -4,6 +4,7 @@
 
 import { db } from "@/lib/db";
 import { ragSearch } from "@/lib/rag_lite";
+import { cosineVector, embedText, parseEmbedding } from "@/lib/embedding_service";
 
 type LegalSourceRecord = {
   id: string;
@@ -15,6 +16,8 @@ type LegalSourceRecord = {
   urlOficial: string | null;
   vigente: boolean;
   dataConsulta: Date | null;
+  embedding: string | null;
+  embeddingModel: string | null;
 };
 
 export interface LegalRetrievalResult {
@@ -26,6 +29,8 @@ export interface LegalRetrievalResult {
     tfidfRank: number | null;
     exactMatch: boolean;
     officialSource: boolean;
+    semanticRank: number | null;
+    semanticScore: number | null;
   };
 }
 
@@ -96,6 +101,7 @@ export async function legalSearch(query: string, topK = 8): Promise<LegalRetriev
       select: {
         id: true, tipo: true, diploma: true, numero: true, tribunal: true,
         textoTrecho: true, urlOficial: true, vigente: true, dataConsulta: true,
+        embedding: true, embeddingModel: true,
       },
     }),
   ]);
@@ -111,11 +117,30 @@ export async function legalSearch(query: string, topK = 8): Promise<LegalRetriev
   const tfidfRanks = new Map(tfidf.map((r, i) => [r.source.id, i + 1]));
   const tfidfById = new Map(tfidf.map((r) => [r.source.id, r]));
 
+  let semanticScores = new Map<string, number>();
+  try {
+    const qEmbedding = await embedText(q);
+    if (qEmbedding?.vector.length) {
+      for (const s of sources) {
+        const v = parseEmbedding(s.embedding);
+        if (v && (!s.embeddingModel || s.embeddingModel === qEmbedding.model)) {
+          const score = cosineVector(qEmbedding.vector, v);
+          if (score > 0) semanticScores.set(s.id, score);
+        }
+      }
+    }
+  } catch {
+    semanticScores = new Map();
+  }
+  const semanticRanks = rankMap([...semanticScores.entries()]);
+
   const normalizedQ = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const k = 60;
   const scored = sources.map((s) => {
     const br = bmRanks.get(s.id);
     const tr = tfidfRanks.get(s.id);
+    const sr = semanticRanks.get(s.id);
+    const semanticScore = semanticScores.get(s.id) ?? null;
     const diploma = s.diploma.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const numero = s.numero.toLowerCase();
     const exactMatch = (diploma.length > 1 && normalizedQ.includes(diploma)) ||
@@ -124,12 +149,13 @@ export async function legalSearch(query: string, topK = 8): Promise<LegalRetriev
     let raw = 0;
     if (br) raw += 1 / (k + br);
     if (tr) raw += 1 / (k + tr);
+    if (sr) raw += 1.35 / (k + sr);
     if (exactMatch) raw += 0.025;
     if (officialSource) raw += 0.008;
     if (s.dataConsulta && Date.now() - s.dataConsulta.getTime() < 365 * 86400000) raw += 0.003;
     const matchedTerms = tfidfById.get(s.id)?.matchedTerms ||
       queryTokens.filter((t) => docs.find((d) => d.id === s.id)?.tokens.includes(t)).slice(0, 10);
-    return { source: s, raw, matchedTerms, br: br || null, tr: tr || null, exactMatch, officialSource };
+    return { source: s, raw, matchedTerms, br: br || null, tr: tr || null, sr: sr || null, semanticScore, exactMatch, officialSource };
   }).filter((x) => x.raw > 0);
 
   scored.sort((a, b) => b.raw - a.raw);
@@ -143,6 +169,8 @@ export async function legalSearch(query: string, topK = 8): Promise<LegalRetriev
       tfidfRank: x.tr,
       exactMatch: x.exactMatch,
       officialSource: x.officialSource,
+      semanticRank: x.sr,
+      semanticScore: x.semanticScore,
     },
   }));
 }

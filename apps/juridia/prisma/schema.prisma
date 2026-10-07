@@ -210,6 +210,9 @@ model LegalSource {
   urlOficial       String?
   hashConteudo     String?  // SHA-256 do snapshot
   dataConsulta     DateTime?
+  embedding        String?  // JSON number[]; cache semântico para SQLite
+  embeddingModel   String?
+  embeddedAt       DateTime?
   revisadoPor      String?  // curador
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
