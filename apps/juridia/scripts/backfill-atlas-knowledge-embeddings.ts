@@ -16,10 +16,7 @@ function documentEmbeddingText(doc: {
     doc.titulo,
     doc.area ? `Área: ${doc.area}` : "",
     doc.subarea ? `Subárea: ${doc.subarea}` : "",
-    doc.assunto ? `Assunto: ${doc.assunto}` : "",
-    doc.subassunto ? `Subassunto: ${doc.subassunto}` : "",
-    doc.tags ? `Tags: ${doc.tags.slice(0, 500)}` : "",
-  ].filter(Boolean).join("\n").slice(0, 1200);
+  ].filter(Boolean).join("\n").slice(0, 500);
 }
 
 async function backfillByDocument(model: string) {
