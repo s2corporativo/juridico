@@ -3,6 +3,7 @@ import { MAX_BATCH_CASES, parseBatchCases } from "@/lib/batch";
 import type { TemplateDTO } from "@/lib/types";
 
 const template = {
+  id: "tpl-teste",
   slug: "teste",
   name: "Teste",
   category: "civil",
