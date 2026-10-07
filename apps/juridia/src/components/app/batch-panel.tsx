@@ -36,6 +36,17 @@ import {
   PencilLine,
 } from "lucide-react";
 
+interface BatchResult {
+  label: string;
+  ok: boolean;
+  docId?: string;
+  title?: string;
+  error?: string;
+  tokens?: number;
+  violations?: number;
+  degraded?: boolean;
+}
+
 export function BatchPanel({
   template,
   skillSlugs,
