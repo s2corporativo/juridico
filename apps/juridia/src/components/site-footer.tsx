@@ -13,8 +13,8 @@ export function SiteFooter() {
                 <Scale className="h-5 w-5" />
               </div>
               <div>
-                <strong className="block text-sm">Atlas Jurídico · JuridIA</strong>
-                <span className="text-xs text-muted-foreground">Inteligência jurídica com evidência e revisão humana</span>
+                <strong className="block text-sm">Atlas Jurídico</strong>
+                <span className="text-xs text-muted-foreground">Sistema interno · inteligência jurídica com evidência e revisão humana</span>
               </div>
             </div>
           </div>

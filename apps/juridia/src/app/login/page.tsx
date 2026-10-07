@@ -1,6 +1,6 @@
 "use client";
 
-// Página de login local do JuridIA.
+// Página de login local do Atlas Jurídico.
 // - Usada diretamente (usuários do escritório) e pelo fluxo SSO
 //   (/api/auth/oidc/authorize redireciona para cá com ?next=...).
 // - Autenticação real via POST /api/auth/login (scrypt + cookie assinado).
@@ -64,7 +64,7 @@ function LoginForm() {
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <Scale className="h-5 w-5" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">JuridIA</h1>
+          <h1 className="text-xl font-bold tracking-tight">Atlas Jurídico</h1>
           <p className="text-sm text-muted-foreground">Acesse com suas credenciais do escritório.</p>
         </div>
 

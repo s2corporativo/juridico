@@ -196,7 +196,7 @@ export function Editor() {
     </style></head><body><div class="Section1">
     <div class="header"><h1>${esc(title)}</h1></div>
     ${htmlBody}
-    <div class="footer">Gerado por JuridIA — Inteligência Artificial para o Direito Brasileiro · ${new Date().toLocaleDateString("pt-BR")}</div>
+    <div class="footer">Gerado pelo Atlas Jurídico — uso interno do escritório · ${new Date().toLocaleDateString("pt-BR")}</div>
     </div></body></html>`;
     const blob = new Blob(["\ufeff", fullHtml], { type: "application/msword" });
     const url = URL.createObjectURL(blob);
@@ -241,7 +241,7 @@ export function Editor() {
     </style></head><body>
     <div class="header"><h1>${title}</h1></div>
     ${html}
-    <div class="footer">Gerado por JuridIA — Inteligência Artificial para o Direito Brasileiro · ${new Date().toLocaleDateString("pt-BR")}</div>
+    <div class="footer">Gerado pelo Atlas Jurídico — uso interno do escritório · ${new Date().toLocaleDateString("pt-BR")}</div>
     <div class="no-print" style="text-align:center;padding:16pt;">
       <button onclick="window.print()" style="padding:8pt 24pt;font-size:11pt;background:#1a4d3a;color:white;border:none;border-radius:4pt;cursor:pointer;">Imprimir / Salvar PDF</button>
     </div>
