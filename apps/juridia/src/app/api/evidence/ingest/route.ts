@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { createEvidence } from "@/lib/evidence";
 import { scanDocumentForPromptInjection } from "@/lib/document_security";
 import { logAuditEvent } from "@/lib/audit";
+import { canAccessCase } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +12,6 @@ type PageInput = {
   pageNumber: number;
   text: string;
 };
-
-async function canAccessCase(caseId: string, user: { uid: string; role: string }) {
-  const item = await db.case.findUnique({
-    where: { id: caseId },
-    include: { client: { select: { userId: true } } },
-  });
-  if (!item) return false;
-  return user.role === "admin" || item.client.userId === user.uid;
-}
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const auth = await requireAuth(req);
