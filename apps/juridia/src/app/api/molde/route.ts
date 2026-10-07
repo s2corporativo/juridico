@@ -147,7 +147,23 @@ Formato da resposta:
       security: { severity: security.severity, score: security.score, findings: security.findings.slice(0, 10) },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Erro no Modo Molde";
-    return NextResponse.json({ error: msg, changes: [] }, { status: 500 });
+    const fallback = buildDeterministicMoldeFallback(baseDocument, instruction);
+    await logAuditEvent({
+      action: "molde_fallback",
+      resource: "document",
+      userId: authUser.uid,
+      metadata: {
+        templateName,
+        reason: e instanceof Error ? e.message.slice(0, 200) : "provider_unavailable",
+        securitySeverity: security.severity,
+        securityScore: security.score,
+      },
+    });
+    return NextResponse.json({
+      changes: [fallback],
+      total: 1,
+      fallback: true,
+      security: { severity: security.severity, score: security.score, findings: security.findings.slice(0, 10) },
+    });
   }
 }
