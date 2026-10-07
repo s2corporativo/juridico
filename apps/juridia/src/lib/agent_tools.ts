@@ -6,6 +6,7 @@ import { registerTool, type AgentContext, type ToolResult } from "@/lib/agent_lo
 import { listEvidence } from "@/lib/evidence";
 import { legalSearch } from "@/lib/legal_retrieval";
 import { buildResearchPlan } from "@/lib/research_coverage";
+import { runIterativeLegalResearch } from "@/lib/iterative_research";
 import { routeSkills } from "@/lib/skill_router";
 
 let registered = false;
@@ -111,6 +112,51 @@ export function registerDefaultAgentTools(): void {
             verified: e.verified,
             sourceKind: e.sourceKind,
           })),
+        },
+      };
+    },
+  });
+
+  registerTool({
+    name: "iterative_research",
+    category: "motores",
+    description: "Executa pesquisa jurídica em ciclos até cobrir fonte primária, vigência, favorável, contrário e aderência. Args: {issue:string,area:string,maxCycles?:number}",
+    async execute(args, ctx: AgentContext): Promise<ToolResult> {
+      const issue = String(args.issue || "").trim();
+      const area = String(args.area || "civil").trim();
+      if (!issue) return { success: false, output: {}, error: "issue obrigatório" };
+      const result = await runIterativeLegalResearch({
+        issue,
+        area,
+        taskType: ctx.taskType,
+        maxCycles: Number(args.maxCycles) || 3,
+      });
+      return {
+        success: true,
+        output: {
+          issue: result.issue,
+          area: result.area,
+          cycles: result.cycles,
+          coverage: result.coverage,
+          insufficient: result.insufficient,
+          laws: result.laws.slice(0, 12).map((l) => ({
+            sourceId: l.source.id,
+            diploma: l.source.diploma,
+            numero: l.source.numero,
+            tribunal: l.source.tribunal,
+            urlOficial: l.source.urlOficial,
+            vigente: l.source.vigente,
+            score: l.score,
+          })),
+          precedents: result.precedents.slice(0, 15).map((p) => ({
+            name: p.name,
+            url: p.url,
+            host: p.host_name,
+            favorable: p.favorable,
+            relevance: p.relevance,
+            official: p.verified,
+          })),
+          queries: result.queries,
         },
       };
     },

@@ -56,6 +56,7 @@ export interface EvidenceRefRecord {
   quoteHash: string;
   sourceKind: string;
   retrievalMethod: string;
+  metadata: Record<string, unknown>;
   verified: boolean;
   createdAt: string;
 }
@@ -185,6 +186,7 @@ function toRecord(e: {
   quoteHash: string;
   sourceKind: string;
   retrievalMethod: string;
+  metadata?: string;
   verified: boolean;
   createdAt: Date;
 }): EvidenceRefRecord {
@@ -197,7 +199,14 @@ function toRecord(e: {
     quoteHash: e.quoteHash,
     sourceKind: e.sourceKind,
     retrievalMethod: e.retrievalMethod,
+    metadata: safeMetadata((e as { metadata?: string }).metadata),
     verified: e.verified,
     createdAt: e.createdAt.toISOString(),
   };
+}
+
+
+function safeMetadata(raw?: string): Record<string, unknown> {
+  if (!raw) return {};
+  try { return JSON.parse(raw) as Record<string, unknown>; } catch { return {}; }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayJson } from "@/lib/ai_gateway";
+import { scanDocumentForPromptInjection, wrapUntrustedDocument } from "@/lib/document_security";
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     baseDocument?: string;
     instruction?: string;
     templateName?: string;
+    allowUnsafe?: boolean;
   } = {};
   try {
     body = await req.json();
@@ -73,68 +75,50 @@ Formato da resposta:
   ]
 }`;
 
-  const userPrompt = `## Tipo de documento
-${templateName}
-
-## Documento-base
-${baseDocument.slice(0, 8000)}
-
-## Instrução do advogado
-${instruction}`;
+  const security = scanDocumentForPromptInjection(baseDocument);
+  if (security.severity === "block" && !body.allowUnsafe) {
+    return NextResponse.json({
+      error: "prompt_injection_detected",
+      security: { severity: security.severity, score: security.score, findings: security.findings },
+      changes: [],
+    }, { status: 422 });
+  }
 
   try {
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    const { data: parsed } = await aiGatewayJson<{ changes?: MoldeChange[] }>({
+      taskType: "minuta",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: `## Tipo de documento\n${templateName}\n\n${wrapUntrustedDocument(baseDocument.slice(0, 12000), "molde")}\n\n## Instrução do advogado\n${instruction}` },
       ],
-      thinking: { type: "disabled" },
       temperature: 0.4,
-      max_tokens: 2000,
+      maxTokens: 2000,
     });
-
-    const raw = completion.choices[0]?.message?.content || "";
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
     let changes: MoldeChange[] = [];
-
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(parsed.changes)) {
-          changes = parsed.changes
-            .filter(
-              (c: MoldeChange) =>
-                c.operation &&
-                c.anchor &&
-                typeof c.anchor === "string" &&
-                c.anchor.length >= 5
-            )
-            .slice(0, 10)
-            .map((c: MoldeChange) => ({
-              operation: c.operation,
-              anchor: c.anchor.slice(0, 300),
-              replacement: c.replacement || null,
-              reason: c.reason || "",
-            }));
-        }
-      } catch {
-        // JSON inválido
-      }
+    if (Array.isArray(parsed.changes)) {
+      changes = parsed.changes
+        .filter((c) => c.operation && c.anchor && typeof c.anchor === "string" && c.anchor.length >= 5)
+        .slice(0, 10)
+        .map((c) => ({
+          operation: c.operation,
+          anchor: c.anchor.slice(0, 300),
+          replacement: c.replacement || undefined,
+          reason: c.reason || "",
+        }));
     }
 
-    // Validação: cada anchor deve existir (parcialmente) no documento-base
+    // Validação: cada anchor deve existir no documento-base.
     const validated = changes.filter((c) => {
       const anchorShort = c.anchor.slice(0, 40).toLowerCase();
       return baseDocument.toLowerCase().includes(anchorShort);
     });
 
     return NextResponse.json({
-      changes: validated.length > 0 ? validated : changes,
-      total: validated.length > 0 ? validated.length : changes.length,
+      changes: validated,
+      total: validated.length,
+      security: { severity: security.severity, score: security.score, findings: security.findings.slice(0, 10) },
     });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Erro no Modo Molde";
-    return NextResponse.json({ error: msg, changes: [] }, { status: 500 });
+  } catch {
+    return;
   }
 }
