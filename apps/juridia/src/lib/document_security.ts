@@ -22,11 +22,11 @@ const BLOCK_PATTERNS: { code: string; re: RegExp; reason: string }[] = [
   { code: "SYSTEM_PROMPT_EXFILTRATION_PT", re: /(?:revele|mostre|imprima|retorne|exponha)\s+(?:o\s+)?(?:prompt\s+do\s+sistema|mensagem\s+do\s+desenvolvedor|chave\s+de\s+api|segredo|senha)/gi, reason: "Tentativa de exfiltração de segredo/configuração." },
   { code: "ROLE_ESCALATION_PT", re: /(?:a\s+partir\s+de\s+agora|agora\s+voc[eê]\s+[ée])\s+(?:o\s+)?(?:sistema|administrador|developer|desenvolvedor)/gi, reason: "Tentativa de redefinir papel do modelo." },
   { code: "TOOL_COERCION_PT", re: /(?:execute|rode|chame|invoque)\s+(?:a\s+)?(?:ferramenta|fun[cç][aã]o|shell|terminal|navegador|browser)/gi, reason: "Documento tenta ordenar execução de ferramenta." },
-  { code: "IGNORE_INSTRUCTIONS", re: /ignore\s+(?:all|any|the|previous|prior)?\s*(?:instructions?|rules?|prompts?)/gi, reason: "Tentativa de substituir instruções do sistema." },
+  { code: "IGNORE_INSTRUCTIONS", re: /(?:ignore\s+(?:all|any|the|previous|prior)?\s*(?:instructions?|rules?|prompts?)|ignore\s+(?:todas?\s+)?(?:as\s+)?instruções?\s+(?:anteriores|prévias)|desconsidere\s+(?:todas?\s+)?(?:as\s+)?instruções?\s+(?:anteriores|prévias))/gi, reason: "Tentativa de substituir instruções do sistema." },
   { code: "SYSTEM_PROMPT_OVERRIDE", re: /(?:system|developer)\s+(?:prompt|message|instruction)[\s\S]{0,80}(?:replace|override|ignore|follow)/gi, reason: "Tentativa de alterar prompt de sistema/desenvolvedor." },
-  { code: "ROLE_ESCALATION", re: /you\s+are\s+now|act\s+as\s+(?:the\s+)?system|new\s+instructions?/gi, reason: "Tentativa de redefinir papel do modelo." },
-  { code: "SECRET_EXFILTRATION", re: /(?:reveal|print|return|expose|show)\s+(?:the\s+)?(?:api\s*key|secret|password|system\s*prompt|developer\s*message)/gi, reason: "Tentativa de exfiltração de segredo/configuração." },
-  { code: "TOOL_COERCION", re: /(?:call|invoke|execute|run)\s+(?:the\s+)?(?:tool|function|shell|terminal|browser)/gi, reason: "Documento tenta ordenar execução de ferramenta." },
+  { code: "ROLE_ESCALATION", re: /you\s+are\s+now|act\s+as\s+(?:the\s+)?system|new\s+instructions?|agora\s+você\s+é|aja\s+como\s+(?:o\s+)?sistema|novas?\s+instruções?/gi, reason: "Tentativa de redefinir papel do modelo." },
+  { code: "SECRET_EXFILTRATION", re: /(?:(?:reveal|print|return|expose|show)\s+(?:the\s+)?(?:api\s*key|secret|password|system\s*prompt|developer\s*message)|(?:revele|mostre|imprima|retorne|exponha)\s+(?:a\s+)?(?:chave\s+de\s+api|api\s*key|segredo|senha|prompt\s+do\s+sistema|mensagem\s+do\s+desenvolvedor))/gi, reason: "Tentativa de exfiltração de segredo/configuração." },
+  { code: "TOOL_COERCION", re: /(?:(?:call|invoke|execute|run)\s+(?:the\s+)?(?:tool|function|shell|terminal|browser)|(?:chame|invoque|execute|rode)\s+(?:a\s+|o\s+)?(?:ferramenta|função|shell|terminal|navegador|browser))/gi, reason: "Documento tenta ordenar execução de ferramenta." },
 ];
 
 const WARN_PATTERNS: { code: string; re: RegExp; reason: string }[] = [
