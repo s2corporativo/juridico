@@ -373,7 +373,7 @@ model UsageLedger {
 // EvidenceRef — proveniência central: cada afirmação aponta para um trecho de documento
 model EvidenceRef {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   documentId      String?  // referência ao documento (se houver upload)
   pageNumber      Int?
   sectionLabel    String?
@@ -398,7 +398,7 @@ model EvidenceRef {
 // LegalAssertion — 3 dimensões independentes (kind, support, review)
 model LegalAssertion {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   text            String   // a afirmação
   kind            String   // fact | inference | gap | risk | rule | precedent | conclusion
   supportStatus   String   @default("absent") // supported | partial | absent | conflicting
@@ -417,7 +417,7 @@ model LegalAssertion {
 // GraphNode — nó do grafo jurídico (pessoa, fato, evento, regra, tese, risco...)
 model GraphNode {
   id                String   @id @default(cuid())
-  caseId            String   @default("default-case")
+  caseId            String
   nodeType          String   // person | entity | document | fact | event | contract | obligation | request | requirement | evidence | rule | precedent | thesis | risk
   label             String
   description       String?
@@ -437,7 +437,7 @@ model GraphNode {
 // GraphEdge — aresta do grafo jurídico (proves, alleges, supports, contradicts...)
 model GraphEdge {
   id                String   @id @default(cuid())
-  caseId            String   @default("default-case")
+  caseId            String
   fromNodeId        String
   toNodeId          String
   edgeType          String   // party_to | represents | signed | obligated_to | occurred_at | proves | alleges | admits | denies | supports | contradicts | grounds | requires | depends_on | results_in | has_request | has_risk
@@ -456,7 +456,7 @@ model GraphEdge {
 // AgentRun — auditoria de toda execução de IA
 model AgentRun {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String?
   userId          String?
   agentSlug       String   // case_mapper | legal_brain | legal_research | legal_draft | agent_loop
   taskType        String   // map | analyze | research | draft | review | loop
@@ -513,7 +513,7 @@ model AgentRunStep {
 // IntelligenceSnapshot — append-only, não sobrescrever versão aprovada
 model IntelligenceSnapshot {
   id          String   @id @default(cuid())
-  caseId      String   @default("default-case")
+  caseId      String
   version     Int      @default(1)
   payload     String   // JSON com fatos, eventos, afirmações, grafo, etc.
   isDraft     Boolean  @default(true)
@@ -558,7 +558,7 @@ model SkillVersion {
 // Permite ao advogado ver a evolução do entendimento sobre o caso ao longo do tempo
 model BrainAnalysis {
   id          String   @id @default(cuid())
-  caseId      String   @default("default-case")
+  caseId      String
   title       String
   factsInput  String   // fatos que foram analisados
   result      String   // JSON completo do resultado do Cérebro (8 etapas)
@@ -617,7 +617,7 @@ model NormVersion {
 // Matriz fato, prova e ônus probatório.
 model ProofMatrix {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   factId          String?  // FK para GraphNode do tipo fact
   factText        String   // o fato alegado
   hasProof        Boolean  @default(false)
@@ -639,7 +639,7 @@ model ProofMatrix {
 // Prazos são calculados de forma determinística; IA nunca confirma prazo.
 model CaseDeadline {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   tipo            String   // contestacao | recurso | intimacao | audiencia | outro
   descricao       String
   marcoInicial    DateTime // data do ato que inicia o prazo
@@ -657,7 +657,7 @@ model CaseDeadline {
 // Simulação de perspectiva do julgador como controle adicional.
 model JudgeSimulation {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   documentId      String?  // minuta avaliada
   competência     String?  // juízo competente?
   legitimidade   String?  // partes legítimas?
