@@ -191,11 +191,23 @@ export async function runMinutaPipeline(
   const factsOnlyPseudonymized = pseudonymize(factsBlock).text;
 
   // 3) Skills: escolhidas manualmente + roteadas automaticamente por relevância
-  const manualSkills: PipelineSkill[] = body.skillSlugs?.length
-    ? (
-        await db.skill.findMany({ where: { slug: { in: body.skillSlugs } } })
-      ).map((s) => ({ slug: s.slug, name: s.name, content: s.content, origin: "manual" as const }))
-    : [];
+  let manualSkills: PipelineSkill[] = [];
+  if (body.skillSlugs?.length) {
+    const versions = await db.skillVersion.findMany({
+      where: { slug: { in: body.skillSlugs }, status: "approved" },
+      orderBy: [{ slug: "asc" }, { version: "desc" }],
+    });
+    const latest = new Map<string, (typeof versions)[number]>();
+    for (const skill of versions) {
+      if (!latest.has(skill.slug)) latest.set(skill.slug, skill);
+    }
+    manualSkills = [...latest.values()].map((s) => ({
+      slug: s.slug,
+      name: s.description,
+      content: s.content,
+      origin: "manual" as const,
+    }));
+  }
 
   let autoRouted: PipelineSkill[] = [];
   let detectedIssues: { key: string; title: string; area: string }[] = [];
@@ -223,7 +235,7 @@ export async function runMinutaPipeline(
   // 4) Jurisprudência/normas inteligentes — RAG na base curada LegalSource
   let ragResults: Awaited<ReturnType<typeof legalSearch>> = [];
   try {
-    ragResults = await legalSearch(factsOnlyPseudonymized || tpl.name, 8);
+    ragResults = await legalSearch(factsOnlyPseudonymized || tpl.name, 6);
   } catch {
     // base curada indisponível → fundamentação fica por conta do LLM com regras de vedação
   }
@@ -236,13 +248,13 @@ export async function runMinutaPipeline(
   }));
   let atlasKnowledge: Awaited<ReturnType<typeof atlasKnowledgeSearch>> = [];
   try {
-    atlasKnowledge = await atlasKnowledgeSearch(factsOnlyPseudonymized || tpl.name, 10);
+    atlasKnowledge = await atlasKnowledgeSearch(factsOnlyPseudonymized || tpl.name, 4);
   } catch {
     atlasKnowledge = [];
   }
   const atlasKnowledgeBlock = atlasKnowledge.length
     ? "\n\n## ACERVO JURÍDICO INTERNO\n" + atlasKnowledge.map((x) =>
-        `### ${x.title} [${x.documentType} · ${x.area} · conf. ${x.reliability}]\nFonte: ${x.source || "elaboração interna"}${x.sourceUrl ? ` — ${x.sourceUrl}` : ""}\nTrecho: ${x.text.slice(0, 1200)}\nScore híbrido: ${x.score.toFixed(3)}${x.semanticScore == null ? " (sem vetor disponível)" : ` · semântico ${x.semanticScore.toFixed(3)}`}`
+        `### ${x.title} [${x.documentType} · ${x.area} · conf. ${x.reliability}]\nFonte: ${x.source || "elaboração interna"}${x.sourceUrl ? ` — ${x.sourceUrl}` : ""}\nTrecho: ${x.text.slice(0, 450)}\nScore híbrido: ${x.score.toFixed(3)}${x.semanticScore == null ? " (sem vetor disponível)" : ` · semântico ${x.semanticScore.toFixed(3)}`}`
       ).join("\n\n")
     : "";
 
