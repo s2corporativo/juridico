@@ -37,7 +37,7 @@ export const PROVIDERS: Record<ProviderSpec["name"], ProviderSpec> = {
     supportsJsonSchema: true,
     supportsTools: false,
     priority: 10,
-    model: process.env.OLLAMA_MODEL?.trim() || "qwen2.5:14b",
+    model: process.env.OLLAMA_MODEL?.trim() || "llama3.2:3b",
   },
   groq: {
     name: "groq",
