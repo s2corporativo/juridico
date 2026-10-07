@@ -12,9 +12,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!__auth.ok) return __auth.response;
   const authUser = __auth.user;
 
+  const url = new URL(req.url);
+  const batchId = url.searchParams.get("batchId") || undefined;
+  const caseId = url.searchParams.get("caseId") || undefined;
   const docs = await db.document.findMany({
+    where: {
+      ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+      ...(batchId ? { batchId } : {}),
+      ...(caseId ? { caseId } : {}),
+    },
     orderBy: { updatedAt: "desc" },
-    take: 100,
+    take: 200,
   });
   const dtos: DocumentDTO[] = docs.map((d) => ({
     id: d.id,
@@ -42,7 +50,10 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const doc = await db.document.findUnique({ where: { id }, select: { title: true, templateName: true } });
+  const doc = await db.document.findUnique({ where: { id }, select: { title: true, templateName: true, userId: true } });
+  if (!doc || (authUser.role !== "admin" && doc.userId !== authUser.uid)) {
+    return NextResponse.json({ error: "Documento não encontrado ou sem acesso" }, { status: 404 });
+  }
   await db.document.delete({ where: { id } });
 
   await logAuditEvent({
@@ -63,6 +74,10 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
 
   const body = (await req.json().catch(() => null)) as { id?: string; content?: string; title?: string } | null;
   if (!body?.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+  const existing = await db.document.findUnique({ where: { id: body.id }, select: { userId: true } });
+  if (!existing || (authUser.role !== "admin" && existing.userId !== authUser.uid)) {
+    return NextResponse.json({ error: "Documento não encontrado ou sem acesso" }, { status: 404 });
+  }
   const data: { generatedContent?: string; title?: string } = {};
   if (typeof body.content === "string") data.generatedContent = body.content;
   if (typeof body.title === "string") data.title = body.title;
