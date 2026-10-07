@@ -48,6 +48,7 @@ import { useAppStore } from "@/lib/store";
 import type { TemplateDTO, SkillDTO, GenerateMinutaResponse } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
 import { BatchPanel } from "./batch-panel";
+import { MoldeMode } from "./molde-mode";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
@@ -85,7 +86,8 @@ export function Generator() {
     "idle" | "prepare" | "outline" | "draft" | "review" | "finalize"
   >("idle");
   const [liveDraft, setLiveDraft] = useState("");
-  const [mode, setMode] = useState<"individual" | "agentic" | "lote">("agentic");
+  const [mode, setMode] = useState<"individual" | "agentic" | "molde" | "lote">("agentic");
+  const [moldBaseContent, setMoldBaseContent] = useState("");
   const [result, setResult] = useState<GenerateMinutaResponse | null>(null);
   const [agentRunId, setAgentRunId] = useState<string | null>(null);
   const [agentPlan, setAgentPlan] = useState<{
@@ -407,6 +409,14 @@ export function Generator() {
           Agêntico
         </Button>
         <Button
+          variant={mode === "molde" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMode("molde")}
+        >
+          <FileEdit className="mr-1.5 h-4 w-4" />
+          Molde
+        </Button>
+        <Button
           variant={mode === "lote" ? "default" : "outline"}
           size="sm"
           onClick={() => setMode("lote")}
@@ -617,7 +627,32 @@ export function Generator() {
         </Card>
       )}
 
-      {mode === "lote" ? (
+      {mode === "molde" ? (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Documento-base</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Cole a minuta ou peça que deve ser preservada. A IA propõe apenas alterações pontuais; nenhuma mudança é aplicada sem sua aprovação.
+              </p>
+              <Textarea
+                rows={18}
+                className="font-mono text-xs"
+                value={moldBaseContent}
+                onChange={(e) => setMoldBaseContent(e.target.value)}
+                placeholder="Cole aqui o documento-base..."
+              />
+            </CardContent>
+          </Card>
+          <MoldeMode
+            baseContent={moldBaseContent}
+            templateName={current?.name || "documento jurídico"}
+            onApply={setMoldBaseContent}
+          />
+        </div>
+      ) : mode === "lote" ? (
         current ? (
           <BatchPanel
             template={current}
