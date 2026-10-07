@@ -36,6 +36,16 @@ O gate instala dependências com lockfile congelado, executa TypeScript, testes 
 
 Regra de publicação: somente promover commits que terminem com `RELEASE GATE APROVADO`. GitHub permanece como controle de versão e revisão; indisponibilidade de runner remoto não bloqueia manutenção ou publicação.
 
+
+## Política de mudanças
+
+- Um assunto técnico por commit.
+- Correções, dados, infraestrutura e interface ficam em commits separados.
+- O commit a publicar deve ser identificado por SHA e validado pelo Release Gate da VPS.
+- Não depender de GitHub Actions para aprovar ou publicar.
+- Manter a versão anterior disponível em `/opt/atlas-juridico/releases/` para rollback.
+- Alterações de banco exigem snapshot antes da escrita.
+
 ## Mapa arquitetural
 
 ```bash
