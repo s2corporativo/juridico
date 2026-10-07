@@ -10,7 +10,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!guard.ok) return guard.response;
 
   const clients = await db.client.findMany({
-    where: { userId: guard.user.uid },
+    where: guard.user.role === "admin" ? {} : { userId: guard.user.uid },
     orderBy: { updatedAt: "desc" },
     include: { _count: { select: { cases: true } } },
   });
@@ -111,7 +111,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (!body.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const owned = await db.client.findFirst({
-    where: { id: body.id, userId: guard.user.uid },
+    where: guard.user.role === "admin" ? { id: body.id } : { id: body.id, userId: guard.user.uid },
     select: { id: true },
   });
   if (!owned) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
@@ -150,7 +150,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const client = await db.client.findFirst({
-    where: { id, userId: guard.user.uid },
+    where: guard.user.role === "admin" ? { id } : { id, userId: guard.user.uid },
     select: { id: true, name: true },
   });
   if (!client) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
