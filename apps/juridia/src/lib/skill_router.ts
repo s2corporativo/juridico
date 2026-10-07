@@ -104,7 +104,9 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   }
   const area = Object.entries(areaCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "civil";
 
-  const selectedMeta = matches.slice(0, 10);
+  const configuredLimit = Number(process.env.SKILL_ROUTER_LIMIT || 10);
+  const skillLimit = Number.isFinite(configuredLimit) ? Math.max(1, Math.min(configuredLimit, 20)) : 10;
+  const selectedMeta = matches.slice(0, skillLimit);
   const full = selectedMeta.length
     ? await db.skillVersion.findMany({ where: { slug: { in: selectedMeta.map((m) => m.slug) }, status: "approved" }, orderBy: { version: "desc" } })
     : [];
@@ -113,7 +115,7 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   const selected = selectedMeta.map((m) => ({ ...m, content: contentBySlug.get(m.slug) || "" }));
 
   return {
-    matches: selected, // top 10
+    matches: selected,
     issues: issues.map((i) => ({ key: i.key, title: i.title, area: i.area })),
     area,
   };
