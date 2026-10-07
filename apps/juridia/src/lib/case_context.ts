@@ -34,7 +34,9 @@ export async function buildCaseEvidenceContext(caseId: string, query: string, to
   block: string;
   references: EvidenceReferenceUsed[];
 }> {
-  const all = await listEvidence(caseId);
+  const all = (await listEvidence(caseId)).filter(
+    (e) => String(e.metadata.securitySeverity || "safe") !== "block"
+  );
   const q = tokens(query);
   const ranked = all
     .map((e) => ({ e, score: score(q, e) }))
@@ -67,7 +69,7 @@ export async function buildCaseEvidenceContext(caseId: string, query: string, to
   return { block, references };
 }
 
-export function verifyEvidenceMarkers(text: string, allowed: EvidenceReferenceUsed[]): {
+export function verifyEvidenceMarkers(text: string, allowed: EvidenceReferenceUsed[], requireAtLeastOne = false): {
   total: number;
   valid: number;
   invalid: string[];
@@ -82,5 +84,8 @@ export function verifyEvidenceMarkers(text: string, allowed: EvidenceReferenceUs
     total++;
     if (!allowedIds.has(m[1])) invalid.push(m[1]);
   }
-  return { total, valid: total - invalid.length, invalid: [...new Set(invalid)], bloquear: invalid.length > 0 };
+  if (requireAtLeastOne && allowed.length > 0 && total === 0) {
+    invalid.push("__missing_evidence_marker__");
+  }
+  return { total, valid: total - invalid.filter((x) => x !== "__missing_evidence_marker__").length, invalid: [...new Set(invalid)], bloquear: invalid.length > 0 };
 }

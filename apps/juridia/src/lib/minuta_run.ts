@@ -526,12 +526,14 @@ export async function runMinutaPipeline(
       excerpt: labelLeaks[0],
     });
   }
-  const evidenceGate = verifyEvidenceMarkers(finalContent, caseEvidence.references);
+  const evidenceGate = verifyEvidenceMarkers(finalContent, caseEvidence.references, caseEvidence.references.length > 0);
   if (evidenceGate.bloquear) {
     validation.violations.push({
       rule: "EVIDENCE_GATE_BLOCK",
       severity: "error",
-      detail: `A peça contém referência(s) de autos não autorizada(s): ${evidenceGate.invalid.join(", ")}.`,
+      detail: evidenceGate.invalid.includes("__missing_evidence_marker__")
+        ? "A peça usa contexto probatório do caso, mas não incluiu nenhuma referência rastreável de documento/página."
+        : `A peça contém referência(s) de autos não autorizada(s): ${evidenceGate.invalid.join(", ")}.`,
     });
   }
 
