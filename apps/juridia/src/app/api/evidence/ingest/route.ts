@@ -59,6 +59,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!caseId || !fileName || !pages.length) {
     return NextResponse.json({ error: "caseId, fileName e pages são obrigatórios" }, { status: 400 });
   }
+  if (fileName.length > 255 || pages.length > 500) {
+    return NextResponse.json({ error: "arquivo excede os limites de ingestão" }, { status: 413 });
+  }
+  const invalidPage = pages.find((p) =>
+    !Number.isInteger(Number(p.pageNumber)) ||
+    Number(p.pageNumber) < 1 ||
+    typeof p.text !== "string" ||
+    !p.text.trim()
+  );
+  if (invalidPage) {
+    return NextResponse.json({ error: "página inválida ou sem texto" }, { status: 400 });
+  }
+  if (pages.some((p) => p.text.length > 100_000)) {
+    return NextResponse.json({ error: "texto de página excede 100.000 caracteres" }, { status: 413 });
+  }
   if (!(await canAccessCase(caseId, auth.user.uid, auth.user.role))) {
     return NextResponse.json({ error: "case_not_found_or_forbidden" }, { status: 403 });
   }
@@ -89,9 +104,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const created: EvidenceRefRecord[] = [];
   for (const { page, security } of reports) {
     const pageNumber = Number(page.pageNumber);
-    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
-      return NextResponse.json({ error: "pageNumber inválido" }, { status: 400 });
-    }
     for (const quote of chunkPage(String(page.text || ""))) {
       const evidence = await createEvidence({
         caseId,
