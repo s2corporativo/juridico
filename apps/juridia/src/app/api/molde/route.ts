@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { aiGatewayJson } from "@/lib/ai_gateway";
 import { scanDocumentForPromptInjection, wrapUntrustedDocument } from "@/lib/document_security";
 import { requireAuth } from "@/lib/auth";
+import { logAuditEvent } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -17,12 +18,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
   const __auth = await requireAuth(req);
   if (!__auth.ok) return __auth.response;
+  const authUser = __auth.user;
 
   let body: {
     baseDocument?: string;
     instruction?: string;
     templateName?: string;
-    allowUnsafe?: boolean;
   } = {};
   try {
     body = await req.json();
@@ -75,7 +76,17 @@ Formato da resposta:
 }`;
 
   const security = scanDocumentForPromptInjection(baseDocument);
-  if (security.severity === "block" && !body.allowUnsafe) {
+  if (security.severity === "block") {
+    await logAuditEvent({
+      action: "molde_blocked_prompt_injection",
+      resource: "document",
+      userId: authUser.uid,
+      metadata: {
+        templateName,
+        score: security.score,
+        findings: security.findings.map((x) => x.code),
+      },
+    });
     return NextResponse.json({
       error: "prompt_injection_detected",
       security: { severity: security.severity, score: security.score, findings: security.findings },
@@ -110,6 +121,19 @@ Formato da resposta:
     const validated = changes.filter((c) => {
       const anchorShort = c.anchor.slice(0, 40).toLowerCase();
       return baseDocument.toLowerCase().includes(anchorShort);
+    });
+
+    await logAuditEvent({
+      action: "molde_analyze",
+      resource: "document",
+      userId: authUser.uid,
+      metadata: {
+        templateName,
+        requestedChanges: changes.length,
+        validatedChanges: validated.length,
+        securitySeverity: security.severity,
+        securityScore: security.score,
+      },
     });
 
     return NextResponse.json({
