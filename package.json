@@ -16,7 +16,8 @@
     "check:juridia": "cd apps/juridia && bun x tsc --noEmit",
     "test:atlas": "cd apps/atlas-forense && pnpm test",
     "test:juridia": "cd apps/juridia && bun test",
-    "map:architecture": "./scripts/architecture-map.sh"
+    "map:architecture": "./scripts/architecture-map.sh",
+    "gate:release": "bash scripts/release-gate.sh"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
