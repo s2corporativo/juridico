@@ -1,4 +1,4 @@
-// Seed do administrador real do JuridIA (uso operacional, não demonstração).
+// Seed operacional do administrador do JuridIA.
 //
 // Uso:
 //   JURIDIA_ADMIN_EMAIL="ops@dominio.adv.br" JURIDIA_ADMIN_PASSWORD="..." JURIDIA_ADMIN_NAME="..." \

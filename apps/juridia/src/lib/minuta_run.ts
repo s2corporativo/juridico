@@ -557,7 +557,7 @@ export async function runMinutaPipeline(
   }
   validation.valid = validation.violations.filter((v) => v.severity === "error").length === 0;
 
-  // 7) Persistência — DONO É O USUÁRIO AUTENTICADO (corrige posse demo).
+  // 7) Persistência — DONO É O USUÁRIO AUTENTICADO (vincula a posse ao usuário autenticado).
   //    O mapa marcador→valor NUNCA é persistido (LGPD): vive só em memória;
   //    a reidratação acontece ponta a ponta na mesma requisição.
   const title = body.title?.trim() || `${tpl.name} — ${new Date().toLocaleDateString("pt-BR")}`;

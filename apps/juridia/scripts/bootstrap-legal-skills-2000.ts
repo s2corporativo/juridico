@@ -29,7 +29,7 @@ async function main() {
           outputSchema: JSON.stringify(s.outputSchema),
           contentHash: hash,
           status: "approved",
-          approvedBy: "system:ejc-office-catalog-v1",
+          approvedBy: "system:atlas-office-catalog-v1",
           approvedAt: new Date(),
         },
         create: {
@@ -48,7 +48,7 @@ async function main() {
           outputSchema: JSON.stringify(s.outputSchema),
           contentHash: hash,
           status: "approved",
-          approvedBy: "system:ejc-office-catalog-v1",
+          approvedBy: "system:atlas-office-catalog-v1",
           approvedAt: new Date(),
         },
       });

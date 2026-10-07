@@ -22,7 +22,6 @@ import {
   Moon,
   Home,
   Sparkles,
-  Github,
   HelpCircle,
   Printer,
   Settings,
@@ -81,8 +80,7 @@ export function CommandPalette() {
       ? { icon: Sun, label: "Mudar para tema claro", group: "Aparência", onSelect: () => { setTheme("light"); setOpen(false); } }
       : { icon: Moon, label: "Mudar para tema escuro", group: "Aparência", onSelect: () => { setTheme("dark"); setOpen(false); } },
     { icon: Printer, label: "Imprimir página atual", shortcut: "⌘P", group: "Ações", onSelect: () => { window.print(); setOpen(false); } },
-    { icon: HelpCircle, label: "Ver documentação", group: "Ajuda", onSelect: () => { toast({ title: "Documentação", description: "Consulte o /home/z/my-project/worklog.md" }); setOpen(false); } },
-    { icon: Github, label: "Código-fonte no GitHub", group: "Ajuda", onSelect: () => { toast({ title: "Projeto demonstrativo", description: "Código disponível no ambiente de desenvolvimento." }); setOpen(false); } },
+    { icon: HelpCircle, label: "Ver documentação", group: "Ajuda", onSelect: () => { toast({ title: "Documentação", description: "Arquitetura e operação estão em docs/ARCHITECTURE.md e docs/OPERATIONS.md." }); setOpen(false); } },
   ];
 
   const groups = Array.from(new Set(items.map((i) => i.group)));

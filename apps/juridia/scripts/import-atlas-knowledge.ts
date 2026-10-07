@@ -9,11 +9,11 @@ if (!targetUrl) throw new Error("DATABASE_URL obrigatório");
 if (targetUrl === sourceUrl) throw new Error("Origem Atlas e destino JuridIA não podem ser o mesmo banco");
 
 const source = new PrismaClient({ datasources: { db: { url: sourceUrl } } });
-const includeDemo = /^(1|true|yes)$/i.test(process.env.INCLUDE_ATLAS_DEMO || "");
+const includeNonProduction = /^(1|true|yes)$/i.test(process.env.INCLUDE_NONPRODUCTION_DATA || "");
 
 async function main() {
   const docs = await source.knowledgeDocument.findMany({
-    where: includeDemo ? {} : { dadosFicticios: false },
+    where: includeNonProduction ? {} : { dadosFicticios: false },
     select: {
       id:true,slug:true,titulo:true,tipoDocumento:true,area:true,subarea:true,assunto:true,subassunto:true,
       prioridade:true,lote:true,conteudo:true,metadados:true,tags:true,fonte:true,urlFonte:true,dataConsulta:true,

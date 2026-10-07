@@ -103,7 +103,7 @@ Regras:
     result = fallbackAnalysis(facts);
   }
 
-  // Persiste no usuário autenticado; não existe mais posse "demo".
+  // Persiste no usuário autenticado; a posse é vinculada ao usuário autenticado.
   const userId = authUser.uid;
   try {
     const saved = await db.caseAnalysis.create({
