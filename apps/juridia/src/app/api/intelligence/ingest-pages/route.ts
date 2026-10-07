@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { createEvidence } from "@/lib/evidence";
 import { logAuditEvent } from "@/lib/audit";
 import { scanDocumentForPromptInjection } from "@/lib/document_security";
+import { canAccessCase } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -25,12 +25,6 @@ function chunks(text: string, max = 1600): string[] {
   return out;
 }
 
-async function canAccessCase(caseId: string, user: { uid: string; role: string }): Promise<boolean> {
-  const c = await db.case.findUnique({ where: { id: caseId }, include: { client: { select: { userId: true } } } });
-  if (!c) return false;
-  return user.role === "admin" || c.client.userId === user.uid;
-}
-
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const auth = await requireAuth(req);
   if (!auth.ok) return auth.response;
@@ -40,7 +34,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     documentId?: string;
     fileName?: string;
     documentHash?: string;
-    allowUnsafe?: boolean;
     pages?: { pageNumber: number; text: string }[];
   } | null;
 
@@ -61,7 +54,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     report: scanDocumentForPromptInjection(String(p.text || "").slice(0, 100_000)),
   }));
   const blocked = security.filter((x) => x.report.severity === "block");
-  if (blocked.length && !body.allowUnsafe) {
+  if (blocked.length) {
     return NextResponse.json({
       error: "prompt_injection_detected",
       documentId,
@@ -91,7 +84,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           fileName,
           securitySeverity: sec.severity,
           securityScore: sec.score,
-          unsafeApproved: Boolean(blocked.length && body.allowUnsafe),
         },
       });
       evidenceCount++;
@@ -105,7 +97,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     userId: auth.user.uid,
     metadata: {
       documentId, fileName, documentHash: wholeHash, pages: body.pages.length,
-      evidenceCount, blockedPages: blocked.map((x) => x.pageNumber), unsafeApproved: Boolean(body.allowUnsafe),
+      evidenceCount, blockedPages: blocked.map((x) => x.pageNumber),
     },
   });
 
@@ -116,7 +108,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     pages: body.pages.length,
     evidenceCount,
     security: {
-      severity: blocked.length ? (body.allowUnsafe ? "warning" : "block") : security.some((x) => x.report.severity === "warning") ? "warning" : "safe",
+      severity: security.some((x) => x.report.severity === "warning") ? "warning" : "safe",
       blockedPages: blocked.map((x) => x.pageNumber),
       findings: security.flatMap((x) => x.report.findings.map((f) => ({ pageNumber: x.pageNumber, ...f }))).slice(0, 100),
     },
