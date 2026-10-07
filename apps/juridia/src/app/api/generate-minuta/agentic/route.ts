@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "system",
-          content: "Planeje a peça antes de redigir. Use somente os fatos informados e as fontes retornadas pela pesquisa, incluindo o acervo EJC/Atlas. Faça perguntas se houver lacunas. Não redija a peça. Não invente fonte. Diferencie fonte oficial de síntese interna. Responda JSON com resumo, perguntas, estrategia, roteiro, riscos e pesquisaInsuficiente.",
+          content: "Planeje a peça antes de redigir. Use somente os fatos informados e as fontes retornadas pela pesquisa, incluindo o acervo jurídico interno. Faça perguntas se houver lacunas. Não redija a peça. Não invente fonte. Diferencie fonte oficial de síntese interna. Responda JSON com resumo, perguntas, estrategia, roteiro, riscos e pesquisaInsuficiente.",
         },
         {
           role: "user",

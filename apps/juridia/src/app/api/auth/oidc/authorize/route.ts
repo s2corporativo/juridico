@@ -1,6 +1,6 @@
 // GET /api/auth/oidc/authorize — início do Authorization Code Flow + PKCE.
 //
-// Requisitos (regra de ativação docs/ejc-sso-preparacao.md):
+// Requisitos de segurança do fluxo OIDC:
 // - usuário autenticado no JuridIA (sessão local) — sem sessão, redireciona
 //   para /login?next=<authorize-url> preservando a requisição original;
 // - client_id registrado + redirect_uri EXATO (allowlist);

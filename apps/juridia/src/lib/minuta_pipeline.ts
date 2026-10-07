@@ -1,5 +1,5 @@
 // minuta_pipeline.ts — Pipeline de geração de minutas em MÚLTIPLAS ETAPAS
-// (paridade de arquitetura com os "múltiplos perfis integrados" do MinutaIA).
+// (arquitetura com perfis especializados).
 //
 // Cada etapa usa um perfil de IA especializado (system prompt próprio):
 //   1. ROTEIRISTA (outline)  → plano estruturado da peça em JSON
@@ -9,7 +9,7 @@
 // A montagem de prompts é FUNÇÃO PURA (testável sem LLM nem banco).
 // Este módulo NÃO conhece segredos e NÃO fala com a rede.
 
-// ── Perfis de estilo (aprendizado de estilo — nível MinutaIA) ───────────────
+// ── Perfis de estilo (aprendizado de estilo) ───────────────
 
 export const STYLE_DIRECTIVES: Record<string, string> = {
   formal:
@@ -28,7 +28,7 @@ export function styleDirective(writingStyle?: string | null): string {
   );
 }
 
-// ── Skills (habilidades auditáveis — paridade com as Habilidades MinutaIA) ──
+// ── Skills (habilidades auditáveis — skills jurídicas auditáveis) ──
 
 export interface PipelineSkill {
   slug: string;
@@ -291,7 +291,7 @@ export interface DraftInput {
   outlineText: string;
   brainContext: string;
   styleDirective: string;
-  /** Minuta-molde aprovada pelo advogado (geração em lote — paridade MinutaIA) */
+  /** Minuta-molde aprovada pelo advogado (geração em lote — geração em lote) */
   moldText?: string;
 }
 

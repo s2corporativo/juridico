@@ -1,4 +1,4 @@
-// research_coverage.ts — cobertura mínima de pesquisa do cérebro EJC.
+// research_coverage.ts — cobertura mínima de pesquisa do cérebro jurídico.
 // Pesquisa não é considerada suficiente só porque encontrou precedente favorável.
 
 export interface ResearchCoverage {
