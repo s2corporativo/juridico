@@ -44,7 +44,7 @@ log "JuridIA · TypeScript"
 (cd "$JURIDIA" && bun_exec x tsc --noEmit)
 
 log "JuridIA · testes críticos"
-(cd "$JURIDIA" && bun_exec test   tests/gates.test.ts   tests/auth-oidc.test.ts   tests/minuta-pipeline.test.ts   tests/paginate.test.ts   tests/legal-brain-core.test.ts   tests/embedding-retrieval.test.ts   tests/office-skill-catalog.test.ts   tests/document-security.test.ts   tests/atlas-knowledge-bridge.test.ts)
+(cd "$JURIDIA" && bun_exec test   tests/gates.test.ts   tests/auth-oidc.test.ts   tests/minuta-pipeline.test.ts   tests/paginate.test.ts   tests/legal-brain-core.test.ts   tests/embedding-retrieval.test.ts   tests/office-skill-catalog.test.ts   tests/document-security.test.ts   tests/molde.test.ts   tests/atlas-knowledge-bridge.test.ts)
 
 log "JuridIA · build de produção"
 (

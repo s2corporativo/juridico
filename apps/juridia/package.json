@@ -17,7 +17,8 @@
     "atlas:knowledge:embeddings": "bun scripts/backfill-atlas-knowledge-embeddings.ts",
     "atlas:legal-sources:materialize": "bun scripts/materialize-atlas-legal-sources.ts",
     "rag:smoke": "bun scripts/smoke-hybrid-rag.ts",
-    "smoke:agentic": "bun scripts/smoke-agentic-flow.ts"
+    "smoke:agentic": "bun scripts/smoke-agentic-flow.ts",
+    "smoke:molde": "bun scripts/smoke-molde.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
