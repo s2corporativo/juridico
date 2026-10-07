@@ -2,7 +2,7 @@
 
 Data da validação: **26/08/2026**.
 
-O Atlas Forense passou a possuir uma camada persistente para executar e auditar o futuro censo nacional DataJud. A estrutura separa **execução** de **métrica agregada mensal**, sem guardar número de processo, partes, conteúdo de petições ou credenciais.
+O Atlas Jurídico passou a possuir uma camada persistente para executar e auditar o futuro censo nacional DataJud. A estrutura separa **execução** de **métrica agregada mensal**, sem guardar número de processo, partes, conteúdo de petições ou credenciais.
 
 | Componente | Estado atual | Regra de uso |
 |---|---|---|

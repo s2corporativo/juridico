@@ -1,6 +1,6 @@
 # Conector de Jurisprudência — verificação de APIs e arquitetura
 
-Atlas Forense · Painel JEC BH e Betim · Task 5 (reconstruída e validada em 04/10/2026)
+Atlas Jurídico · Conector de jurisprudência
 
 ## 1. Lacuna mapeada
 

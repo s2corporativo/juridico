@@ -1,7 +1,7 @@
 # Matriz de compatibilidade — especificação do Compêndio
 
 **Base analisada:** especificação recebida em 28/08/2026.  
-**Decisão de arquitetura:** o Atlas mantém MariaDB próprio e isolado; o EJC poderá atuar apenas como provedor de identidade quando isso for necessário.
+**Decisão de arquitetura:** o Atlas mantém MariaDB próprio e isolado; o JuridIA atua como provedor de identidade quando isso for necessário.
 
 | Requisito da especificação | Decisão no Atlas | Justificativa e limite |
 | --- | --- | --- |

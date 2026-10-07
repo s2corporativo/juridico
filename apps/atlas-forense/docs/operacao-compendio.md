@@ -8,7 +8,7 @@ Data de consolidação: **26/08/2026**.
 
 | Camada | Finalidade | Estado atual | Limite de atuação |
 |---|---|---|---|
-| Atlas Forense | Censo, recortes, série mensal e exportações metodológicas. | Operacional. | Não converte amostra ou movimento em taxa de êxito. |
+| Atlas Jurídico | Censo, recortes, série mensal e exportações metodológicas. | Operacional. | Não converte amostra ou movimento em taxa de êxito. |
 | Compêndio público | Pesquisa de julgados, fontes, teses e taxonomia. | Operacional. | Exibe somente metadados públicos compatíveis. |
 | Curadoria | Conferência da fonte, taxonomia, tese e elegibilidade. | Processo definido. | Exige revisão humana e documento ou URL oficial. |
 | Central de controle | Pré-validação técnica de lotes candidatos. | Operacional para perfil `admin`. | Não grava, publica ou armazena documentos. |
