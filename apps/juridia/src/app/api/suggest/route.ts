@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayChat, inferSensitiveTask } from "@/lib/ai_gateway";
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -60,23 +60,21 @@ ${instruction}
 Gere apenas o trecho solicitado, em português jurídico brasileiro, pronto para ser inserido no documento. Não use marcadores [TIPO_0001] — escreva o texto completo com dados genéricos onde necessário (____ para campos a preencher).`;
 
   try {
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    const inferred = inferSensitiveTask(`${templateName}\n${instruction}\n${currentContent.slice(-1500)}`);
+    const taskType = inferred === "brain_classify" ? "minuta" : inferred;
+    const response = await aiGatewayChat({
+      taskType,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      thinking: { type: "disabled" },
       temperature: 0.5,
-      max_tokens: 1200,
+      maxTokens: 1200,
     });
 
-    const suggestion = completion.choices[0]?.message?.content || "";
     return NextResponse.json({
-      suggestion,
-      tokensUsed:
-        (completion as unknown as { usage?: { total_tokens?: number } }).usage
-          ?.total_tokens || 0,
+      suggestion: response.text,
+      tokensUsed: response.totalTokens,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Erro ao gerar sugestão";
@@ -92,41 +90,30 @@ Gere apenas o trecho solicitado, em português jurídico brasileiro, pronto para
 
 function generateFallback(instruction: string, templateName: string): string {
   const lower = instruction.toLowerCase();
-
   if (lower.includes("fundament")) {
     return `### Fundamentação
 
-O art. 927 do Código Civil estabelece que aquele que, por ato ilícito (arts. 186 e 187), causar dano a outrem, fica obrigado a repará-lo. Tratando-se de responsabilidade objetiva (art. 927, parágrafo único), basta a demonstração da conduta, do dano e do nexo causal.
+[Insira aqui apenas normas e precedentes verificados em fonte oficial e aderentes aos fatos do caso.]
 
-A jurisprudência do STJ consolidou entendimento no sentido de que a inscrição indevida em cadastros de proteção ao crédito, quando decorrente de conduta ilícita do fornecedor, gera dano moral in re ipsa, prescindindo a comprovação de prejuízo concreto.
-
-No caso em tela, restam caracterizados os pressupostos da responsabilidade civil, impondo-se a condenação do réu ao pagamento de indenização por danos morais, em valor razoável e proporcional à gravidade da conduta.`;
+Aplique os fundamentos jurídicos aos fatos comprovados e identifique expressamente qualquer lacuna que ainda dependa de pesquisa ou prova.`;
   }
   if (lower.includes("pedido")) {
     return `### Pedidos
 
-1. A procedência integral da ação para condenar o réu ao pagamento de indenização por danos morais;
-2. A condenação do réu em honorários advocatícios de 20% sobre o valor da condenação (art. 85, §2º, CPC);
-3. A condenação do réu nas custas processuais;
-4. A concessão dos benefícios da Justiça Gratuita ao autor, por ser pessoa pobre na acepção jurídica do termo;
-5. A produção de todas as provas em direito admitidas, em especial documental e testemunhal.
+1. [Pedido principal, conforme os fatos e a base jurídica verificada];
+2. [Pedido acessório, se cabível];
+3. [Requerimentos probatórios pertinentes].
 
-Dá-se à causa o valor de R$ ____.`;
+Valor da causa: R$ ____ [conferir critério legal aplicável].`;
   }
   if (lower.includes("relat") || lower.includes("fato")) {
-    return `### I. Dos Fatos
+    return `### Dos Fatos
 
-O autor, devidamente qualificado, manteve relação jurídica com o réu. No entanto, o réu, em conduta contrária ao direito, promoveu ____ que resultou em prejuízos ao autor.
-
-Diante da conduta ilícita, restou configurado o dano, bem como o nexo de causalidade entre a conduta do réu e o prejuízo experimentado pelo autor.
-
-Frustradas as tentativas de resolução amigável, restou ao autor valer-se da via judicial para ver reparado o dano sofrido.`;
+[Descreva cronologicamente apenas os fatos comprovados ou expressamente alegados, vinculando-os aos documentos do caso quando disponíveis.]`;
   }
   return `### ${templateName}
 
-Trecho sugerido para: ${instruction}
+Trecho solicitado: ${instruction}
 
-Conforme a legislação aplicável e a jurisprudência dos tribunais superiores, cumpre destacar que ____ (complementar com a fundamentação específica do caso).
-
-Assim, requer-se o que de direito.`;
+[Conteúdo pendente de fundamentação e conferência jurídica. Não inserir lei, precedente, valor, prazo ou fato sem fonte/evidência verificada.]`;
 }

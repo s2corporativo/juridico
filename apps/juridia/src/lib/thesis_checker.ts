@@ -9,7 +9,7 @@
 // Base normativa: art. 489, §1º, V e VI, do CPC (fundamentação deve demonstrar
 // o ajuste do precedente ao caso ou a sua distinção)
 
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayJson, inferSensitiveTask } from "@/lib/ai_gateway";
 
 export type ThesisAdherence =
   | "apoia"
@@ -49,23 +49,22 @@ export async function checkThesisAdherence(input: ThesisCheckInput): Promise<The
   }
 
   try {
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    const inferred = inferSensitiveTask(`${claim}\n${precedentQuote}\n${caseFacts}`);
+    const taskType = inferred === "brain_classify" ? "analise_caso" : inferred;
+    const { data: parsed } = await aiGatewayJson<{
+      adherence?: ThesisAdherence;
+      confidence?: number;
+      explanation?: string;
+      recommendation?: string;
+    }>({
+      taskType,
       messages: [
         {
           role: "system",
-          content: `Você é um verificador jurídico brasileiro. Sua função é verificar se um precedente realmente SUSTENTA a afirmação feita em uma peça jurídica.
-
-Classifique em:
-- "apoia": o precedente confirma diretamente a afirmação
-- "apoia_em_parte": o precedente apoia parte da afirmação, mas não toda
-- "distinguivel": o precedente trata de situação diferente (distinguishing)
-- "contrario": o precedente vai contra a afirmação
-- "insuficiente": não é possível determinar a relação
-
-Responda APENAS com JSON: {"adherence": "...", "confidence": 0.0-1.0, "explanation": "...", "recommendation": "..."}
-
-Base normativa: art. 489, §1º, V e VI, do CPC — a fundamentação deve demonstrar o ajuste do precedente ao caso ou a sua distinção.`,
+          content: `Você é um verificador jurídico brasileiro. Verifique apenas se o trecho fornecido do precedente sustenta a afirmação da peça.
+Classifique: apoia | apoia_em_parte | distinguivel | contrario | insuficiente.
+Não complemente o precedente com conhecimento externo e não invente fundamento.
+Responda APENAS JSON: {"adherence":"...","confidence":0.0,"explanation":"...","recommendation":"..."}.`,
         },
         {
           role: "user",
@@ -76,37 +75,19 @@ ${claim}
 ${precedentQuote}
 
 ## Fatos do caso
-${caseFacts.slice(0, 500)}
-
-## Tarefa
-Compare a afirmação com o precedente. O precedente sustenta a afirmação? Ou é distinguível? Ou contrário?`,
+${caseFacts.slice(0, 500)}`,
         },
       ],
-      thinking: { type: "disabled" },
       temperature: 0.2,
-      max_tokens: 500,
+      maxTokens: 500,
     });
-
-    const raw = completion.choices[0]?.message?.content || "";
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (match) {
-      const parsed = JSON.parse(match[0]);
-      const validAdherence = ["apoia", "apoia_em_parte", "distinguivel", "contrario", "insuficiente"];
-      const adherence = validAdherence.includes(parsed.adherence)
-        ? (parsed.adherence as ThesisAdherence)
-        : "insuficiente";
-      return {
-        adherence,
-        confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
-        explanation: parsed.explanation || "Verificação inconclusiva",
-        recommendation: parsed.recommendation || "Verifique manualmente a relação entre a afirmação e o precedente",
-      };
-    }
+    const validAdherence: ThesisAdherence[] = ["apoia", "apoia_em_parte", "distinguivel", "contrario", "insuficiente"];
+    const adherence = parsed.adherence && validAdherence.includes(parsed.adherence) ? parsed.adherence : "insuficiente";
     return {
-      adherence: "insuficiente",
-      confidence: 0,
-      explanation: "Não foi possível processar a verificação",
-      recommendation: "Verifique manualmente",
+      adherence,
+      confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
+      explanation: parsed.explanation || "Verificação inconclusiva",
+      recommendation: parsed.recommendation || "Verifique manualmente a relação entre a afirmação e o precedente",
     };
   } catch (e) {
     return {
