@@ -113,7 +113,7 @@ async function callZai(spec: ProviderSpec, request: AIRequest, messages: AIMessa
 
 async function callOllama(spec: ProviderSpec, request: AIRequest, messages: AIMessage[]): Promise<Omit<AIResponse, "latencyMs" | "sanitizationMode">> {
   const base = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").replace(/\/$/, "");
-  const model = request.model || spec.model || process.env.OLLAMA_MODEL || "qwen2.5:14b";
+  const model = request.model || spec.model || process.env.OLLAMA_MODEL || "llama3.2:3b";
   const resp = await fetch(`${base}/api/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },

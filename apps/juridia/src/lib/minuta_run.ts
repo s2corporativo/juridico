@@ -443,7 +443,7 @@ export async function runMinutaPipeline(
     degraded = true;
     generated = fallbackDraft(
       tpl.name,
-      pseudonymization.text,
+      factsOnlyPseudonymized,
       skills.map((s) => s.name)
     );
   }
