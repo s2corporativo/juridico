@@ -325,6 +325,7 @@ ${inp.anonymizedFacts || "(sem fatos informados — redija com ____ nos campos e
 - Exemplo CERTO de qualificação: "[NOME_1], brasileiro(a), portador(a) do CPF [CPF_1]..."
 - Exemplo ERRADO (não faça): "Nome Autor, brasileiro(a)..." ou "Cpf Autor portador..." — esses são rótulos, não pessoas.
 - NUNCA crie marcadores novos. Falta de dado = ____ (sublinhado).
+- Se o bloco "EVIDÊNCIAS DOS AUTOS" estiver presente, toda afirmação fática relevante baseada nos autos deve carregar ao menos um marcador [[autos:...:evidence=ID]] exatamente como fornecido. Preserve documento, página e evidence_ref_id sem alterar.
 - Para datas: ____ de ____________ de ______.
 - NÃO inclua dados sensíveis reais: você só recebeu marcadores.
 - Feche com bloco de assinatura com placeholders: [LOCAL], [DATA], nome do advogado como ____ e OAB/____.`;
