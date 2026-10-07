@@ -1,6 +1,6 @@
-// thesis_checker.ts — Verificador de aderência da tese (diferencial sobre MinutaIA)
+// thesis_checker.ts — Verificador de aderência da tese 
 //
-// Lacuna do MinutaIA: confirma que a citação existe e foi transcrita fielmente,
+// Verifica não apenas a existência da citação, mas também
 // mas não verifica se ela SUSTENTA a afirmação feita na peça.
 //
 // Este verificador compara a frase da peça com o fundamento central do acórdão

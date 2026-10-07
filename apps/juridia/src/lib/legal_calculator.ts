@@ -1,6 +1,6 @@
-// legal_calculator.ts — Cálculos jurídicos determinísticos (diferencial sobre MinutaIA)
+// legal_calculator.ts — Cálculos jurídicos determinísticos 
 //
-// Lacuna do MinutaIA: cálculos ficam a cargo de ferramentas externas.
+// Cálculos jurídicos são determinísticos e auditáveis.
 // Este módulo faz cálculos determinísticos auditáveis: prazos, correção,
 // juros, prescrição — sem delegar aritmética ao LLM.
 //

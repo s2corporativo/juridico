@@ -1,6 +1,6 @@
-// judge_simulator.ts — Simulação do julgador (diferencial sobre MinutaIA)
+// judge_simulator.ts — Simulação do julgador 
 //
-// Lacuna do MinutaIA: simula o ADVERSÁRIO (peça contrária), não o JULGADOR.
+// Controle complementar: simulação da perspectiva do julgador.
 // Este módulo simula o julgador: verifica admissibilidade e mérito ANTES do protocolo.
 //
 // Base normativa:
@@ -38,7 +38,7 @@ export interface JudgeSimulationResult {
 
 /**
  * Simula o julgador: verifica admissibilidade e mérito da peça.
- * Diferencial: MinutaIA só simula o adversário, não o juiz.
+ * Controle complementar de coerência decisória.
  */
 export async function simulateJudge(params: {
   caseFacts: string;

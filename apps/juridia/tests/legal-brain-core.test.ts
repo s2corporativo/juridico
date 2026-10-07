@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { getSanitizationMode, SanitizationMode } from "@/lib/ai_governance";
 import { assessResearchCoverage, buildResearchPlan } from "@/lib/research_coverage";
 
-describe("EJC brain core", () => {
+describe("Legal brain core", () => {
   test("criminal é fail-closed local", () => {
     expect(getSanitizationMode("criminal")).toBe(SanitizationMode.LOCAL_COMPLETO);
     expect(getSanitizationMode("debate_penal")).toBe(SanitizationMode.LOCAL_COMPLETO);

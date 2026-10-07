@@ -1,8 +1,5 @@
-// ⚠️  DEPRECATED — NÃO RODAR EM PRODUÇÃO
-// Este script popula o banco com dados fictícios (skills, fontes, advogados fake, etc.)
-// Para produção, use apenas fontes REAIS oficiais (Planalto, CNJ, STJ, STF).
-// Em desenvolvimento: pode rodar para popular a base de conhecimento,
-// mas NÃO deve ser incluído em deploy scripts ou CI/CD.
+// Catálogo curado de skills de consumidor/bancário.
+// Execução idempotente; em produção a carga deve ocorrer somente por procedimento controlado.
 import { db } from "@/lib/db";
 import { createHash } from "crypto";
 

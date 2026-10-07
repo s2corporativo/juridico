@@ -1,4 +1,4 @@
-// Prisma schema — JuridIA (clone do MinutaIA)
+// Prisma schema — JuridIA / Atlas Jurídico
 
 generator client {
   provider = "prisma-client-js"
@@ -222,7 +222,7 @@ model LegalSource {
   @@index([tipo, vigente])
 }
 
-// Acervo jurídico legado EJC/Atlas — preservado sem perda de proveniência.
+// Acervo jurídico interno — preserva proveniência e histórico documental.
 model KnowledgeDocument {
   id                            String   @id @default(cuid())
   slug                          String   @unique
@@ -571,10 +571,10 @@ model BrainAnalysis {
   @@index([createdAt])
 }
 
-// ── SISTEMA SUPERIOR: diferenciais sobre MinutaIA ──────────────────────────
+// ── CONTROLES JURÍDICOS AVANÇADOS ─────────────────────────────────────────
 
 // PrecedentStatus — status de vigência/superação de precedentes (art. 927 §§2-4 CPC)
-// Diferencial: MinutaIA não tem controle público de superação
+// Controle de superação e vigência de precedentes.
 model PrecedentStatus {
   id              String   @id @default(cuid())
   legalSourceId   String?  // FK para LegalSource (se a fonte for um precedente)
@@ -594,7 +594,7 @@ model PrecedentStatus {
 }
 
 // NormVersion — versão da norma à época dos fatos (vigência temporal)
-// Diferencial: MinutaIA verifica texto atual; não controla versão histórica
+// Controle de versão histórica da norma.
 model NormVersion {
   id              String   @id @default(cuid())
   diploma         String   // CC, CPC, CLT, CP, CDC, CTN, etc.
@@ -614,7 +614,7 @@ model NormVersion {
 }
 
 // ProofMatrix — matriz fato→prova→ônus (art. 373 CPC, art. 6 VIII CDC, art. 818 CLT)
-// Diferencial: MinutaIA liga fato à página, não ao ônus probatório
+// Matriz fato, prova e ônus probatório.
 model ProofMatrix {
   id              String   @id @default(cuid())
   caseId          String   @default("default-case")
@@ -636,7 +636,7 @@ model ProofMatrix {
 }
 
 // CaseDeadline — prazo processual calculado deterministicamente
-// Diferencial: MinutaIA não calcula prazos; IA nunca confirma prazo
+// Prazos são calculados de forma determinística; IA nunca confirma prazo.
 model CaseDeadline {
   id              String   @id @default(cuid())
   caseId          String   @default("default-case")
@@ -654,7 +654,7 @@ model CaseDeadline {
 }
 
 // JudgeSimulation — simulação do julgador (admissibilidade + mérito)
-// Diferencial: MinutaIA simula o adversário, não o julgador
+// Simulação de perspectiva do julgador como controle adicional.
 model JudgeSimulation {
   id              String   @id @default(cuid())
   caseId          String   @default("default-case")

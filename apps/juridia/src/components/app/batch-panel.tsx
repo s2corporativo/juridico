@@ -1,7 +1,7 @@
 "use client";
 
 // BatchPanel — Geração em LOTE com aprovação da 1ª minuta como molde
-// (paridade MinutaIA). Fluxo:
+// . Fluxo:
 //   1. O advogado cola N casos (blocos separados por ---, cada linha
 //      "campo: valor" — aceita rótulo do template ou a própria chave).
 //   2. Gera a minuta do CASO 1 e permite revisar/editar.

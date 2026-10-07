@@ -1,6 +1,6 @@
-// proof_matrix.ts — Matriz fato→prova→ônus (diferencial sobre MinutaIA)
+// proof_matrix.ts — Matriz fato→prova→ônus 
 //
-// Lacuna do MinutaIA: liga o fato à página, mas não à análise de ônus probatório.
+// Relaciona fato, prova, documento e ônus probatório.
 // Este módulo constrói a matriz: cada alegação → tem prova? → quem prova? → risco?
 //
 // Base normativa:
