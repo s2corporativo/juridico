@@ -108,8 +108,8 @@ export async function runIterativeLegalResearch(params: {
         snippet: x.source.textoTrecho.slice(0, 900),
         host_name: (() => { try { return new URL(x.source.urlOficial || "").hostname; } catch { return ""; } })(),
       }));
-    if (internalPrecedents.length) {
-      const classifiedInternal = await classifyPrecedents(params.issue, internalPrecedents, taskType);
+    if (internalPrecedents.length && cycle === maxCycles) {
+      const classifiedInternal = await classifyPrecedents(params.issue, internalPrecedents.slice(0, 10), taskType);
       precedents = dedupe([...precedents, ...classifiedInternal])
         .sort((a, b) => (b.relevance + Number(b.verified) * 0.15) - (a.relevance + Number(a.verified) * 0.15))
         .slice(0, 40);
