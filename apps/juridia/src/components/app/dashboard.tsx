@@ -10,7 +10,8 @@ import {
   Search,
   ArrowRight,
   Zap,
-  Target,
+  Brain,
+  BookOpen,
   Calendar,
   Star,
   BarChart3,
@@ -65,10 +66,10 @@ export function Dashboard() {
   }, []).sort((a, b) => b.count - a.count);
 
   const quickActions = [
-    { label: "Gerar nova minuta", icon: Zap, tab: "generator" as const, color: "text-primary" },
-    { label: "Meus clientes", icon: Star, tab: "clients" as const, color: "text-primary" },
-    { label: "Pesquisar jurisprudência", icon: Search, tab: "jurisprudence" as const, color: "text-primary" },
-    { label: "Resumo do caso", icon: FileText, tab: "case-analysis" as const, color: "text-primary" },
+    { label: "Redigir minuta", icon: Zap, tab: "generator" as const, color: "text-primary" },
+    { label: "Analisar caso", icon: Brain, tab: "cerebro" as const, color: "text-primary" },
+    { label: "Pesquisar jurisprudência", icon: Search, tab: "datajud" as const, color: "text-primary" },
+    { label: "Consultar biblioteca", icon: BookOpen, tab: "biblioteca" as const, color: "text-primary" },
   ];
 
   return (
