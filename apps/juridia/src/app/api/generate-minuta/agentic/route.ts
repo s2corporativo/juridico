@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       coverage: r.coverage,
       insufficient: r.insufficient,
       laws: r.laws.slice(0, 8).map((x) => ({ id: x.source.id, diploma: x.source.diploma, numero: x.source.numero, urlOficial: x.source.urlOficial, vigente: x.source.vigente })),
+      atlasKnowledge: r.atlasKnowledge.slice(0, 10).map((x) => ({ documentId: x.documentId, slug: x.slug, title: x.title, type: x.documentType, area: x.area, source: x.source, sourceUrl: x.sourceUrl, reliability: x.reliability, excerpt: x.text.slice(0, 700), score: x.score, semanticScore: x.semanticScore })),
       precedents: r.precedents.slice(0, 10).map((x) => ({ name: x.name, url: x.url, favorable: x.favorable, relevance: x.relevance, official: x.verified })),
     }));
 
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "system",
-          content: "Planeje a peça antes de redigir. Use somente os fatos informados e o resumo de pesquisa. Faça perguntas se houver lacunas. Não redija a peça. Não invente fonte. Responda JSON com resumo, perguntas, estrategia, roteiro, riscos e pesquisaInsuficiente.",
+          content: "Planeje a peça antes de redigir. Use somente os fatos informados e as fontes retornadas pela pesquisa, incluindo o acervo EJC/Atlas. Faça perguntas se houver lacunas. Não redija a peça. Não invente fonte. Diferencie fonte oficial de síntese interna. Responda JSON com resumo, perguntas, estrategia, roteiro, riscos e pesquisaInsuficiente.",
         },
         {
           role: "user",

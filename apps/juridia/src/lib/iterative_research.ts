@@ -4,6 +4,7 @@
 import { aiGatewayJson, governedWebSearch, type WebSearchResult } from "@/lib/ai_gateway";
 import { legalSearch, type LegalRetrievalResult } from "@/lib/legal_retrieval";
 import { assessResearchCoverage, buildResearchPlan, type ResearchCoverage } from "@/lib/research_coverage";
+import { atlasKnowledgeSearch, type AtlasKnowledgeHit } from "@/lib/atlas_knowledge_retrieval";
 
 export interface ClassifiedPrecedent extends WebSearchResult {
   favorable: boolean | null;
@@ -16,6 +17,7 @@ export interface IterativeResearchResult {
   area: string;
   cycles: number;
   laws: LegalRetrievalResult[];
+  atlasKnowledge: AtlasKnowledgeHit[];
   precedents: ClassifiedPrecedent[];
   coverage: ResearchCoverage;
   queries: { purpose: string; query: string; results: number }[];
@@ -90,12 +92,19 @@ export async function runIterativeLegalResearch(params: {
   const plan = buildResearchPlan(params.issue, params.area);
   const queries: IterativeResearchResult["queries"] = [];
   let laws: LegalRetrievalResult[] = [];
+  let atlasKnowledge: AtlasKnowledgeHit[] = [];
   let precedents: ClassifiedPrecedent[] = [];
   let coverage = assessResearchCoverage({ laws: [], precedents: [], factualFit: false });
 
   for (let cycle = 1; cycle <= maxCycles; cycle++) {
     const localQuery = `${params.area} ${params.issue} ${cycle > 1 ? coverage.missing.join(" ") : ""}`;
     laws = dedupeLegal([...laws, ...(await legalSearch(localQuery, 12))]);
+    try {
+      atlasKnowledge = dedupeAtlas([...atlasKnowledge, ...(await atlasKnowledgeSearch(localQuery, 16))]);
+      queries.push({ purpose: "acervo EJC/Atlas híbrido", query: localQuery, results: atlasKnowledge.length });
+    } catch {
+      queries.push({ purpose: "acervo EJC/Atlas híbrido", query: localQuery, results: 0 });
+    }
 
     for (const step of plan.steps.filter((s) => s.sourceClasses.includes("precedent"))) {
       const query = cycle === 1 ? step.query : `${step.query} ${coverage.missing.join(" ")}`;
@@ -117,11 +126,11 @@ export async function runIterativeLegalResearch(params: {
       factualFit: laws.length > 0 && precedents.some((p) => p.relevance >= 0.45),
     });
     if (coverage.complete) {
-      return { issue: params.issue, area: params.area, cycles: cycle, laws, precedents, coverage, queries, insufficient: false };
+      return { issue: params.issue, area: params.area, cycles: cycle, laws, atlasKnowledge, precedents, coverage, queries, insufficient: false };
     }
   }
 
-  return { issue: params.issue, area: params.area, cycles: maxCycles, laws, precedents, coverage, queries, insufficient: true };
+  return { issue: params.issue, area: params.area, cycles: maxCycles, laws, atlasKnowledge, precedents, coverage, queries, insufficient: true };
 }
 
 function dedupeLegal(items: LegalRetrievalResult[]): LegalRetrievalResult[] {
@@ -131,4 +140,14 @@ function dedupeLegal(items: LegalRetrievalResult[]): LegalRetrievalResult[] {
     if (!prev || item.score > prev.score) best.set(item.source.id, item);
   }
   return [...best.values()].sort((a, b) => b.score - a.score).slice(0, 30);
+}
+
+
+function dedupeAtlas(items: AtlasKnowledgeHit[]): AtlasKnowledgeHit[] {
+  const best = new Map<string, AtlasKnowledgeHit>();
+  for (const item of items) {
+    const prev = best.get(item.documentId);
+    if (!prev || item.score > prev.score) best.set(item.documentId, item);
+  }
+  return [...best.values()].sort((a,b)=>b.score-a.score).slice(0,40);
 }

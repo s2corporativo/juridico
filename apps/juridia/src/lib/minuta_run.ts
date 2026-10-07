@@ -17,6 +17,7 @@ import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
 import { legalSearch } from "@/lib/legal_retrieval";
+import { atlasKnowledgeSearch } from "@/lib/atlas_knowledge_retrieval";
 import { verifyCitations } from "@/lib/citation_gate";
 import { buildCaseEvidenceContext, verifyEvidenceMarkers } from "@/lib/case_context";
 import {
@@ -233,6 +234,18 @@ export async function runMinutaPipeline(
     urlOficial: r.source.urlOficial,
     score: Number(r.score.toFixed(4)),
   }));
+  let atlasKnowledge: Awaited<ReturnType<typeof atlasKnowledgeSearch>> = [];
+  try {
+    atlasKnowledge = await atlasKnowledgeSearch(factsOnlyPseudonymized || tpl.name, 10);
+  } catch {
+    atlasKnowledge = [];
+  }
+  const atlasKnowledgeBlock = atlasKnowledge.length
+    ? "\n\n## ACERVO JURÍDICO INTERNO EJC/ATLAS\n" + atlasKnowledge.map((x) =>
+        `### ${x.title} [${x.documentType} · ${x.area} · conf. ${x.reliability}]\nFonte: ${x.source || "elaboração interna"}${x.sourceUrl ? ` — ${x.sourceUrl}` : ""}\nTrecho: ${x.text.slice(0, 1200)}\nScore híbrido: ${x.score.toFixed(3)}${x.semanticScore == null ? " (sem vetor disponível)" : ` · semântico ${x.semanticScore.toFixed(3)}`}`
+      ).join("\n\n")
+    : "";
+
   const referencesBlock = buildReferencesBlock(
     ragResults.map((r) => ({
       diploma: r.source.diploma,
@@ -323,7 +336,7 @@ export async function runMinutaPipeline(
   // Minuta-molde aprovada (geração em lote — paridade MinutaIA)
   const moldText = normalizeMoldContent(body.moldContent);
 
-  emit({ type: "stage", stage: "prepare", status: "done", note: `${skills.length} skill(s), ${references.length} fonte(s)` });
+  emit({ type: "stage", stage: "prepare", status: "done", note: `${skills.length} skill(s), ${references.length} fonte(s), ${atlasKnowledge.length} item(ns) Atlas` });
 
   // ═══ ETAPA 1 — ROTEIRISTA (plano estruturado) ═══
   let outlineText = "(plano indisponível — redija com a estrutura clássica)";
@@ -374,7 +387,7 @@ export async function runMinutaPipeline(
         templateName: tpl.name,
         templateDirectives: tpl.prompt,
         anonymizedFacts: pseudonymization.text,
-        skillsBlock,
+        skillsBlock: skillsBlock + atlasKnowledgeBlock,
         markerList,
         referencesBlock,
         outlineText,
@@ -584,6 +597,7 @@ export async function runMinutaPipeline(
         providers: [...providersUsed],
         pipeline: onEvent ? "multi-stage-v4-gateway-sse-contract" : "multi-stage-v4-gateway",
         stages: stages.map((s) => ({ stage: s.stage, ok: s.ok, tokens: s.tokens })),
+        atlasKnowledgeCount: atlasKnowledge.length,
       }),
     },
   });
@@ -607,6 +621,7 @@ export async function runMinutaPipeline(
       citationGate: { total: citationGate.total, verificadas: citationGate.verificadas, identificadas: citationGate.identificadas, suspeitas: citationGate.suspeitas, genericas: citationGate.genericas, bloquear: citationGate.bloquear },
       evidenceGate,
       evidenceRefs: caseEvidence.references.map((e) => e.evidenceRefId),
+      atlasKnowledge: atlasKnowledge.map((x) => ({ documentId:x.documentId, slug:x.slug, type:x.documentType, score:x.score, semanticScore:x.semanticScore })),
       runId: run.id,
       batch: Boolean(body.batchId),
       mold: Boolean(moldText),
