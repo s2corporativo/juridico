@@ -1,4 +1,4 @@
-// Prisma schema — JuridIA / Atlas Jurídico
+// Prisma schema — Atlas Jurídico
 
 generator client {
   provider = "prisma-client-js"
@@ -32,7 +32,7 @@ model User {
 }
 
 // Chave de assinatura do IdP OIDC (RS256) — gerada na primeira inicialização.
-// A privada permanece no servidor do JuridIA; a pública é exposta via /jwks.
+// A chave privada permanece no servidor do Atlas Jurídico; a pública é exposta via /jwks.
 model OidcKey {
   id            String   @id @default(cuid())
   kid           String   @unique
