@@ -4,11 +4,7 @@ import { useEffect } from "react";
 import {
   Brain,
   Wand2,
-  FileText,
   LayoutDashboard,
-  Settings as SettingsIcon,
-  Calculator,
-  BarChart3,
   Search,
   Shield,
   BookOpen,
@@ -30,14 +26,7 @@ import { DataJudBusca } from "./datajud-busca";
 import { GrafoSistema } from "./grafo-sistema";
 import { BibliotecaJuridica } from "./biblioteca-juridica";
 
-// ── Zona ÚNICA: Cérebro Jurídico (foco em conhecimento, sem ERP) ────────────
-// Antes: ERP (10 tabs) + IA (10 tabs) = 20 tabs (com componentes operacionais)
-// Agora: Apenas a zona cognitiva. Operacional (clientes/casos/documentos/prazos/
-// audiências/financeiro/produtividade) foi removido para focar no conhecimento.
-// APIs continuam disponíveis para a IA usar internamente.
-// Navegação do advogado: mostra tarefas, não motores internos.
-// Intelligence/Pipeline/Homologação/Grafo continuam como capacidades internas,
-// acionadas pelos fluxos principais e mantidas fora do menu superior.
+// Navegação principal orientada às tarefas do advogado. Capacidades técnicas permanecem contextuais.
 const TABS = [
   { id: "dashboard" as const, label: "Início", icon: LayoutDashboard, key: "1" },
   { id: "cerebro" as const, label: "Cérebro", icon: Brain, key: "e" },
@@ -45,8 +34,12 @@ const TABS = [
   { id: "biblioteca" as const, label: "Biblioteca", icon: BookOpen, key: "b" },
   { id: "editor" as const, label: "Editor", icon: FileText, key: "m" },
   { id: "datajud" as const, label: "Pesquisa", icon: Search, key: "j" },
-  { id: "calculadora" as const, label: "Cálculos", icon: Calculator, key: "l" },
-  { id: "visuallaw" as const, label: "Visual Law", icon: BarChart3, key: "v" },
+  { id: "calculadora" as conconst TABS = [
+  { id: "dashboard" as const, label: "Início", icon: LayoutDashboard, key: "1" },
+  { id: "cerebro" as const, label: "Analisar", icon: Brain, key: "e" },
+  { id: "generator" as const, label: "Redigir", icon: Wand2, key: "g" },
+  { id: "datajud" as const, label: "Pesquisar", icon: Search, key: "j" },
+  { id: "biblioteca" as const, label: "Biblioteca", icon: BookOpen, key: "b" },
   { id: "settings" as const, label: "Governança", icon: Shield, key: "," },
 ];
 
@@ -54,11 +47,6 @@ const ALL_TABS = TABS;
 
 export function AppShell() {
   const { appTab, setAppTab } = useAppStore();
-
-  useEffect(() => {
-    // Migra sessões antigas que ficaram em uma aba técnica agora consolidada.
-    if (!TABS.some((t) => t.id === appTab)) setAppTab(appTab);
-  }, [appTab, setAppTab]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -79,10 +67,9 @@ export function AppShell() {
         <div className="container-juridia">
           <Tabs value={appTab} onValueChange={(v) => setAppTab(v as typeof appTab)}>
             <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-0 bg-transparent p-2 scrollbar-juridia">
-              {/* ZONA ÚNICA — Cérebro Jurídico */}
               <div className="flex items-center gap-2 pr-2">
                 <Brain className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Cérebro Jurídico</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Atlas Jurídico</span>
               </div>
               {TABS.map((t) => (
                 <TabsTrigger key={t.id} value={t.id} className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary" title={`Atalho: ${t.key.toUpperCase()}`}>
@@ -97,7 +84,6 @@ export function AppShell() {
       </div>
 
       <div>
-        {/* Cérebro Jurídico — zona única (sem ERP) */}
         {appTab === "assistente" && <Assistente />}
         {appTab === "dashboard" && <Dashboard />}
         {appTab === "biblioteca" && <BibliotecaJuridica />}
