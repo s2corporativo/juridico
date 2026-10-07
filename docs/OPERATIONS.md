@@ -24,22 +24,17 @@ ATLAS_OIDC_REDIRECT_URIS=https://atlas.depaulateixeira.adv.br/api/sso/callback
 
 Segredos reais não entram no Git. Use arquivos de ambiente com permissão restrita no servidor. O script `apps/atlas-forense/deploy/render-env.sh` gera apenas valores que podem ser gerados localmente e nunca imprime segredos.
 
-## Validação antes de publicar
+## Release Gate
+
+A validação oficial não depende de GitHub Actions. O commit exato é validado no ambiente de engenharia/VPS antes de qualquer publicação:
 
 ```bash
-cd apps/atlas-forense
-pnpm install --frozen-lockfile
-pnpm check
-pnpm test -- --run
-pnpm build
-
-cd ../juridia
-bun install --frozen-lockfile
-bun run db:generate
-bun x tsc --noEmit
-bun test
-bun run build
+npm run gate:release
 ```
+
+O gate instala dependências com lockfile congelado, executa TypeScript, testes críticos e builds de produção do Atlas e do JuridIA.
+
+Regra de publicação: somente promover commits que terminem com `RELEASE GATE APROVADO`. GitHub permanece como controle de versão e revisão; indisponibilidade de runner remoto não bloqueia manutenção ou publicação.
 
 ## Mapa arquitetural
 
