@@ -99,6 +99,22 @@ export async function runIterativeLegalResearch(params: {
   for (let cycle = 1; cycle <= maxCycles; cycle++) {
     const localQuery = `${params.area} ${params.issue} ${cycle > 1 ? coverage.missing.join(" ") : ""}`;
     laws = dedupeLegal([...laws, ...(await legalSearch(localQuery, 12))]);
+
+    const internalPrecedents = laws
+      .filter((x) => ["jurisprudencia", "sumula"].includes(x.source.tipo) && Boolean(x.source.urlOficial))
+      .map((x) => ({
+        url: x.source.urlOficial || "",
+        name: [x.source.tribunal, x.source.diploma, x.source.numero].filter(Boolean).join(" "),
+        snippet: x.source.textoTrecho.slice(0, 900),
+        host_name: (() => { try { return new URL(x.source.urlOficial || "").hostname; } catch { return ""; } })(),
+      }));
+    if (internalPrecedents.length) {
+      const classifiedInternal = await classifyPrecedents(params.issue, internalPrecedents, taskType);
+      precedents = dedupe([...precedents, ...classifiedInternal])
+        .sort((a, b) => (b.relevance + Number(b.verified) * 0.15) - (a.relevance + Number(a.verified) * 0.15))
+        .slice(0, 40);
+      queries.push({ purpose: "precedentes internos híbridos", query: localQuery, results: classifiedInternal.length });
+    }
     try {
       atlasKnowledge = dedupeAtlas([...atlasKnowledge, ...(await atlasKnowledgeSearch(localQuery, 16))]);
       queries.push({ purpose: "acervo jurídico interno híbrido", query: localQuery, results: atlasKnowledge.length });

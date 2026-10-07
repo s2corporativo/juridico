@@ -5,6 +5,7 @@ import { performance } from "node:perf_hooks";
 import {
   getSanitizationMode,
   resolveProviders,
+  AI_EXTERNAL_PROVIDERS_ALLOWED,
   SanitizationMode,
   type ProviderSpec,
 } from "@/lib/ai_governance";
@@ -22,6 +23,7 @@ export interface AIRequest {
   temperature?: number;
   maxTokens?: number;
   sanitizationMode?: SanitizationMode;
+  jsonMode?: boolean;
 }
 
 export interface AIResponse {
@@ -107,6 +109,7 @@ async function callOllama(spec: ProviderSpec, request: AIRequest, messages: AIMe
       model,
       messages,
       stream: false,
+      ...(request.jsonMode ? { format: "json" } : {}),
       options: {
         temperature: request.temperature ?? 0.2,
         num_predict: request.maxTokens ?? 2000,
@@ -146,6 +149,7 @@ async function callOpenAICompatible(spec: ProviderSpec, request: AIRequest, mess
       messages,
       temperature: request.temperature ?? 0.2,
       max_tokens: request.maxTokens ?? 2000,
+      ...(request.jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
     signal: AbortSignal.timeout(180_000),
   });
@@ -209,7 +213,7 @@ export function extractJson<T>(text: string): T | null {
 }
 
 export async function aiGatewayJson<T>(request: AIRequest): Promise<{ data: T; response: AIResponse }> {
-  const response = await aiGatewayChat(request);
+  const response = await aiGatewayChat({ ...request, jsonMode: true });
   const data = extractJson<T>(response.text);
   if (data == null) throw new Error("Provider não retornou JSON válido");
   return { data, response };
@@ -224,6 +228,9 @@ export interface WebSearchResult {
 
 export async function governedWebSearch(query: string, taskType = "pesquisa", num = 8): Promise<WebSearchResult[]> {
   const mode = getSanitizationMode(taskType);
+  if (!AI_EXTERNAL_PROVIDERS_ALLOWED) {
+    throw new AIProviderUnavailable("Pesquisa web externa desabilitada pela governança");
+  }
   if (mode === SanitizationMode.LOCAL_COMPLETO) {
     throw new AIProviderUnavailable("Pesquisa web externa bloqueada pela política LOCAL_COMPLETO");
   }
