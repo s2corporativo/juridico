@@ -104,7 +104,7 @@ export function Inteligencia() {
   useEffect(() => {
     if (currentCaseId) loadStored();
     else setStored(null);
-  }, [currentCaseId, loadStored]);
+  }, [currentCaseId]);
 
   // Usa brainContext se vier do Cérebro
   useEffect(() => {
