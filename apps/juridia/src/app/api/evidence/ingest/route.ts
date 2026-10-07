@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { createEvidence } from "@/lib/evidence";
+import { createEvidence, type EvidenceRefRecord } from "@/lib/evidence";
 import { scanDocumentForPromptInjection } from "@/lib/document_security";
 import { logAuditEvent } from "@/lib/audit";
 
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }, { status: 422 });
   }
 
-  const created = [];
+  const created: EvidenceRefRecord[] = [];
   for (const { page, security } of reports) {
     const pageNumber = Number(page.pageNumber);
     if (!Number.isInteger(pageNumber) || pageNumber < 1) {
