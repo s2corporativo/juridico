@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { SkillVersionEditor } from "./skill-version-editor";
 
 interface Skill {
   id: string;
@@ -183,6 +184,7 @@ export function BibliotecaJuridica() {
                         <CardContent className="pt-0">
                           <p className="text-xs text-muted-foreground line-clamp-3">{s.description}</p>
                           <code className="mt-2 block text-[10px] text-muted-foreground font-mono">{s.slug}</code>
+                          <SkillVersionEditor slug={s.slug} onSaved={load} />
                         </CardContent>
                       </Card>
                     </motion.div>
