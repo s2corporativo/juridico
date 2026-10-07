@@ -117,10 +117,10 @@ export default function CompendiumPage() {
       <aside className="compendium-rail">
         <a className="compendium-brand" href="/">
           <span className="brand-crest"><Scale size={20} /></span>
-          <span><small>Atlas Forense · JEC</small><strong>Compêndio<br />Jurídico</strong></span>
+          <span><small>Atlas Jurídico · JEC</small><strong>Compêndio<br />Jurídico</strong></span>
         </a>
         <div className="compendium-rail-copy">
-          <span className="eyebrow">MÓDULO DO ATLAS FORENSE</span>
+          <span className="eyebrow">MÓDULO DO ATLAS JURÍDICO</span>
           <p>Taxonomia, teses e jurisprudência com status de evidência explícito.</p>
         </div>
         <nav className="compendium-nav" aria-label="Navegação do compêndio">
@@ -131,7 +131,7 @@ export default function CompendiumPage() {
           <a href="#qualidade"><span>05</span>Qualidade</a>
           <a href="#auditoria"><span>06</span>Auditoria</a>
         </nav>
-        <SiteNav heading="Atlas Forense" />
+        <SiteNav heading="Atlas Jurídico" />
         <div className="compendium-rail-foot"><ShieldCheck size={16} /><p>Sem partes, CPF, endereço ou documento pessoal no modelo público.</p></div>
       </aside>
 
@@ -143,7 +143,7 @@ export default function CompendiumPage() {
 
         <section className="compendium-hero" id="panorama">
           <div>
-            <span className="eyebrow">ATLAS FORENSE · MÓDULO 02 / COMPÊNDIO JURÍDICO</span>
+            <span className="eyebrow">ATLAS JURÍDICO · MÓDULO 02 / COMPÊNDIO JURÍDICO</span>
             <h1>Direito organizado por <em>evidência</em>, não por promessas.</h1>
             <p>Uma camada estruturada para conectar áreas, temas, teses, julgados e fontes. O lote atual é piloto e local; a arquitetura é nacional e preparada para expansão auditável.</p>
             <span className="scope-chip"><CircleAlert size={13} /> Escopo vigente: piloto local · TJMG</span>

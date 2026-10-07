@@ -1,6 +1,6 @@
 // Shared prazos types — both Atlas and JuridIA use the same LexValida port.
 // These contracts guarantee that prazo / prescrição computation is interchangeable
-// between the data layer (Atlas Forense) and the cognitive layer (JuridIA).
+// between the data layer (Atlas Jurídico) and the cognitive layer (JuridIA).
 
 export interface PrazoInput {
   marcoInicial: string; // ISO date

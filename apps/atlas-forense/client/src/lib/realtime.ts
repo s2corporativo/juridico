@@ -1,7 +1,7 @@
 import { io, type Socket } from "socket.io-client";
 
 /**
- * Cliente WebSocket do Atlas Forense.
+ * Cliente WebSocket do Atlas Jurídico.
  *
  * - Conecta SEMPRE pela mesma origem e rota fixa `/socket.io/` (o proxy reverso
  *   encaminha para a porta fixa interna do serviço de notificação). Nenhuma porta

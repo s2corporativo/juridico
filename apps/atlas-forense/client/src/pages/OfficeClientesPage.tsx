@@ -32,7 +32,7 @@ export default function OfficeClientesPage() {
           <a href="/escritorio/comunicacoes">Comunicações</a>
           <a href="/escritorio/jurisprudencia">Jurisprudência</a>
           <a href="/escritorio/treinamento">Treinamento</a>
-          <a href="/">Atlas Forense</a>
+          <a href="/">Atlas Jurídico</a>
         </nav>
       </header>
 

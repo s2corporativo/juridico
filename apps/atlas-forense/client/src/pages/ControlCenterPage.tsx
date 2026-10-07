@@ -71,7 +71,7 @@ export default function ControlCenterPage() {
   return (
     <div className="control-shell">
       <aside className="control-rail">
-        <a className="compendium-brand" href="/"><span className="brand-crest"><Scale size={20} /></span><span><small>Atlas Forense · JEC</small><strong>Central de<br />Controle</strong></span></a>
+        <a className="compendium-brand" href="/"><span className="brand-crest"><Scale size={20} /></span><span><small>Atlas Jurídico · JEC</small><strong>Central de<br />Controle</strong></span></a>
         <div className="control-rail-copy"><span className="eyebrow">ACESSO RESTRITO</span><p>Pré-validação de lotes antes de qualquer gravação no acervo jurídico.</p></div>
         <div className="control-rail-rule"><FileLock2 size={17} /><p>Este ambiente não recebe PDFs, não persiste documentos e não publica registros automaticamente.</p></div>
       </aside>
