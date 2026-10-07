@@ -68,12 +68,20 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
       }
     }
 
-    // Score: número de gatilhos matched / total de gatilhos + bônus por área
+    // Matching em duas camadas: gatilho textual + aderência às questões detectadas.
+    // Não basta pertencer à mesma área: com ~2.000 skills isso faria centenas
+    // entrarem por um bônus genérico.
     const triggerScore = triggers.length > 0 ? matchedTriggers.length / triggers.length : 0;
-    const issueBonus = issues.some((i) => i.area === skill.area) ? 0.2 : 0;
-    const matchScore = Math.min(1, triggerScore + issueBonus);
+    const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ");
+    const descTokens = new Set(normalize(skill.description).split(/\s+/).filter((x) => x.length > 3));
+    const issueTokens = new Set(normalize(issues.map((i) => i.title).join(" ")).split(/\s+/).filter((x) => x.length > 3));
+    let overlap = 0;
+    for (const t of descTokens) if (issueTokens.has(t)) overlap++;
+    const descriptionScore = Math.min(0.45, overlap * 0.12);
+    const issueAreaBonus = issues.some((i) => i.area === skill.area) && (triggerScore > 0 || descriptionScore > 0) ? 0.15 : 0;
+    const matchScore = Math.min(1, triggerScore * 0.75 + descriptionScore + issueAreaBonus);
 
-    if (matchScore > 0) {
+    if (matchedTriggers.length > 0 || descriptionScore > 0) {
       matches.push({
         slug: skill.slug,
         name: skill.description,

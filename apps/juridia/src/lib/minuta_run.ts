@@ -616,7 +616,7 @@ export async function runMinutaPipeline(
       markers: "[]", // intencional: o mapa de PII não é persistido (tarja-1)
       generatedContent: finalContent,
       skillSlugs: JSON.stringify(skills.map((s) => s.slug)),
-      status: degraded || citationGate.bloquear ? "draft" : "generated",
+      status: degraded || citationGate.bloquear || evidenceGate.bloquear ? "draft" : "generated",
       batchId: body.batchId || null,
       caseId: body.caseId || null,
     },
