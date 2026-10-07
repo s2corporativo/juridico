@@ -43,7 +43,7 @@ function deterministicPlan(
       { titulo: "Riscos e contrapontos", objetivo: "Registrar lacunas, distinções e argumentos adversos relevantes.", fontesNecessarias: ["pesquisa bilateral"] },
       { titulo: "Pedidos e providências", objetivo: "Formular pedidos compatíveis com fatos, provas e fundamentos verificados.", fontesNecessarias: ["legislação aplicável"] },
     ],
-    riscos,
+    riscos: risks,
     pesquisaInsuficiente: missing,
   };
 }
