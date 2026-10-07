@@ -55,7 +55,7 @@ async function classifyPrecedents(
     const { data } = await aiGatewayJson<{ items: { index: number; favorable: boolean | null; relevance: number }[] }>({
       taskType,
       temperature: 0.1,
-      maxTokens: 900,
+      maxTokens: 300,
       messages: [
         {
           role: "system",
@@ -63,7 +63,7 @@ async function classifyPrecedents(
         },
         {
           role: "user",
-          content: JSON.stringify({ issue, results: results.map((r, index) => ({ index, name: r.name, snippet: r.snippet, host: r.host_name })) }),
+          content: JSON.stringify({ issue, results: results.map((r, index) => ({ index, name: r.name, snippet: r.snippet.slice(0, 350), host: r.host_name })) }),
         },
       ],
     });
