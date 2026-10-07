@@ -37,10 +37,11 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   const allSkills = await db.skillVersion.findMany({
     where: { status: "approved" },
     orderBy: [{ slug: "asc" }, { version: "desc" }],
+    select: { id: true, slug: true, version: true, area: true, description: true, triggers: true },
   });
 
   // Deduplica: pega apenas a versão mais recente de cada slug
-  const bySlug = new Map<string, typeof allSkills[0]>();
+  const bySlug = new Map<string, (typeof allSkills)[number]>();
   for (const s of allSkills) {
     if (!bySlug.has(s.slug) || s.version > bySlug.get(s.slug)!.version) {
       bySlug.set(s.slug, s);
@@ -80,7 +81,7 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
         version: skill.version,
         matchScore,
         matchedTriggers,
-        content: skill.content,
+        content: "",
       });
     }
   }
@@ -95,8 +96,16 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   }
   const area = Object.entries(areaCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "civil";
 
+  const selectedMeta = matches.slice(0, 10);
+  const full = selectedMeta.length
+    ? await db.skillVersion.findMany({ where: { slug: { in: selectedMeta.map((m) => m.slug) }, status: "approved" }, orderBy: { version: "desc" } })
+    : [];
+  const contentBySlug = new Map<string, string>();
+  for (const s of full) if (!contentBySlug.has(s.slug)) contentBySlug.set(s.slug, s.content);
+  const selected = selectedMeta.map((m) => ({ ...m, content: contentBySlug.get(m.slug) || "" }));
+
   return {
-    matches: matches.slice(0, 10), // top 10
+    matches: selected, // top 10
     issues: issues.map((i) => ({ key: i.key, title: i.title, area: i.area })),
     area,
   };
