@@ -3,6 +3,7 @@ import { aiGatewayJson } from "@/lib/ai_gateway";
 import { scanDocumentForPromptInjection, wrapUntrustedDocument } from "@/lib/document_security";
 import { requireAuth } from "@/lib/auth";
 import { logAuditEvent } from "@/lib/audit";
+import { buildDeterministicMoldeFallback } from "@/lib/molde";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -118,10 +119,14 @@ Formato da resposta:
     }
 
     // Validação: cada anchor deve existir no documento-base.
-    const validated = changes.filter((c) => {
+    let validated = changes.filter((c) => {
       const anchorShort = c.anchor.slice(0, 40).toLowerCase();
       return baseDocument.toLowerCase().includes(anchorShort);
     });
+
+    if (validated.length === 0) {
+      validated = [buildDeterministicMoldeFallback(baseDocument, instruction)];
+    }
 
     await logAuditEvent({
       action: "molde_analyze",
