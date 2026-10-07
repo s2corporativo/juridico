@@ -10,7 +10,7 @@
 // Este módulo NÃO conhece HTTP: as rotas são wrappers finos (auth + serialização).
 
 import { createHash } from "node:crypto";
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayChat, inferSensitiveTask } from "@/lib/ai_gateway";
 import { db } from "@/lib/db";
 import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
@@ -62,111 +62,55 @@ export type MinutaRunEvent =
 
 export type MinutaRunObserver = (e: MinutaRunEvent) => void;
 
-// ── Chamada LLM (não-streaming, igual à original) ────────────────────────────
+// ── Chamada LLM pelo AI Gateway único ────────────────────────────────────────
+// Segurança e política de provider valem igualmente para roteirista, redator e revisor.
+// A rota SSE mantém o contrato: enquanto o gateway não expõe streaming multi-provider,
+// a resposta segura é emitida em um único delta.
 
 interface LlmResult {
   text: string;
   tokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  provider: string;
+  model: string;
 }
 
-type ZaiClient = NonNullable<Awaited<ReturnType<typeof ZAI.create>>>;
-
 async function callLlm(
-  zai: ZaiClient,
+  taskType: string,
   system: string,
   user: string,
   opts: { temperature: number; maxTokens: number }
 ): Promise<LlmResult> {
-  const completion = await zai.chat.completions.create({
+  const response = await aiGatewayChat({
+    taskType,
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    thinking: { type: "disabled" },
     temperature: opts.temperature,
-    max_tokens: opts.maxTokens,
+    maxTokens: opts.maxTokens,
   });
   return {
-    text: completion.choices[0]?.message?.content || "",
-    tokens:
-      (completion as unknown as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0,
+    text: response.text,
+    tokens: response.totalTokens,
+    inputTokens: response.inputTokens,
+    outputTokens: response.outputTokens,
+    provider: response.provider,
+    model: response.model,
   };
 }
 
-// ── Chamada LLM em streaming (etapa de redação) ──────────────────────────────
-// O SDK (z-ai-web-dev-sdk ≥0.0.18) retorna response.body (ReadableStream de
-// SSE do provider) quando stream:true. Se o provider ignorar stream e
-// responder JSON, caímos para o texto completo como um único delta.
-
-async function* iterateProviderSse(
-  body: ReadableStream<Uint8Array>
-): AsyncGenerator<{ delta?: string; tokens?: number }> {
-  const decoder = new TextDecoder();
-  let buffer = "";
-  const reader = body.getReader();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value as unknown as ArrayBuffer, { stream: true });
-    let idx: number;
-    while ((idx = buffer.indexOf("\n")) !== -1) {
-      const line = buffer.slice(0, idx).trim();
-      buffer = buffer.slice(idx + 1);
-      if (!line.startsWith("data:")) continue;
-      const payload = line.slice(5).trim();
-      if (!payload || payload === "[DONE]") continue;
-      try {
-        const json = JSON.parse(payload) as {
-          choices?: { delta?: { content?: string }; message?: { content?: string } }[];
-          usage?: { total_tokens?: number };
-        };
-        const delta =
-          json.choices?.[0]?.delta?.content ?? json.choices?.[0]?.message?.content ?? "";
-        const tokens = json.usage?.total_tokens;
-        if (delta || tokens) yield { delta: delta || undefined, tokens };
-      } catch {
-        // linha não-JSON (keepalive etc.) — ignora
-      }
-    }
-  }
-}
-
 async function callLlmStream(
-  zai: ZaiClient,
+  taskType: string,
   system: string,
   user: string,
   opts: { temperature: number; maxTokens: number },
   onDelta: (text: string) => void
 ): Promise<LlmResult> {
-  const completion = (await zai.chat.completions.create({
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    thinking: { type: "disabled" },
-    temperature: opts.temperature,
-    max_tokens: opts.maxTokens,
-    stream: true,
-  })) as unknown;
-
-  // Provider respondeu JSON (ignorou stream) → trata como resposta única.
-  if (!(completion instanceof Object && "getReader" in completion)) {
-    const r = completion as { choices?: { message?: { content?: string } }[]; usage?: { total_tokens?: number } };
-    const text = r.choices?.[0]?.message?.content || "";
-    if (text) onDelta(text);
-    return { text, tokens: r.usage?.total_tokens || 0 };
-  }
-
-  let text = "";
-  let tokens = 0;
-  for await (const evt of iterateProviderSse(completion as ReadableStream<Uint8Array>)) {
-    if (evt.delta) {
-      text += evt.delta;
-      onDelta(evt.delta);
-    }
-    if (evt.tokens) tokens = evt.tokens;
-  }
-  return { text, tokens };
+  const result = await callLlm(taskType, system, user, opts);
+  if (result.text) onDelta(result.text);
+  return result;
 }
 
 // ── Helpers finais (antes na rota; agora vivem com o pipeline) ───────────────
@@ -225,6 +169,7 @@ export async function runMinutaPipeline(
 
   // 2) Inteiro teor + contexto do Cérebro (pseudonimizado junto — tarja-1)
   const factsBlock = buildFactsBlock(body.fields);
+  const aiTaskType = inferSensitiveTask(`${tpl.name}\n${factsBlock}`);
 
   let caseEvidence = { block: "", references: [] as Awaited<ReturnType<typeof buildCaseEvidenceContext>>["references"] };
   if (body.caseId) {
@@ -317,8 +262,9 @@ export async function runMinutaPipeline(
       userId: authUser.uid,
       tokensBudget: 30000,
       providerSnapshot: JSON.stringify({
-        provider: "zai",
-        pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
+        policy: "ai_gateway",
+        taskType: aiTaskType,
+        pipeline: onEvent ? "multi-stage-v4-gateway-sse-contract" : "multi-stage-v4-gateway",
       }),
     },
   });
@@ -334,7 +280,9 @@ export async function runMinutaPipeline(
     output: Record<string, unknown>,
     tokensIn: number,
     tokensOut: number,
-    durationMs: number
+    durationMs: number,
+    provider?: string,
+    model?: string
   ) {
     stepNo += 1;
     await db.agentRunStep.create({
@@ -347,8 +295,8 @@ export async function runMinutaPipeline(
         inputHash: null,
         outputHash: hashOf(JSON.stringify(output)),
         output: JSON.stringify(output).slice(0, 4000),
-        provider: "zai",
-        model: "juridia-default",
+        provider: provider || null,
+        model: model || null,
         tokensIn,
         tokensOut,
         durationMs,
@@ -356,12 +304,7 @@ export async function runMinutaPipeline(
     });
   }
 
-  let zai: ZaiClient | null = null;
-  try {
-    zai = await ZAI.create();
-  } catch {
-    zai = null;
-  }
+  const providersUsed = new Set<string>();
 
   const styleText = styleDirective(body.writingStyle);
 
@@ -384,12 +327,12 @@ export async function runMinutaPipeline(
 
   // ═══ ETAPA 1 — ROTEIRISTA (plano estruturado) ═══
   let outlineText = "(plano indisponível — redija com a estrutura clássica)";
-  if (zai) {
+  {
     emit({ type: "stage", stage: "outline", status: "start" });
     const t0 = Date.now();
     try {
       const r = await callLlm(
-        zai,
+        aiTaskType,
         buildSystemPrompt("outline"),
         buildOutlineUserPrompt({
           templateName: tpl.name,
@@ -410,22 +353,20 @@ export async function runMinutaPipeline(
         emit({ type: "stage", stage: "outline", status: "error", ms: Date.now() - t0, tokens: r.tokens, note: "JSON do plano inválido — seguindo estrutura clássica" });
       }
       tokensTotal += r.tokens;
-      await recordStep("llm_call", "outline", "done", { ok: !!outline }, 0, r.tokens, Date.now() - t0);
+      providersUsed.add(`${r.provider}:${r.model}`);
+      await recordStep("llm_call", "outline", "done", { ok: !!outline }, r.inputTokens, r.outputTokens, Date.now() - t0, r.provider, r.model);
     } catch (e) {
       const note = e instanceof Error ? e.message : "falha no roteirista";
       stages.push({ stage: "outline", ok: false, ms: Date.now() - t0, tokens: 0, note });
       emit({ type: "stage", stage: "outline", status: "error", ms: Date.now() - t0, tokens: 0, note });
       await recordStep("llm_call", "outline", "error", { error: note }, 0, 0, Date.now() - t0);
     }
-  } else {
-    stages.push({ stage: "outline", ok: false, ms: 0, tokens: 0, note: "provider indisponível" });
-    emit({ type: "stage", stage: "outline", status: "skipped", note: "provider indisponível" });
   }
 
   // ═══ ETAPA 2 — REDATOR (minuta completa; STREAMING quando observado) ═══
   let generated = "";
   let degraded = false;
-  if (zai) {
+  {
     emit({ type: "stage", stage: "draft", status: "start" });
     const t0 = Date.now();
     try {
@@ -445,23 +386,24 @@ export async function runMinutaPipeline(
       // sem observador (rota JSON clássica), chamada única como antes.
       const r = onEvent
         ? await callLlmStream(
-            zai,
+            aiTaskType,
             buildSystemPrompt("draft"),
             draftPrompt,
             { temperature: 0.55, maxTokens: 6000 },
             (delta) => emit({ type: "draft_delta", text: delta })
           )
         : await callLlm(
-            zai,
+            aiTaskType,
             buildSystemPrompt("draft"),
             draftPrompt,
             { temperature: 0.55, maxTokens: 6000 }
           );
       generated = r.text;
       tokensTotal += r.tokens;
+      providersUsed.add(`${r.provider}:${r.model}`);
       stages.push({ stage: "draft", ok: !!generated, ms: Date.now() - t0, tokens: r.tokens });
       emit({ type: "stage", stage: "draft", status: generated ? "done" : "error", ms: Date.now() - t0, tokens: r.tokens });
-      await recordStep("llm_call", "draft", generated ? "done" : "error", { chars: generated.length }, 0, r.tokens, Date.now() - t0);
+      await recordStep("llm_call", "draft", generated ? "done" : "error", { chars: generated.length }, r.inputTokens, r.outputTokens, Date.now() - t0, r.provider, r.model);
     } catch (e) {
       const note = e instanceof Error ? e.message : "falha no redator";
       stages.push({ stage: "draft", ok: false, ms: Date.now() - t0, tokens: 0, note });
@@ -482,13 +424,13 @@ export async function runMinutaPipeline(
 
   // ═══ ETAPA 3 — REVISOR (2ª passada) ═══
   let reviewCorrections = { applied: 0, skipped: 0 };
-  if (zai && !degraded) {
+  if (!degraded) {
     emit({ type: "stage", stage: "review", status: "start" });
     const t0 = Date.now();
     try {
       const preliminaryValidation = validateResponse(generated);
       const r = await callLlm(
-        zai,
+        aiTaskType,
         buildSystemPrompt("review"),
         buildReviewUserPrompt({
           templateName: tpl.name,
@@ -509,9 +451,10 @@ export async function runMinutaPipeline(
         reviewCorrections = { applied: appliedResult.applied, skipped: appliedResult.skipped };
       }
       tokensTotal += r.tokens;
+      providersUsed.add(`${r.provider}:${r.model}`);
       stages.push({ stage: "review", ok: true, ms: Date.now() - t0, tokens: r.tokens, note: `${reviewCorrections.applied} correção(ões)` });
       emit({ type: "stage", stage: "review", status: "done", ms: Date.now() - t0, tokens: r.tokens, note: `${reviewCorrections.applied} correção(ões)` });
-      await recordStep("llm_call", "review", "done", reviewCorrections, 0, r.tokens, Date.now() - t0);
+      await recordStep("llm_call", "review", "done", reviewCorrections, r.inputTokens, r.outputTokens, Date.now() - t0, r.provider, r.model);
     } catch (e) {
       const note = e instanceof Error ? e.message : "falha no revisor";
       stages.push({ stage: "review", ok: false, ms: Date.now() - t0, tokens: 0, note });
@@ -636,8 +579,10 @@ export async function runMinutaPipeline(
       tokensIn: 0,
       tokensOut: tokensTotal,
       providerSnapshot: JSON.stringify({
-        provider: "zai",
-        pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
+        policy: "ai_gateway",
+        taskType: aiTaskType,
+        providers: [...providersUsed],
+        pipeline: onEvent ? "multi-stage-v4-gateway-sse-contract" : "multi-stage-v4-gateway",
         stages: stages.map((s) => ({ stage: s.stage, ok: s.ok, tokens: s.tokens })),
       }),
     },
