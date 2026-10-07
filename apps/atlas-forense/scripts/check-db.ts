@@ -5,7 +5,7 @@ const conn = await mysql.createConnection({
   port: 33061,
   user: "root",
   password: "",
-  database: "atlas_ejc",
+  database: "atlas_juridico",
 });
 
 const [tables] = await conn.query("SHOW TABLES");

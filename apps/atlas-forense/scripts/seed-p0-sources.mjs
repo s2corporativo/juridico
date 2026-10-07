@@ -11,7 +11,7 @@ const conn = await mysql.createConnection({
   port: Number(process.env.DB_PORT || 33061),
   user: "root",
   password: "",
-  database: "atlas_ejc",
+  database: "atlas_juridico",
 });
 
 const p0 = [

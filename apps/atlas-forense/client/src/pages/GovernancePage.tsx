@@ -51,7 +51,7 @@ export default function GovernancePage() {
           <div className="governance-mark"><Network size={24} /><span>ARQUITETURA<br />CONTROLADA</span><b>01</b></div>
         </section>
 
-        <section className="ejc-bridge-status" id="integracao">
+        <section className="integration-status" id="integracao">
           <div>
             <span className="eyebrow">IDENTIDADE E INTEGRAÇÃO</span>
             <h2>{ssoEnabled ? "SSO JuridIA operacional" : "SSO JuridIA indisponível"}</h2>

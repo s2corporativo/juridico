@@ -3,7 +3,7 @@ import mysql from "mysql2/promise";
 import { validateRmbhCoverageImport } from "./rmbh-coverage-import-runtime.mjs";
 
 const RUN_KEY = "datajud-tjmg-rmbh-jec-facets-2025-2026-v1";
-const outputDir = process.env.RMBH_TJMG_OUTPUT_DIR ?? "/var/lib/atlas-ejc/rmbh-facets/20260828";
+const outputDir = process.env.RMBH_TJMG_OUTPUT_DIR ?? "/var/lib/atlas-juridico/rmbh-facets/20260828";
 const manifestPath = `${outputDir}/manifesto_rmbh_tjmg_facetas.json`;
 const facetsPath = `${outputDir}/rmbh_tjmg_jec_orgaos_agregados.json`;
 

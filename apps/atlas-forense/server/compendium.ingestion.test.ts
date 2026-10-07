@@ -10,7 +10,7 @@ function createContext(role: "user" | "admin"): TrpcContext {
       openId: `ingestion-${role}`,
       email: null,
       name: null,
-      loginMethod: "manus",
+      loginMethod: "juridia-oidc",
       role,
       createdAt: new Date(),
       updatedAt: new Date(),

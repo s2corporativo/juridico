@@ -9,3 +9,7 @@ db/*.db-*
 .turbo/
 .cache/
 .DS_Store
+
+graphify-out/
+*.tsbuildinfo
+.claude/
