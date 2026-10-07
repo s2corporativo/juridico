@@ -29,13 +29,6 @@ import { BibliotecaJuridica } from "./biblioteca-juridica";
 // Navegação principal orientada às tarefas do advogado. Capacidades técnicas permanecem contextuais.
 const TABS = [
   { id: "dashboard" as const, label: "Início", icon: LayoutDashboard, key: "1" },
-  { id: "cerebro" as const, label: "Cérebro", icon: Brain, key: "e" },
-  { id: "generator" as const, label: "Produção", icon: Wand2, key: "g" },
-  { id: "biblioteca" as const, label: "Biblioteca", icon: BookOpen, key: "b" },
-  { id: "editor" as const, label: "Editor", icon: FileText, key: "m" },
-  { id: "datajud" as const, label: "Pesquisa", icon: Search, key: "j" },
-  { id: "calculadora" as conconst TABS = [
-  { id: "dashboard" as const, label: "Início", icon: LayoutDashboard, key: "1" },
   { id: "cerebro" as const, label: "Analisar", icon: Brain, key: "e" },
   { id: "generator" as const, label: "Redigir", icon: Wand2, key: "g" },
   { id: "datajud" as const, label: "Pesquisar", icon: Search, key: "j" },
