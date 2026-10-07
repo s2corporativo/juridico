@@ -20,6 +20,31 @@ A integração entre as duas aplicações deve ocorrer por contratos explícitos
 7. Evidence Gate e Citation Gate validam a saída.
 8. O advogado revisa e homologa.
 
+## Snapshot Graphify
+
+Mapa regenerado sobre a árvore profissionalizada:
+
+- **2.588 nós**
+- **5.980 relações**
+- **135 comunidades**
+- **395 arquivos de código analisados**
+- **26 arquivos não-código excluídos do grafo por política**
+- **43 arquivos de código sem símbolos extraíveis**, majoritariamente configuração, scripts e testes simples
+
+Hubs de maior impacto:
+
+| Símbolo | Relações |
+| --- | ---: |
+| `requireAuth` | 131 |
+| `logAuditEvent` | 86 |
+| `getDb` | 58 |
+| `runMinutaPipeline` | 42 |
+| `Editor` | 36 |
+| `Generator` | 29 |
+| `AppShell` | 21 |
+
+O comando `graphify affected` deve ser usado antes de alterações nesses hubs.
+
 ## Hubs arquiteturais
 
 O Graphify identifica como principais pontos de acoplamento:
