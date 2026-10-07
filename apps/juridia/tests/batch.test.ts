@@ -10,7 +10,7 @@ const template = {
   description: "",
   icon: "FileText",
   fields: [
-    { key: "autor", label: "Autor", type: "text", required: true },
+    { key: "autor", label: "Autor", type: "text" },
     { key: "fatos", label: "Fatos", type: "textarea", required: true },
   ],
 } as TemplateDTO;
