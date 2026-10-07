@@ -8,6 +8,7 @@ import { routeSkills } from "@/lib/skill_router";
 import { buildFactsBlock } from "@/lib/minuta_pipeline";
 import { runMinutaPipeline } from "@/lib/minuta_run";
 import { pseudonymize } from "@/lib/pseudonymizer";
+import { canAccessCase } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -52,12 +53,6 @@ function sha(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
-async function caseAccess(caseId: string | undefined, user: { uid: string; role: string }) {
-  if (!caseId) return true;
-  const c = await db.case.findUnique({ where: { id: caseId }, include: { client: { select: { userId: true } } } });
-  return Boolean(c && (user.role === "admin" || c.client.userId === user.uid));
-}
-
 export async function POST(req: NextRequest) {
   const auth = await requireAuth(req);
   if (!auth.ok) return auth.response;
@@ -81,8 +76,11 @@ export async function POST(req: NextRequest) {
   } | null;
 
   const input = body?.request;
-  if (!input?.templateSlug || !input.fields || !(await caseAccess(input.caseId, auth.user))) {
-    return NextResponse.json({ error: "request inválido ou caso sem acesso" }, { status: 400 });
+  if (!input?.templateSlug || !input.fields) {
+    return NextResponse.json({ error: "request inválido" }, { status: 400 });
+  }
+  if (input.caseId && !(await canAccessCase(input.caseId, auth.user))) {
+    return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
   }
 
   const facts = buildFactsBlock(input.fields);
@@ -181,7 +179,7 @@ export async function POST(req: NextRequest) {
     const storedPlan = pseudonymize(JSON.stringify(plan)).text;
     const run = await db.agentRun.create({
       data: {
-        caseId: input.caseId || "default-case",
+        caseId: input.caseId || null,
         userId: auth.user.uid,
         agentSlug: "agentic_draft",
         taskType: "draft",
