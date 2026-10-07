@@ -84,6 +84,9 @@ async function main() {
   const result = draft.result;
   if (!result.evidenceReferences?.length) throw new Error("minuta sem referências de evidência carregadas");
   if ((result.evidenceGate?.total || 0) < 1) throw new Error("minuta não citou documento/página/evidence_ref_id");
+  if (result.evidenceGate?.bloquear) throw new Error(`Evidence Gate bloqueou: ${JSON.stringify(result.evidenceGate)}`);
+  if (result.citationGate?.bloquear) throw new Error(`Citation Gate bloqueou: ${JSON.stringify(result.citationGate)}`);
+  if (result.pipeline?.degraded) throw new Error("pipeline agêntico terminou degradado");
 
   const baseDocument = [
     "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO",
@@ -105,7 +108,7 @@ async function main() {
     instruction: "Acrescente referência à necessidade de tutela de urgência sem alterar a estrutura geral.",
   }));
   const molde = await moldeResponse.json();
-  if (moldeResponse.status !== 200 || !Array.isArray(molde.changes)) throw new Error(`Modo Molde falhou: ${moldeResponse.status}`);
+  if (moldeResponse.status !== 200 || !Array.isArray(molde.changes) || molde.changes.length < 1) throw new Error(`Modo Molde falhou: ${moldeResponse.status}`);
   if (!molde.changes.every((change: { anchor: string }) => baseDocument.toLowerCase().includes(String(change.anchor).slice(0, 40).toLowerCase()))) {
     throw new Error("Modo Molde retornou anchor inexistente");
   }
