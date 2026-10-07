@@ -10,7 +10,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const [documents, skills, templates, searches, cases, clients] = await Promise.all([
     db.document.count(),
-    db.skill.count({ where: { active: true } }),
+    db.skill.count(),
     db.template.count(),
     db.jurisprudenceSearch.count(),
     db.case.count(),
