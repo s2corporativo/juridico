@@ -44,6 +44,12 @@ export class AIProviderUnavailable extends Error {
   }
 }
 
+function ollamaTimeoutMs(): number {
+  const configured = Number(process.env.OLLAMA_REQUEST_TIMEOUT_MS || 300_000);
+  if (!Number.isFinite(configured)) return 300_000;
+  return Math.max(30_000, Math.min(configured, 600_000));
+}
+
 function effectiveMaxTokens(requested: number | undefined): number {
   const base = requested ?? 2000;
   const cap = Number(process.env.AI_MAX_TOKENS_CAP || 0);
@@ -121,7 +127,7 @@ async function callOllama(spec: ProviderSpec, request: AIRequest, messages: AIMe
         num_predict: effectiveMaxTokens(request.maxTokens),
       },
     }),
-    signal: AbortSignal.timeout(180_000),
+    signal: AbortSignal.timeout(ollamaTimeoutMs()),
   });
   if (!resp.ok) throw new Error(`Ollama ${resp.status}: ${await resp.text()}`);
   const data = await resp.json() as {
