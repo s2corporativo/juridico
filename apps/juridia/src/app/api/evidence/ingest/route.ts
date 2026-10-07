@@ -85,6 +85,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
 
+  const documentRef = body?.documentId || body?.documentHash || `file:${fileName}`;
+
   const reports = pages.map((page) => ({
     page,
     security: scanDocumentForPromptInjection(String(page.text || "")),
@@ -107,7 +109,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     for (const quote of chunkPage(String(page.text || ""))) {
       const evidence = await createEvidence({
         caseId,
-        documentId: body?.documentId || null,
+        documentId: documentRef,
         quote,
         pageNumber,
         sectionLabel: page.sectionLabel || null,
@@ -133,7 +135,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     userId: auth.user.uid,
     metadata: {
       fileName,
-      documentId: body?.documentId || null,
+      documentId: documentRef,
       pages: pages.length,
       evidenceRefs: created.length,
       warnings: reports.filter((x) => x.security.severity === "warning").length,
