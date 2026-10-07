@@ -281,6 +281,7 @@ export async function runMinutaPipeline(
     .slice(0, 32);
   const run = await db.agentRun.create({
     data: {
+      caseId: body.caseId || null,
       agentSlug: "legal_draft",
       taskType: "draft",
       status: "running",
