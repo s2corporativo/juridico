@@ -17,7 +17,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
   const __auth = await requireAuth(req);
   if (!__auth.ok) return __auth.response;
-  const authUser = __auth.user;
 
   let body: {
     baseDocument?: string;
@@ -118,7 +117,8 @@ Formato da resposta:
       total: validated.length,
       security: { severity: security.severity, score: security.score, findings: security.findings.slice(0, 10) },
     });
-  } catch {
-    return;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Erro no Modo Molde";
+    return NextResponse.json({ error: msg, changes: [] }, { status: 500 });
   }
 }

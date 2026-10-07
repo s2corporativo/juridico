@@ -18,6 +18,7 @@ import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
 import { legalSearch } from "@/lib/legal_retrieval";
 import { verifyCitations } from "@/lib/citation_gate";
+import { buildCaseEvidenceContext, verifyEvidenceMarkers } from "@/lib/case_context";
 import {
   buildSystemPrompt,
   buildOutlineUserPrompt,
@@ -224,9 +225,21 @@ export async function runMinutaPipeline(
 
   // 2) Inteiro teor + contexto do Cérebro (pseudonimizado junto — tarja-1)
   const factsBlock = buildFactsBlock(body.fields);
-  const rawContextForModel = body.brainContext?.trim()
-    ? `${factsBlock}\n\n[Contexto do Cérebro Jurídico]\n${body.brainContext.trim()}`
-    : factsBlock;
+
+  let caseEvidence = { block: "", references: [] as Awaited<ReturnType<typeof buildCaseEvidenceContext>>["references"] };
+  if (body.caseId) {
+    const c = await db.case.findUnique({ where: { id: body.caseId }, include: { client: { select: { userId: true } } } });
+    if (!c || (authUser.role !== "admin" && c.client.userId !== authUser.uid)) {
+      throw new PipelineError("Caso inexistente ou sem acesso", 403);
+    }
+    caseEvidence = await buildCaseEvidenceContext(body.caseId, factsBlock, 24);
+  }
+
+  const rawContextForModel = [
+    factsBlock,
+    body.brainContext?.trim() ? `[Contexto do Cérebro Jurídico]\n${body.brainContext.trim()}` : "",
+    caseEvidence.block,
+  ].filter(Boolean).join("\n\n");
   const pseudonymization = pseudonymize(rawContextForModel);
   // Fatos "puros" (sem o contexto do cérebro) para roteamento de skills
   const factsOnlyPseudonymized = pseudonymize(factsBlock).text;
@@ -557,6 +570,15 @@ export async function runMinutaPipeline(
       excerpt: labelLeaks[0],
     });
   }
+  const evidenceGate = verifyEvidenceMarkers(finalContent, caseEvidence.references);
+  if (evidenceGate.bloquear) {
+    validation.violations.push({
+      rule: "EVIDENCE_GATE_BLOCK",
+      severity: "error",
+      detail: `A peça contém referência(s) de autos não autorizada(s): ${evidenceGate.invalid.join(", ")}.`,
+    });
+  }
+
   const citationGate = verifyCitations(
     finalContent,
     ragResults.map((r) => ({
@@ -596,6 +618,7 @@ export async function runMinutaPipeline(
       skillSlugs: JSON.stringify(skills.map((s) => s.slug)),
       status: degraded || citationGate.bloquear ? "draft" : "generated",
       batchId: body.batchId || null,
+      caseId: body.caseId || null,
     },
   });
 
@@ -637,6 +660,8 @@ export async function runMinutaPipeline(
       anonymized: true,
       degraded,
       citationGate: { total: citationGate.total, verificadas: citationGate.verificadas, identificadas: citationGate.identificadas, suspeitas: citationGate.suspeitas, genericas: citationGate.genericas, bloquear: citationGate.bloquear },
+      evidenceGate,
+      evidenceRefs: caseEvidence.references.map((e) => e.evidenceRefId),
       runId: run.id,
       batch: Boolean(body.batchId),
       mold: Boolean(moldText),
@@ -677,6 +702,8 @@ export async function runMinutaPipeline(
     },
     references,
     citationGate: { total: citationGate.total, verificadas: citationGate.verificadas, identificadas: citationGate.identificadas, suspeitas: citationGate.suspeitas, genericas: citationGate.genericas, bloquear: citationGate.bloquear },
+    evidenceGate,
+    evidenceReferences: caseEvidence.references,
     pipeline: {
       stages,
       degraded,
