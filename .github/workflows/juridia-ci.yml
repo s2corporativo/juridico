@@ -28,7 +28,7 @@ jobs:
       - name: TypeScript
         run: bun x tsc --noEmit
       - name: Core tests
-        run: bun test tests/gates.test.ts tests/auth-oidc.test.ts tests/pipeline.test.ts tests/paginate.test.ts tests/ejc-brain-core.test.ts tests/ejc-agent-loop.test.ts tests/embedding-retrieval.test.ts
+        run: bun test tests/gates.test.ts tests/auth-oidc.test.ts tests/pipeline.test.ts tests/paginate.test.ts tests/ejc-brain-core.test.ts tests/ejc-agent-loop.test.ts tests/embedding-retrieval.test.ts tests/office-skill-catalog.test.ts tests/document-security.test.ts
       - name: Build
         env:
           DATABASE_URL: file:./ci.db

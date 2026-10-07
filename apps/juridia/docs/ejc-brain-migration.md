@@ -53,3 +53,37 @@ Trazer o núcleo de conhecimento e raciocínio do EJC para o JuridIA sem restaur
 - Pipeline estilo MinutaIA: perguntas → roteiro → pesquisa iterativa → redação por seção → adversarial → Citation Gate → homologação.
 - Conectar editor e UI ao Agent Loop/HITL.
 - Aprendizado controlado do estilo do advogado.
+
+
+## Evolução executada na Fase 1.1
+
+- Modo Agêntico visível no Gerador:
+  - planeja;
+  - identifica lacunas/perguntas;
+  - pesquisa antes de redigir;
+  - exige aprovação humana do plano;
+  - redige somente após HITL.
+- Pesquisa jurisprudencial iterativa:
+  - fonte primária/vigência;
+  - precedente favorável;
+  - precedente contrário;
+  - aderência fática.
+- Retrieval jurídico:
+  - BM25;
+  - TF-IDF;
+  - embeddings locais;
+  - Reciprocal Rank Fusion (RRF);
+  - autoridade de fonte oficial.
+- Ledger de autos por documento/página/evidence_ref_id.
+- Ingestão de páginas com scan anti-prompt-injection.
+- Modo Molde submetido ao AI Gateway e ao scan de documento não confiável.
+- Catálogo de 2.000 skills operacionais jurídicas, versionadas em SkillVersion.
+- APIs administrativas para revisar, criar nova versão, aprovar e aposentar skills.
+- Bootstrap: `bun run skills:bootstrap`.
+- Vetorização da base: `bun run embeddings:backfill`.
+
+### Observação sobre as 2.000 skills
+
+As 2.000 skills do escritório são originais e operacionais; não são cópia de conteúdo proprietário de terceiros.
+Elas orientam método, pesquisa, evidência, redação e auditoria em 20 áreas × 10 temas × 10 workflows.
+Nenhuma skill pode converter conhecimento interno do modelo em "fonte". Conteúdo substantivo deve vir de fonte oficial/vigente ou permanecer marcado como não verificado.
