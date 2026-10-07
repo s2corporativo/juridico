@@ -5,20 +5,39 @@ import type { SkillDTO } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-// GET exige sessão: skills são conteúdo proprietário/orientador do produto.
+// Catálogo operacional: expõe somente a versão aprovada mais recente de cada skill.
+// Edição, versionamento e aprovação ficam em /api/skills/versions.
 export async function GET(req: NextRequest) {
-  const __auth = await requireAuth(req);
-  if (!__auth.ok) return __auth.response;
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth.response;
 
-  const items = await db.skill.findMany({ orderBy: { name: "asc" } });
-  const dtos: SkillDTO[] = items.map((s) => ({
+  const area = new URL(req.url).searchParams.get("area") || undefined;
+  const versions = await db.skillVersion.findMany({
+    where: { status: "approved", ...(area ? { area } : {}) },
+    orderBy: [{ slug: "asc" }, { version: "desc" }],
+    select: {
+      id: true,
+      slug: true,
+      version: true,
+      area: true,
+      description: true,
+    },
+  });
+
+  const latest = new Map<string, (typeof versions)[number]>();
+  for (const skill of versions) {
+    if (!latest.has(skill.slug)) latest.set(skill.slug, skill);
+  }
+
+  const skills: SkillDTO[] = [...latest.values()].map((s) => ({
     id: s.id,
     slug: s.slug,
-    name: s.name,
-    category: s.category,
+    name: s.description,
+    category: s.area,
     description: s.description,
-    content: s.content,
-    locked: s.locked,
+    content: "",
+    locked: true,
   }));
-  return NextResponse.json({ skills: dtos });
+
+  return NextResponse.json({ skills, total: skills.length });
 }
