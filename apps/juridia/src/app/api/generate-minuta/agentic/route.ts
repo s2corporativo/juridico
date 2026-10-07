@@ -55,8 +55,15 @@ export async function POST(req: NextRequest) {
     const routed = await routeSkills(facts);
     const issues = routed.issues.length ? routed.issues.slice(0, 3) : [{ key: "questao_principal", title: input.templateSlug, area: routed.area || "civil" }];
     const research: IterativeResearchResult[] = [];
+    const configuredCycles = Number(process.env.AGENTIC_RESEARCH_MAX_CYCLES || 3);
+    const maxCycles = Number.isFinite(configuredCycles) ? Math.max(1, Math.min(configuredCycles, 4)) : 3;
     for (const issue of issues) {
-      research.push(await runIterativeLegalResearch({ issue: issue.title, area: issue.area, taskType: issue.area === "penal" ? "criminal" : "pesquisa", maxCycles: 3 }));
+      research.push(await runIterativeLegalResearch({
+        issue: issue.title,
+        area: issue.area,
+        taskType: issue.area === "penal" ? "criminal" : "pesquisa",
+        maxCycles,
+      }));
     }
 
     const researchContext = research.map((r) => ({

@@ -44,6 +44,12 @@ export class AIProviderUnavailable extends Error {
   }
 }
 
+function effectiveMaxTokens(requested: number | undefined): number {
+  const base = requested ?? 2000;
+  const cap = Number(process.env.AI_MAX_TOKENS_CAP || 0);
+  return Number.isFinite(cap) && cap > 0 ? Math.max(64, Math.min(base, cap)) : base;
+}
+
 type PreparedMessages = {
   messages: AIMessage[];
   map: PseudonymMap | null;
@@ -85,7 +91,7 @@ async function callZai(spec: ProviderSpec, request: AIRequest, messages: AIMessa
     messages,
     thinking: { type: "disabled" },
     temperature: request.temperature ?? 0.2,
-    max_tokens: request.maxTokens ?? 2000,
+    max_tokens: effectiveMaxTokens(request.maxTokens),
     ...(request.model || spec.model ? { model: request.model || spec.model } : {}),
   });
   const usage = (c as unknown as { usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } }).usage;
@@ -112,7 +118,7 @@ async function callOllama(spec: ProviderSpec, request: AIRequest, messages: AIMe
       ...(request.jsonMode ? { format: "json" } : {}),
       options: {
         temperature: request.temperature ?? 0.2,
-        num_predict: request.maxTokens ?? 2000,
+        num_predict: effectiveMaxTokens(request.maxTokens),
       },
     }),
     signal: AbortSignal.timeout(180_000),
@@ -148,7 +154,7 @@ async function callOpenAICompatible(spec: ProviderSpec, request: AIRequest, mess
       model,
       messages,
       temperature: request.temperature ?? 0.2,
-      max_tokens: request.maxTokens ?? 2000,
+      max_tokens: effectiveMaxTokens(request.maxTokens),
       ...(request.jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
     signal: AbortSignal.timeout(180_000),
