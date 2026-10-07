@@ -105,6 +105,15 @@ export interface GenerateMinutaResponse {
   };
   /** Fontes normativas rastreáveis usadas na fundamentação (RAG na base curada) */
   references?: ReferenceUsed[];
+  /** Gate bloqueante de citações jurídicas antes da homologação */
+  citationGate?: {
+    total: number;
+    verificadas: number;
+    identificadas: number;
+    suspeitas: number;
+    genericas: number;
+    bloquear: boolean;
+  };
   /** Telemetria do pipeline multi-etapas */
   pipeline?: {
     stages: PipelineStageInfo[];

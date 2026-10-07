@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayChat, governedWebSearch, inferSensitiveTask } from "@/lib/ai_gateway";
 import { db } from "@/lib/db";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
-import { ragSearch } from "@/lib/rag_lite";
+import { legalSearch } from "@/lib/legal_retrieval";
+import { assessResearchCoverage, type ResearchCoverage } from "@/lib/research_coverage";
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,7 @@ interface BrainResult {
   };
   gaps: { what: string; why: string; question: string; state: EpistemicState }[];
   strategy: { proceduralPath: string; immediateActions: EvidenceItem[]; documentsToCollect: string[]; risks: EvidenceItem[]; recommendation: string };
+  researchCoverage: ResearchCoverage;
   steps: BrainStep[];
   totalTokens: number;
 }
@@ -88,7 +90,39 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const steps: BrainStep[] = STEPS.map((s) => ({ ...s, status: "pending" as const }));
   const r: Partial<BrainResult> = { steps };
   let tokens = 0;
-  const zai = await ZAI.create();
+  let currentTask = inferSensitiveTask(facts);
+
+  const zai = {
+    chat: {
+      completions: {
+        create: async (options: {
+          messages: { role: "system" | "user" | "assistant"; content: string }[];
+          temperature?: number;
+          max_tokens?: number;
+        }) => {
+          const response = await aiGatewayChat({
+            messages: options.messages,
+            taskType: currentTask,
+            temperature: options.temperature,
+            maxTokens: options.max_tokens,
+          });
+          return {
+            choices: [{ message: { content: response.text } }],
+            usage: {
+              prompt_tokens: response.inputTokens,
+              completion_tokens: response.outputTokens,
+              total_tokens: response.totalTokens,
+            },
+            model: response.model,
+          };
+        },
+      },
+    },
+    functions: {
+      invoke: async (_name: string, args: { query?: string; num?: number }) =>
+        governedWebSearch(String(args.query || ""), currentTask, Number(args.num) || 8),
+    },
+  };
 
   const tok = (c: unknown) => tokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
 
@@ -106,6 +140,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (m) { const p = JSON.parse(m[0]); r.ramoJuridico = p.ramo || "civil"; r.ramoConfianca = typeof p.confianca === "number" ? p.confianca : 0.7; }
     tok(c); steps[0].status = "done"; steps[0].result = r.ramoJuridico;
   } catch (e) { steps[0].status = "error"; steps[0].error = e instanceof Error ? e.message : "Erro"; r.ramoJuridico = "civil"; r.ramoConfianca = 0.5; }
+
+  if (r.ramoJuridico === "penal") currentTask = "criminal";
+  else if (currentTask !== "menores") currentTask = "analise_caso";
 
   // ── ETAPA 1: Extração estruturada (com estados epistêmicos) ──────────────
   steps[1].status = "running";
@@ -152,14 +189,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Constroi query combinando fatos + questões jurídicas
     const ragQuery = `${facts} ${issues.map((i) => i.question).join(" ")}`;
     // Busca semântica na base curada (TF-IDF cosine similarity)
-    const ragResults = await ragSearch(ragQuery, 8);
+    const ragResults = await legalSearch(ragQuery, 8);
     r.applicableLaw = ragResults.map((res) => ({
       diploma: res.source.diploma,
       numero: res.source.numero,
       textoTrecho: res.source.textoTrecho,
       vigente: res.source.vigente,
       urlOficial: res.source.urlOficial,
-      applicability: `RAG score: ${res.score.toFixed(3)} — ${res.source.diploma} ${res.source.numero} ${res.source.tribunal || ""}`,
+      applicability: `Hybrid score: ${res.score.toFixed(3)} — ${res.source.diploma} ${res.source.numero} ${res.source.tribunal || ""}`,
       state: "direito_positivo" as const,
       confidence: Math.min(1, res.score + 0.3), // ajusta confiança com base no score
     }));
@@ -177,6 +214,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       : [];
     steps[4].status = "done"; steps[4].result = r.jurisprudence.length;
   } catch (e) { steps[4].status = "error"; steps[4].error = e instanceof Error ? e.message : "Erro"; r.jurisprudence = []; }
+
+  if ((r.jurisprudence || []).length > 0) {
+    try {
+      const c = await zai.chat.completions.create({
+        messages: [
+          { role: "system", content: 'Classifique cada resultado como favorável, contrário ou neutro em relação às questões jurídicas. Responda APENAS JSON: {"items":[{"index":0,"favorable":true|false|null}]}. Não invente conteúdo além dos snippets.' },
+          { role: "user", content: JSON.stringify({ issues: r.legalIssues, precedents: r.jurisprudence?.map((j, index) => ({ index, name: j.name, snippet: j.snippet })) }) },
+        ],
+        temperature: 0.1,
+        max_tokens: 500,
+      });
+      const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
+      if (m) {
+        const parsed = JSON.parse(m[0]) as { items?: { index: number; favorable: boolean | null }[] };
+        for (const item of parsed.items || []) {
+          if (r.jurisprudence?.[item.index]) r.jurisprudence[item.index].favorable = item.favorable;
+        }
+      }
+      tok(c);
+    } catch {
+      // Cobertura ficará explicitamente incompleta.
+    }
+  }
+
+  r.researchCoverage = assessResearchCoverage({
+    laws: (r.applicableLaw || []).map((l) => ({ vigente: l.vigente, urlOficial: l.urlOficial })),
+    precedents: (r.jurisprudence || []).map((j) => ({ favorable: j.favorable, url: j.url, snippet: j.snippet })),
+    factualFit: Boolean((r.legalIssues || []).length && (r.applicableLaw || []).length),
+  });
 
   // ── ETAPA 5: Análise de viabilidade (com Evidence Ledger + hipótese) ─────
   steps[5].status = "running";
@@ -218,7 +284,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const c = await zai.chat.completions.create({
       messages: [
         { role: "system", content: `Sugira estratégia processual. Todas as ações e riscos são HIPÓTESES — rotule cada uma. Responda APENAS com JSON: {"strategy":{"proceduralPath":"caminho","immediateActions":[{"claim":"ação","state":"hipotese","source":"recomendação IA","confidence":0.5,"note":"nota"}],"documentsToCollect":["doc 1"],"risks":[{"claim":"risco","state":"hipotese","source":"análise IA","confidence":0.5,"note":"nota"}],"recommendation":"recomendação conservadora final"}}` },
-        { role: "user", content: `## Fatos\n${facts}\n## Legislação\n${JSON.stringify(r.applicableLaw?.map((l) => l.diploma + " " + l.numero))}\n## Viabilidade\n${JSON.stringify(r.viability)}\n## Lacunas\n${JSON.stringify(r.gaps)}` },
+        { role: "user", content: `## Fatos\n${facts}\n## Legislação\n${JSON.stringify(r.applicableLaw?.map((l) => l.diploma + " " + l.numero))}\n## Viabilidade\n${JSON.stringify(r.viability)}\n## Lacunas\n${JSON.stringify(r.gaps)}\n## Cobertura da pesquisa\n${JSON.stringify(r.researchCoverage)}\nSe researchCoverage.complete=false, não trate a conclusão como segura e destaque o que falta.` },
       ],
       thinking: { type: "disabled" }, temperature: 0.5, max_tokens: 1000,
     });
@@ -227,8 +293,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     tok(c); steps[7].status = "done"; steps[7].result = r.strategy;
   } catch (e) { steps[7].status = "error"; steps[7].error = e instanceof Error ? e.message : "Erro"; r.strategy = { proceduralPath: "", immediateActions: [], documentsToCollect: [], risks: [], recommendation: "Análise indisponível" }; }
 
-  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { title, totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length } });
-  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: `Análise cerebral: ${title}`, metadata: { totalTokens: tokens, caseId: body.caseId } });
+  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { title, totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length, researchComplete: r.researchCoverage?.complete ?? false, researchMissing: r.researchCoverage?.missing ?? [] }, userId: authUser.uid });
+  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: `Análise cerebral: ${title}`, metadata: { totalTokens: tokens, caseId: body.caseId }, userId: authUser.uid });
 
   // ── Persistir análise (memória jurídica por processo) ──────────────────
   if (body.caseId) {

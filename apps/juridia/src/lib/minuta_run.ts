@@ -16,7 +16,8 @@ import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
-import { ragSearch } from "@/lib/rag_lite";
+import { legalSearch } from "@/lib/legal_retrieval";
+import { verifyCitations } from "@/lib/citation_gate";
 import {
   buildSystemPrompt,
   buildOutlineUserPrompt,
@@ -261,9 +262,9 @@ export async function runMinutaPipeline(
     : "";
 
   // 4) Jurisprudência/normas inteligentes — RAG na base curada LegalSource
-  let ragResults: Awaited<ReturnType<typeof ragSearch>> = [];
+  let ragResults: Awaited<ReturnType<typeof legalSearch>> = [];
   try {
-    ragResults = await ragSearch(factsOnlyPseudonymized || tpl.name, 5);
+    ragResults = await legalSearch(factsOnlyPseudonymized || tpl.name, 8);
   } catch {
     // base curada indisponível → fundamentação fica por conta do LLM com regras de vedação
   }
@@ -556,6 +557,26 @@ export async function runMinutaPipeline(
       excerpt: labelLeaks[0],
     });
   }
+  const citationGate = verifyCitations(
+    finalContent,
+    ragResults.map((r) => ({
+      id: r.source.id,
+      tipo: r.source.tipo,
+      diploma: r.source.diploma,
+      numero: r.source.numero,
+      tribunal: r.source.tribunal,
+      textoTrecho: r.source.textoTrecho,
+      vigente: r.source.vigente,
+      urlOficial: r.source.urlOficial,
+    })),
+  );
+  if (citationGate.bloquear) {
+    validation.violations.push({
+      rule: "CITATION_GATE_BLOCK",
+      severity: "error",
+      detail: `Citation Gate bloqueou homologação automática: ${citationGate.suspeitas} citação(ões) suspeita(s). A peça permanece em rascunho até revisão.`,
+    });
+  }
   validation.valid = validation.violations.filter((v) => v.severity === "error").length === 0;
 
   // 7) Persistência — DONO É O USUÁRIO AUTENTICADO (corrige posse demo).
@@ -573,7 +594,7 @@ export async function runMinutaPipeline(
       markers: "[]", // intencional: o mapa de PII não é persistido (tarja-1)
       generatedContent: finalContent,
       skillSlugs: JSON.stringify(skills.map((s) => s.slug)),
-      status: degraded ? "draft" : "generated",
+      status: degraded || citationGate.bloquear ? "draft" : "generated",
       batchId: body.batchId || null,
     },
   });
@@ -615,6 +636,7 @@ export async function runMinutaPipeline(
       tokensUsed: tokensTotal,
       anonymized: true,
       degraded,
+      citationGate: { total: citationGate.total, verificadas: citationGate.verificadas, identificadas: citationGate.identificadas, suspeitas: citationGate.suspeitas, genericas: citationGate.genericas, bloquear: citationGate.bloquear },
       runId: run.id,
       batch: Boolean(body.batchId),
       mold: Boolean(moldText),
@@ -654,6 +676,7 @@ export async function runMinutaPipeline(
       markedAsDraft: validation.markedAsDraft,
     },
     references,
+    citationGate: { total: citationGate.total, verificadas: citationGate.verificadas, identificadas: citationGate.identificadas, suspeitas: citationGate.suspeitas, genericas: citationGate.genericas, bloquear: citationGate.bloquear },
     pipeline: {
       stages,
       degraded,
