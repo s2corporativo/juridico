@@ -5,6 +5,7 @@ import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { legalSearch } from "@/lib/legal_retrieval";
 import { assessResearchCoverage, type ResearchCoverage } from "@/lib/research_coverage";
 import { requireAuth } from "@/lib/auth";
+import { canAccessCase } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -81,6 +82,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   const facts = (body.facts || "").trim();
+  if (body.caseId && !(await canAccessCase(body.caseId, authUser))) {
+    return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
+  }
   const title = body.title?.trim() || `Análise — ${new Date().toLocaleDateString("pt-BR")}`;
 
   if (facts.length < 30) {
@@ -318,7 +322,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const caseId = url.searchParams.get("caseId") || "default-case";
+  const caseId = (url.searchParams.get("caseId") || "").trim();
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   const analyses = await db.brainAnalysis.findMany({
     where: { caseId },
