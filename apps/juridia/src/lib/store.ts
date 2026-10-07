@@ -41,9 +41,14 @@ const APP_TAB_ALIASES: Record<string, AppTab> = {
   documents: "editor",
   clients: "dashboard",
   jurisprudence: "biblioteca",
-  "case-analysis": "assistente",
+  "case-analysis": "cerebro",
   batch: "generator",
   audit: "settings",
+  assistente: "dashboard",
+  intelligence: "cerebro",
+  pipeline: "generator",
+  homologacao: "editor",
+  grafo: "cerebro",
 };
 
 export function resolveAppTab(t: string): AppTab {

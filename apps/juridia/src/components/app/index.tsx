@@ -7,13 +7,9 @@ import {
   FileText,
   LayoutDashboard,
   Settings as SettingsIcon,
-  Network,
   Calculator,
   BarChart3,
-  GitBranch,
-  ClipboardCheck,
   Search,
-  Sparkles,
   Shield,
   BookOpen,
 } from "lucide-react";
@@ -39,27 +35,30 @@ import { BibliotecaJuridica } from "./biblioteca-juridica";
 // Agora: Apenas a zona cognitiva. Operacional (clientes/casos/documentos/prazos/
 // audiências/financeiro/produtividade) foi removido para focar no conhecimento.
 // APIs continuam disponíveis para a IA usar internamente.
+// Navegação do advogado: mostra tarefas, não motores internos.
+// Intelligence/Pipeline/Homologação/Grafo continuam como capacidades internas,
+// acionadas pelos fluxos principais e mantidas fora do menu superior.
 const TABS = [
-  { id: "assistente" as const, label: "Assistente", icon: Sparkles, key: "s" },
   { id: "dashboard" as const, label: "Início", icon: LayoutDashboard, key: "1" },
+  { id: "cerebro" as const, label: "Cérebro", icon: Brain, key: "e" },
+  { id: "generator" as const, label: "Produção", icon: Wand2, key: "g" },
   { id: "biblioteca" as const, label: "Biblioteca", icon: BookOpen, key: "b" },
-  { id: "cerebro" as const, label: "1. Cérebro", icon: Brain, key: "e" },
-  { id: "intelligence" as const, label: "2. Inteligência", icon: Network, key: "i" },
-  { id: "pipeline" as const, label: "3. Pipeline", icon: GitBranch, key: "p" },
-  { id: "generator" as const, label: "5. Produção", icon: Wand2, key: "g" },
   { id: "editor" as const, label: "Editor", icon: FileText, key: "m" },
-  { id: "homologacao" as const, label: "Homologação", icon: ClipboardCheck, key: "h" },
-  { id: "calculadora" as const, label: "Análise Jurídica", icon: Calculator, key: "l" },
+  { id: "datajud" as const, label: "Pesquisa", icon: Search, key: "j" },
+  { id: "calculadora" as const, label: "Cálculos", icon: Calculator, key: "l" },
   { id: "visuallaw" as const, label: "Visual Law", icon: BarChart3, key: "v" },
-  { id: "datajud" as const, label: "DataJud", icon: Search, key: "j" },
-  { id: "grafo" as const, label: "Grafo", icon: Network, key: "n" },
-  { id: "settings" as const, label: "6. Governança", icon: Shield, key: "," },
+  { id: "settings" as const, label: "Governança", icon: Shield, key: "," },
 ];
 
 const ALL_TABS = TABS;
 
 export function AppShell() {
   const { appTab, setAppTab } = useAppStore();
+
+  useEffect(() => {
+    // Migra sessões antigas que ficaram em uma aba técnica agora consolidada.
+    if (!TABS.some((t) => t.id === appTab)) setAppTab(appTab);
+  }, [appTab, setAppTab]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
