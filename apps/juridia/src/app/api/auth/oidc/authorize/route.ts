@@ -1,7 +1,7 @@
 // GET /api/auth/oidc/authorize — início do Authorization Code Flow + PKCE.
 //
 // Requisitos de segurança do fluxo OIDC:
-// - usuário autenticado no JuridIA (sessão local) — sem sessão, redireciona
+// - usuário autenticado no Atlas Jurídico (sessão local) — sem sessão, redireciona
 //   para /login?next=<authorize-url> preservando a requisição original;
 // - client_id registrado + redirect_uri EXATO (allowlist);
 // - response_type=code e PKCE S256 obrigatórios;

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const styleHint = STYLE_HINTS[style] || STYLE_HINTS.formal;
 
-  const systemPrompt = `Você é a JuridIA, uma IA jurídica brasileira especialista em redação de minutas. Sua tarefa é gerar UM TRECHO de peça jurídica que o usuário pediu. Responda APENAS com o trecho solicitado, sem comentários ou explicações. Use formatação Markdown (### para subtítulos, listas, parágrafos). Estilo: ${styleHint}. Conformidade: CPC, CC, legislação especial, Resolução CNJ 615/2025.`;
+  const systemPrompt = `Você é a Atlas Jurídico, uma IA jurídica brasileira especialista em redação de minutas. Sua tarefa é gerar UM TRECHO de peça jurídica que o usuário pediu. Responda APENAS com o trecho solicitado, sem comentários ou explicações. Use formatação Markdown (### para subtítulos, listas, parágrafos). Estilo: ${styleHint}. Conformidade: CPC, CC, legislação especial, Resolução CNJ 615/2025.`;
 
   const userPrompt = `## Contexto
 Tipo de minuta: ${templateName}

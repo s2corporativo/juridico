@@ -51,7 +51,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const systemPrompt = `Você é a JuridIA, uma IA jurídica brasileira especialista em análise estruturada de casos. Sua tarefa é analisar os fatos de um caso jurídico e extrair informações estruturadas em formato JSON válido. Responda APENAS com JSON válido, sem markdown, sem comentários, sem texto antes ou depois do JSON.
+  const systemPrompt = `Você é a Atlas Jurídico, uma IA jurídica brasileira especialista em análise estruturada de casos. Sua tarefa é analisar os fatos de um caso jurídico e extrair informações estruturadas em formato JSON válido. Responda APENAS com JSON válido, sem markdown, sem comentários, sem texto antes ou depois do JSON.
 
 O JSON deve ter exatamente esta estrutura:
 {

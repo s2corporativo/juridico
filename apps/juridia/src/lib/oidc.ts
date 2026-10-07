@@ -1,4 +1,4 @@
-// OIDC Identity Provider do JuridIA para o Atlas Jurídico.
+// OIDC Identity Provider do Atlas Jurídico para o Atlas Jurídico.
 // Authorization Code + PKCE S256, tokens RS256 e configuração fail-closed.
 
 import { createHash, createPublicKey, createSign, createVerify, generateKeyPairSync, randomBytes } from "crypto";

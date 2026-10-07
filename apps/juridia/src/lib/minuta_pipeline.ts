@@ -154,7 +154,7 @@ export function labelFromKey(key: string): string {
 // ── System prompts (um perfil por etapa) ────────────────────────────────────
 
 const BASE_PERSONA =
-  "Você é a JuridIA, uma IA jurídica brasileira especialista em redação de minutas e peças processuais. Sua saída é sempre em português do Brasil, em linguagem jurídica formal, com conformidade ao CPC, CC, CDC, legislação especial e Resolução CNJ 615/2025. Você nunca escreve dados sensíveis inventados: usa apenas os marcadores [TIPO_N] fornecidos. Você nunca promete resultado (vedação art. 2º §1º do EOAB) e nunca cita jurisprudência sem indicar que precisa de verificação.";
+  "Você é a Atlas Jurídico, uma IA jurídica brasileira especialista em redação de minutas e peças processuais. Sua saída é sempre em português do Brasil, em linguagem jurídica formal, com conformidade ao CPC, CC, CDC, legislação especial e Resolução CNJ 615/2025. Você nunca escreve dados sensíveis inventados: usa apenas os marcadores [TIPO_N] fornecidos. Você nunca promete resultado (vedação art. 2º §1º do EOAB) e nunca cita jurisprudência sem indicar que precisa de verificação.";
 
 export function buildSystemPrompt(stage: "outline" | "draft" | "review"): string {
   if (stage === "outline") {

@@ -1,4 +1,4 @@
-// Autenticação do JuridIA — sessão local + guards de rota.
+// Autenticação do Atlas Jurídico — sessão local + guards de rota.
 //
 // Modelo de segurança:
 // - Senha: scrypt (N=16384) com salt aleatório por usuário, comparação timing-safe.

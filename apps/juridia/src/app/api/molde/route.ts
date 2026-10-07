@@ -49,7 +49,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const systemPrompt = `Você é a JuridIA operando em Modo Molde. Sua tarefa é analisar um documento-base jurídico e uma instrução do advogado, e produzir uma LISTA de alterações estruturadas que devem ser aplicadas ao documento.
+  const systemPrompt = `Você é a Atlas Jurídico operando em Modo Molde. Sua tarefa é analisar um documento-base jurídico e uma instrução do advogado, e produzir uma LISTA de alterações estruturadas que devem ser aplicadas ao documento.
 
 NÃO reescreva o documento inteiro. Produza apenas as alterações necessárias, cada uma com:
 - operation: "replace" (substituir trecho), "add" (adicionar após o anchor), "remove" (remover o trecho)

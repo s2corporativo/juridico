@@ -21,6 +21,6 @@ export async function GET() {
     jwks_endpoint: `${cfg.issuer}/jwks`,
     verify_endpoint: `${cfg.issuer}/verify`,
     registered_redirect_uris: cfg.redirectUris,
-    note: "JuridIA é o provedor de identidade OIDC do Atlas Jurídico.",
+    note: "Atlas Jurídico é o provedor de identidade OIDC do Atlas Jurídico.",
   });
 }
