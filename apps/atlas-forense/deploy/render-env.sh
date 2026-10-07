@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # render-env.sh — DEFINIÇÃO E EXECUÇÃO dos segredos definitivos de produção
-# (Atlas Forense + JuridIA) na VPS. Ver docs/segredos-producao-vps.md.
+# (Atlas Jurídico + JuridIA) na VPS. Ver ../../../docs/OPERATIONS.md.
 #
 # Uso (na VPS, como root):
 #   ./render-env.sh --check                # audita: o que falta / está fraco (NUNCA imprime valores)
