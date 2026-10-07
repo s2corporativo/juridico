@@ -24,15 +24,12 @@ import type { DocumentDTO } from "@/lib/types";
 import { useFavoritesCount } from "@/hooks/use-favorites-count";
 
 interface Stats {
-  totalUsers: number;
-  totalDocuments: number;
-  publicInstitutions: number;
-  statesServed: number;
-  lawOffices: number;
+  documents: number;
   skills: number;
   templates: number;
   searches: number;
-  demo: { plan: string; minutasUsed: number; minutasLimit: number; remaining: number } | null;
+  cases: number;
+  clients: number;
 }
 
 export function Dashboard() {
@@ -51,10 +48,6 @@ export function Dashboard() {
       .catch(() => null);
   }, []);
 
-  const usagePct = stats?.demo
-    ? Math.min(100, (stats.demo.minutasUsed / stats.demo.minutasLimit) * 100)
-    : 0;
-
   const todayDocs = docs.filter((d) => {
     const today = new Date().toDateString();
     return new Date(d.createdAt).toDateString() === today;
@@ -71,16 +64,6 @@ export function Dashboard() {
     return acc;
   }, []).sort((a, b) => b.count - a.count);
 
-  const planName = stats?.demo
-    ? stats.demo.plan === "individual_2"
-      ? "Individual II"
-      : stats.demo.plan === "individual_1"
-      ? "Individual I"
-      : stats.demo.plan === "individual_3"
-      ? "Individual III"
-      : stats.demo.plan
-    : "—";
-
   const quickActions = [
     { label: "Gerar nova minuta", icon: Zap, tab: "generator" as const, color: "text-primary" },
     { label: "Meus clientes", icon: Star, tab: "clients" as const, color: "text-primary" },
@@ -96,41 +79,29 @@ export function Dashboard() {
           Olá, {user?.name || "Advogado"} 👋
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Aqui está um resumo da sua atividade no JuridIA.
+          Aqui está um resumo da atividade jurídica e da produção do escritório.
         </p>
       </div>
 
       {/* Resumo do escritório */}
       <Card className="mb-6 overflow-hidden border-primary/20">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/10" />
-          <CardContent className="relative p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <Badge variant="secondary" className="gap-1">
-                  <Sparkles className="h-3 w-3" /> Assistente jurídico ativo
-                </Badge>
-                <h2 className="mt-3 text-lg font-semibold">Bem-vindo de volta</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {stats?.demo?.minutasUsed || 0} minutas geradas ·{" "}
-                  {stats?.templates || 0} templates · {stats?.skills || 0} habilidades
-                </p>
-                <div className="mt-3 max-w-md">
-                  <Progress value={Math.min(100, ((stats?.demo?.minutasUsed || 0) / 200) * 100)} className="h-2" />
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    {200 - (stats?.demo?.minutasUsed || 0)} gerações restantes neste ciclo
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <div className="text-4xl font-bold tracking-tight text-primary">
-                  {stats?.demo?.minutasUsed || 0}
-                </div>
-                <div className="text-xs text-muted-foreground">minutas geradas</div>
-              </div>
+        <CardContent className="p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <Badge variant="secondary" className="gap-1">
+                <Sparkles className="h-3 w-3" /> Inteligência jurídica ativa
+              </Badge>
+              <h2 className="mt-3 text-lg font-semibold">Atlas Jurídico</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {stats?.cases || 0} casos · {stats?.clients || 0} clientes · {stats?.documents || docs.length} documentos
+              </p>
             </div>
-          </CardContent>
-        </div>
+            <div className="text-right">
+              <div className="text-4xl font-bold tracking-tight text-primary">{stats?.skills || 0}</div>
+              <div className="text-xs text-muted-foreground">skills jurídicas ativas</div>
+            </div>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Stats grid */}
@@ -315,19 +286,12 @@ export function Dashboard() {
               <strong className="text-foreground">Dica:</strong> use{" "}
               <kbd className="rounded border border-border bg-muted px-1 font-mono text-[10px]">⌘K</kbd>{" "}
               para abrir a paleta de comandos e navegar rápido entre as seções.
-              Atalhos de tecla única:{" "}
-              <kbd className="rounded border border-border bg-muted px-1 font-mono text-[10px]">C</kbd>{" "}
-              clientes,{" "}
-              <kbd className="rounded border border-border bg-muted px-1 font-mono text-[10px]">G</kbd>{" "}
-              gerar,{" "}
-              <kbd className="rounded border border-border bg-muted px-1 font-mono text-[10px]">J</kbd>{" "}
-              jurisprudência.
+              Use os atalhos exibidos na navegação para alternar entre as áreas principais.
             </div>
             <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
               <Sparkles className="mb-1 inline h-3.5 w-3.5 text-primary" />{" "}
               <strong className="text-foreground">Fluxo recomendado:</strong>{" "}
-              cadastre o cliente na aba Clientes → crie um caso → gere a minuta
-              vinculada → revise no editor → exporte em PDF/DOC.
+              selecione o caso → analise as evidências → aprove o plano agêntico → revise a minuta no editor → exporte o documento final.
             </div>
           </CardContent>
         </Card>

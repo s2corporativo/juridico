@@ -35,8 +35,7 @@ export type AppTab =
   | "grafo"
   | "settings";
 
-// Ids legados usados por componentes (header, paleta, dashboard) que foram
-// consolidados em tabs renderizáveis — evita navegar para uma tab sem view.
+// Aliases de navegação mantêm links antigos compatíveis com a interface consolidada.
 const APP_TAB_ALIASES: Record<string, AppTab> = {
   documents: "editor",
   clients: "dashboard",
@@ -92,13 +91,13 @@ interface AppState {
 }
 
 const DEFAULT_PROFILE: LawyerProfile = {
-  name: "Advogado Demo",
-  oab: "123456",
-  oabUf: "SP",
-  office: "Escritório JuridIA Advocacia",
-  email: "demo@juridia.com.br",
-  phone: "(11) 99999-0000",
-  address: "Av. Paulista, 1000 — São Paulo/SP",
+  name: "",
+  oab: "",
+  oabUf: "MG",
+  office: "Atlas Jurídico",
+  email: "",
+  phone: "",
+  address: "",
 };
 
 export const useAppStore = create<AppState>()(
@@ -128,7 +127,7 @@ export const useAppStore = create<AppState>()(
       clearSkills: () => set({ selectedSkillSlugs: [] }),
       authOpen: false,
       setAuthOpen: (authOpen) => set({ authOpen }),
-      user: { email: "demo@juridia.com.br", name: "Advogado Demo" },
+      user: null,
       setUser: (user) => set({ user }),
       // Perfil e estilo
       profile: DEFAULT_PROFILE,

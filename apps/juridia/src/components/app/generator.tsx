@@ -70,7 +70,6 @@ export function Generator() {
     toggleSkill,
     setAppTab,
     setCurrentDocId,
-    user,
     brainContext,
     setBrainContext,
     writingStyle,
@@ -386,11 +385,7 @@ export function Generator() {
             anonimização local.
           </p>
         </div>
-        {user && (
-          <Badge variant="secondary" className="text-xs">
-            Plano {user.plan === "individual_2" ? "Individual II" : (user.plan ?? "não informado")}
-          </Badge>
-        )}
+        
       </div>
 
       {/* Alternância de modo: individual × lote (molde) */}

@@ -1,5 +1,5 @@
 {
-  "name": "juridico-monorepo",
+  "name": "atlas-juridico",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
@@ -12,8 +12,11 @@
     "dev": "concurrently \"pnpm dev:atlas\" \"pnpm dev:juridia\"",
     "build:atlas": "cd apps/atlas-forense && pnpm build",
     "build:juridia": "cd apps/juridia && bun run build",
-    "lint:juridia": "cd apps/juridia && bun run lint",
-    "test:atlas": "cd apps/atlas-forense && pnpm test"
+    "check:atlas": "cd apps/atlas-forense && pnpm check",
+    "check:juridia": "cd apps/juridia && bun x tsc --noEmit",
+    "test:atlas": "cd apps/atlas-forense && pnpm test",
+    "test:juridia": "cd apps/juridia && bun test",
+    "map:architecture": "./scripts/architecture-map.sh"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
