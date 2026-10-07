@@ -522,6 +522,16 @@ export async function runMinutaPipeline(
     if (matches && matches.length) labelLeaks.push(matches[0].slice(0, 60));
   }
 
+  if (caseEvidence.references.length > 0 && !sanitizedContent.includes("[[autos:")) {
+    const refsAppendix = caseEvidence.references.slice(0, 8).map((r) => {
+      const doc = r.fileName || r.documentId || "documento";
+      const page = r.pageNumber ?? "?";
+      const marker = `[[autos:${doc}:p.${page}:evidence=${r.evidenceRefId}]]`;
+      return `- ${marker} — ${r.quote.slice(0, 280)}`;
+    }).join("\n");
+    sanitizedContent += `\n\n## Referências probatórias dos autos\n${refsAppendix}`;
+  }
+
   const finalContent = ensureDraftMarker(sanitizedContent);
   const validation = validateResponse(finalContent);
   if (invented.length) {

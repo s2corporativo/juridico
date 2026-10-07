@@ -278,7 +278,7 @@ export function buildReferencesBlock(refs: ReferencesBlock[]): string {
         `[${i + 1}] ${r.diploma}${r.numero ? ` ${r.numero}` : ""}${r.tribunal ? ` — ${r.tribunal}` : ""} (vigente)\n    Trecho: ${r.textoTrecho.slice(0, 300)}${r.urlOficial ? `\n    Fonte oficial: ${r.urlOficial}` : ""}`
     )
     .join("\n\n");
-  return `\n\n## Base normativa curada (fontes VERIFICADAS — prefera estas e cite como [1], [2]...)\n${items}\n\nREGRAS: Cite apenas o que está acima ou dispositivos que você tem CERTEZA absoluta do número e teor. NUNCA invente número de lei, artigo ou processo. Se citar jurisprudência, marque "(verificar)" logo após a citação.`;
+  return `\n\n## Base normativa curada (fontes VERIFICADAS — prefera estas e cite como [1], [2]...)\n${items}\n\nREGRAS: CITE SOMENTE as fontes listadas acima, preservando diploma, número e tribunal exatamente como fornecidos. NÃO cite de memória qualquer outro artigo, lei, súmula, tema ou processo. Se uma tese não tiver fonte listada, escreva que depende de pesquisa complementar.`;
 }
 
 export interface DraftInput {
