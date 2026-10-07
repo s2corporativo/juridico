@@ -45,9 +45,9 @@ export interface SkillBudget {
 }
 
 export const DEFAULT_SKILL_BUDGET: SkillBudget = {
-  maxSkills: 6,
-  maxCharsPerSkill: 2200,
-  maxTotalChars: 10000,
+  maxSkills: 5,
+  maxCharsPerSkill: 1200,
+  maxTotalChars: 5000,
 };
 
 /**
@@ -275,7 +275,7 @@ export function buildReferencesBlock(refs: ReferencesBlock[]): string {
   const items = refs
     .map(
       (r, i) =>
-        `[${i + 1}] ${r.diploma}${r.numero ? ` ${r.numero}` : ""}${r.tribunal ? ` — ${r.tribunal}` : ""} (vigente)\n    Trecho: ${r.textoTrecho.slice(0, 400)}${r.urlOficial ? `\n    Fonte oficial: ${r.urlOficial}` : ""}`
+        `[${i + 1}] ${r.diploma}${r.numero ? ` ${r.numero}` : ""}${r.tribunal ? ` — ${r.tribunal}` : ""} (vigente)\n    Trecho: ${r.textoTrecho.slice(0, 300)}${r.urlOficial ? `\n    Fonte oficial: ${r.urlOficial}` : ""}`
     )
     .join("\n\n");
   return `\n\n## Base normativa curada (fontes VERIFICADAS — prefera estas e cite como [1], [2]...)\n${items}\n\nREGRAS: Cite apenas o que está acima ou dispositivos que você tem CERTEZA absoluta do número e teor. NUNCA invente número de lei, artigo ou processo. Se citar jurisprudência, marque "(verificar)" logo após a citação.`;
