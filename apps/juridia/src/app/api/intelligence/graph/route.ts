@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { canAccessCase } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const caseId = url.searchParams.get("caseId") || "default-case";
+  const caseId = (url.searchParams.get("caseId") || "").trim();
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   const [nodes, edges] = await Promise.all([
     db.graphNode.findMany({
@@ -98,7 +101,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "fromNodeId e toNodeId não podem ser iguais" }, { status: 422 });
   }
 
-  const caseId = body.caseId || "default-case";
+  const caseId = (body.caseId || "").trim();
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   // Valida que ambos os nós pertencem ao mesmo caso (Princípio: bloquear vínculos cruzados)
   const [fromNode, toNode] = await Promise.all([
