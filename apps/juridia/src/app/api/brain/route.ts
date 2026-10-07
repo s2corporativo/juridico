@@ -133,7 +133,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       messages: [
         { role: "system", content: `Classifique o caso em UM destes 16 ramos. Responda APENAS com JSON: {"ramo":"...","confianca":0.0-1.0}. Ramos: civil, penal, trabalhista, tributario, consumer, family, previdenciario, empresarial, administrativo, bancario, ambiental, saude, imobiliario, internacional, digital_lgpd, transito` },
         { role: "user", content: facts.slice(0, 500) },
-      ],, temperature: 0.2, max_tokens: 100,
+      ], temperature: 0.2, max_tokens: 100,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.ramoJuridico = p.ramo || "civil"; r.ramoConfianca = typeof p.confianca === "number" ? p.confianca : 0.7; }
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 {"parties":[{"role":"autor|réu|requerente|requerido|terceiro","name":"nome ou null","type":"pessoa física|pessoa jurídica|órgão público","state":"fato_extraido|alegacao_cliente|inferencia_ia"}],"timeline":[{"date":"data","event":"evento","state":"fato_extraido|alegacao_cliente|inferencia_ia"}],"requests":[{"text":"pedido","state":"alegacao_cliente|inferencia_ia"}],"values":[{"label":"rótulo","amount":"R$ X","state":"fato_extraido|alegacao_cliente|inferencia_ia"}]}` },
         { role: "user", content: facts },
-      ],, temperature: 0.3, max_tokens: 1000,
+      ], temperature: 0.3, max_tokens: 1000,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) {
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       messages: [
         { role: "system", content: `Identifique as QUESTÕES JURÍDICAS do caso. Para cada, indique área, relevância (alta/média/baixa) e estado epistêmico ("fato_extraido" se surge dos fatos, "inferencia_ia" se é inferência jurídica, "alegacao_cliente" se é alegação). Responda APENAS com JSON: {"legalIssues":[{"question":"...","area":"civil|penal|trabalhista|tributario|consumer|family|previdenciario|empresarial|administrativo|bancario|ambiental|saude|imobiliario|internacional|digital_lgpd|transito","relevance":"alta|média|baixa","state":"fato_extraido|alegacao_cliente|inferencia_ia","note":"explicação curta"}]}` },
         { role: "user", content: `Fatos:\n${facts}\n\nPartes:\n${JSON.stringify(r.parties)}\nPedidos:\n${JSON.stringify(r.requests)}` },
-      ],, temperature: 0.4, max_tokens: 800,
+      ], temperature: 0.4, max_tokens: 800,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.legalIssues = p.legalIssues || []; }
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 {"hypothesis":"favorável|incerto|desfavorável","hypothesisNote":"explicar que é hipótese sem base estatística, requer validação jurisprudencial","strengths":[{"claim":"ponto forte","state":"fato_extraido|alegacao_cliente|inferencia_ia|direito_positivo|jurisprudencia","source":"origem","confidence":0.0-1.0,"note":"explicação"}],"weaknesses":[{"claim":"ponto fraco","state":"fato_extraido|alegacao_cliente|inferencia_ia","source":"origem","confidence":0.0-1.0,"note":"explicação"}],"reasoning":"raciocínio conectando fatos, lei e jurisprudência","evidence":[{"claim":"afirmação consolidada","state":"fato_extraido|inferencia_ia|direito_positivo|jurisprudencia","source":"origem","confidence":0.0-1.0,"note":"nota"}]}` },
         { role: "user", content: `## Fatos\n${facts}\n\n## Legislação\n${lawCtx}\n\n## Jurisprudência\n${jurCtx}\n\n## Pedidos\n${JSON.stringify(r.requests)}` },
-      ],, temperature: 0.4, max_tokens: 1500,
+      ], temperature: 0.4, max_tokens: 1500,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.viability = { hypothesis: p.hypothesis || "incerto", hypothesisNote: p.hypothesisNote || "Hipótese sem base estatística — requer validação jurisprudencial e revisão humana.", strengths: p.strengths || [], weaknesses: p.weaknesses || [], reasoning: p.reasoning || "", evidence: p.evidence || [] }; }
@@ -266,7 +266,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       messages: [
         { role: "system", content: `Identifique LACUNAS factuais/probatórias e faça PERGUNTAS para o cliente. Cada lacuna deve ter estado epistêmico. Responda APENAS com JSON: {"gaps":[{"what":"informação faltante","why":"por que importa","question":"pergunta para o cliente","state":"fato_extraido|alegacao_cliente|inferencia_ia"}]}` },
         { role: "user", content: `## Fatos\n${facts}\n\n## Questões\n${JSON.stringify(r.legalIssues)}\n\n## Análise\n${JSON.stringify(r.viability)}` },
-      ],, temperature: 0.5, max_tokens: 800,
+      ], temperature: 0.5, max_tokens: 800,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.gaps = p.gaps || []; }
@@ -280,7 +280,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       messages: [
         { role: "system", content: `Sugira estratégia processual. Todas as ações e riscos são HIPÓTESES — rotule cada uma. Responda APENAS com JSON: {"strategy":{"proceduralPath":"caminho","immediateActions":[{"claim":"ação","state":"hipotese","source":"recomendação IA","confidence":0.5,"note":"nota"}],"documentsToCollect":["doc 1"],"risks":[{"claim":"risco","state":"hipotese","source":"análise IA","confidence":0.5,"note":"nota"}],"recommendation":"recomendação conservadora final"}}` },
         { role: "user", content: `## Fatos\n${facts}\n## Legislação\n${JSON.stringify(r.applicableLaw?.map((l) => l.diploma + " " + l.numero))}\n## Viabilidade\n${JSON.stringify(r.viability)}\n## Lacunas\n${JSON.stringify(r.gaps)}\n## Cobertura da pesquisa\n${JSON.stringify(r.researchCoverage)}\nSe researchCoverage.complete=false, não trate a conclusão como segura e destaque o que falta.` },
-      ],, temperature: 0.5, max_tokens: 1000,
+      ], temperature: 0.5, max_tokens: 1000,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.strategy = p.strategy; }
