@@ -272,7 +272,7 @@ export function Inteligencia() {
           )}
 
           {result && (
-            <ResultView result={result} stored={stored} onReview={review} activeTab={activeTab} setActiveTab={setActiveTab} />
+            <ResultView result={result} stored={stored} onReview={review} activeTab={activeTab} setActiveTab={setActiveTab} currentCaseId={currentCaseId} />
           )}
         </div>
       </div>
@@ -287,12 +287,14 @@ function ResultView({
   onReview,
   activeTab,
   setActiveTab,
+  currentCaseId,
 }: {
   result: MapResult;
   stored: StoredData | null;
   onReview: (t: "assertion" | "node", id: string, a: "confirm" | "correct" | "reject") => void;
   activeTab: "resumo" | "fatos" | "grafo" | "afirmacoes";
   setActiveTab: (t: "resumo" | "fatos" | "grafo" | "afirmacoes") => void;
+  currentCaseId: string | null;
 }) {
   const tabs = [
     { id: "resumo" as const, label: "Resumo", icon: Brain },
