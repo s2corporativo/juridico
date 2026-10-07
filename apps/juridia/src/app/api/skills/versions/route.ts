@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { logAuditEvent } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,13 @@ export async function POST(req: NextRequest) {
       contentHash: hash,
     },
   });
+  await logAuditEvent({
+    action: "skill_version_create",
+    resource: "skill",
+    resourceId: created.id,
+    userId: auth.user.uid,
+    metadata: { slug, version, area, status: created.status, contentHash: created.contentHash },
+  });
   return NextResponse.json({ skill: created }, { status: 201 });
 }
 
@@ -86,12 +94,27 @@ export async function PATCH(req: NextRequest) {
   if (!body?.id || !["draft","review","approved","retired"].includes(String(body.status))) {
     return NextResponse.json({ error: "id/status inválidos" }, { status: 400 });
   }
+  const previous = await db.skillVersion.findUnique({ where: { id: body.id } });
+  if (!previous) return NextResponse.json({ error: "skill não encontrada" }, { status: 404 });
   const skill = await db.skillVersion.update({
     where: { id: body.id },
     data: {
       status: body.status,
       approvedBy: body.status === "approved" ? auth.user.uid : null,
       approvedAt: body.status === "approved" ? new Date() : null,
+    },
+  });
+  await logAuditEvent({
+    action: "skill_status_change",
+    resource: "skill",
+    resourceId: skill.id,
+    userId: auth.user.uid,
+    metadata: {
+      slug: skill.slug,
+      version: skill.version,
+      previousStatus: previous.status,
+      newStatus: skill.status,
+      contentHash: skill.contentHash,
     },
   });
   return NextResponse.json({ skill });
