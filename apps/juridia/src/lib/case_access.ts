@@ -22,3 +22,14 @@ export async function accessibleCaseIds(user: CaseAccessUser): Promise<string[]>
   });
   return items.map((item) => item.id);
 }
+
+
+export async function canAccessClient(clientId: string, user: CaseAccessUser): Promise<boolean> {
+  if (!clientId) return false;
+  const item = await db.client.findUnique({
+    where: { id: clientId },
+    select: { userId: true },
+  });
+  if (!item) return false;
+  return user.role === "admin" || item.userId === user.uid;
+}
