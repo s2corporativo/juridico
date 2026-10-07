@@ -155,7 +155,7 @@ export function validateResponse(text: string): ValidationResult {
     const match = text.match(pattern);
     if (match) {
       violations.push({
-        rule: "VEDACAO_PROMESSA_RESULTADO",
+        rule: "VEDAÇÃO_PROMESSA_RESULTADO",
         severity: "error",
         detail: "A IA não pode prometer resultado. A comunicação jurídica deve respeitar o Estatuto, o Código de Ética e o Provimento CFOAB 205/2021, inclusive a vedação de promessa de resultados.",
         excerpt: match[0],
@@ -175,7 +175,7 @@ export function validateResponse(text: string): ValidationResult {
   if (possibleCaseLaw) {
     for (const match of possibleCaseLaw.slice(0, 5)) {
       violations.push({
-        rule: "JURISPRUDENCIA_EXIGE_GATE",
+        rule: "JURISPRUDENCIA_NAO_VERIFICADA",
         severity: "warning",
         detail: `Citação '${match}' deve passar pelo Citation Gate antes de homologação.`,
         excerpt: match,
