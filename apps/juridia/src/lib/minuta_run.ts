@@ -241,7 +241,7 @@ export async function runMinutaPipeline(
     atlasKnowledge = [];
   }
   const atlasKnowledgeBlock = atlasKnowledge.length
-    ? "\n\n## ACERVO JURÍDICO INTERNO EJC/ATLAS\n" + atlasKnowledge.map((x) =>
+    ? "\n\n## ACERVO JURÍDICO INTERNO\n" + atlasKnowledge.map((x) =>
         `### ${x.title} [${x.documentType} · ${x.area} · conf. ${x.reliability}]\nFonte: ${x.source || "elaboração interna"}${x.sourceUrl ? ` — ${x.sourceUrl}` : ""}\nTrecho: ${x.text.slice(0, 1200)}\nScore híbrido: ${x.score.toFixed(3)}${x.semanticScore == null ? " (sem vetor disponível)" : ` · semântico ${x.semanticScore.toFixed(3)}`}`
       ).join("\n\n")
     : "";
@@ -333,7 +333,7 @@ export async function runMinutaPipeline(
     },
   );
 
-  // Minuta-molde aprovada (geração em lote — paridade MinutaIA)
+  // Minuta-molde aprovada (geração em lote — geração em lote)
   const moldText = normalizeMoldContent(body.moldContent);
 
   emit({ type: "stage", stage: "prepare", status: "done", note: `${skills.length} skill(s), ${references.length} fonte(s), ${atlasKnowledge.length} item(ns) Atlas` });

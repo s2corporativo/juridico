@@ -1,4 +1,4 @@
-// legal_retrieval.ts — recuperação jurídica híbrida inspirada no EJC.
+// legal_retrieval.ts — recuperação jurídica híbrida do Atlas Jurídico.
 // SQLite-friendly: TF-IDF existente + BM25 + match exato + autoridade oficial + RRF.
 // Quando a base migrar para PostgreSQL/pgvector, esta interface permanece estável.
 

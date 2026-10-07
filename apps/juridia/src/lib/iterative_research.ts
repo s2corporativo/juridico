@@ -101,9 +101,9 @@ export async function runIterativeLegalResearch(params: {
     laws = dedupeLegal([...laws, ...(await legalSearch(localQuery, 12))]);
     try {
       atlasKnowledge = dedupeAtlas([...atlasKnowledge, ...(await atlasKnowledgeSearch(localQuery, 16))]);
-      queries.push({ purpose: "acervo EJC/Atlas híbrido", query: localQuery, results: atlasKnowledge.length });
+      queries.push({ purpose: "acervo jurídico interno híbrido", query: localQuery, results: atlasKnowledge.length });
     } catch {
-      queries.push({ purpose: "acervo EJC/Atlas híbrido", query: localQuery, results: 0 });
+      queries.push({ purpose: "acervo jurídico interno híbrido", query: localQuery, results: 0 });
     }
 
     for (const step of plan.steps.filter((s) => s.sourceClasses.includes("precedent"))) {

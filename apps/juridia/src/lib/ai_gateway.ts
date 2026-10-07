@@ -1,5 +1,5 @@
 // ai_gateway.ts — única porta de saída para LLMs externos/locais.
-// Regra do EJC: nenhuma camada de negócio escolhe provider nem envia PII diretamente.
+// Regra do Atlas Jurídico: nenhuma camada de negócio escolhe provider nem envia PII diretamente.
 
 import { performance } from "node:perf_hooks";
 import {
@@ -51,14 +51,14 @@ function prepareMessages(messages: AIMessage[], mode: SanitizationMode): Prepare
   if (mode === SanitizationMode.LOCAL_COMPLETO) return { messages, map: null };
 
   const tagged = messages
-    .map((m, i) => `<<<EJCMSG_${i}_${m.role.toUpperCase()}>>>\n${m.content}`)
+    .map((m, i) => `<<<ATLASMSG_${i}_${m.role.toUpperCase()}>>>\n${m.content}`)
     .join("\n");
   const p = pseudonymize(tagged);
 
   const rebuilt: AIMessage[] = messages.map((m, i) => {
-    const marker = `<<<EJCMSG_${i}_${m.role.toUpperCase()}>>>\n`;
+    const marker = `<<<ATLASMSG_${i}_${m.role.toUpperCase()}>>>\n`;
     const next = i + 1 < messages.length
-      ? `<<<EJCMSG_${i + 1}_${messages[i + 1].role.toUpperCase()}>>>\n`
+      ? `<<<ATLASMSG_${i + 1}_${messages[i + 1].role.toUpperCase()}>>>\n`
       : null;
     const start = p.text.indexOf(marker);
     if (start < 0) return { ...m, content: "" };

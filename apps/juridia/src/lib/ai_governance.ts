@@ -1,4 +1,4 @@
-// ai_governance.ts — governança central de IA, portada e endurecida a partir do EJC.
+// ai_governance.ts — governança central de IA, do Atlas Jurídico.
 // Este módulo é server-side: nenhuma rota deve decidir provider ou política de sigilo por conta própria.
 
 export interface ProviderSpec {

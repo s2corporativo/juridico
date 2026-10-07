@@ -1,4 +1,4 @@
-// atlas_knowledge_retrieval.ts — busca híbrida no acervo histórico EJC/Atlas.
+// atlas_knowledge_retrieval.ts — busca híbrida no acervo jurídico interno.
 // Combina BM25 + embedding local + sinais editoriais e RRF.
 
 import { db } from "@/lib/db";

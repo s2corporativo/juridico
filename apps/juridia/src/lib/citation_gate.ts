@@ -1,4 +1,4 @@
-// citation_gate.ts — Gate anti-alucinação de citações jurídicas (portado do EJC)
+// citation_gate.ts — Gate anti-alucinação de citações jurídicas (integrado ao Atlas Jurídico)
 // Extrai citações do texto, verifica existência contra base curada, fail-closed.
 
 export interface Citation {
