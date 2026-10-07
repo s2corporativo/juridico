@@ -17,7 +17,7 @@ function escapeCsv(value: string | number) {
 
 export function buildNationalCensusCsv(metadata: NationalExportMetadata, rows: NationalExportRow[]) {
   return [
-    "# Atlas Forense — Censo Nacional JEC",
+    "# Atlas Jurídico — Censo Nacional JEC",
     "# Fonte: CNJ/DataJud | Coleta agregada validada em 26/08/2026",
     `# Filtro: ${metadata.from} a ${metadata.to}; Tribunal: ${metadata.tribunalLabel}`,
     `# Cobertura: ${metadata.coveragePct}% (${metadata.respondedTribunals}/${metadata.expectedTribunals} TJs); Estado da execução: ${metadata.executionState}`,

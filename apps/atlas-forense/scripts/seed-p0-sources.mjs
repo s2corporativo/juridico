@@ -1,5 +1,5 @@
 /**
- * Seed das 7 fontes P0 do Atlas Forense (Painel JEC BH e Betim):
+ * Seed das 7 fontes P0 do Atlas Jurídico (Painel JEC BH e Betim):
  * define priority='p0_obrigatoria', atualiza notas de uso dos conectores
  * (DJEN, LexML SRU, STJ Dados Abertos) e insere fontes ausentes.
  * Idempotente (upsert por sourceKey).

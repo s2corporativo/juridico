@@ -1,4 +1,4 @@
-/** Atlas Forense: filtros múltiplos, evidência censitária e relatório de impressão. */
+/** Atlas Jurídico: filtros múltiplos, evidência censitária e relatório de impressão. */
 import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpRight, BarChart3, FileText, Filter, Plus, Printer, X } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -80,7 +80,7 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
   };
   const csvCell = (value: string | number | boolean | null) => `"${String(value ?? "").replaceAll('"', '""')}"`;
   const exportCsv = () => {
-    const metadata = ["# Atlas Forense — recorte filtrado", `# Filtros: ${activeFilters.join(" | ")}`, `# Fonte: ${data.meta.fonte}`, `# Série mensal: ${data.meta.alertaTimeline}`];
+    const metadata = ["# Atlas Jurídico — recorte filtrado", `# Filtros: ${activeFilters.join(" | ")}`, `# Fonte: ${data.meta.fonte}`, `# Série mensal: ${data.meta.alertaTimeline}`];
     const header = "municipio;ano;orgao_codigo;unidade;assuntos_cnj;data_ajuizamento;ultimo_movimento;data_ultimo_movimento;tempo_observado_dias;baixa_observada;fonte_status";
     const lines = rows.map((row) => [row.municipio, row.ano, row.orgaoCodigo, row.unidade, row.assuntos.join(" | "), row.dataAjuizamento, row.ultimoMovimento, row.ultimoMovimentoData, row.tempoObservadoDias, row.temBaixaObservada, row.fonteStatus].map(csvCell).join(";"));
     const blob = new Blob(["\ufeff" + [...metadata, header, ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
@@ -95,7 +95,7 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
   return (
     <section className="advanced-evidence evidence-section" data-stage="01A · DETALHE" id="detalhe">
       <article className="print-report" aria-hidden="true">
-        <span>ATLAS FORENSE · RELATÓRIO JURIMÉTRICO</span>
+        <span>ATLAS JURÍDICO · RELATÓRIO JURIMÉTRICO</span>
         <h1>JEC comparado<br />Belo Horizonte e Betim</h1>
         <p>Relatório de evidência pública gerado pelo painel interativo, com os filtros ativos, recorte metodológico e anexos de rastreabilidade.</p>
         <dl><dt>Filtros ativos</dt><dd>{activeFilters.join(" · ")}</dd><dt>Fonte</dt><dd>{data.meta.fonte}</dd><dt>Recorte</dt><dd>{data.meta.recorte}</dd><dt>Classe</dt><dd>{data.meta.classe}</dd></dl>

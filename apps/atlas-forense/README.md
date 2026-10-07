@@ -1,4 +1,4 @@
-# Painel JEC BH e Betim / Atlas Forense
+# Painel JEC BH e Betim / Atlas Jurídico
 
 Projeto público de apoio à organização e consulta de informações relacionadas aos Juizados Especiais, com foco operacional e informativo em Belo Horizonte e Betim/MG.
 

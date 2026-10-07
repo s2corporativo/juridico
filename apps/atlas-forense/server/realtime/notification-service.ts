@@ -8,7 +8,7 @@ import { verifySession } from "../_core/session";
 import * as db from "../db";
 
 /**
- * Serviço de notificações em tempo real (WebSocket) do Atlas Forense.
+ * Serviço de notificações em tempo real (WebSocket) do Atlas Jurídico.
  *
  * Arquitetura de segurança (Task 12):
  * - Porta interna FIXA (default 3003, env NOTIFICATION_SERVICE_PORT), sempre em loopback
