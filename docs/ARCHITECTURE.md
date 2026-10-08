@@ -22,13 +22,13 @@ A integração entre as duas aplicações deve ocorrer por contratos explícitos
 
 ## Snapshot Graphify
 
-Mapa final da árvore de código consolidada no commit `e4d66ee8` (os commits posteriores desta rodada alteram apenas documentação):
+Mapa final da árvore de código consolidada no commit `0ed7e6bc`:
 
-- **2.559 nós**
-- **5.759 relações**
-- **134 comunidades**
-- **391 arquivos de código analisados**
-- **26 arquivos não-código excluídos por política**
+- **2.549 nós**
+- **5.746 relações**
+- **136 comunidades**
+- **390 arquivos de código analisados**
+- **27 arquivos não-código excluídos por política**
 - **44 arquivos de código sem símbolos extraíveis**
 - **0 ciclos de importação detectados**
 
@@ -53,13 +53,13 @@ Superfície operacional consolidada:
 - **50 rotas API** auditadas e categorizadas em `docs/API_SURFACE.md`;
 - **6 tarefas principais** no menu: Início, Analisar, Redigir, Pesquisar, Biblioteca e Governança;
 - **1 tela contextual** na shell: Editor;
-- chamadas diretas a provider são bloqueadas por teste arquitetural fora de `ai_gateway.ts`;
+- chamadas diretas a provider são bloqueadas por `ai-gateway-boundary.test.ts`;
 - geração individual, streaming, agêntica e lote convergem para o pipeline canônico.
 
 Artefatos completos do snapshot são mantidos na VPS em:
 
 ```text
-/opt/atlas-juridico/shared/architecture/e4d66ee8/
+/opt/atlas-juridico/shared/architecture/0ed7e6bc/
 ```
 
 Antes de alterar hubs centrais, use `graphify affected`.
