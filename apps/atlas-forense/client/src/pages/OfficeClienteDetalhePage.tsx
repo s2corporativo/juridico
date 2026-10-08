@@ -61,7 +61,7 @@ export default function OfficeClienteDetalhePage() {
           <a href="/escritorio/clientes" className="active">Clientes</a>
           <a href="/escritorio/comunicacoes">Comunicações</a>
           <a href="/escritorio/jurisprudencia">Jurisprudência</a>
-          <a href="/">Atlas Forense</a>
+          <a href="/">Atlas Jurídico</a>
         </nav>
       </header>
 

@@ -1,5 +1,5 @@
 /**
- * Seed das 7 fontes P0 do Atlas Forense (Painel JEC BH e Betim):
+ * Seed das 7 fontes P0 do Atlas Jurídico (Painel JEC BH e Betim):
  * define priority='p0_obrigatoria', atualiza notas de uso dos conectores
  * (DJEN, LexML SRU, STJ Dados Abertos) e insere fontes ausentes.
  * Idempotente (upsert por sourceKey).
@@ -11,7 +11,7 @@ const conn = await mysql.createConnection({
   port: Number(process.env.DB_PORT || 33061),
   user: "root",
   password: "",
-  database: "atlas_ejc",
+  database: "atlas_juridico",
 });
 
 const p0 = [

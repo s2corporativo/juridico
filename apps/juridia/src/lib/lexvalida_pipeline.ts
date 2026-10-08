@@ -2,9 +2,9 @@
 // PLANEJAR → ROTEIRO → REDIGIR_SECAO → ADERENCIA → CONTRARIA → DISTINGUISHING → AUDITORIA
 // Mais: RATIO_DECIDENDI, MOLDE, ESTILO, REFORMULAR
 
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayChat, governedWebSearch, inferSensitiveTask } from "@/lib/ai_gateway";
 import { db } from "@/lib/db";
-import { ragSearch } from "@/lib/rag_lite";
+import { legalSearch } from "@/lib/legal_retrieval";
 import {
   SISTEMA_BASE, PLANEJAR, ROTEIRO, REDIGIR_SECAO, ADERENCIA, CONTRARIA,
   DISTINGUISHING, AUDITORIA, RATIO_DECIDENDI, REFORMULAR,
@@ -48,25 +48,24 @@ export interface PipelineResult {
   textoFinal: string;
 }
 
-const zai = await ZAI.create();
 let totalTokens = 0;
 
 function tok(c: unknown) {
   totalTokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
 }
 
-async function llmCall(system: string, user: string, maxTokens = 1000): Promise<string> {
-  const c = await zai.chat.completions.create({
+async function llmCall(taskType: string, system: string, user: string, maxTokens = 1000): Promise<string> {
+  const response = await aiGatewayChat({
+    taskType,
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    thinking: { type: "disabled" },
     temperature: 0.2,
-    max_tokens: maxTokens,
+    maxTokens,
   });
-  tok(c);
-  return c.choices[0]?.message?.content || "";
+  totalTokens += response.totalTokens;
+  return response.text;
 }
 
 function parseJSON(text: string): Record<string, unknown> | null {
@@ -83,13 +82,14 @@ export async function runPipeline(params: {
   skillsContent?: string;
 }): Promise<PipelineResult> {
   const { pedido, tipoPeca, autos, caseId, skillsContent = "" } = params;
+  const taskType = inferSensitiveTask(`${tipoPeca}\n${pedido}\n${autos.slice(0, 2000)}`);
   const steps: PipelineStep[] = [];
   const result: Partial<PipelineResult> = { steps, secoesRedigidas: [], totalTokens: 0 };
 
   // ── ETAPA 1: PLANEJAR ─────────────────────────────────────────────────
   steps.push({ phase: "planejar", status: "running" });
   try {
-    const raw = await llmCall(SISTEMA_BASE + "\n\n" + PLANEJAR, buildPlanMessage(pedido, tipoPeca, autos));
+    const raw = await llmCall(taskType, SISTEMA_BASE + "\n\n" + PLANEJAR, buildPlanMessage(pedido, tipoPeca, autos));
     const parsed = parseJSON(raw);
     if (parsed) {
       result.planejamento = {
@@ -114,7 +114,7 @@ export async function runPipeline(params: {
   // ── ETAPA 2: ROTEIRO ──────────────────────────────────────────────────
   steps.push({ phase: "roteiro", status: "running" });
   try {
-    const raw = await llmCall(SISTEMA_BASE + "\n\n" + ROTEIRO, `## Planejamento\n${JSON.stringify(result.planejamento)}\n\n## Pedido\n${pedido}`);
+    const raw = await llmCall(taskType, SISTEMA_BASE + "\n\n" + ROTEIRO, `## Planejamento\n${JSON.stringify(result.planejamento)}\n\n## Pedido\n${pedido}`);
     const parsed = parseJSON(raw);
     if (parsed) {
       result.roteiro = { secoes: (parsed.secoes as { id: string; titulo: string; objetivo: string; pontos: string[] }[]) || [] };
@@ -135,7 +135,7 @@ export async function runPipeline(params: {
 
     // RAG para legislação
     for (const q of (queries.legislacao || [pedido]).slice(0, 3)) {
-      const ragResults = await ragSearch(q, 5);
+      const ragResults = await legalSearch(q, 8);
       for (const r of ragResults) {
         legislacao.push({
           id: r.source.id,
@@ -148,7 +148,7 @@ export async function runPipeline(params: {
     // web_search para jurisprudência
     for (const q of (queries.jurisprudencia || [pedido]).slice(0, 2)) {
       try {
-        const raw = (await zai.functions.invoke("web_search", { query: `jurisprudência ${q}`, num: 5 })) as unknown as { url: string; name: string; snippet: string }[];
+        const raw = await governedWebSearch(`jurisprudência ${q}`, taskType, 5);
         if (Array.isArray(raw)) {
           for (const r of raw.slice(0, 5)) {
             jurisprudencia.push({ id: r.url, rotulo: r.name.slice(0, 100), ementa: r.snippet.slice(0, 200) });
@@ -171,7 +171,7 @@ export async function runPipeline(params: {
     const secoes = result.roteiro?.secoes || [];
     const pesquisa = result.pesquisa || { jurisprudencia: [], legislacao: [] };
     for (const secao of secoes) {
-      const raw = await llmCall(
+      const raw = await llmCall(taskType, 
         SISTEMA_BASE + "\n\n" + REDIGIR_SECAO,
         buildDraftMessage(secao, pesquisa, autos, skillsContent),
         800,
@@ -191,7 +191,7 @@ export async function runPipeline(params: {
     const textoPeca = result.secoesRedigidas?.map((s) => s.texto).join("\n\n") || "";
     const precedente = result.pesquisa?.jurisprudencia?.[0];
     if (precedente) {
-      const raw = await llmCall(SISTEMA_BASE + "\n\n" + ADERENCIA,
+      const raw = await llmCall(taskType, SISTEMA_BASE + "\n\n" + ADERENCIA,
         `## Afirmação da peça\n${textoPeca.slice(0, 500)}\n\n## Precedente (${precedente.rotulo})\n${precedente.ementa}`);
       const parsed = parseJSON(raw);
       if (parsed) {
@@ -212,7 +212,7 @@ export async function runPipeline(params: {
   steps.push({ phase: "analise_adversarial", status: "running" });
   try {
     const textoPeca = result.secoesRedigidas?.map((s) => s.texto).join("\n\n") || "";
-    const raw = await llmCall(SISTEMA_BASE + "\n\n" + CONTRARIA,
+    const raw = await llmCall(taskType, SISTEMA_BASE + "\n\n" + CONTRARIA,
       `## Peça a criticar\n${textoPeca.slice(0, 1500)}`);
     const parsed = parseJSON(raw);
     if (parsed) {
@@ -233,13 +233,13 @@ export async function runPipeline(params: {
     const precedente = result.pesquisa?.jurisprudencia?.[0];
     if (precedente) {
       // Extrai ratio decidendi
-      const ratioRaw = await llmCall(SISTEMA_BASE + "\n\n" + RATIO_DECIDENDI,
+      const ratioRaw = await llmCall(taskType, SISTEMA_BASE + "\n\n" + RATIO_DECIDENDI,
         `## Precedente (${precedente.rotulo})\n${precedente.ementa}`);
       const ratioParsed = parseJSON(ratioRaw);
       const fatosPrecedente = (ratioParsed?.fatos_materiais as string[]) || [];
 
       // Compara com fatos do caso
-      const distRaw = await llmCall(SISTEMA_BASE + "\n\n" + DISTINGUISHING,
+      const distRaw = await llmCall(taskType, SISTEMA_BASE + "\n\n" + DISTINGUISHING,
         `## Fatos materiais do precedente\n${fatosPrecedente.map((f, i) => `${i + 1}. ${f}`).join("\n")}\n\n## Fatos do caso\n${autos.slice(0, 500)}`);
       const distParsed = parseJSON(distRaw);
       if (distParsed) {
@@ -261,7 +261,7 @@ export async function runPipeline(params: {
   steps.push({ phase: "auditoria", status: "running" });
   try {
     const textoPeca = result.secoesRedigidas?.map((s) => s.texto).join("\n\n") || "";
-    const raw = await llmCall(SISTEMA_BASE + "\n\n" + AUDITORIA,
+    const raw = await llmCall(taskType, SISTEMA_BASE + "\n\n" + AUDITORIA,
       `## Raciocínio do redator\n${textoPeca.slice(0, 1000)}\n\n## Pedido original\n${pedido}`);
     const parsed = parseJSON(raw);
     if (parsed) {

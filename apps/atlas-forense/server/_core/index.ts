@@ -4,9 +4,7 @@ import { createServer } from "http";
 import net from "net";
 import httpProxy from "http-proxy";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { registerEjcSsoRoutes } from "./ejc-sso";
-import { registerStorageProxy } from "./storageProxy";
+import { registerSsoRoutes } from "./sso";
 import { getServerListenOptions } from "./network";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -43,9 +41,7 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   app.get("/healthz", (_req, res) => res.status(200).json(ATLAS_HEALTH_RESPONSE));
-  registerStorageProxy(app);
-  registerOAuthRoutes(app);
-  registerEjcSsoRoutes(app);
+  registerSsoRoutes(app);
   registerEditorialScheduledRoute(app);
   // tRPC API
   app.use(

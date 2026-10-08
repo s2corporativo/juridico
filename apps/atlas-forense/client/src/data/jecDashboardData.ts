@@ -1,4 +1,4 @@
-// Atlas Forense: dados consolidados de fonte pública e sem dados pessoais.
+// Atlas Jurídico: dados consolidados de fonte pública e sem dados pessoais.
 export const jecDashboardData = {
   "meta": {
     "titulo": "Painel Jurimetria JEC — Belo Horizonte e Betim",

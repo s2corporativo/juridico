@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JuridIA — Inteligência Artificial para o Direito Brasileiro",
+  title: "Atlas Jurídico — Inteligência e Automação Jurídica",
   description:
-    "De petições a sentenças, a IA que mais entende — e mais produz — para o Direito brasileiro. Anonimização local (tarja-1), conformidade LGPD e Resolução CNJ 615/2025.",
+    "Sistema interno do escritório para análise, pesquisa, redação, evidências e revisão jurídica assistida por IA.",
   keywords: [
     "IA jurídica",
     "minuta",
@@ -28,15 +28,15 @@ export const metadata: Metadata = {
     "CNJ 615/2025",
     "jurisprudência",
   ],
-  authors: [{ name: "JuridIA" }],
+  authors: [{ name: "Atlas Jurídico" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
   },
   openGraph: {
-    title: "JuridIA — IA para o Direito Brasileiro",
+    title: "Atlas Jurídico — Inteligência Jurídica",
     description:
-      "Plataforma de IA para geração de minutas jurídicas com anonimização local e conformidade LGPD.",
-    siteName: "JuridIA",
+      "Sistema interno de inteligência jurídica com rastreabilidade de evidências, pesquisa e revisão humana.",
+    siteName: "Atlas Jurídico",
     type: "website",
   },
 };

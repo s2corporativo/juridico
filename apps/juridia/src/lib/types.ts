@@ -68,6 +68,19 @@ export interface GenerateMinutaRequest {
   brainContext?: string;
   /** Perfil de estilo: formal | objetivo | tecnico */
   writingStyle?: string;
+  /** Caso vinculado: habilita contexto probatório com referências documento/página. */
+  caseId?: string;
+}
+
+export interface EvidenceReferenceUsed {
+  evidenceRefId: string;
+  documentId: string | null;
+  fileName: string | null;
+  pageNumber: number | null;
+  quote: string;
+  quoteHash: string;
+  verified: boolean;
+  securitySeverity: string;
 }
 
 export interface ReferenceUsed {
@@ -105,6 +118,23 @@ export interface GenerateMinutaResponse {
   };
   /** Fontes normativas rastreáveis usadas na fundamentação (RAG na base curada) */
   references?: ReferenceUsed[];
+  /** Referências probatórias rastreáveis dos autos */
+  evidenceReferences?: EvidenceReferenceUsed[];
+  evidenceGate?: {
+    total: number;
+    valid: number;
+    invalid: string[];
+    bloquear: boolean;
+  };
+  /** Gate bloqueante de citações jurídicas antes da homologação */
+  citationGate?: {
+    total: number;
+    verificadas: number;
+    identificadas: number;
+    suspeitas: number;
+    genericas: number;
+    bloquear: boolean;
+  };
   /** Telemetria do pipeline multi-etapas */
   pipeline?: {
     stages: PipelineStageInfo[];

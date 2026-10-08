@@ -4,6 +4,8 @@ import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody, MAX_PRAZO_DIAS } from "@/lib/api-helpers";
 import { calculateDeadline } from "@/lib/legal_calculator";
 import { requireAuth } from "@/lib/auth";
+import { accessibleCaseIds, canAccessCase } from "@/lib/case_access";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +21,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
 
-  const where: { caseId?: string; vencimento?: { gte?: Date; lte?: Date } } = {};
-  if (caseId) where.caseId = caseId;
+  const where: Prisma.CaseDeadlineWhereInput = {};
+  if (caseId) {
+    if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
+    where.caseId = caseId;
+  } else {
+    where.caseId = { in: await accessibleCaseIds(authUser) };
+  }
   if (from || to) {
     where.vencimento = {};
     if (from) where.vencimento.gte = new Date(from);
@@ -70,6 +77,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const { caseId, tipo, descricao, marcoInicial, prazoDias, tipoContagem, observacoes } = parsed.body;
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
   if (!descricao?.trim()) return NextResponse.json({ error: "descricao obrigatória" }, { status: 400 });
   if (!marcoInicial) return NextResponse.json({ error: "marcoInicial obrigatório" }, { status: 400 });
   const prazo = Number(prazoDias);
@@ -84,7 +93,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const deadline = await db.caseDeadline.create({
     data: {
-      caseId: caseId || "default-case",
+      caseId,
       tipo: tipo || "outro",
       descricao: descricao.trim(),
       marcoInicial: marco,
@@ -106,6 +115,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       tipoContagem: tipoCont,
       vencimento: deadline.vencimento.toISOString(),
     },
+    userId: authUser.uid,
   });
 
   return NextResponse.json({
@@ -145,7 +155,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const existing = await db.caseDeadline.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Prazo não encontrado" }, { status: 404 });
+  if (!existing || !(await canAccessCase(existing.caseId, authUser))) return NextResponse.json({ error: "Prazo não encontrado ou sem acesso" }, { status: 404 });
 
   const data: Record<string, unknown> = {};
   if (tipo !== undefined) data.tipo = tipo;
@@ -180,6 +190,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     resource: "case_deadline",
     resourceId: id,
     metadata: { ...data, prevPrazoDias: existing.prazoDias, prevTipoContagem: existing.tipoContagem },
+    userId: authUser.uid,
   });
 
   return NextResponse.json({
@@ -202,7 +213,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const existing = await db.caseDeadline.findUnique({ where: { id }, select: { caseId: true, descricao: true } });
-  if (!existing) return NextResponse.json({ error: "Prazo não encontrado" }, { status: 404 });
+  if (!existing || !(await canAccessCase(existing.caseId, authUser))) return NextResponse.json({ error: "Prazo não encontrado ou sem acesso" }, { status: 404 });
 
   await db.caseDeadline.delete({ where: { id } });
 
@@ -211,6 +222,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     resource: "case_deadline",
     resourceId: id,
     metadata: { caseId: existing.caseId, descricao: existing.descricao },
+    userId: authUser.uid,
   });
 
   return NextResponse.json({ ok: true });

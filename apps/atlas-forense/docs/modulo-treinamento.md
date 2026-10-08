@@ -3,7 +3,7 @@
 ## Propósito
 
 O módulo Treinamento (`/escritorio/treinamento`) é o ponto de entrada da equipe no
-Atlas Forense. Ele reúne, em uma única página do sistema, o conhecimento necessário
+Atlas Jurídico. Ele reúne, em uma única página do sistema, o conhecimento necessário
 para operar o Painel JEC BH e Betim: a função de cada módulo, o fluxo de trabalho
 recomendado do recebimento da comunicação até a vinculação da jurisprudência, as
 regras do motor de prazos LexValida, as práticas de LGPD e uma verificação de
@@ -17,7 +17,7 @@ camada pública de metadados da camada operacional do escritório.
 
 ## Seções implementadas
 
-1. **Como o Atlas Forense se organiza** — cartões explicando os seis módulos
+1. **Como o Atlas Jurídico se organiza** — cartões explicando os seis módulos
    principais (Home/Jurimetria, Clientes, Comunicações, Jurisprudência, Fontes),
    com o papel de cada um no fluxo do escritório.
 2. **Fluxo de trabalho recomendado** — seis passos numerados, da configuração do
@@ -40,7 +40,7 @@ camada pública de metadados da camada operacional do escritório.
 
 ## Política de dados reais (Task 11)
 
-O Atlas Forense **não contém e não gera dados fictícios**. O acervo de demonstração
+O Atlas Jurídico não deve usar dados fictícios em operação. Materiais de treinamento
 que existiu nas Tasks 6–10 (clientes, matérias, atendimentos, comunicações e
 julgados com `isDemoData = 1`) foi integralmente purgado: 79 registros removidos,
 coluna `isDemoData` eliminada do schema e seeds de demonstração excluídos do

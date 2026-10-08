@@ -1,5 +1,5 @@
 // pseudonymizer.ts — Pseudonimização REVERSÍVEL e CONSISTENTE de PII (LGPD art. 33/46)
-// Portado do pseudonymizer.py do EJC para TypeScript.
+// Pseudonimização reversível para proteção de dados em integrações de IA.
 //
 // Diferente de anonymize.ts (mascaramento IRREVERSÍVEL), aqui cada entidade
 // recebe um marcador CONSISTENTE por TIPO+ÍNDICE ([CPF_1], [CLIENTE_1]):

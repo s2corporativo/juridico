@@ -37,10 +37,11 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   const allSkills = await db.skillVersion.findMany({
     where: { status: "approved" },
     orderBy: [{ slug: "asc" }, { version: "desc" }],
+    select: { id: true, slug: true, version: true, area: true, description: true, triggers: true },
   });
 
   // Deduplica: pega apenas a versão mais recente de cada slug
-  const bySlug = new Map<string, typeof allSkills[0]>();
+  const bySlug = new Map<string, (typeof allSkills)[number]>();
   for (const s of allSkills) {
     if (!bySlug.has(s.slug) || s.version > bySlug.get(s.slug)!.version) {
       bySlug.set(s.slug, s);
@@ -67,12 +68,20 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
       }
     }
 
-    // Score: número de gatilhos matched / total de gatilhos + bônus por área
+    // Matching em duas camadas: gatilho textual + aderência às questões detectadas.
+    // Não basta pertencer à mesma área: com ~2.000 skills isso faria centenas
+    // entrarem por um bônus genérico.
     const triggerScore = triggers.length > 0 ? matchedTriggers.length / triggers.length : 0;
-    const issueBonus = issues.some((i) => i.area === skill.area) ? 0.2 : 0;
-    const matchScore = Math.min(1, triggerScore + issueBonus);
+    const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ");
+    const descTokens = new Set(normalize(skill.description).split(/\s+/).filter((x) => x.length > 3));
+    const issueTokens = new Set(normalize(issues.map((i) => i.title).join(" ")).split(/\s+/).filter((x) => x.length > 3));
+    let overlap = 0;
+    for (const t of descTokens) if (issueTokens.has(t)) overlap++;
+    const descriptionScore = Math.min(0.45, overlap * 0.12);
+    const issueAreaBonus = issues.some((i) => i.area === skill.area) && (triggerScore > 0 || descriptionScore > 0) ? 0.15 : 0;
+    const matchScore = Math.min(1, triggerScore * 0.75 + descriptionScore + issueAreaBonus);
 
-    if (matchScore > 0) {
+    if (matchedTriggers.length > 0 || descriptionScore > 0) {
       matches.push({
         slug: skill.slug,
         name: skill.description,
@@ -80,7 +89,7 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
         version: skill.version,
         matchScore,
         matchedTriggers,
-        content: skill.content,
+        content: "",
       });
     }
   }
@@ -95,8 +104,18 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   }
   const area = Object.entries(areaCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "civil";
 
+  const configuredLimit = Number(process.env.SKILL_ROUTER_LIMIT || 10);
+  const skillLimit = Number.isFinite(configuredLimit) ? Math.max(1, Math.min(configuredLimit, 20)) : 10;
+  const selectedMeta = matches.slice(0, skillLimit);
+  const full = selectedMeta.length
+    ? await db.skillVersion.findMany({ where: { slug: { in: selectedMeta.map((m) => m.slug) }, status: "approved" }, orderBy: { version: "desc" } })
+    : [];
+  const contentBySlug = new Map<string, string>();
+  for (const s of full) if (!contentBySlug.has(s.slug)) contentBySlug.set(s.slug, s.content);
+  const selected = selectedMeta.map((m) => ({ ...m, content: contentBySlug.get(m.slug) || "" }));
+
   return {
-    matches: matches.slice(0, 10), // top 10
+    matches: selected,
     issues: issues.map((i) => ({ key: i.key, title: i.title, area: i.area })),
     area,
   };

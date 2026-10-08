@@ -1,5 +1,5 @@
 // minuta_pipeline.ts — Pipeline de geração de minutas em MÚLTIPLAS ETAPAS
-// (paridade de arquitetura com os "múltiplos perfis integrados" do MinutaIA).
+// (arquitetura com perfis especializados).
 //
 // Cada etapa usa um perfil de IA especializado (system prompt próprio):
 //   1. ROTEIRISTA (outline)  → plano estruturado da peça em JSON
@@ -9,7 +9,7 @@
 // A montagem de prompts é FUNÇÃO PURA (testável sem LLM nem banco).
 // Este módulo NÃO conhece segredos e NÃO fala com a rede.
 
-// ── Perfis de estilo (aprendizado de estilo — nível MinutaIA) ───────────────
+// ── Perfis de estilo (aprendizado de estilo) ───────────────
 
 export const STYLE_DIRECTIVES: Record<string, string> = {
   formal:
@@ -28,7 +28,7 @@ export function styleDirective(writingStyle?: string | null): string {
   );
 }
 
-// ── Skills (habilidades auditáveis — paridade com as Habilidades MinutaIA) ──
+// ── Skills (habilidades auditáveis — skills jurídicas auditáveis) ──
 
 export interface PipelineSkill {
   slug: string;
@@ -45,9 +45,9 @@ export interface SkillBudget {
 }
 
 export const DEFAULT_SKILL_BUDGET: SkillBudget = {
-  maxSkills: 6,
-  maxCharsPerSkill: 2200,
-  maxTotalChars: 10000,
+  maxSkills: 5,
+  maxCharsPerSkill: 1200,
+  maxTotalChars: 5000,
 };
 
 /**
@@ -154,7 +154,7 @@ export function labelFromKey(key: string): string {
 // ── System prompts (um perfil por etapa) ────────────────────────────────────
 
 const BASE_PERSONA =
-  "Você é a JuridIA, uma IA jurídica brasileira especialista em redação de minutas e peças processuais. Sua saída é sempre em português do Brasil, em linguagem jurídica formal, com conformidade ao CPC, CC, CDC, legislação especial e Resolução CNJ 615/2025. Você nunca escreve dados sensíveis inventados: usa apenas os marcadores [TIPO_N] fornecidos. Você nunca promete resultado (vedação art. 2º §1º do EOAB) e nunca cita jurisprudência sem indicar que precisa de verificação.";
+  "Você é a Atlas Jurídico, uma IA jurídica brasileira especialista em redação de minutas e peças processuais. Sua saída é sempre em português do Brasil, em linguagem jurídica formal, com conformidade ao CPC, CC, CDC, legislação especial e Resolução CNJ 615/2025. Você nunca escreve dados sensíveis inventados: usa apenas os marcadores [TIPO_N] fornecidos. Você nunca promete resultado (vedação art. 2º §1º do EOAB) e nunca cita jurisprudência sem indicar que precisa de verificação.";
 
 export function buildSystemPrompt(stage: "outline" | "draft" | "review"): string {
   if (stage === "outline") {
@@ -275,10 +275,10 @@ export function buildReferencesBlock(refs: ReferencesBlock[]): string {
   const items = refs
     .map(
       (r, i) =>
-        `[${i + 1}] ${r.diploma}${r.numero ? ` ${r.numero}` : ""}${r.tribunal ? ` — ${r.tribunal}` : ""} (vigente)\n    Trecho: ${r.textoTrecho.slice(0, 400)}${r.urlOficial ? `\n    Fonte oficial: ${r.urlOficial}` : ""}`
+        `[${i + 1}] ${r.diploma}${r.numero ? ` ${r.numero}` : ""}${r.tribunal ? ` — ${r.tribunal}` : ""} (vigente)\n    Trecho: ${r.textoTrecho.slice(0, 300)}${r.urlOficial ? `\n    Fonte oficial: ${r.urlOficial}` : ""}`
     )
     .join("\n\n");
-  return `\n\n## Base normativa curada (fontes VERIFICADAS — prefera estas e cite como [1], [2]...)\n${items}\n\nREGRAS: Cite apenas o que está acima ou dispositivos que você tem CERTEZA absoluta do número e teor. NUNCA invente número de lei, artigo ou processo. Se citar jurisprudência, marque "(verificar)" logo após a citação.`;
+  return `\n\n## Base normativa curada (fontes VERIFICADAS — prefera estas e cite como [1], [2]...)\n${items}\n\nREGRAS: CITE SOMENTE as fontes listadas acima, preservando diploma, número e tribunal exatamente como fornecidos. NÃO cite de memória qualquer outro artigo, lei, súmula, tema ou processo. Se uma tese não tiver fonte listada, escreva que depende de pesquisa complementar.`;
 }
 
 export interface DraftInput {
@@ -291,7 +291,7 @@ export interface DraftInput {
   outlineText: string;
   brainContext: string;
   styleDirective: string;
-  /** Minuta-molde aprovada pelo advogado (geração em lote — paridade MinutaIA) */
+  /** Minuta-molde aprovada pelo advogado (geração em lote — geração em lote) */
   moldText?: string;
 }
 
@@ -325,6 +325,7 @@ ${inp.anonymizedFacts || "(sem fatos informados — redija com ____ nos campos e
 - Exemplo CERTO de qualificação: "[NOME_1], brasileiro(a), portador(a) do CPF [CPF_1]..."
 - Exemplo ERRADO (não faça): "Nome Autor, brasileiro(a)..." ou "Cpf Autor portador..." — esses são rótulos, não pessoas.
 - NUNCA crie marcadores novos. Falta de dado = ____ (sublinhado).
+- Se o bloco "EVIDÊNCIAS DOS AUTOS" estiver presente, toda afirmação fática relevante baseada nos autos deve carregar ao menos um marcador [[autos:...:evidence=ID]] exatamente como fornecido. Preserve documento, página e evidence_ref_id sem alterar.
 - Para datas: ____ de ____________ de ______.
 - NÃO inclua dados sensíveis reais: você só recebeu marcadores.
 - Feche com bloco de assinatura com placeholders: [LOCAL], [DATA], nome do advogado como ____ e OAB/____.`;

@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type View = "landing" | "app";
-
 export type WritingStyle =
   | "formal"      // formal técnico (padrão)
   | "sintetico"   // conciso e direto
@@ -20,30 +18,29 @@ export interface LawyerProfile {
 }
 
 export type AppTab =
-  | "assistente"
   | "dashboard"
   | "biblioteca"
   | "calculadora"
   | "cerebro"
-  | "intelligence"
-  | "pipeline"
   | "generator"
   | "editor"
-  | "homologacao"
   | "visuallaw"
   | "datajud"
-  | "grafo"
   | "settings";
 
-// Ids legados usados por componentes (header, paleta, dashboard) que foram
-// consolidados em tabs renderizáveis — evita navegar para uma tab sem view.
+// Aliases de navegação mantêm links antigos compatíveis com a interface consolidada.
 const APP_TAB_ALIASES: Record<string, AppTab> = {
   documents: "editor",
   clients: "dashboard",
   jurisprudence: "biblioteca",
-  "case-analysis": "assistente",
+  "case-analysis": "cerebro",
   batch: "generator",
   audit: "settings",
+  assistente: "dashboard",
+  intelligence: "cerebro",
+  pipeline: "generator",
+  homologacao: "editor",
+  grafo: "cerebro",
 };
 
 export function resolveAppTab(t: string): AppTab {
@@ -52,14 +49,11 @@ export function resolveAppTab(t: string): AppTab {
 }
 
 const APP_TABS: AppTab[] = [
-  "assistente", "dashboard", "biblioteca", "calculadora", "cerebro",
-  "intelligence", "pipeline", "generator", "editor", "homologacao",
-  "visuallaw", "datajud", "grafo", "settings",
+  "dashboard", "biblioteca", "calculadora", "cerebro",
+  "generator", "editor", "visuallaw", "datajud", "settings",
 ];
 
 interface AppState {
-  view: View;
-  setView: (v: View) => void;
   appTab: AppTab;
   setAppTab: (t: string) => void;
   currentDocId: string | null;
@@ -87,20 +81,18 @@ interface AppState {
 }
 
 const DEFAULT_PROFILE: LawyerProfile = {
-  name: "Advogado Demo",
-  oab: "123456",
-  oabUf: "SP",
-  office: "Escritório JuridIA Advocacia",
-  email: "demo@juridia.com.br",
-  phone: "(11) 99999-0000",
-  address: "Av. Paulista, 1000 — São Paulo/SP",
+  name: "",
+  oab: "",
+  oabUf: "MG",
+  office: "Atlas Jurídico",
+  email: "",
+  phone: "",
+  address: "",
 };
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      view: "app",
-      setView: (view) => set({ view }),
       appTab: "dashboard",
       setAppTab: (appTab) => set({ appTab: resolveAppTab(appTab) }),
       currentDocId: null,
@@ -123,7 +115,7 @@ export const useAppStore = create<AppState>()(
       clearSkills: () => set({ selectedSkillSlugs: [] }),
       authOpen: false,
       setAuthOpen: (authOpen) => set({ authOpen }),
-      user: { email: "demo@juridia.com.br", name: "Advogado Demo" },
+      user: null,
       setUser: (user) => set({ user }),
       // Perfil e estilo
       profile: DEFAULT_PROFILE,
@@ -141,9 +133,8 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: "juridia-store",
+      name: "atlas-juridico-store",
       partialize: (s) => ({
-        view: s.view,
         appTab: s.appTab,
         user: s.user,
         selectedSkillSlugs: s.selectedSkillSlugs,

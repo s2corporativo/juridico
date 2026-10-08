@@ -1,6 +1,6 @@
 // POST /api/generate-minuta/stream — mesma geração da rota clássica, com
 // Server-Sent Events: o advogado acompanha as etapas e vê a REDAÇÃO chegar
-// token a token (paridade com o "stream" do MinutaIA), em vez de esperar
+// token a token , em vez de esperar
 // 20-30 s sem feedback.
 //
 // Eventos SSE emitidos (todos `data:` são JSON de uma linha):

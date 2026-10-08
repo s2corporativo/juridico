@@ -10,7 +10,7 @@ Em consulta técnica mínima e não persistida, uma chave pública localizada na
 
 Em nova verificação de **26/08/2026**, a mesma sequência foi executada inteiramente em memória: a página oficial foi recebida em variável de processo, a chave foi extraída e enviada no cabeçalho da consulta agregada vazia, e ambas as variáveis foram descartadas ao fim. Nenhum arquivo temporário, log de aplicação, linha de banco ou artefato de projeto recebeu o valor da chave.
 
-| Aspecto | Regra adotada no Atlas Forense |
+| Aspecto | Regra adotada no Atlas Jurídico |
 |---|---|
 | Autenticação | Buscar dinamicamente na Wiki oficial apenas no momento da execução controlada. |
 | Aliases | Usar a base oficial e o alias de cada tribunal, validando resposta antes de incluir na cobertura. [2] |
@@ -20,7 +20,7 @@ Em nova verificação de **26/08/2026**, a mesma sequência foi executada inteir
 
 ### Política operacional aprovada
 
-O Atlas Forense admite apenas dois meios para obter a chave pública: variável temporária de ambiente, quando disponibilizada pelo operador, ou leitura direta da página oficial do CNJ durante a requisição administrativa. Em ambos os casos, a chave existe somente na memória do processo, é usada em consulta mínima e não integra cache, banco, interface, log ou checkpoint. A rota administrativa de cobertura testa somente aliases e expõe contagens/estados, não processos ou respostas brutas.
+O Atlas Jurídico admite apenas dois meios para obter a chave pública: variável temporária de ambiente, quando disponibilizada pelo operador, ou leitura direta da página oficial do CNJ durante a requisição administrativa. Em ambos os casos, a chave existe somente na memória do processo, é usada em consulta mínima e não integra cache, banco, interface, log ou checkpoint. A rota administrativa de cobertura testa somente aliases e expõe contagens/estados, não processos ou respostas brutas.
 
 > A API pública não garante precisão, integridade ou atualização dos dados; os termos também restringem o uso a finalidades legais, não comerciais e autorizadas. [3]
 

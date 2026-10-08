@@ -36,13 +36,13 @@ const thesisAuthorities = [
 const auditEvents = [
   ["ingestion_batch", "jurisprudencia-local-lote-1-20260826", "imported_metadata", "attachment_reviewed", "Compêndio Nacional", "Importação dos seis registros com origem oficial indicada e sem execução dos scripts do ZIP.", "2026-08-26 18:10:55"],
   ...["TJMG-BETIM-2025-304515-7-001", "TJMG-CONTAGEM-2025-094026-9-001", "TJMG-BH-2026-307529-5-001", "TJMG-BETIM-2025-063186-8-001", "TJMG-CONTAGEM-2025-261059-7-001", "TJMG-BH-2025-323134-4-001"].map(key => ["jurisprudence_record", key, "imported_metadata", "official_confirmed", "Compêndio Nacional", "Metadado público importado do lote piloto.", "2026-08-26 18:10:55"]),
-  ["public_data_source", "cnj-datajud", "cataloged", "official_confirmed", "Sistema Atlas Forense", "Fonte oficial catalogada; integração depende de chave temporária e Termo de Uso vigente.", "2026-08-26 19:15:27"],
-  ["public_data_source", "stj-dados-abertos", "cataloged", "official_confirmed", "Sistema Atlas Forense", "Catálogo CKAN oficial validado passivamente; nenhum recurso foi ingerido.", "2026-08-26 19:15:27"],
-  ["public_data_source", "lexml-sru", "cataloged", "attachment_reviewed", "Sistema Atlas Forense", "Documentação oficial de SRU confirmada; endpoint não foi automatizado após verificação de conexão.", "2026-08-26 19:15:27"],
-  ["public_data_source", "tjmg-jurisprudencia", "cataloged", "official_confirmed", "Sistema Atlas Forense", "Portal oficial mantido apenas para consulta manual; não há API pública documentada.", "2026-08-26 19:15:27"],
-  ["public_data_source", "lexml-sru", "license_verified", "official_confirmed", "Sistema Atlas Forense", "Página oficial de Dados Abertos do LexML confirmou condições gerais de dados abertos; disponibilidade do endpoint SRU segue pendente por verificação de conexão.", "2026-08-26 19:21:35"],
-  ["public_data_source", "stj-dados-abertos", "connector_enabled", "official_confirmed", "Sistema Atlas Forense", "Consulta pública do catálogo CKAN do STJ ativada por tRPC, sem download de recursos ou ingestão automática.", "2026-08-26 19:22:29"],
-  ["national_census_run", "datajud-jec-nacional-2025-2026-v1", "planned", "official_confirmed", "Sistema Atlas Forense", "Execução nacional preparada; nenhuma métrica coletada e nenhuma credencial registrada.", "2026-08-26 21:00:27"],
+  ["public_data_source", "cnj-datajud", "cataloged", "official_confirmed", "Sistema Atlas Jurídico", "Fonte oficial catalogada; integração depende de chave temporária e Termo de Uso vigente.", "2026-08-26 19:15:27"],
+  ["public_data_source", "stj-dados-abertos", "cataloged", "official_confirmed", "Sistema Atlas Jurídico", "Catálogo CKAN oficial validado passivamente; nenhum recurso foi ingerido.", "2026-08-26 19:15:27"],
+  ["public_data_source", "lexml-sru", "cataloged", "attachment_reviewed", "Sistema Atlas Jurídico", "Documentação oficial de SRU confirmada; endpoint não foi automatizado após verificação de conexão.", "2026-08-26 19:15:27"],
+  ["public_data_source", "tjmg-jurisprudencia", "cataloged", "official_confirmed", "Sistema Atlas Jurídico", "Portal oficial mantido apenas para consulta manual; não há API pública documentada.", "2026-08-26 19:15:27"],
+  ["public_data_source", "lexml-sru", "license_verified", "official_confirmed", "Sistema Atlas Jurídico", "Página oficial de Dados Abertos do LexML confirmou condições gerais de dados abertos; disponibilidade do endpoint SRU segue pendente por verificação de conexão.", "2026-08-26 19:21:35"],
+  ["public_data_source", "stj-dados-abertos", "connector_enabled", "official_confirmed", "Sistema Atlas Jurídico", "Consulta pública do catálogo CKAN do STJ ativada por tRPC, sem download de recursos ou ingestão automática.", "2026-08-26 19:22:29"],
+  ["national_census_run", "datajud-jec-nacional-2025-2026-v1", "planned", "official_confirmed", "Sistema Atlas Jurídico", "Execução nacional preparada; nenhuma métrica coletada e nenhuma credencial registrada.", "2026-08-26 21:00:27"],
 ];
 
 export const publicMetadataManifest = { topics, theses, jurisprudenceTopics, thesisAuthorities, auditEvents };

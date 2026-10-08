@@ -3,7 +3,7 @@ import mysql from "mysql2/promise";
 import { validateCivilConsumerRows } from "./rmbh-civil-consumer-metrics-runtime.mjs";
 
 const RUN_KEY = "datajud-tjmg-rmbh-civil-consumer-2025-2026-v1";
-const outputDir = process.env.RMBH_CIVIL_CONSUMER_METRICS_OUTPUT_DIR ?? "/var/lib/atlas-ejc/civil-consumer-metrics/20260828";
+const outputDir = process.env.RMBH_CIVIL_CONSUMER_METRICS_OUTPUT_DIR ?? "/var/lib/atlas-juridico/civil-consumer-metrics/20260828";
 const manifestPath = `${outputDir}/manifesto_rmbh_civil_consumer_metrics.json`;
 const metricsPath = `${outputDir}/rmbh_civil_consumer_metrics.json`;
 const FORBIDDEN = /process|cpf|parte|address|document|_source|hits|authorization|apikey|hmac/i;

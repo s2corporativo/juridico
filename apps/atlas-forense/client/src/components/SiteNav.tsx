@@ -1,6 +1,4 @@
-// SiteNav.tsx — Navegação global do Atlas Forense.
-// Antes: várias seções (/estrutura, /nacional, /controle, /escritorio/*) só eram
-// acessíveis digitando URL. Este componente unifica a navegação em todos os shells.
+// Navegação global do Atlas Jurídico.
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard,
@@ -62,21 +60,19 @@ export const SITE_NAV_GROUPS: SiteNavGroup[] = [
   },
 ];
 
-export function SiteNav({ heading = "Atlas completo" }: { heading?: string }) {
+export function SiteNav({ heading = "Atlas Jurídico" }: { heading?: string }) {
   const [location] = useLocation();
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
 
-  // Ponte JuridIA (EJC): o atalho só aparece quando o runtime SSO está ATIVO
-  // (fail-closed — idem integration.ejcStatus).
-  const ejc = trpc.integration.ejcStatus.useQuery(undefined, { staleTime: 60_000, retry: false });
-  const ejcUrl =
-    ejc.data?.sso?.status === "enabled" && ejc.data.sso.issuer
-      ? String(ejc.data.sso.issuer)
+  const integration = trpc.integration.ssoStatus.useQuery(undefined, { staleTime: 60_000, retry: false });
+  const juridiaUrl =
+    integration.data?.sso?.status === "enabled" && integration.data.sso.appUrl
+      ? String(integration.data.sso.appUrl)
       : null;
 
   return (
-    <nav className="site-nav" aria-label="Navegação do Atlas Forense">
+    <nav className="site-nav" aria-label="Navegação do Atlas Jurídico">
       <span className="site-nav-heading">{heading}</span>
       {SITE_NAV_GROUPS.map((group) => (
         <div key={group.title} className="site-nav-group">
@@ -93,16 +89,16 @@ export function SiteNav({ heading = "Atlas completo" }: { heading?: string }) {
           ))}
         </div>
       ))}
-      {ejcUrl && (
+      {juridiaUrl && (
         <div className="site-nav-group">
           <span className="site-nav-group-title">Produção</span>
           <a
-            href={ejcUrl}
+            href={juridiaUrl}
             className="site-nav-link"
-            title="Abrir o Escritório Jurídico Consciente (JuridIA) — geração de minutas com IA"
+            title="Abrir a produção jurídica assistida"
           >
             <FileSignature size={15} aria-hidden="true" />
-            <span>Minutas · JuridIA</span>
+            <span>Produção Jurídica</span>
           </a>
         </div>
       )}

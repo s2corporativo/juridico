@@ -19,7 +19,7 @@ import { toast } from "@/hooks/use-toast";
 // Autenticação REAL: POST /api/auth/login (scrypt + cookie HttpOnly assinado).
 // A autenticação client-side simulada foi removida — decisão de segurança.
 export function AuthDialog() {
-  const { authOpen, setAuthOpen, setView, setUser } = useAppStore();
+  const { authOpen, setAuthOpen, setUser } = useAppStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,8 +46,7 @@ export function AuthDialog() {
       }
       setUser({ email: data.user.email, name: data.user.name ?? null, plan: data.user.plan ?? null });
       setAuthOpen(false);
-      setView("app");
-      toast({ title: "Bem-vindo(a) ao JuridIA!", description: `Sessão iniciada como ${data.user.email}` });
+      toast({ title: "Bem-vindo(a) ao Atlas Jurídico!", description: `Sessão iniciada como ${data.user.email}` });
     } catch {
       setError("Falha de rede. Tente novamente.");
     } finally {
@@ -63,7 +62,7 @@ export function AuthDialog() {
             <Scale className="h-6 w-6" />
           </div>
           <DialogTitle className="text-center text-2xl">
-            Entrar no JuridIA
+            Entrar no Atlas Jurídico
           </DialogTitle>
           <DialogDescription className="text-center">
             Acesse com as credenciais do seu escritório.

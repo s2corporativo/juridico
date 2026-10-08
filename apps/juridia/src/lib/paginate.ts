@@ -1,6 +1,6 @@
 // paginate.ts — Paginação ESTIMADA de minutas em páginas A4 (pure function).
 //
-// Paridade MinutaIA: editor com páginas. Aqui a paginação é uma ESTIMATIVA
+// Editor paginado com estimativa visual. Aqui a paginação é uma ESTIMATIVA
 // determinística de quantas páginas a peça terá quando impressa (o navegador
 // faz a paginação real no Ctrl+P via @page). A UI usa este módulo para
 // desenhar as páginas na tela com timbrado.

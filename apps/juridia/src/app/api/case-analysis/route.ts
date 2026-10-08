@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayJson, inferSensitiveTask } from "@/lib/ai_gateway";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const systemPrompt = `Você é a JuridIA, uma IA jurídica brasileira especialista em análise estruturada de casos. Sua tarefa é analisar os fatos de um caso jurídico e extrair informações estruturadas em formato JSON válido. Responda APENAS com JSON válido, sem markdown, sem comentários, sem texto antes ou depois do JSON.
+  const systemPrompt = `Você é a Atlas Jurídico, uma IA jurídica brasileira especialista em análise estruturada de casos. Sua tarefa é analisar os fatos de um caso jurídico e extrair informações estruturadas em formato JSON válido. Responda APENAS com JSON válido, sem markdown, sem comentários, sem texto antes ou depois do JSON.
 
 O JSON deve ter exatamente esta estrutura:
 {
@@ -78,47 +78,33 @@ Regras:
   let result: CaseAnalysisResult = { ...EMPTY };
 
   try {
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    const inferred = inferSensitiveTask(facts);
+    const taskType = inferred === "brain_classify" ? "case_analysis" : inferred;
+    const { data: parsed } = await aiGatewayJson<CaseAnalysisResult>({
+      taskType,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      thinking: { type: "disabled" },
       temperature: 0.3,
-      max_tokens: 2000,
+      maxTokens: 2000,
     });
-
-    const raw = completion.choices[0]?.message?.content || "";
-    // Extrai JSON mesmo se vier com markdown
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        result = {
-          parties: Array.isArray(parsed.parties) ? parsed.parties : [],
-          timeline: Array.isArray(parsed.timeline) ? parsed.timeline : [],
-          requests: Array.isArray(parsed.requests) ? parsed.requests : [],
-          proofs: Array.isArray(parsed.proofs) ? parsed.proofs : [],
-          decisions: Array.isArray(parsed.decisions) ? parsed.decisions : [],
-          values: Array.isArray(parsed.values) ? parsed.values : [],
-          risks: Array.isArray(parsed.risks) ? parsed.risks : [],
-          nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps : [],
-        };
-      } catch {
-        // JSON inválido, usa fallback
-        result = fallbackAnalysis(facts);
-      }
-    } else {
-      result = fallbackAnalysis(facts);
-    }
+    result = {
+      parties: Array.isArray(parsed.parties) ? parsed.parties : [],
+      timeline: Array.isArray(parsed.timeline) ? parsed.timeline : [],
+      requests: Array.isArray(parsed.requests) ? parsed.requests : [],
+      proofs: Array.isArray(parsed.proofs) ? parsed.proofs : [],
+      decisions: Array.isArray(parsed.decisions) ? parsed.decisions : [],
+      values: Array.isArray(parsed.values) ? parsed.values : [],
+      risks: Array.isArray(parsed.risks) ? parsed.risks : [],
+      nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps : [],
+    };
   } catch {
     result = fallbackAnalysis(facts);
   }
 
-  // Persiste a análise
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-  const userId = demoUser?.id;
+  // Persiste no usuário autenticado; a posse é vinculada ao usuário autenticado.
+  const userId = authUser.uid;
   try {
     const saved = await db.caseAnalysis.create({
       data: {
@@ -148,6 +134,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const items = await db.caseAnalysis.findMany({
+    where: { userId: authUser.uid },
     orderBy: { createdAt: "desc" },
     take: 20,
   });

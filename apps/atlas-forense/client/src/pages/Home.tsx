@@ -1,4 +1,4 @@
-/** Atlas Forense: painel editorial de evidência jurídica, com dados públicos e limites visíveis. */
+/** Atlas Jurídico: painel editorial de evidência jurídica, com dados públicos e limites visíveis. */
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -95,7 +95,6 @@ const CITY_SOFT: Record<string, string> = {
   "Belo Horizonte": "#a9cbc4",
   Betim: "#e2b47a",
 };
-const ATLAS_SEAL_URL = "/manus-storage/atlas-forense-seal_7ca15135.jpg";
 const fmt = new Intl.NumberFormat("pt-BR");
 const fmtOne = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 const durationOrder = ["0–30 dias", "31–90 dias", "91–180 dias", "181–365 dias", "Mais de 365 dias"];
@@ -330,10 +329,10 @@ export default function Home() {
 
   return (
     <div className="atlas-shell">
-      <aside className="atlas-sidebar" style={{ backgroundImage: `url(${ATLAS_SEAL_URL})` }}>
+      <aside className="atlas-sidebar">
         <div className="brand-block">
-          <img className="brand-mark" src="/manus-storage/atlas-forense-logo_bb6317e2.png" alt="Marca gráfica Atlas Forense" />
-          <div><span>Atlas Forense</span><strong>Compêndio<br />Jurídico</strong><small>consulta · evidência · contexto</small></div>
+          <div className="brand-monogram" aria-hidden="true">A</div>
+          <div><span>Atlas Jurídico</span><strong>Compêndio<br />Jurídico</strong><small>consulta · evidência · contexto</small></div>
         </div>
 
         <div className="sidebar-context">
@@ -362,7 +361,7 @@ export default function Home() {
 
       <main className="atlas-main">
         <header className="topbar">
-          <div className="breadcrumb"><Landmark size={16} /> Ecossistema Jurídico Clovis <ChevronRight size={15} /> Compêndio Jurídico</div>
+          <div className="breadcrumb"><Landmark size={16} /> Atlas Jurídico <ChevronRight size={15} /> Compêndio Jurídico</div>
           <div className="topbar-actions"><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Pesquisar acervo</a><a className="structure-link" href="/fontes"><Database size={16} /> Fontes</a><a className="structure-link" href="/rmbh"><Landmark size={16} /> RMBH</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
         </header>
 
@@ -374,7 +373,7 @@ export default function Home() {
             <div className="hero-tags"><Pill tone="city">Fichas com proveniência</Pill><Pill>Temas · teses · julgados</Pill><Pill tone="alert">Uso condicionado à fonte</Pill></div>
             <PartialRuler />
           </div>
-          <div className="hero-art" aria-hidden="true"><img src="/manus-storage/atlas-forense-hero_a0688916.jpg" alt="" /></div>
+          <div className="hero-art" aria-hidden="true" />
         </section>
 
         <CompendiumHomePanel />
@@ -425,7 +424,7 @@ export default function Home() {
           </article>
 
           <article className="evidence-card">
-            <img src="/manus-storage/atlas-forense-evidence_0ee8172d.jpg" alt="Textura abstrata de evidência documental" />
+            <div className="evidence-art" aria-hidden="true" />
             <div className="evidence-copy">
               <span className="eyebrow">LEITURA COMPARADA</span>
               <h2>2025 sustenta a comparação de tempo.</h2>
@@ -520,7 +519,7 @@ export default function Home() {
         </section>
 
         <section className="method-section" id="metodo">
-          <div className="method-art"><img src="/manus-storage/atlas-forense-municipal_aa1bc6b0.jpg" alt="Composição abstrata de municípios comparados" /></div>
+          <div className="method-art" aria-hidden="true" />
           <div className="method-copy">
             <span className="eyebrow">TRILHA DE EVIDÊNCIA</span>
             <h2>O que este painel afirma — e o que ele não afirma.</h2>

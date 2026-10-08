@@ -1,4 +1,4 @@
-// Prisma schema — JuridIA (clone do MinutaIA)
+// Prisma schema — Atlas Jurídico
 
 generator client {
   provider = "prisma-client-js"
@@ -32,7 +32,7 @@ model User {
 }
 
 // Chave de assinatura do IdP OIDC (RS256) — gerada na primeira inicialização.
-// A privada permanece no servidor do JuridIA; a pública é exposta via /jwks.
+// A chave privada permanece no servidor do Atlas Jurídico; a pública é exposta via /jwks.
 model OidcKey {
   id            String   @id @default(cuid())
   kid           String   @unique
@@ -210,6 +210,9 @@ model LegalSource {
   urlOficial       String?
   hashConteudo     String?  // SHA-256 do snapshot
   dataConsulta     DateTime?
+  embedding        String?  // JSON number[]; cache semântico para SQLite
+  embeddingModel   String?
+  embeddedAt       DateTime?
   revisadoPor      String?  // curador
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -217,6 +220,77 @@ model LegalSource {
   @@unique([tipo, diploma, numero, tribunal])
   @@index([diploma, numero])
   @@index([tipo, vigente])
+}
+
+// Acervo jurídico interno — preserva proveniência e histórico documental.
+model KnowledgeDocument {
+  id                            String   @id @default(cuid())
+  slug                          String   @unique
+  titulo                        String
+  tipoDocumento                 String
+  area                          String
+  subarea                       String?
+  assunto                       String?
+  subassunto                    String?
+  prioridade                    String   @default("P2")
+  lote                          String?
+  conteudo                      String
+  metadados                     String?
+  tags                          String?
+  fonte                         String?
+  urlFonte                      String?
+  dataConsulta                  String?
+  confiabilidade                String   @default("B")
+  vigente                       Boolean  @default(true)
+  status                        String   @default("ATIVO")
+  dadosFicticios                Boolean  @default(false)
+  versao                        Int      @default(1)
+  dataUltimaVerificacao         String?
+  proximaVerificacaoRecomendada String?
+  municipio                     String?
+  codigoIbgeMunicipio           String?
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+
+  chunks         KnowledgeChunk[]
+  relacaoOrigem  KnowledgeRelationship[] @relation("origem")
+  relacaoDestino KnowledgeRelationship[] @relation("destino")
+
+  @@index([tipoDocumento])
+  @@index([area])
+  @@index([prioridade])
+  @@index([confiabilidade])
+  @@index([status, vigente, dadosFicticios])
+}
+
+model KnowledgeChunk {
+  id             String            @id @default(cuid())
+  documentId     String
+  document       KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  ordem          Int
+  contexto       String
+  texto          String
+  palavras       Int               @default(0)
+  embedding      String?
+  embeddingModel String?
+  embeddedAt     DateTime?
+
+  @@index([documentId])
+  @@index([embeddingModel])
+}
+
+model KnowledgeRelationship {
+  id        String            @id @default(cuid())
+  origemId  String
+  origem    KnowledgeDocument @relation("origem", fields: [origemId], references: [id], onDelete: Cascade)
+  destinoId String
+  destino   KnowledgeDocument @relation("destino", fields: [destinoId], references: [id], onDelete: Cascade)
+  tipo      String
+  descricao String?
+
+  @@index([origemId])
+  @@index([destinoId])
+  @@index([tipo])
 }
 
 model NewsItem {
@@ -299,7 +373,7 @@ model UsageLedger {
 // EvidenceRef — proveniência central: cada afirmação aponta para um trecho de documento
 model EvidenceRef {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   documentId      String?  // referência ao documento (se houver upload)
   pageNumber      Int?
   sectionLabel    String?
@@ -324,7 +398,7 @@ model EvidenceRef {
 // LegalAssertion — 3 dimensões independentes (kind, support, review)
 model LegalAssertion {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   text            String   // a afirmação
   kind            String   // fact | inference | gap | risk | rule | precedent | conclusion
   supportStatus   String   @default("absent") // supported | partial | absent | conflicting
@@ -343,7 +417,7 @@ model LegalAssertion {
 // GraphNode — nó do grafo jurídico (pessoa, fato, evento, regra, tese, risco...)
 model GraphNode {
   id                String   @id @default(cuid())
-  caseId            String   @default("default-case")
+  caseId            String
   nodeType          String   // person | entity | document | fact | event | contract | obligation | request | requirement | evidence | rule | precedent | thesis | risk
   label             String
   description       String?
@@ -363,7 +437,7 @@ model GraphNode {
 // GraphEdge — aresta do grafo jurídico (proves, alleges, supports, contradicts...)
 model GraphEdge {
   id                String   @id @default(cuid())
-  caseId            String   @default("default-case")
+  caseId            String
   fromNodeId        String
   toNodeId          String
   edgeType          String   // party_to | represents | signed | obligated_to | occurred_at | proves | alleges | admits | denies | supports | contradicts | grounds | requires | depends_on | results_in | has_request | has_risk
@@ -382,7 +456,7 @@ model GraphEdge {
 // AgentRun — auditoria de toda execução de IA
 model AgentRun {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String?
   userId          String?
   agentSlug       String   // case_mapper | legal_brain | legal_research | legal_draft | agent_loop
   taskType        String   // map | analyze | research | draft | review | loop
@@ -439,7 +513,7 @@ model AgentRunStep {
 // IntelligenceSnapshot — append-only, não sobrescrever versão aprovada
 model IntelligenceSnapshot {
   id          String   @id @default(cuid())
-  caseId      String   @default("default-case")
+  caseId      String
   version     Int      @default(1)
   payload     String   // JSON com fatos, eventos, afirmações, grafo, etc.
   isDraft     Boolean  @default(true)
@@ -484,7 +558,7 @@ model SkillVersion {
 // Permite ao advogado ver a evolução do entendimento sobre o caso ao longo do tempo
 model BrainAnalysis {
   id          String   @id @default(cuid())
-  caseId      String   @default("default-case")
+  caseId      String
   title       String
   factsInput  String   // fatos que foram analisados
   result      String   // JSON completo do resultado do Cérebro (8 etapas)
@@ -497,10 +571,10 @@ model BrainAnalysis {
   @@index([createdAt])
 }
 
-// ── SISTEMA SUPERIOR: diferenciais sobre MinutaIA ──────────────────────────
+// ── CONTROLES JURÍDICOS AVANÇADOS ─────────────────────────────────────────
 
 // PrecedentStatus — status de vigência/superação de precedentes (art. 927 §§2-4 CPC)
-// Diferencial: MinutaIA não tem controle público de superação
+// Controle de superação e vigência de precedentes.
 model PrecedentStatus {
   id              String   @id @default(cuid())
   legalSourceId   String?  // FK para LegalSource (se a fonte for um precedente)
@@ -520,7 +594,7 @@ model PrecedentStatus {
 }
 
 // NormVersion — versão da norma à época dos fatos (vigência temporal)
-// Diferencial: MinutaIA verifica texto atual; não controla versão histórica
+// Controle de versão histórica da norma.
 model NormVersion {
   id              String   @id @default(cuid())
   diploma         String   // CC, CPC, CLT, CP, CDC, CTN, etc.
@@ -540,10 +614,10 @@ model NormVersion {
 }
 
 // ProofMatrix — matriz fato→prova→ônus (art. 373 CPC, art. 6 VIII CDC, art. 818 CLT)
-// Diferencial: MinutaIA liga fato à página, não ao ônus probatório
+// Matriz fato, prova e ônus probatório.
 model ProofMatrix {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   factId          String?  // FK para GraphNode do tipo fact
   factText        String   // o fato alegado
   hasProof        Boolean  @default(false)
@@ -562,10 +636,10 @@ model ProofMatrix {
 }
 
 // CaseDeadline — prazo processual calculado deterministicamente
-// Diferencial: MinutaIA não calcula prazos; IA nunca confirma prazo
+// Prazos são calculados de forma determinística; IA nunca confirma prazo.
 model CaseDeadline {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   tipo            String   // contestacao | recurso | intimacao | audiencia | outro
   descricao       String
   marcoInicial    DateTime // data do ato que inicia o prazo
@@ -580,10 +654,10 @@ model CaseDeadline {
 }
 
 // JudgeSimulation — simulação do julgador (admissibilidade + mérito)
-// Diferencial: MinutaIA simula o adversário, não o julgador
+// Simulação de perspectiva do julgador como controle adicional.
 model JudgeSimulation {
   id              String   @id @default(cuid())
-  caseId          String   @default("default-case")
+  caseId          String
   documentId      String?  // minuta avaliada
   competência     String?  // juízo competente?
   legitimidade   String?  // partes legítimas?

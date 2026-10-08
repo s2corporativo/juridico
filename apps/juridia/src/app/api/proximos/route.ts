@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { accessibleCaseIds } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +19,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   agora.setHours(0, 0, 0, 0);
   const limite = new Date(agora.getTime() + dias * 86400000);
 
+  const allowedCaseIds = await accessibleCaseIds(authUser);
   const [prazos, audiencias] = await Promise.all([
     db.caseDeadline.findMany({
-      where: { vencimento: { gte: agora, lte: limite } },
+      where: { caseId: { in: allowedCaseIds }, vencimento: { gte: agora, lte: limite } },
       orderBy: { vencimento: "asc" },
       take: 200,
     }),
     db.caseHearing.findMany({
-      where: { data: { gte: agora, lte: limite } },
+      where: { caseId: { in: allowedCaseIds }, data: { gte: agora, lte: limite } },
       orderBy: { data: "asc" },
       take: 200,
     }),
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const caseIds = new Set<string>([
     ...prazos.map((p) => p.caseId),
     ...audiencias.map((a) => a.caseId),
-  ].filter((id) => id !== "default-case"));
+  ]);
   const cases = caseIds.size > 0
     ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) } }, select: { id: true, title: true, number: true, responsavel: true } })
     : [];
@@ -79,6 +81,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     action: "proximos_query",
     resource: "case",
     metadata: { dias, total: agenda.length, prazos: prazos.length, audiencias: audiencias.length },
+    userId: authUser.uid,
   });
 
   return NextResponse.json({

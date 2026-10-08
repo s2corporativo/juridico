@@ -172,7 +172,7 @@ export default function OfficeComunicacoesPage() {
           <a href="/escritorio/comunicacoes" className="active">Comunicações</a>
           <a href="/escritorio/jurisprudencia">Jurisprudência</a>
           <a href="/escritorio/treinamento">Treinamento</a>
-          <a href="/">Atlas Forense</a>
+          <a href="/">Atlas Jurídico</a>
         </nav>
       </header>
 

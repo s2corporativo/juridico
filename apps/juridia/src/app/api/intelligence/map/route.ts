@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayJson, inferSensitiveTask } from "@/lib/ai_gateway";
 import { db } from "@/lib/db";
 import { mapCaseDeterministic, validateMapperOutput, identifyIssues, type CaseMapperOutput } from "@/lib/legal_brain";
 import { canonicalHash } from "@/lib/evidence";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { canAccessCase } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -20,7 +21,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   const facts = (body.facts || "").trim();
-  const caseId = body.caseId || "default-case";
+  const caseId = (body.caseId || "").trim();
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   if (facts.length < 30) {
     return NextResponse.json({ error: "Texto insuficiente (mín. 30 caracteres)" }, { status: 400 });
@@ -65,10 +68,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── Etapa 2: Enriquecimento por LLM (governado) ────────────────────────
   let llmOutput: CaseMapperOutput | null = null;
   let tokensUsed = 0;
+  let providerUsed: { provider: string; model: string } | null = null;
 
   try {
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    const inferred = inferSensitiveTask(facts);
+    const taskType = inferred === "brain_classify" ? "analise_caso" : inferred;
+    const { data: parsed, response } = await aiGatewayJson<CaseMapperOutput>({
+      taskType,
       messages: [
         {
           role: "system",
@@ -83,27 +89,26 @@ REGRAS:
 6. Nunca marque item como confirmado.
 7. Responda APENAS no schema JSON.
 
-{"facts":[{"text":"...","evidence_ref_ids":["ev_xxx"],"confidence":0.0-1.0}],"events":[{"description":"...","date":null,"date_status":"unknown","evidence_ref_ids":["ev_xxx"]}],"assertions":[{"text":"...","kind":"fact|inference|gap|risk|rule|precedent","evidence_ref_ids":["ev_xxx"],"support_status":"supported|partial|absent"}],"warnings":["..."]}`,
+{"facts":[{"text":"...","evidence_ref_ids":["ev_xxx"],"confidence":0.0}],"events":[{"description":"...","date":null,"date_status":"unknown","evidence_ref_ids":["ev_xxx"]}],"assertions":[{"text":"...","kind":"fact|inference|gap|risk|rule|precedent","evidence_ref_ids":["ev_xxx"],"support_status":"supported|partial|absent"}],"warnings":["..."]}`,
         },
         {
           role: "user",
-          content: `## Evidências autorizadas\n${JSON.stringify(evidenceRefs.map((e) => ({ id: e.id, quote: e.quote.slice(0, 200), source_kind: e.sourceKind })))}\n\n## Texto do caso\n${facts}\n\n## Rascunho determinístico\n${JSON.stringify(deterministicOutput)}`,
+          content: `## Evidências autorizadas
+${JSON.stringify(evidenceRefs.map((e) => ({ id: e.id, quote: e.quote.slice(0, 200), source_kind: e.sourceKind })))}
+
+## Texto do caso
+${facts}
+
+## Rascunho determinístico
+${JSON.stringify(deterministicOutput)}`,
         },
       ],
-      thinking: { type: "disabled" },
       temperature: 0.3,
-      max_tokens: 1500,
+      maxTokens: 1500,
     });
-
-    const raw = completion.choices[0]?.message?.content || "";
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (match) {
-      const parsed = JSON.parse(match[0]) as CaseMapperOutput;
-      // Valida que todos os evidence_ref_ids existem (Princípio 7)
-      llmOutput = await validateMapperOutput(caseId, parsed, evidenceRefs);
-    }
-
-    tokensUsed = (completion as unknown as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
+    llmOutput = await validateMapperOutput(caseId, parsed, evidenceRefs);
+    tokensUsed = response.totalTokens;
+    providerUsed = { provider: response.provider, model: response.model };
   } catch {
     // Princípio 18: falha do LLM não destrói o resultado determinístico
     llmOutput = null;
@@ -188,7 +193,7 @@ REGRAS:
       status: "completed",
       tokensOut: tokensUsed,
       resultSnapshotId: snapshot.id,
-      providerSnapshot: JSON.stringify({ provider: "zai", tokens: tokensUsed }),
+      providerSnapshot: JSON.stringify({ policy: "ai_gateway", ...providerUsed, tokens: tokensUsed }),
       finishedAt: new Date(),
     },
   });
@@ -223,7 +228,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const caseId = url.searchParams.get("caseId") || "default-case";
+  const caseId = (url.searchParams.get("caseId") || "").trim();
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   const snapshots = await db.intelligenceSnapshot.findMany({
     where: { caseId },

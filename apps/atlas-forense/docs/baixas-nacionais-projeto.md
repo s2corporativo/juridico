@@ -46,7 +46,7 @@ Foram persistidas somente 13 células agregadas por `alias`, `UF`, `mês`, `cód
 
 ## Importação no banco Atlas isolado
 
-Em **28/08/2026**, o manifesto e as 13 células agregadas foram submetidos ao importador `import-national-jec-lower-pilot.mjs` no banco MariaDB isolado `atlas_ejc`. A rotina exige autorização transitória, restringe o manifesto aos códigos `40011` e `8161`, rejeita campos estruturais de identificadores ou respostas brutas e realiza `upsert` pela chave única de execução, mês, métrica, classe e órgão.
+Em **28/08/2026**, o manifesto e as 13 células agregadas foram submetidos ao importador `import-national-jec-lower-pilot.mjs` no banco MariaDB isolado `atlas_juridico`. A rotina exige autorização transitória, restringe o manifesto aos códigos `40011` e `8161`, rejeita campos estruturais de identificadores ou respostas brutas e realiza `upsert` pela chave única de execução, mês, métrica, classe e órgão.
 
 | Validação | Resultado |
 | --- | --- |

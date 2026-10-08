@@ -1,6 +1,6 @@
-// judge_simulator.ts — Simulação do julgador (diferencial sobre MinutaIA)
+// judge_simulator.ts — Simulação do julgador 
 //
-// Lacuna do MinutaIA: simula o ADVERSÁRIO (peça contrária), não o JULGADOR.
+// Controle complementar: simulação da perspectiva do julgador.
 // Este módulo simula o julgador: verifica admissibilidade e mérito ANTES do protocolo.
 //
 // Base normativa:
@@ -14,7 +14,7 @@
 // - Indeferimento da inicial: art. 330 do CPC
 // - Conclusão/sentença: art. 489 do CPC
 
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayJson, inferSensitiveTask } from "@/lib/ai_gateway";
 
 export interface JudgeSimulationResult {
   admissibilidade: {
@@ -38,7 +38,7 @@ export interface JudgeSimulationResult {
 
 /**
  * Simula o julgador: verifica admissibilidade e mérito da peça.
- * Diferencial: MinutaIA só simula o adversário, não o juiz.
+ * Controle complementar de coerência decisória.
  */
 export async function simulateJudge(params: {
   caseFacts: string;
@@ -61,10 +61,20 @@ export async function simulateJudge(params: {
     preliminares: { status: "ok", detail: "Sem preliminares aparentes (verificar art. 337 CPC)" },
   };
 
-  // ── Análise de mérito via LLM ──────────────────────────────────────────
+  // ── Análise de mérito via AI Gateway único ─────────────────────────────
   try {
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    const inferred = inferSensitiveTask(`${area}\n${caseFacts}\n${claim}`);
+    const taskType = inferred === "brain_classify" ? "analise_caso" : inferred;
+    const { data: parsed } = await aiGatewayJson<{
+      probabilidade?: "alta" | "media" | "baixa";
+      pontos_fortes?: string[];
+      pontos_fracos?: string[];
+      fundamentos_necessarios?: string[];
+      provas_essenciais?: string[];
+      recomendacao?: string;
+      risks?: string[];
+    }>({
+      taskType,
       messages: [
         {
           role: "system",
@@ -82,12 +92,10 @@ Responda APENAS com JSON:
 }
 
 Regras:
-- NUNCA prometa resultado (art. 2º §1º EOAB)
-- Verifique competência (art. 42-62 CPC), legitimidade (art. 17 CPC)
-- Verifique prescrição (art. 337 §1º CPC)
-- Verifique valor da causa (art. 291-294 CPC)
-- Identifique preliminares (art. 337 CPC)
-- Avalie mérito com base nos fatos, não em opinião pessoal`,
+- NUNCA prometa resultado.
+- Não invente lei, precedente, fato ou prova.
+- Trate a classificação como avaliação qualitativa, não estatística.
+- Aponte o que precisa ser conferido em fonte oficial antes do protocolo.`,
         },
         {
           role: "user",
@@ -102,30 +110,24 @@ ${claim}
 ## ${documentoTexto ? `Minuta produzida:\n${documentoTexto.slice(0, 1000)}` : "Sem minuta (análise prévia)"}`,
         },
       ],
-      thinking: { type: "disabled" },
       temperature: 0.3,
-      max_tokens: 800,
+      maxTokens: 800,
     });
 
-    const raw = completion.choices[0]?.message?.content || "";
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (match) {
-      const parsed = JSON.parse(match[0]);
-      return {
-        admissibilidade,
-        merito: {
-          probabilidade: parsed.probabilidade || "media",
-          pontos_fortes: parsed.pontos_fortes || [],
-          pontos_fracos: parsed.pontos_fracos || [],
-          fundamentos_necessarios: parsed.fundamentos_necessarios || [],
-          provas_essenciais: parsed.provas_essenciais || [],
-        },
-        recomendacao: parsed.recomendacao || "Verifique manualmente",
-        risks: parsed.risks || [],
-      };
-    }
+    return {
+      admissibilidade,
+      merito: {
+        probabilidade: parsed.probabilidade || "media",
+        pontos_fortes: parsed.pontos_fortes || [],
+        pontos_fracos: parsed.pontos_fracos || [],
+        fundamentos_necessarios: parsed.fundamentos_necessarios || [],
+        provas_essenciais: parsed.provas_essenciais || [],
+      },
+      recomendacao: parsed.recomendacao || "Verifique manualmente",
+      risks: parsed.risks || [],
+    };
   } catch {
-    // Falha do LLM — retorna apenas verificação determinística
+    // Falha do provider — retorna somente verificações determinísticas.
   }
 
   return {

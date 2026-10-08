@@ -1,8 +1,8 @@
-# Serviço de Notificações em Tempo Real (WebSocket) — Atlas Forense
+# Serviço de Notificações em Tempo Real (WebSocket) — Atlas Jurídico
 
 ## Política do proxy fixo (sem porta dinâmica)
 
-O Atlas Forense **proíbe** a arquitetura de proxy dinâmico do tipo `?XTransformPort=XXXX`, em
+O Atlas Jurídico **proíbe** a arquitetura de proxy dinâmico do tipo `?XTransformPort=XXXX`, em
 que o usuário escolhe a porta interna de destino. Nenhum parâmetro de query ou header do
 aplicativo seleciona porta, host ou destino de proxy — verificado por auditoria
 (`grep -r "XTransformPort"`, `req.query` sem qualquer chave de porta em `server/`).
@@ -100,7 +100,7 @@ Não há dados fictícios: notificações só existem para eventos reais do sist
 
 ## Operação (VPS)
 
-1. `deploy/atlas.env.example` traz os três valores; `/etc/atlas-ejc/atlas.env` deve definir
+1. `deploy/atlas.env.example` traz os três valores; `/etc/atlas-juridico/atlas.env` deve definir
    `NOTIFICATION_INTERNAL_SECRET` e `ATLAS_ALLOWED_ORIGINS` (0640, `root:atlas`).
 2. `deploy/Caddyfile` já contém a rota fixa `/socket.io/*` → `127.0.0.1:3003` **antes** do
    catch-all da aplicação; o Caddy encaminha o upgrade de WebSocket automaticamente.

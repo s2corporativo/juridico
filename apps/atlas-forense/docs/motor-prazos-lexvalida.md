@@ -1,13 +1,13 @@
 # Motor de prazos LexValida — portabilidade e validação
 
-Atlas Forense · Painel JEC BH e Betim · Tasks 3–4 reconstruídas e validadas em 04/10/2026
+Atlas Jurídico · Motor de prazos e validação determinística
 
 ## Proveniência
 
 Motores determinísticos do **LexValida** (FastAPI + PostgreSQL, enviado pelo usuário)
 portados para TypeScript compartilhado entre servidor e navegador:
 
-| LexValida (Python) | Atlas Forense (TypeScript) |
+| Referência normativa/determinística | Atlas Jurídico (TypeScript) |
 |---|---|
 | `app/core/prazos.py` | `shared/prazos-module.ts` |
 | `app/core/prescricao.py` | `shared/prescricao-module.ts` |

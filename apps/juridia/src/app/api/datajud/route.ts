@@ -1,164 +1,159 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
-import { parseJsonBody } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const DATAJUD_API_BASE = "https://api-publica.datajud.cnj.jus.br";
-const DATAJAD_TOKEN = "c7o6ektnW6n4p3uI0r07bC8Y4h3t2m3";
+const DATAJUD_BASE_URL = "https://api-publica.datajud.cnj.jus.br";
+const DATAJUD_ACCESS_URL = "https://datajud-wiki.cnj.jus.br/api-publica/acesso/";
 
-interface DatajudResultado {
-  cnj: string;
-  tribunal: string | null;
-  encontrado: boolean;
-  dados?: Record<string, unknown>;
+const UF_BY_TR: Record<string, string> = {
+  "01":"ac","02":"al","03":"ap","04":"am","05":"ba","06":"ce","07":"dft",
+  "08":"es","09":"go","10":"ma","11":"mt","12":"ms","13":"mg","14":"pa",
+  "15":"pb","16":"pr","17":"pe","18":"pi","19":"rj","20":"rn","21":"rs",
+  "22":"ro","23":"rr","24":"sc","25":"se","26":"sp","27":"to",
+};
+
+function inferAlias(cnj: string): string | null {
+  const justice = cnj[13];
+  const tr = cnj.slice(14, 16);
+  if (justice === "8") {
+    const uf = UF_BY_TR[tr];
+    return uf ? `tj${uf}` : null;
+  }
+  if (justice === "4") return `trf${Number(tr)}`;
+  if (justice === "5") return `trt${Number(tr)}`;
+  if (justice === "6") {
+    const uf = UF_BY_TR[tr];
+    return uf ? `tre-${uf === "dft" ? "df" : uf}` : null;
+  }
+  if (justice === "9") {
+    if (tr === "13") return "tjmmg";
+    if (tr === "21") return "tjmrs";
+    if (tr === "26") return "tjmsp";
+  }
+  return null;
 }
 
-// GET /api/datajud?cnj=xxx — consulta pública por número CNJ
+function extractPublicDataJudKey(page: string): string | null {
+  const text = page.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ");
+  const marker = text.indexOf("Authorization: APIKey");
+  if (marker < 0) return null;
+  return text.slice(marker, marker + 280).match(/[A-Za-z0-9_-]{40,}={0,2}/)?.[0] ?? null;
+}
+
+async function getDataJudKey(): Promise<string> {
+  const configured = process.env.DATAJUD_API_KEY?.trim();
+  if (configured) return configured;
+
+  const response = await fetch(DATAJUD_ACCESS_URL, {
+    headers: { Accept: "text/html" },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new Error("Não foi possível obter a chave pública oficial do DataJud.");
+  const key = extractPublicDataJudKey(await response.text());
+  if (!key) throw new Error("A página oficial não apresentou uma chave pública DataJud reconhecível.");
+  return key;
+}
+
+function readName(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const name = (value as { nome?: unknown }).nome;
+  return typeof name === "string" ? name : null;
+}
+
+function sanitize(source: Record<string, unknown>) {
+  const movements = Array.isArray(source.movimentos) ? source.movimentos : [];
+  return {
+    numeroProcesso: typeof source.numeroProcesso === "string" ? source.numeroProcesso : null,
+    tribunal: typeof source.tribunal === "string" ? source.tribunal : null,
+    updatedAt: typeof source["@timestamp"] === "string" ? source["@timestamp"] : null,
+    classe: readName(source.classe),
+    orgaoJulgador: readName(source.orgaoJulgador),
+    assuntos: (Array.isArray(source.assuntos) ? source.assuntos : [])
+      .map(readName)
+      .filter((value): value is string => Boolean(value))
+      .slice(0, 12),
+    movimentos: movements
+      .map((movement) => {
+        const record = movement && typeof movement === "object"
+          ? movement as Record<string, unknown>
+          : {};
+        return {
+          date: typeof record.dataHora === "string"
+            ? record.dataHora
+            : typeof record.data === "string"
+              ? record.data
+              : null,
+          name: readName(record) ?? (typeof record.nome === "string" ? record.nome : null),
+        };
+      })
+      .filter((item) => item.date || item.name)
+      .slice(-40),
+  };
+}
+
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
-  const __auth = await requireAuth(req);
-  if (!__auth.ok) return __auth.response;
-  const authUser = __auth.user;
+  const guard = await requireAuth(req);
+  if (!guard.ok) return guard.response;
 
-  const url = new URL(req.url);
-  const cnj = url.searchParams.get("cnj");
-  if (!cnj) return NextResponse.json({ error: "cnj obrigatório" }, { status: 400 });
-
-  // Formata CNJ: remove não-dígitos
-  const cnjLimpo = cnj.replace(/\D/g, "");
-  if (cnjLimpo.length < 20) {
+  const raw = new URL(req.url).searchParams.get("cnj") ?? "";
+  const cnj = raw.replace(/\D/g, "");
+  if (cnj.length !== 20) {
     return NextResponse.json({ error: "CNJ deve ter 20 dígitos" }, { status: 400 });
   }
 
-  // Identifica tribunal (segmento = posição 14-15)
-  const segmento = cnjLimpo.slice(13, 15);
-  const tribunalMap: Record<string, string> = {
-    "8": "TJ", // estadual
-    "4": "TRF", // federal
-    "5": "TRT", // trabalhista
-    "6": "TRE", // eleitoral
-    "2": "TJM", // militar
-  };
-  const tribunalTipo = tribunalMap[segmento[0]] || "TJ";
-  // Para TJ/TRF: usar tribunal específico (estado/region) — sem detalhamento aqui, usa endpoint genérico
-  const endpoint = tribunalTipo === "TJ"
-    ? "api-publica-datajud-tj"
-    : tribunalTipo === "TRT"
-      ? "api-publica-datajud-trt"
-      : "api-publica-datajud";
-
-  const result: DatajudResultado = {
-    cnj,
-    tribunal: tribunalTipo,
-    encontrado: false,
-  };
+  const alias = inferAlias(cnj);
+  if (!alias) {
+    return NextResponse.json(
+      { error: "Não foi possível identificar automaticamente o tribunal desse número CNJ." },
+      { status: 400 },
+    );
+  }
 
   try {
-    const resp = await fetch(`${DATAJUD_API_BASE}/${endpoint}/api/public/processos/numero/${cnjLimpo}`, {
-      method: "GET",
+    const key = await getDataJudKey();
+    const response = await fetch(`${DATAJUD_BASE_URL}/api_publica_${alias}/_search`, {
+      method: "POST",
       headers: {
-        "X-Request-DataJud": DATAJAD_TOKEN,
-        "Accept": "application/json",
+        Authorization: `APIKey ${key}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      signal: AbortSignal.timeout(15000),
+      body: JSON.stringify({
+        size: 1,
+        query: { match: { numeroProcesso: cnj } },
+        _source: ["numeroProcesso","tribunal","@timestamp","classe","assuntos","orgaoJulgador","movimentos"],
+      }),
+      signal: AbortSignal.timeout(15_000),
     });
-    if (resp.ok) {
-      const json = (await resp.json()) as Record<string, unknown>;
-      result.encontrado = true;
-      result.dados = json;
-    } else if (resp.status === 404) {
-      result.encontrado = false;
-    } else {
-      return NextResponse.json({ error: `DataJud retornou ${resp.status}`, cnj }, { status: 502 });
+
+    if (!response.ok) {
+      return NextResponse.json({ error: `DataJud indisponível para ${alias} (HTTP ${response.status}).` }, { status: 502 });
     }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: `Falha ao consultar DataJud: ${msg}`, cnj }, { status: 502 });
+
+    const body = await response.json() as {
+      hits?: { hits?: Array<{ _source?: Record<string, unknown> }> };
+    };
+    const source = body.hits?.hits?.[0]?._source;
+
+    await logAuditEvent({
+      userId: guard.user.uid,
+      action: "datajud_query",
+      resource: "process",
+      metadata: { cnj, alias, found: Boolean(source) },
+    });
+
+    return NextResponse.json({
+      found: Boolean(source),
+      alias,
+      record: source ? sanitize(source) : null,
+      citation: "Fonte: Conselho Nacional de Justiça — DataJud.",
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Falha ao consultar DataJud." },
+      { status: 502 },
+    );
   }
-
-  await logAuditEvent({
-    action: "datajud_query",
-    resource: "process",
-    metadata: { cnj, tribunal: tribunalTipo, encontrado: result.encontrado },
-  });
-
-  return NextResponse.json(result);
-}
-
-// POST /api/datajud — busca geral em lote (json query) ou por CNJ
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
-  const __auth = await requireAuth(req);
-  if (!__auth.ok) return __auth.response;
-  const authUser = __auth.user;
-
-  const parsed = await parseJsonBody<{ cnj?: string; query?: Record<string, unknown> }>(req);
-  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
-
-  const { cnj, query } = parsed.body;
-  if (!cnj && !query) {
-    return NextResponse.json({ error: "Informe cnj ou query" }, { status: 400 });
-  }
-
-  // Se passou query, usa endpoint de busca por body
-  if (query) {
-    const endpoint = "api-publica-datajud-tj";
-    try {
-      const resp = await fetch(`${DATAJUD_API_BASE}/${endpoint}/api/public/processos/pesquisa`, {
-        method: "POST",
-        headers: {
-          "X-Request-DataJud": DATAJAD_TOKEN,
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        body: JSON.stringify(query),
-        signal: AbortSignal.timeout(20000),
-      });
-      if (!resp.ok) {
-        return NextResponse.json({ error: `DataJud retornou ${resp.status}` }, { status: 502 });
-      }
-      const json = (await resp.json()) as Record<string, unknown>;
-      await logAuditEvent({
-        action: "datajud_search",
-        resource: "process",
-        metadata: { hasQuery: true, querySize: JSON.stringify(query).length },
-      });
-      return NextResponse.json({ resultados: json });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      return NextResponse.json({ error: `Falha ao consultar DataJud: ${msg}` }, { status: 502 });
-    }
-  }
-
-  // POST com cnj: trata como busca por número
-  if (cnj) {
-    const cnjLimpo = cnj.replace(/\D/g, "");
-    if (cnjLimpo.length < 20) return NextResponse.json({ error: "CNJ deve ter 20 dígitos" }, { status: 400 });
-    const endpoint = "api-publica-datajud-tj";
-    try {
-      const resp = await fetch(`${DATAJUD_API_BASE}/${endpoint}/api/public/processos/numero/${cnjLimpo}`, {
-        method: "GET",
-        headers: {
-          "X-Request-DataJud": DATAJAD_TOKEN,
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (resp.status === 404) {
-        await logAuditEvent({ action: "datajud_query", resource: "process", metadata: { cnj, encontrado: false } });
-        return NextResponse.json({ cnj, encontrado: false });
-      }
-      if (!resp.ok) return NextResponse.json({ error: `DataJud retornou ${resp.status}` }, { status: 502 });
-      const json = (await resp.json()) as Record<string, unknown>;
-      await logAuditEvent({ action: "datajud_query", resource: "process", metadata: { cnj, encontrado: true } });
-      return NextResponse.json({ cnj, encontrado: true, dados: json });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      return NextResponse.json({ error: `Falha ao consultar DataJud: ${msg}` }, { status: 502 });
-    }
-  }
-
-  return NextResponse.json({ error: "Requisição inválida" }, { status: 400 });
 }

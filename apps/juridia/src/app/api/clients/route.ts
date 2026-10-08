@@ -5,56 +5,48 @@ import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-// GET: lista clientes do escritório
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
-  const __auth = await requireAuth(req);
-  if (!__auth.ok) return __auth.response;
-  const authUser = __auth.user;
+  const guard = await requireAuth(req);
+  if (!guard.ok) return guard.response;
 
   const clients = await db.client.findMany({
+    where: guard.user.role === "admin" ? {} : { userId: guard.user.uid },
     orderBy: { updatedAt: "desc" },
-    include: {
-      _count: { select: { cases: true } },
-    },
+    include: { _count: { select: { cases: true } } },
   });
 
-  // Conta documentos por cliente (via cases)
   const clientsWithStats = await Promise.all(
-    clients.map(async (c) => {
+    clients.map(async (client) => {
       const cases = await db.case.findMany({
-        where: { clientId: c.id },
+        where: { clientId: client.id },
         select: { id: true },
       });
-      const caseIds = cases.map((cs) => cs.id);
-      const docCount = await db.document.count({
-        where: { caseId: { in: caseIds } },
-      });
+      const caseIds = cases.map((item) => item.id);
+      const documentsCount = caseIds.length
+        ? await db.document.count({ where: { caseId: { in: caseIds } } })
+        : 0;
       return {
-        id: c.id,
-        name: c.name,
-        email: c.email,
-        phone: c.phone,
-        document: c.document,
-        notes: c.notes,
-        color: c.color,
-        casesCount: c._count.cases,
-        documentsCount: docCount,
-        createdAt: c.createdAt.toISOString(),
-        updatedAt: c.updatedAt.toISOString(),
+        id: client.id,
+        name: client.name,
+        email: client.email,
+        phone: client.phone,
+        document: client.document,
+        notes: client.notes,
+        color: client.color,
+        casesCount: client._count.cases,
+        documentsCount,
+        createdAt: client.createdAt.toISOString(),
+        updatedAt: client.updatedAt.toISOString(),
       };
-    })
+    }),
   );
 
   return NextResponse.json({ clients: clientsWithStats });
 }
 
-// POST: cria novo cliente
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
-  const __auth = await requireAuth(req);
-  if (!__auth.ok) return __auth.response;
-  const authUser = __auth.user;
+  const guard = await requireAuth(req);
+  if (!guard.ok) return guard.response;
 
   let body: {
     name?: string;
@@ -63,7 +55,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     document?: string;
     notes?: string;
     color?: string;
-  } = {};
+  };
   try {
     body = await req.json();
   } catch {
@@ -74,11 +66,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 });
   }
 
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-
   const client = await db.client.create({
     data: {
-      userId: demoUser?.id,
+      userId: guard.user.uid,
       name: body.name.trim(),
       email: body.email?.trim() || null,
       phone: body.phone?.trim() || null,
@@ -89,30 +79,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   await logAuditEvent({
+    userId: guard.user.uid,
     action: "create_client",
     resource: "client",
     resourceId: client.id,
     metadata: { name: client.name },
   });
 
-  return NextResponse.json({
-    id: client.id,
-    name: client.name,
-    email: client.email,
-    phone: client.phone,
-    document: client.document,
-    notes: client.notes,
-    color: client.color,
-    createdAt: client.createdAt.toISOString(),
-  });
+  return NextResponse.json(client, { status: 201 });
 }
 
-// PATCH: atualiza cliente
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
-  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
-  const __auth = await requireAuth(req);
-  if (!__auth.ok) return __auth.response;
-  const authUser = __auth.user;
+  const guard = await requireAuth(req);
+  if (!guard.ok) return guard.response;
 
   let body: {
     id?: string;
@@ -122,16 +101,20 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     document?: string;
     notes?: string;
     color?: string;
-  } = {};
+  };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  if (!body.id) {
-    return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-  }
+  if (!body.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+
+  const owned = await db.client.findFirst({
+    where: guard.user.role === "admin" ? { id: body.id } : { id: body.id, userId: guard.user.uid },
+    select: { id: true },
+  });
+  if (!owned) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
   const data: {
     name?: string;
@@ -141,7 +124,6 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     notes?: string | null;
     color?: string;
   } = {};
-
   if (body.name !== undefined) data.name = body.name.trim();
   if (body.email !== undefined) data.email = body.email.trim() || null;
   if (body.phone !== undefined) data.phone = body.phone.trim() || null;
@@ -149,41 +131,37 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (body.notes !== undefined) data.notes = body.notes.trim() || null;
   if (body.color !== undefined) data.color = body.color;
 
-  const updated = await db.client.update({
-    where: { id: body.id },
-    data,
-  });
-
+  const updated = await db.client.update({ where: { id: body.id }, data });
   await logAuditEvent({
+    userId: guard.user.uid,
     action: "update_client",
     resource: "client",
     resourceId: body.id,
     metadata: { name: updated.name },
   });
-
   return NextResponse.json({ ok: true });
 }
 
-// DELETE: exclui cliente
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
-  // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
-  const __auth = await requireAuth(req);
-  if (!__auth.ok) return __auth.response;
-  const authUser = __auth.user;
+  const guard = await requireAuth(req);
+  if (!guard.ok) return guard.response;
 
-  const url = new URL(req.url);
-  const id = url.searchParams.get("id");
+  const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const client = await db.client.findUnique({ where: { id }, select: { name: true } });
-  await db.client.delete({ where: { id } });
+  const client = await db.client.findFirst({
+    where: guard.user.role === "admin" ? { id } : { id, userId: guard.user.uid },
+    select: { id: true, name: true },
+  });
+  if (!client) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
+  await db.client.delete({ where: { id } });
   await logAuditEvent({
+    userId: guard.user.uid,
     action: "delete_client",
     resource: "client",
     resourceId: id,
-    metadata: { name: client?.name },
+    metadata: { name: client.name },
   });
-
   return NextResponse.json({ ok: true });
 }

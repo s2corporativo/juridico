@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { aiGatewayChat, governedWebSearch, inferSensitiveTask } from "@/lib/ai_gateway";
 import { db } from "@/lib/db";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
-import { ragSearch } from "@/lib/rag_lite";
+import { legalSearch } from "@/lib/legal_retrieval";
+import { assessResearchCoverage, type ResearchCoverage } from "@/lib/research_coverage";
 import { requireAuth } from "@/lib/auth";
+import { canAccessCase } from "@/lib/case_access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -54,6 +56,7 @@ interface BrainResult {
   };
   gaps: { what: string; why: string; question: string; state: EpistemicState }[];
   strategy: { proceduralPath: string; immediateActions: EvidenceItem[]; documentsToCollect: string[]; risks: EvidenceItem[]; recommendation: string };
+  researchCoverage: ResearchCoverage;
   steps: BrainStep[];
   totalTokens: number;
 }
@@ -79,6 +82,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   const facts = (body.facts || "").trim();
+  if (body.caseId && !(await canAccessCase(body.caseId, authUser))) {
+    return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
+  }
   const title = body.title?.trim() || `Análise — ${new Date().toLocaleDateString("pt-BR")}`;
 
   if (facts.length < 30) {
@@ -88,36 +94,62 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const steps: BrainStep[] = STEPS.map((s) => ({ ...s, status: "pending" as const }));
   const r: Partial<BrainResult> = { steps };
   let tokens = 0;
-  const zai = await ZAI.create();
+  let currentTask: string = inferSensitiveTask(facts);
 
-  const tok = (c: unknown) => tokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
+  const brainChat = async (options: {
+    messages: { role: "system" | "user" | "assistant"; content: string }[];
+    temperature?: number;
+    max_tokens?: number;
+  }) => {
+    const response = await aiGatewayChat({
+      messages: options.messages,
+      taskType: currentTask,
+      temperature: options.temperature,
+      maxTokens: options.max_tokens,
+    });
+    return {
+      choices: [{ message: { content: response.text } }],
+      usage: {
+        prompt_tokens: response.inputTokens,
+        completion_tokens: response.outputTokens,
+        total_tokens: response.totalTokens,
+      },
+      model: response.model,
+    };
+  };
 
+  const brainWebSearch = async (query: string, num = 8) =>
+    governedWebSearch(query, currentTask, num);
+
+  const tok = (completion: unknown) =>
+    tokens += (completion as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
   // ── ETAPA 0: Classificação do ramo jurídico ──────────────────────────────
   steps[0].status = "running";
   try {
-    const c = await zai.chat.completions.create({
+    const c = await brainChat({
       messages: [
         { role: "system", content: `Classifique o caso em UM destes 16 ramos. Responda APENAS com JSON: {"ramo":"...","confianca":0.0-1.0}. Ramos: civil, penal, trabalhista, tributario, consumer, family, previdenciario, empresarial, administrativo, bancario, ambiental, saude, imobiliario, internacional, digital_lgpd, transito` },
         { role: "user", content: facts.slice(0, 500) },
-      ],
-      thinking: { type: "disabled" }, temperature: 0.2, max_tokens: 100,
+      ], temperature: 0.2, max_tokens: 100,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.ramoJuridico = p.ramo || "civil"; r.ramoConfianca = typeof p.confianca === "number" ? p.confianca : 0.7; }
     tok(c); steps[0].status = "done"; steps[0].result = r.ramoJuridico;
   } catch (e) { steps[0].status = "error"; steps[0].error = e instanceof Error ? e.message : "Erro"; r.ramoJuridico = "civil"; r.ramoConfianca = 0.5; }
 
+  if (r.ramoJuridico === "penal") currentTask = "criminal";
+  else if (currentTask !== "menores") currentTask = "analise_caso";
+
   // ── ETAPA 1: Extração estruturada (com estados epistêmicos) ──────────────
   steps[1].status = "running";
   try {
-    const c = await zai.chat.completions.create({
+    const c = await brainChat({
       messages: [
         { role: "system", content: `Extraia informações estruturadas em JSON. Para CADA item, rotule o estado epistêmico: "fato_extraido" (literal do texto), "alegacao_cliente" (não confirmado), "inferencia_ia" (inferido). Responda APENAS com JSON, sem markdown. Use marcadores [NOME_0001] se houver dados sensíveis.
 
 {"parties":[{"role":"autor|réu|requerente|requerido|terceiro","name":"nome ou null","type":"pessoa física|pessoa jurídica|órgão público","state":"fato_extraido|alegacao_cliente|inferencia_ia"}],"timeline":[{"date":"data","event":"evento","state":"fato_extraido|alegacao_cliente|inferencia_ia"}],"requests":[{"text":"pedido","state":"alegacao_cliente|inferencia_ia"}],"values":[{"label":"rótulo","amount":"R$ X","state":"fato_extraido|alegacao_cliente|inferencia_ia"}]}` },
         { role: "user", content: facts },
-      ],
-      thinking: { type: "disabled" }, temperature: 0.3, max_tokens: 1000,
+      ], temperature: 0.3, max_tokens: 1000,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) {
@@ -133,12 +165,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── ETAPA 2: Questões jurídicas ───────────────────────────────────────────
   steps[2].status = "running";
   try {
-    const c = await zai.chat.completions.create({
+    const c = await brainChat({
       messages: [
         { role: "system", content: `Identifique as QUESTÕES JURÍDICAS do caso. Para cada, indique área, relevância (alta/média/baixa) e estado epistêmico ("fato_extraido" se surge dos fatos, "inferencia_ia" se é inferência jurídica, "alegacao_cliente" se é alegação). Responda APENAS com JSON: {"legalIssues":[{"question":"...","area":"civil|penal|trabalhista|tributario|consumer|family|previdenciario|empresarial|administrativo|bancario|ambiental|saude|imobiliario|internacional|digital_lgpd|transito","relevance":"alta|média|baixa","state":"fato_extraido|alegacao_cliente|inferencia_ia","note":"explicação curta"}]}` },
         { role: "user", content: `Fatos:\n${facts}\n\nPartes:\n${JSON.stringify(r.parties)}\nPedidos:\n${JSON.stringify(r.requests)}` },
-      ],
-      thinking: { type: "disabled" }, temperature: 0.4, max_tokens: 800,
+      ], temperature: 0.4, max_tokens: 800,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.legalIssues = p.legalIssues || []; }
@@ -152,14 +183,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Constroi query combinando fatos + questões jurídicas
     const ragQuery = `${facts} ${issues.map((i) => i.question).join(" ")}`;
     // Busca semântica na base curada (TF-IDF cosine similarity)
-    const ragResults = await ragSearch(ragQuery, 8);
+    const ragResults = await legalSearch(ragQuery, 8);
     r.applicableLaw = ragResults.map((res) => ({
       diploma: res.source.diploma,
       numero: res.source.numero,
       textoTrecho: res.source.textoTrecho,
       vigente: res.source.vigente,
       urlOficial: res.source.urlOficial,
-      applicability: `RAG score: ${res.score.toFixed(3)} — ${res.source.diploma} ${res.source.numero} ${res.source.tribunal || ""}`,
+      applicability: `Hybrid score: ${res.score.toFixed(3)} — ${res.source.diploma} ${res.source.numero} ${res.source.tribunal || ""}`,
       state: "direito_positivo" as const,
       confidence: Math.min(1, res.score + 0.3), // ajusta confiança com base no score
     }));
@@ -171,26 +202,54 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const issues = r.legalIssues || [];
     const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${facts.slice(0, 100)}`;
-    const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
+    const raw = (await brainWebSearch(searchQuery, 8)) as { url: string; name: string; snippet: string; host_name: string }[];
     r.jurisprudence = Array.isArray(raw)
       ? raw.slice(0, 8).map((x) => ({ name: x.name, url: x.url, snippet: x.snippet, host_name: x.host_name, favorable: null, state: "jurisprudencia" as const, confidence: 0.7 }))
       : [];
     steps[4].status = "done"; steps[4].result = r.jurisprudence.length;
   } catch (e) { steps[4].status = "error"; steps[4].error = e instanceof Error ? e.message : "Erro"; r.jurisprudence = []; }
 
+  if ((r.jurisprudence || []).length > 0) {
+    try {
+      const c = await brainChat({
+        messages: [
+          { role: "system", content: 'Classifique cada resultado como favorável, contrário ou neutro em relação às questões jurídicas. Responda APENAS JSON: {"items":[{"index":0,"favorable":true|false|null}]}. Não invente conteúdo além dos snippets.' },
+          { role: "user", content: JSON.stringify({ issues: r.legalIssues, precedents: r.jurisprudence?.map((j, index) => ({ index, name: j.name, snippet: j.snippet })) }) },
+        ],
+        temperature: 0.1,
+        max_tokens: 500,
+      });
+      const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
+      if (m) {
+        const parsed = JSON.parse(m[0]) as { items?: { index: number; favorable: boolean | null }[] };
+        for (const item of parsed.items || []) {
+          if (r.jurisprudence?.[item.index]) r.jurisprudence[item.index].favorable = item.favorable;
+        }
+      }
+      tok(c);
+    } catch {
+      // Cobertura ficará explicitamente incompleta.
+    }
+  }
+
+  r.researchCoverage = assessResearchCoverage({
+    laws: (r.applicableLaw || []).map((l) => ({ vigente: l.vigente, urlOficial: l.urlOficial })),
+    precedents: (r.jurisprudence || []).map((j) => ({ favorable: j.favorable, url: j.url, snippet: j.snippet })),
+    factualFit: Boolean((r.legalIssues || []).length && (r.applicableLaw || []).length),
+  });
+
   // ── ETAPA 5: Análise de viabilidade (com Evidence Ledger + hipótese) ─────
   steps[5].status = "running";
   try {
     const lawCtx = (r.applicableLaw || []).map((l) => `${l.diploma} ${l.numero}: ${l.textoTrecho.slice(0, 120)}`).join("\n");
     const jurCtx = (r.jurisprudence || []).map((j) => `- ${j.name}: ${j.snippet.slice(0, 100)}`).join("\n");
-    const c = await zai.chat.completions.create({
+    const c = await brainChat({
       messages: [
         { role: "system", content: `Você é um advogado sênior emitindo um PARECER DE VIABILIDADE. NUNCA use percentual ou "chance de êxito" — isso é HIPÓTESE sem base estatística. Para cada ponto forte/fraco, rotule o estado epistêmico. Responda APENAS com JSON:
 
 {"hypothesis":"favorável|incerto|desfavorável","hypothesisNote":"explicar que é hipótese sem base estatística, requer validação jurisprudencial","strengths":[{"claim":"ponto forte","state":"fato_extraido|alegacao_cliente|inferencia_ia|direito_positivo|jurisprudencia","source":"origem","confidence":0.0-1.0,"note":"explicação"}],"weaknesses":[{"claim":"ponto fraco","state":"fato_extraido|alegacao_cliente|inferencia_ia","source":"origem","confidence":0.0-1.0,"note":"explicação"}],"reasoning":"raciocínio conectando fatos, lei e jurisprudência","evidence":[{"claim":"afirmação consolidada","state":"fato_extraido|inferencia_ia|direito_positivo|jurisprudencia","source":"origem","confidence":0.0-1.0,"note":"nota"}]}` },
         { role: "user", content: `## Fatos\n${facts}\n\n## Legislação\n${lawCtx}\n\n## Jurisprudência\n${jurCtx}\n\n## Pedidos\n${JSON.stringify(r.requests)}` },
-      ],
-      thinking: { type: "disabled" }, temperature: 0.4, max_tokens: 1500,
+      ], temperature: 0.4, max_tokens: 1500,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.viability = { hypothesis: p.hypothesis || "incerto", hypothesisNote: p.hypothesisNote || "Hipótese sem base estatística — requer validação jurisprudencial e revisão humana.", strengths: p.strengths || [], weaknesses: p.weaknesses || [], reasoning: p.reasoning || "", evidence: p.evidence || [] }; }
@@ -200,12 +259,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── ETAPA 6: Lacunas e perguntas ──────────────────────────────────────────
   steps[6].status = "running";
   try {
-    const c = await zai.chat.completions.create({
+    const c = await brainChat({
       messages: [
         { role: "system", content: `Identifique LACUNAS factuais/probatórias e faça PERGUNTAS para o cliente. Cada lacuna deve ter estado epistêmico. Responda APENAS com JSON: {"gaps":[{"what":"informação faltante","why":"por que importa","question":"pergunta para o cliente","state":"fato_extraido|alegacao_cliente|inferencia_ia"}]}` },
         { role: "user", content: `## Fatos\n${facts}\n\n## Questões\n${JSON.stringify(r.legalIssues)}\n\n## Análise\n${JSON.stringify(r.viability)}` },
-      ],
-      thinking: { type: "disabled" }, temperature: 0.5, max_tokens: 800,
+      ], temperature: 0.5, max_tokens: 800,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.gaps = p.gaps || []; }
@@ -215,20 +273,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── ETAPA 7: Estratégia recomendada (todas as afirmações são hipótese) ───
   steps[7].status = "running";
   try {
-    const c = await zai.chat.completions.create({
+    const c = await brainChat({
       messages: [
         { role: "system", content: `Sugira estratégia processual. Todas as ações e riscos são HIPÓTESES — rotule cada uma. Responda APENAS com JSON: {"strategy":{"proceduralPath":"caminho","immediateActions":[{"claim":"ação","state":"hipotese","source":"recomendação IA","confidence":0.5,"note":"nota"}],"documentsToCollect":["doc 1"],"risks":[{"claim":"risco","state":"hipotese","source":"análise IA","confidence":0.5,"note":"nota"}],"recommendation":"recomendação conservadora final"}}` },
-        { role: "user", content: `## Fatos\n${facts}\n## Legislação\n${JSON.stringify(r.applicableLaw?.map((l) => l.diploma + " " + l.numero))}\n## Viabilidade\n${JSON.stringify(r.viability)}\n## Lacunas\n${JSON.stringify(r.gaps)}` },
-      ],
-      thinking: { type: "disabled" }, temperature: 0.5, max_tokens: 1000,
+        { role: "user", content: `## Fatos\n${facts}\n## Legislação\n${JSON.stringify(r.applicableLaw?.map((l) => l.diploma + " " + l.numero))}\n## Viabilidade\n${JSON.stringify(r.viability)}\n## Lacunas\n${JSON.stringify(r.gaps)}\n## Cobertura da pesquisa\n${JSON.stringify(r.researchCoverage)}\nSe researchCoverage.complete=false, não trate a conclusão como segura e destaque o que falta.` },
+      ], temperature: 0.5, max_tokens: 1000,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
     if (m) { const p = JSON.parse(m[0]); r.strategy = p.strategy; }
     tok(c); steps[7].status = "done"; steps[7].result = r.strategy;
   } catch (e) { steps[7].status = "error"; steps[7].error = e instanceof Error ? e.message : "Erro"; r.strategy = { proceduralPath: "", immediateActions: [], documentsToCollect: [], risks: [], recommendation: "Análise indisponível" }; }
 
-  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { title, totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length } });
-  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: `Análise cerebral: ${title}`, metadata: { totalTokens: tokens, caseId: body.caseId } });
+  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { title, totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length, researchComplete: r.researchCoverage?.complete ?? false, researchMissing: r.researchCoverage?.missing ?? [] }, userId: authUser.uid });
+  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: `Análise cerebral: ${title}`, metadata: { totalTokens: tokens, caseId: body.caseId }, userId: authUser.uid });
 
   // ── Persistir análise (memória jurídica por processo) ──────────────────
   if (body.caseId) {
@@ -258,7 +315,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const caseId = url.searchParams.get("caseId") || "default-case";
+  const caseId = (url.searchParams.get("caseId") || "").trim();
+  if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(caseId, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   const analyses = await db.brainAnalysis.findMany({
     where: { caseId },

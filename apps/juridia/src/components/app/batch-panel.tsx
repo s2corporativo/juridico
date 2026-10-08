@@ -1,7 +1,7 @@
 "use client";
 
 // BatchPanel — Geração em LOTE com aprovação da 1ª minuta como molde
-// (paridade MinutaIA). Fluxo:
+// . Fluxo:
 //   1. O advogado cola N casos (blocos separados por ---, cada linha
 //      "campo: valor" — aceita rótulo do template ou a própria chave).
 //   2. Gera a minuta do CASO 1 e permite revisar/editar.
@@ -14,7 +14,7 @@
 // servidor continua sendo a única fonte de verdade (auth, anonimização,
 // telemetria e persistência por caso).
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TemplateDTO, GenerateMinutaResponse } from "@/lib/types";
+import { MAX_BATCH_CASES, parseBatchCases } from "@/lib/batch";
 import { useAppStore } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -35,15 +36,6 @@ import {
   PencilLine,
 } from "lucide-react";
 
-const MAX_BATCH_CASES = 10;
-
-interface ParsedCase {
-  index: number;
-  title?: string;
-  fields: Record<string, string>;
-  raw: string;
-}
-
 interface BatchResult {
   label: string;
   ok: boolean;
@@ -53,62 +45,6 @@ interface BatchResult {
   tokens?: number;
   violations?: number;
   degraded?: boolean;
-}
-
-// Normaliza para comparação de rótulos: minúsculas, sem acentos, sem pontuação
-function norm(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
-/** Faz o parse do texto colado em casos; mapeia "rótulo: valor" para campos do template */
-export function parseBatchCases(text: string, template: TemplateDTO): { cases: ParsedCase[]; errors: string[] } {
-  const errors: string[] = [];
-  const blocks = text
-    .split(/^\s*-{3,}\s*$/m)
-    .map((b) => b.trim())
-    .filter(Boolean);
-
-  const keyByNorm = new Map<string, string>(); // norm(key|label) -> key
-  for (const f of template.fields) {
-    keyByNorm.set(norm(f.key), f.key);
-    keyByNorm.set(norm(f.label), f.key);
-  }
-  const titleAliases = new Set(["titulo", "title", "nomedaminuta"]);
-
-  const cases: ParsedCase[] = [];
-  blocks.forEach((block, i) => {
-    const fields: Record<string, string> = {};
-    let title: string | undefined;
-    let matched = 0;
-    for (const line of block.split("\n")) {
-      const m = line.match(/^\s*([^:]{1,60}?)\s*:\s*(.+)$/);
-      if (!m) continue;
-      const labelNorm = norm(m[1]);
-      const value = m[2].trim();
-      if (!value) continue;
-      if (titleAliases.has(labelNorm)) {
-        title = value;
-        continue;
-      }
-      const key = keyByNorm.get(labelNorm);
-      if (key) {
-        fields[key] = fields[key] ? `${fields[key]}; ${value}` : value;
-        matched++;
-      } else {
-        errors.push(`Caso ${i + 1}: campo "${m[1]}" não existe no template — linha ignorada.`);
-      }
-    }
-    if (matched === 0 && !title) {
-      errors.push(`Caso ${i + 1}: nenhuma linha "campo: valor" reconhecida — bloco ignorado.`);
-      return;
-    }
-    cases.push({ index: i, title, fields, raw: block.slice(0, 120) });
-  });
-  return { cases, errors };
 }
 
 export function BatchPanel({
@@ -136,6 +72,9 @@ export function BatchPanel({
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<BatchResult[]>([]);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [paused, setPaused] = useState(false);
+  const pauseRef = useRef(false);
+  const cancelRef = useRef(false);
 
   const parsed = useMemo(() => parseBatchCases(casesText, template), [casesText, template]);
   const cases = parsed.cases.slice(0, MAX_BATCH_CASES);
@@ -195,10 +134,17 @@ export function BatchPanel({
       return;
     }
     setBusy(true);
+    setPaused(false);
+    pauseRef.current = false;
+    cancelRef.current = false;
     setPhase("batch");
     setProgress({ current: 0, total: rest.length });
     const acc: BatchResult[] = [];
     for (let i = 0; i < rest.length; i++) {
+      while (pauseRef.current && !cancelRef.current) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      if (cancelRef.current) break;
       const c = rest[i];
       try {
         const data = await callGenerate({
@@ -231,9 +177,12 @@ export function BatchPanel({
       setProgress({ current: i + 1, total: rest.length });
     }
     setBusy(false);
+    setPaused(false);
     const okCount = acc.filter((r) => r.ok).length;
     toast({
-      title: `Lote concluído: ${okCount}/${rest.length} minutas geradas`,
+      title: cancelRef.current
+        ? `Lote interrompido: ${okCount} minuta(s) gerada(s)`
+        : `Lote concluído: ${okCount}/${rest.length} minutas geradas`,
       description: "Todas vinculadas ao mesmo lote (batchId).",
     });
   }
@@ -343,6 +292,31 @@ export function BatchPanel({
           </CardHeader>
           <CardContent className="space-y-3">
             <Progress value={progress.total ? (progress.current / progress.total) * 100 : 0} />
+            {busy && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    pauseRef.current = !pauseRef.current;
+                    setPaused(pauseRef.current);
+                  }}
+                >
+                  {paused ? "Continuar lote" : "Pausar lote"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => {
+                    cancelRef.current = true;
+                    pauseRef.current = false;
+                    setPaused(false);
+                  }}
+                >
+                  Interromper lote
+                </Button>
+              </div>
+            )}
             <ul className="space-y-1.5">
               {results.map((r, i) => (
                 <li key={i} className="flex items-center gap-2 text-xs">

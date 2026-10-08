@@ -1,16 +1,26 @@
 {
-  "name": "nextjs_tailwind_shadcn_ts",
-  "version": "0.2.1",
+  "name": "@atlas/juridico-intelligence",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
-    "db:push": "prisma db push --accept-data-loss",
+    "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "skills:bootstrap": "bun scripts/bootstrap-legal-skills-2000.ts",
+    "embeddings:backfill": "bun scripts/backfill-legal-embeddings.ts",
+    "atlas:knowledge:import": "bun scripts/import-atlas-knowledge.ts",
+    "atlas:knowledge:embeddings": "bun scripts/backfill-atlas-knowledge-embeddings.ts",
+    "atlas:legal-sources:materialize": "bun scripts/materialize-atlas-legal-sources.ts",
+    "rag:smoke": "bun scripts/smoke-hybrid-rag.ts",
+    "smoke:agentic": "bun scripts/smoke-agentic-flow.ts",
+    "smoke:molde": "bun scripts/smoke-molde.ts",
+    "smoke:batch": "bun scripts/smoke-batch.ts",
+    "routes:audit": "bun scripts/audit-routes.ts --check"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
@@ -49,5 +59,6 @@
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5"
-  }
+  },
+  "description": "Motor de inteligência jurídica do Atlas Jurídico"
 }

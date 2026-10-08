@@ -1,7 +1,7 @@
 "use client";
 
 // PaginatedPreview — visualização PAGINADA da minuta em páginas A4 com
-// timbrado (paridade MinutaIA: "editor de documento com páginas/timbrado").
+// timbrado com paginação visual.
 //
 // A paginação na tela é uma ESTIMATIVA (src/lib/paginate.ts); a paginação REAL
 // na impressão/PDF é do navegador via @page. O timbrado deriva do perfil do

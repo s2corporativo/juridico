@@ -4,11 +4,11 @@ import express, { type Express, type Request, type Response } from "express";
 import { Server as SocketIOServer, type Socket } from "socket.io";
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
-import { sdk } from "../_core/sdk";
+import { verifySession } from "../_core/session";
 import * as db from "../db";
 
 /**
- * Serviço de notificações em tempo real (WebSocket) do Atlas Forense.
+ * Serviço de notificações em tempo real (WebSocket) do Atlas Jurídico.
  *
  * Arquitetura de segurança (Task 12):
  * - Porta interna FIXA (default 3003, env NOTIFICATION_SERVICE_PORT), sempre em loopback
@@ -374,7 +374,7 @@ export async function startNotificationService(
           ? authCandidate
           : undefined;
 
-      const session = await sdk.verifySession(cookieToken ?? bearerToken);
+      const session = await verifySession(cookieToken ?? bearerToken);
       if (!session) {
         logger.warn(`[Realtime] auth:reject socket=${socket.id} motivo=sessao_invalida`);
         next(new Error("unauthorized"));

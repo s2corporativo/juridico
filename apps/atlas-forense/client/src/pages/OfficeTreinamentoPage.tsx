@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 const MODULOS = [
-  { icone: Landmark, titulo: "Atlas Forense (Home)", texto: "Jurimetria pública do JEC em Belo Horizonte e Betim: censo, amostra concreta e tempo médio observado por unidade julgadora." },
+  { icone: Landmark, titulo: "Atlas Jurídico (Home)", texto: "Jurimetria pública do JEC em Belo Horizonte e Betim: censo, amostra concreta e tempo médio observado por unidade julgadora." },
   { icone: Users, titulo: "Clientes", texto: "Cadastro e dossiê do cliente: matérias, CNJs, atendimentos e histórico — base operacional do escritório." },
   { icone: BellRing, titulo: "Comunicações", texto: "Caixa única alimentada pelo Conector DJEN (OAB/UF) e por registros manuais, com sanitização LGPD e motor de prazos." },
   { icone: BookOpenCheck, titulo: "Jurisprudência", texto: "Acervo do escritório: provedores oficiais (STJ Dados Abertos, LexML) e registro manual auditável de julgados." },
@@ -126,7 +126,7 @@ const FAQ = [
   { pergunta: "O conector de jurisprudência retornou erro 403 no catálogo do STJ. É defeito?", resposta: "Não. O catálogo Dados Abertos do STJ pode aplicar bloqueio anti-automação (HTTP 403). O sistema degrada com elegância: registra o diagnóstico por provedor e segue operando com LexML e registro manual. Em ambiente sem acesso à rede judicial (DNS bloqueado), todas as coletas externas falham com \"fetch failed\" — comportamento esperado." },
   { pergunta: "A memória de cálculo pode substituir a conferência humana?", resposta: "Não. A memória é auditável e cita a base normativa de cada passo, mas feriados locais e portarias de suspensão do tribunal devem ser conferidos no calendário oficial (CPC, art. 216). O prazo calculado é apoio à decisão, não decisão." },
   { pergunta: "Posso editar o prazo calculado manualmente?", resposta: "O prazo declarado no teor tem prioridade e o padrão do escritório só entra como fallback. Ajustes de interpretação (por exemplo, prazo em dobro comprovado) são feitos na conferência humana e registrados nos atendimentos da matéria." },
-  { pergunta: "O sistema contém dados fictícios ou de demonstração?", resposta: "Não. O Atlas Forense opera apenas com dados reais: cadastro próprio do escritório, comunicações efetivamente recebidas pelo conector DJEN e julgados de fonte declarada (conectores oficiais ou registro manual auditável). Nenhum dado fictício é gerado pelo sistema — a política completa está em docs/politica-de-dados.md." },
+  { pergunta: "O sistema contém dados não produtivos?", resposta: "Não. O Atlas Jurídico opera apenas com dados operacionais e fontes controladas: cadastro próprio do escritório, comunicações efetivamente recebidas pelo conector DJEN e julgados de fonte declarada (conectores oficiais ou registro manual auditável). Nenhum dado fictício é gerado pelo sistema — a política completa está em docs/politica-de-dados.md." },
 ];
 
 const CHAVE_CHECKLIST = "atlas-treinamento-checklist-v1";
@@ -161,7 +161,7 @@ export default function OfficeTreinamentoPage() {
           <GraduationCap size={20} />
           <div>
             <h1>Treinamento do Escritório</h1>
-            <p>Guia operacional do Atlas Forense: módulos, fluxo de trabalho, motor de prazos e verificação de aprendizado</p>
+            <p>Guia operacional do Atlas Jurídico: módulos, fluxo de trabalho, motor de prazos e verificação de aprendizado</p>
           </div>
         </div>
         <nav className="office-nav">
@@ -169,12 +169,12 @@ export default function OfficeTreinamentoPage() {
           <a href="/escritorio/comunicacoes">Comunicações</a>
           <a href="/escritorio/jurisprudencia">Jurisprudência</a>
           <a href="/escritorio/treinamento" className="active">Treinamento</a>
-          <a href="/">Atlas Forense</a>
+          <a href="/">Atlas Jurídico</a>
         </nav>
       </header>
 
       <section className="office-panel">
-        <h2><Landmark size={16} /> Como o Atlas Forense se organiza</h2>
+        <h2><Landmark size={16} /> Como o Atlas Jurídico se organiza</h2>
         <p className="office-panel-sub">
           Plataforma de dados judiciais do JEC BH e Betim: uma camada pública de jurimetria
           (Atlas, Compêndio, RMBH, Nacional) e uma camada operacional do escritório
@@ -282,7 +282,7 @@ export default function OfficeTreinamentoPage() {
         </div>
         {respondidas === QUIZ.length && (
           <p className="trein-resultado" role="status">
-            Pontuação final: {acertos}/{QUIZ.length}. {acertos === QUIZ.length ? "Excelente — equipe pronta para operar o Atlas Forense." : "Revise os módulos indicados e refaça o quiz."}
+            Pontuação final: {acertos}/{QUIZ.length}. {acertos === QUIZ.length ? "Excelente — equipe pronta para operar o Atlas Jurídico." : "Revise os módulos indicados e refaça o quiz."}
           </p>
         )}
       </section>

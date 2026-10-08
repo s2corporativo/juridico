@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { canAccessCase, canAccessClient } from "@/lib/case_access";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +19,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const status = url.searchParams.get("status");
   const area = url.searchParams.get("area");
 
-  const where: { clientId?: string; status?: string; area?: string } = {};
-  if (clientId) where.clientId = clientId;
+  const where: Prisma.CaseWhereInput = authUser.role === "admin" ? {} : { client: { userId: authUser.uid } };
+  if (clientId) {
+    if (!(await canAccessClient(clientId, authUser))) return NextResponse.json({ error: "Cliente não encontrado ou sem acesso" }, { status: 404 });
+    where.clientId = clientId;
+  }
   if (status) where.status = status;
   if (area) where.area = area;
 
@@ -80,6 +85,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   if (!body.clientId) return NextResponse.json({ error: "clientId obrigatório" }, { status: 400 });
+  if (!(await canAccessClient(body.clientId, authUser))) return NextResponse.json({ error: "Cliente não encontrado ou sem acesso" }, { status: 404 });
   if (!body.title?.trim()) return NextResponse.json({ error: "Título do caso obrigatório" }, { status: 400 });
 
   const newCase = await db.case.create({
@@ -102,6 +108,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     resource: "case",
     resourceId: newCase.id,
     metadata: { title: newCase.title, area: newCase.area, responsavel: newCase.responsavel },
+    userId: authUser.uid,
   });
 
   return NextResponse.json({
@@ -141,6 +148,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   if (!body.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+  if (!(await canAccessCase(body.id, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
 
   const data: Record<string, unknown> = {};
   if (body.title !== undefined) data.title = body.title.trim();
@@ -163,6 +171,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     resource: "case",
     resourceId: body.id,
     metadata: { title: updated.title, status: updated.status, resultado: updated.resultado },
+    userId: authUser.uid,
   });
 
   return NextResponse.json({ ok: true });
@@ -179,6 +188,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
+  if (!(await canAccessCase(id, authUser))) return NextResponse.json({ error: "Caso não encontrado ou sem acesso" }, { status: 404 });
   const c = await db.case.findUnique({ where: { id }, select: { title: true } });
   await db.case.delete({ where: { id } });
 
@@ -187,6 +197,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     resource: "case",
     resourceId: id,
     metadata: { title: c?.title },
+    userId: authUser.uid,
   });
 
   return NextResponse.json({ ok: true });

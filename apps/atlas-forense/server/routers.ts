@@ -6,8 +6,8 @@ import { comparePublicRelatedDecisions } from "./compendium-ai-compare";
 import { previewControlledIngestion } from "./compendium.ingestion";
 import { checkDataJudCoverage, DATAJUD_ALIASES, getDataJudConnectionStatus, lookupDataJudByProcess, NATIONAL_DATAJUD_ALIASES } from "./datajud";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
-import { getEjcIntegrationStatus } from "@shared/ejc-integration";
-import { getEjcSsoReadiness } from "./ejc-sso-config";
+import { getAtlasIntegrationStatus } from "@shared/integration";
+import { getAtlasSsoReadiness } from "./sso-config";
 import { REVIEW_DECISIONS, REVIEW_PRIORITIES, REVIEW_STATUSES } from "./evidence-review";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -39,7 +39,6 @@ import {
 const sourceStatusSchema = z.enum(["official_confirmed", "official_without_number", "attachment_reviewed", "secondary_pending", "movement_observed", "search_thematic"]);
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -66,17 +65,9 @@ export const appRouter = router({
     coverage: adminProcedure.input(z.object({ aliases: z.array(z.enum(NATIONAL_DATAJUD_ALIASES)).min(1).max(NATIONAL_DATAJUD_ALIASES.length).optional() })).mutation(({ input }) => checkDataJudCoverage(input.aliases)),
   }),
   integration: router({
-    ejcStatus: publicProcedure.query(() => {
-      const sso = getEjcSsoReadiness();
-      const base = getEjcIntegrationStatus();
-      // Estado de runtime sobrepõe o manifest estático: a ponte só aparece como
-      // ativa quando o ambiente completo está presente e aprovado (fail-closed).
-      return {
-        ...base,
-        mode: sso.enabled ? ("active" as const) : ("pending_approval" as const),
-        authBridgeMode: sso.enabled ? ("enabled" as const) : ("disabled" as const),
-        sso,
-      };
+    ssoStatus: publicProcedure.query(() => {
+      const sso = getAtlasSsoReadiness();
+      return { ...getAtlasIntegrationStatus(), sso };
     }),
   }),
   office: router({

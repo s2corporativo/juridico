@@ -21,6 +21,7 @@ import {
   Brain,
   Layers,
   FileEdit,
+  FileCheck2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ import { useAppStore } from "@/lib/store";
 import type { TemplateDTO, SkillDTO, GenerateMinutaResponse } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
 import { BatchPanel } from "./batch-panel";
+import { MoldeMode } from "./molde-mode";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
@@ -69,10 +71,10 @@ export function Generator() {
     toggleSkill,
     setAppTab,
     setCurrentDocId,
-    user,
     brainContext,
     setBrainContext,
     writingStyle,
+    currentCaseId,
   } = useAppStore();
 
   const [templates, setTemplates] = useState<TemplateDTO[]>([]);
@@ -84,8 +86,20 @@ export function Generator() {
     "idle" | "prepare" | "outline" | "draft" | "review" | "finalize"
   >("idle");
   const [liveDraft, setLiveDraft] = useState("");
-  const [mode, setMode] = useState<"individual" | "lote">("individual");
+  const [mode, setMode] = useState<"individual" | "agentic" | "molde" | "lote">("agentic");
+  const [moldBaseContent, setMoldBaseContent] = useState("");
   const [result, setResult] = useState<GenerateMinutaResponse | null>(null);
+  const [agentRunId, setAgentRunId] = useState<string | null>(null);
+  const [agentPlan, setAgentPlan] = useState<{
+    resumo?: string;
+    perguntas?: string[];
+    estrategia?: string;
+    roteiro?: { titulo: string; objetivo: string; fontesNecessarias?: string[] }[];
+    riscos?: string[];
+    pesquisaInsuficiente?: string[];
+  } | null>(null);
+  const [agentResearch, setAgentResearch] = useState<unknown[]>([]);
+  const [agentAnswers, setAgentAnswers] = useState<Record<string, string>>({});
   const liveRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
@@ -256,6 +270,90 @@ export function Generator() {
     }
   }
 
+  async function planAgentic() {
+    if (!current) return;
+    if (!Object.values(fields).some((v) => v && v.trim())) {
+      toast({ title: "Preencha ao menos um campo do caso", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    setResult(null);
+    setAgentPlan(null);
+    setAgentResearch([]);
+    setStep("prepare");
+    try {
+      const request = {
+        templateSlug: current.slug,
+        fields,
+        skillSlugs: selectedSkillSlugs,
+        title: title || undefined,
+        brainContext: brainContext || undefined,
+        writingStyle: writingStyle || undefined,
+        caseId: currentCaseId || undefined,
+      };
+      const res = await fetch("/api/generate-minuta/agentic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase: "plan", request }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setAgentRunId(data.runId);
+      setAgentPlan(data.plan || null);
+      setAgentResearch(Array.isArray(data.research) ? data.research : []);
+      setStep("idle");
+      toast({
+        title: "Plano agêntico pronto para revisão",
+        description: "Revise estratégia, lacunas e pesquisa antes de autorizar a redação.",
+      });
+    } catch (e) {
+      setStep("idle");
+      toast({ title: "Falha no planejamento agêntico", description: e instanceof Error ? e.message : undefined, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function approveAgenticAndDraft() {
+    if (!current || !agentRunId || !agentPlan) return;
+    setLoading(true);
+    setStep("draft");
+    try {
+      const request = {
+        templateSlug: current.slug,
+        fields,
+        skillSlugs: selectedSkillSlugs,
+        title: title || undefined,
+        brainContext: brainContext || undefined,
+        writingStyle: writingStyle || undefined,
+        caseId: currentCaseId || undefined,
+      };
+      const res = await fetch("/api/generate-minuta/agentic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase: "draft", runId: agentRunId, request, approvedPlan: agentPlan, answers: agentAnswers }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      const generated = data.result as GenerateMinutaResponse;
+      setResult(generated);
+      setCurrentDocId(generated.document.id);
+      const blocked = generated.validation?.violations?.some((v) => v.severity === "error") || generated.pipeline?.degraded;
+      if (blocked) {
+        toast({ title: "Minuta gerada com bloqueios de revisão", description: "Abra o relatório de conformidade antes de homologar.", variant: "destructive" });
+      } else {
+        toast({ title: "Minuta agêntica concluída", description: "Plano, pesquisa, redação e gates concluídos." });
+        setAppTab("editor");
+      }
+      setStep("idle");
+    } catch (e) {
+      setStep("idle");
+      toast({ title: "Falha na redação agêntica", description: e instanceof Error ? e.message : undefined, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const stepLabels: Record<string, string> = {
     prepare: "1. Pseudonimizando, roteando habilidades e fontes...",
     outline: "2. Estrategista: planejando a peça...",
@@ -289,11 +387,7 @@ export function Generator() {
             anonimização local.
           </p>
         </div>
-        {user && (
-          <Badge variant="secondary" className="text-xs">
-            Plano {user.plan === "individual_2" ? "Individual II" : (user.plan ?? "não informado")}
-          </Badge>
-        )}
+        
       </div>
 
       {/* Alternância de modo: individual × lote (molde) */}
@@ -305,6 +399,22 @@ export function Generator() {
         >
           <FileEdit className="mr-1.5 h-4 w-4" />
           Individual
+        </Button>
+        <Button
+          variant={mode === "agentic" ? "default" : "outline"}
+          size="sm"
+          onClick={() => { setMode("agentic"); setAgentPlan(null); setAgentRunId(null); }}
+        >
+          <Brain className="mr-1.5 h-4 w-4" />
+          Agêntico
+        </Button>
+        <Button
+          variant={mode === "molde" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMode("molde")}
+        >
+          <FileEdit className="mr-1.5 h-4 w-4" />
+          Molde
         </Button>
         <Button
           variant={mode === "lote" ? "default" : "outline"}
@@ -465,7 +575,84 @@ export function Generator() {
         </CardContent>
       </Card>
 
-      {mode === "lote" ? (
+      {mode === "agentic" && agentPlan && (
+        <Card className="mb-5 border-primary/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Brain className="h-4 w-4 text-primary" />
+              Plano agêntico — aprovação obrigatória
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {agentPlan.resumo && <div><strong>Resumo:</strong> {agentPlan.resumo}</div>}
+            {agentPlan.estrategia && <div><strong>Estratégia:</strong> {agentPlan.estrategia}</div>}
+            {!!agentPlan.pesquisaInsuficiente?.length && (
+              <div className="rounded-md border border-amber-500/50 bg-amber-500/5 p-3 text-xs">
+                <strong>Pesquisa ainda insuficiente:</strong>
+                <ul className="mt-1 list-disc pl-5">{agentPlan.pesquisaInsuficiente.map((x, i) => <li key={i}>{x}</li>)}</ul>
+              </div>
+            )}
+            {!!agentPlan.roteiro?.length && (
+              <div>
+                <strong>Roteiro:</strong>
+                <ol className="mt-1 list-decimal space-y-1 pl-5 text-xs">
+                  {agentPlan.roteiro.map((s, i) => <li key={i}><b>{s.titulo}</b> — {s.objetivo}</li>)}
+                </ol>
+              </div>
+            )}
+            {!!agentPlan.perguntas?.length && (
+              <div className="space-y-2">
+                <strong>Perguntas/lacunas:</strong>
+                {agentPlan.perguntas.map((q, i) => (
+                  <div key={i}>
+                    <Label className="text-xs">{q}</Label>
+                    <Textarea rows={2} value={agentAnswers[String(i)] || ""} onChange={(e) => setAgentAnswers((prev) => ({ ...prev, [String(i)]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground">
+              Pesquisa iterativa executada em {agentResearch.length} questão(ões). O texto só será redigido após sua aprovação.
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={approveAgenticAndDraft} disabled={loading}>
+                <FileCheck2 className="mr-2 h-4 w-4" />
+                Aprovar plano e redigir
+              </Button>
+              <Button variant="outline" onClick={() => { setAgentPlan(null); setAgentRunId(null); setAgentAnswers({}); }} disabled={loading}>
+                Refazer planejamento
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {mode === "molde" ? (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Documento-base</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Cole a minuta ou peça que deve ser preservada. A IA propõe apenas alterações pontuais; nenhuma mudança é aplicada sem sua aprovação.
+              </p>
+              <Textarea
+                rows={18}
+                className="font-mono text-xs"
+                value={moldBaseContent}
+                onChange={(e) => setMoldBaseContent(e.target.value)}
+                placeholder="Cole aqui o documento-base..."
+              />
+            </CardContent>
+          </Card>
+          <MoldeMode
+            baseContent={moldBaseContent}
+            templateName={current?.name || "documento jurídico"}
+            onApply={setMoldBaseContent}
+          />
+        </div>
+      ) : mode === "lote" ? (
         current ? (
           <BatchPanel
             template={current}
@@ -673,11 +860,11 @@ export function Generator() {
                 <Button
                   className="w-full"
                   size="lg"
-                  onClick={generate}
+                  onClick={mode === "agentic" ? planAgentic : generate}
                   disabled={!current}
                 >
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  Gerar minuta com IA
+                  {mode === "agentic" ? <Brain className="mr-2 h-4 w-4" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                  {mode === "agentic" ? "Planejar e pesquisar antes de redigir" : "Gerar minuta com IA"}
                 </Button>
               )}
             </CardContent>

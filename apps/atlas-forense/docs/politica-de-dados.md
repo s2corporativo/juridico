@@ -1,8 +1,8 @@
-# Política de Dados Reais — Atlas Forense
+# Política de Dados Reais — Atlas Jurídico
 
 ## Princípio
 
-O Atlas Forense (Painel JEC BH e Betim) opera **exclusivamente com dados reais**.
+O Atlas Jurídico (Painel JEC BH e Betim) opera **exclusivamente com dados reais**.
 Nenhum registro fictício, de demonstração ou sintético pode existir no banco de
 dados, ser gerado pelo sistema ou ser introduzido por scripts. Todo registro
 visível na interface é um fato jurídico real sob responsabilidade do escritório
@@ -83,7 +83,7 @@ Verificação estrutural (esperado: zero colunas):
 
 ```sql
 SELECT COUNT(*) FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = 'atlas_ejc' AND COLUMN_NAME = 'isDemoData';
+WHERE TABLE_SCHEMA = 'atlas_juridico' AND COLUMN_NAME = 'isDemoData';
 ```
 
 ## O que foi purgado na Task 11
@@ -106,5 +106,5 @@ teses, 4 autoridades, 6 fontes de evidência) e trilha de auditoria.
 ## Regra de ouro
 
 Se um dado não representa um fato real — cliente real, comunicação real, julgado
-real com fonte declarada — ele não entra no Atlas Forense. Exemplos e materiais
+real com fonte declarada — ele não entra no Atlas Jurídico. Exemplos e materiais
 de treinamento pertencem a testes, à página Treinamento e à documentação.

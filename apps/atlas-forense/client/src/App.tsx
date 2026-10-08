@@ -1,7 +1,7 @@
-/** Atlas Forense: jurimetria pública e Compêndio Jurídico Nacional. */
+/** Atlas Jurídico — dados, pesquisa e inteligência jurídica. */
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ejcIntegrationManifest } from "@shared/ejc-integration";
+import { atlasIntegrationManifest } from "@shared/integration";
 import { Database } from "lucide-react";
 import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -25,11 +25,11 @@ const OfficeJurisprudenciaPage = lazy(() => import("@/pages/OfficeJurisprudencia
 const OfficeTreinamentoPage = lazy(() => import("@/pages/OfficeTreinamentoPage"));
 
 function PageLoader() {
-  return <main className="compendium-loading"><Database size={24} /><p>Carregando módulo do Atlas Forense…</p></main>;
+  return <main className="compendium-loading"><Database size={24} /><p>Carregando módulo do Atlas Jurídico…</p></main>;
 }
 
 export default function App() {
-  const routes = Object.fromEntries(ejcIntegrationManifest.modules.map(module => [module.key, module.route])) as Record<string, string>;
+  const routes = Object.fromEntries(atlasIntegrationManifest.modules.map(module => [module.key, module.route])) as Record<string, string>;
   const [location] = useLocation();
   const isAtlasHome = location === routes.atlas || location === "/";
   // Notificações em tempo real (WebSocket autenticado, rota fixa /socket.io/).

@@ -1,8 +1,8 @@
-// Autenticação do JuridIA — sessão local + guards de rota.
+// Autenticação do Atlas Jurídico — sessão local + guards de rota.
 //
 // Modelo de segurança:
 // - Senha: scrypt (N=16384) com salt aleatório por usuário, comparação timing-safe.
-// - Sessão: cookie HttpOnly `ejc_session` = base64url(payload).HMAC-SHA256.
+// - Sessão: cookie HttpOnly `juridia_session` = base64url(payload).HMAC-SHA256.
 //   Payload: { uid, email, role, iat, exp } — assinado com JURIDIA_SESSION_SECRET.
 // - Fail-closed: em produção, JURIDIA_SESSION_SECRET ausente DESLIGA o login e
 //   todas as rotas protegidas (nunca usa segredo padrão conhecido).
@@ -16,7 +16,7 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-export const SESSION_COOKIE = "ejc_session";
+export const SESSION_COOKIE = "juridia_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 dias
 
 export const ROLES = ["admin", "advogado", "user", "promotor", "juiz"] as const;

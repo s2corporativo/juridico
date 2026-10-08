@@ -1,7 +1,7 @@
-// Seed do administrador real do JuridIA (uso operacional, não demonstração).
+// Seed operacional do administrador do JuridIA.
 //
 // Uso:
-//   EJC_ADMIN_EMAIL="ops@dominio.adv.br" EJC_ADMIN_PASSWORD="..." EJC_ADMIN_NAME="..." \
+//   JURIDIA_ADMIN_EMAIL="ops@dominio.adv.br" JURIDIA_ADMIN_PASSWORD="..." JURIDIA_ADMIN_NAME="..." \
 //     bunx tsx scripts/seed-admin.ts
 //
 // - Não cria dados fictícios (política de dados do projeto).
@@ -19,16 +19,16 @@ function hashPassword(password: string): string {
 }
 
 async function main() {
-  const email = process.env.EJC_ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.EJC_ADMIN_PASSWORD || "";
-  const name = process.env.EJC_ADMIN_NAME?.trim() || null;
+  const email = process.env.JURIDIA_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.JURIDIA_ADMIN_PASSWORD || "";
+  const name = process.env.JURIDIA_ADMIN_NAME?.trim() || null;
 
   if (!email || !password) {
-    console.error("Uso: EJC_ADMIN_EMAIL=... EJC_ADMIN_PASSWORD=... bunx tsx scripts/seed-admin.ts");
+    console.error("Uso: JURIDIA_ADMIN_EMAIL=... JURIDIA_ADMIN_PASSWORD=... bunx tsx scripts/seed-admin.ts");
     process.exit(1);
   }
   if (password.length < 12) {
-    console.error("EJC_ADMIN_PASSWORD deve ter ao menos 12 caracteres.");
+    console.error("JURIDIA_ADMIN_PASSWORD deve ter ao menos 12 caracteres.");
     process.exit(1);
   }
 

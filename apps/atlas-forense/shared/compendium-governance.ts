@@ -2,7 +2,7 @@ export const COMPENDIUM_MODULES = [
   {
     id: "atlas",
     ordinal: "01",
-    title: "Atlas Forense",
+    title: "Atlas Jurídico",
     description: "Camada jurimétrica para censo, recortes territoriais, séries mensais e exportações metodológicas.",
     evidence: "Censo agregado e dados públicos estruturados",
     route: "/",

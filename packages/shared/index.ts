@@ -1,7 +1,6 @@
-// @juridico/shared — unified contract package for the Atlas Forense + JuridIA (EJC) monorepo.
-// Re-exports all shared modules so consumers can do: import { ejcIntegrationManifest } from "@juridico/shared"
+// Contratos compartilhados do Atlas Jurídico.
 
-export * from "./ejc-integration";
+export * from "./integration";
 export * from "./prazos-module";
 export * from "./citation-types";
 export * from "./evidence-types";
