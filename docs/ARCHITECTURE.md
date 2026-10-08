@@ -22,12 +22,12 @@ A integração entre as duas aplicações deve ocorrer por contratos explícitos
 
 ## Snapshot Graphify
 
-Mapa regenerado sobre a árvore consolidada no commit `e374a810`:
+Mapa final da árvore de código consolidada no commit `e4d66ee8` (os commits posteriores desta rodada alteram apenas documentação):
 
-- **2.575 nós**
-- **5.855 relações**
-- **139 comunidades**
-- **396 arquivos de código analisados**
+- **2.559 nós**
+- **5.759 relações**
+- **134 comunidades**
+- **391 arquivos de código analisados**
 - **26 arquivos não-código excluídos por política**
 - **44 arquivos de código sem símbolos extraíveis**
 - **0 ciclos de importação detectados**
@@ -36,8 +36,8 @@ Hubs de maior impacto:
 
 | Símbolo | Relações |
 | --- | ---: |
-| `requireAuth` | 127 |
-| `logAuditEvent` | 87 |
+| `requireAuth` | 113 |
+| `logAuditEvent` | 77 |
 | `db` | 61 |
 | `getDb` | 58 |
 | `AppRouter` | 54 |
@@ -50,15 +50,16 @@ Hubs de maior impacto:
 
 Superfície operacional consolidada:
 
-- **56 rotas API** auditadas;
-- **6 tarefas principais** no menu do advogado;
-- **3 telas contextuais**: Editor, Cálculos e Visual Law;
-- chamadas de IA diretas permitidas somente em `ai_gateway.ts`.
+- **50 rotas API** auditadas e categorizadas em `docs/API_SURFACE.md`;
+- **6 tarefas principais** no menu: Início, Analisar, Redigir, Pesquisar, Biblioteca e Governança;
+- **1 tela contextual** na shell: Editor;
+- chamadas diretas a provider são bloqueadas por teste arquitetural fora de `ai_gateway.ts`;
+- geração individual, streaming, agêntica e lote convergem para o pipeline canônico.
 
 Artefatos completos do snapshot são mantidos na VPS em:
 
 ```text
-/opt/atlas-juridico/shared/architecture/e374a810/
+/opt/atlas-juridico/shared/architecture/e4d66ee8/
 ```
 
 Antes de alterar hubs centrais, use `graphify affected`.
