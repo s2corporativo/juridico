@@ -22,28 +22,46 @@ A integração entre as duas aplicações deve ocorrer por contratos explícitos
 
 ## Snapshot Graphify
 
-Mapa regenerado sobre a árvore profissionalizada:
+Mapa regenerado sobre a árvore consolidada no commit `e374a810`:
 
-- **2.588 nós**
-- **5.980 relações**
-- **135 comunidades**
-- **395 arquivos de código analisados**
-- **26 arquivos não-código excluídos do grafo por política**
-- **43 arquivos de código sem símbolos extraíveis**, majoritariamente configuração, scripts e testes simples
+- **2.575 nós**
+- **5.855 relações**
+- **139 comunidades**
+- **396 arquivos de código analisados**
+- **26 arquivos não-código excluídos por política**
+- **44 arquivos de código sem símbolos extraíveis**
+- **0 ciclos de importação detectados**
 
 Hubs de maior impacto:
 
 | Símbolo | Relações |
 | --- | ---: |
-| `requireAuth` | 131 |
-| `logAuditEvent` | 86 |
+| `requireAuth` | 127 |
+| `logAuditEvent` | 87 |
+| `db` | 61 |
 | `getDb` | 58 |
-| `runMinutaPipeline` | 42 |
+| `AppRouter` | 54 |
+| `runMinutaPipeline` | 43 |
 | `Editor` | 36 |
-| `Generator` | 29 |
-| `AppShell` | 21 |
+| `Generator` | 30 |
+| `useAppStore` | 26 |
+| `canAccessCase` | 24 |
+| `BatchPanel` | 18 |
 
-O comando `graphify affected` deve ser usado antes de alterações nesses hubs.
+Superfície operacional consolidada:
+
+- **56 rotas API** auditadas;
+- **6 tarefas principais** no menu do advogado;
+- **3 telas contextuais**: Editor, Cálculos e Visual Law;
+- chamadas de IA diretas permitidas somente em `ai_gateway.ts`.
+
+Artefatos completos do snapshot são mantidos na VPS em:
+
+```text
+/opt/atlas-juridico/shared/architecture/e374a810/
+```
+
+Antes de alterar hubs centrais, use `graphify affected`.
 
 ## Hubs arquiteturais
 
