@@ -16,14 +16,9 @@ import { Editor } from "./editor";
 import { Dashboard } from "./dashboard";
 import { Settings } from "./settings";
 import { Cerebro } from "./cerebro";
-import { Inteligencia } from "./inteligencia";
-import { Assistente } from "./assistente";
 import { CalculadoraJuridica } from "./calculadora-juridica";
-import { Pipeline } from "./pipeline";
-import { Homologacao } from "./homologacao";
 import { VisualLaw } from "./visual-law";
 import { DataJudBusca } from "./datajud-busca";
-import { GrafoSistema } from "./grafo-sistema";
 import { BibliotecaJuridica } from "./biblioteca-juridica";
 
 // Navegação principal orientada às tarefas do advogado. Capacidades técnicas permanecem contextuais.
@@ -77,19 +72,14 @@ export function AppShell() {
       </div>
 
       <div>
-        {appTab === "assistente" && <Assistente />}
         {appTab === "dashboard" && <Dashboard />}
         {appTab === "biblioteca" && <BibliotecaJuridica />}
         {appTab === "cerebro" && <Cerebro />}
-        {appTab === "intelligence" && <Inteligencia />}
-        {appTab === "pipeline" && <Pipeline />}
         {appTab === "generator" && <Generator />}
         {appTab === "editor" && <Editor />}
-        {appTab === "homologacao" && <Homologacao />}
         {appTab === "calculadora" && <CalculadoraJuridica />}
         {appTab === "visuallaw" && <VisualLaw />}
         {appTab === "datajud" && <DataJudBusca />}
-        {appTab === "grafo" && <GrafoSistema />}
         {appTab === "settings" && <Settings />}
       </div>
     </div>

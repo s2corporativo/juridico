@@ -18,19 +18,14 @@ export interface LawyerProfile {
 }
 
 export type AppTab =
-  | "assistente"
   | "dashboard"
   | "biblioteca"
   | "calculadora"
   | "cerebro"
-  | "intelligence"
-  | "pipeline"
   | "generator"
   | "editor"
-  | "homologacao"
   | "visuallaw"
   | "datajud"
-  | "grafo"
   | "settings";
 
 // Aliases de navegação mantêm links antigos compatíveis com a interface consolidada.
@@ -54,9 +49,8 @@ export function resolveAppTab(t: string): AppTab {
 }
 
 const APP_TABS: AppTab[] = [
-  "assistente", "dashboard", "biblioteca", "calculadora", "cerebro",
-  "intelligence", "pipeline", "generator", "editor", "homologacao",
-  "visuallaw", "datajud", "grafo", "settings",
+  "dashboard", "biblioteca", "calculadora", "cerebro",
+  "generator", "editor", "visuallaw", "datajud", "settings",
 ];
 
 interface AppState {
