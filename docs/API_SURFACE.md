@@ -2,6 +2,14 @@
 
 Estado consolidado: **50 rotas HTTP** no JuridIA.
 
+O inventário canônico é validado automaticamente por:
+
+```bash
+bun run routes:audit
+```
+
+Taxonomia automatizada atual: **identity 9 · core 10 · knowledge 8 · office 11 · internal 12**.
+
 A regra é simples: rota pública existe apenas quando há consumidor real, integração externa necessária ou fronteira operacional clara. Motores internos devem permanecer em bibliotecas/serviços, não como wrappers HTTP redundantes.
 
 ## 1. Identidade e infraestrutura — 9
