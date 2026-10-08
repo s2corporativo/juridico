@@ -31,12 +31,13 @@ function category(route: string): string {
   return "internal";
 }
 
-const sourceFiles = walk(SRC).filter((p) => /\\.(ts|tsx)$/.test(p));
+const sourceFiles = walk(SRC).filter((p) => p.endsWith(".ts") || p.endsWith(".tsx"));
 const routes = walk(API)
   .filter((p) => p.endsWith("route.ts"))
   .sort()
   .map((path) => {
-    const route = "/" + relative(join(ROOT, "src", "app"), path).replaceAll("\\", "/").replace(/\\/route\\.ts$/, "");
+    const normalized = relative(join(ROOT, "src", "app"), path).replaceAll("\\", "/");
+    const route = "/" + normalized.slice(0, -"/route.ts".length);
     const source = readFileSync(path, "utf8");
     const methods = [...source.matchAll(/export async function (GET|POST|PUT|PATCH|DELETE)/g)].map((m) => m[1]);
     const refs = sourceFiles
