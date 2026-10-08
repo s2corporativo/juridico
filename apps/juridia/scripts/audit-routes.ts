@@ -46,7 +46,7 @@ const routes = walk(API)
     return { route, category: category(route), methods, refs };
   });
 
-const retired = ["/api/skill-router", "/api/intelligence/ingest-pages", "/api/caso-mapa"];
+const retired = ["/api/skill-router", "/api/intelligence/ingest-pages", "/api/caso-mapa", "/api/julgador-checklist", "/api/valor-causa", "/api/triagem-documento", "/api/vedacao-surpresa", "/api/salvaguardas", "/api/lexvalida/pipeline"];
 const regressions = retired.filter((route) => routes.some((x) => x.route === route));
 const counts = Object.fromEntries(
   ["core", "knowledge", "office", "identity", "internal"].map((key) => [
@@ -63,8 +63,8 @@ if (process.argv.includes("--check")) {
     console.error("Rotas aposentadas reapareceram:", regressions.join(", "));
     process.exit(1);
   }
-  if (routes.length > 56) {
-    console.error(`A superfície de API cresceu de 56 para ${routes.length} rotas; revise antes do merge.`);
+  if (routes.length !== 50) {
+    console.error("A superfície canônica deve ter exatamente 50 rotas; encontrou " + routes.length + ". Revise antes do release.");
     process.exit(1);
   }
 }
