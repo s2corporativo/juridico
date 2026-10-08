@@ -17,7 +17,13 @@ describe("superfície operacional da UI", () => {
     }
   });
 
-  test("estado de navegação mantém apenas tarefas e telas contextuais", () => {
+  test("shell mantém somente Editor como tela contextual renderizada", () => {
+    expect(appIndex).toContain('appTab === "editor"');
+    expect(appIndex).not.toContain('appTab === "calculadora"');
+    expect(appIndex).not.toContain('appTab === "visuallaw"');
+  });
+
+  test("estado de navegação mantém tarefas e capacidades contextuais", () => {
     const typeBlock = store.match(/export type AppTab =([\s\S]*?);/)?.[1] || "";
     for (const old of ["assistente", "intelligence", "pipeline", "homologacao", "grafo"]) {
       expect(typeBlock.includes(`"${old}"`)).toBe(false);
