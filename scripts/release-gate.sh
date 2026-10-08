@@ -35,7 +35,7 @@ log "Atlas Data · build"
 (cd "$ATLAS" && pnpm build)
 
 log "JuridIA · dependências"
-(cd "$JURIDIA" && bun_exec install --frozen-lockfile)
+(cd "$JURIDIA" && bun_exec install --frozen-lockfile --backend=copyfile)
 
 log "JuridIA · Prisma"
 (cd "$JURIDIA" && bun_exec run db:generate)
@@ -44,7 +44,10 @@ log "JuridIA · TypeScript"
 (cd "$JURIDIA" && bun_exec x tsc --noEmit)
 
 log "JuridIA · testes críticos"
-(cd "$JURIDIA" && bun_exec test   tests/gates.test.ts   tests/auth-oidc.test.ts   tests/minuta-pipeline.test.ts   tests/paginate.test.ts   tests/legal-brain-core.test.ts   tests/embedding-retrieval.test.ts   tests/office-skill-catalog.test.ts   tests/document-security.test.ts   tests/molde.test.ts   tests/batch.test.ts   tests/ai-gateway-boundary.test.ts   tests/route-security-boundary.test.ts   tests/atlas-knowledge-bridge.test.ts)
+(cd "$JURIDIA" && bun_exec test   tests/gates.test.ts   tests/auth-oidc.test.ts   tests/minuta-pipeline.test.ts   tests/paginate.test.ts   tests/legal-brain-core.test.ts   tests/embedding-retrieval.test.ts   tests/office-skill-catalog.test.ts   tests/document-security.test.ts   tests/molde.test.ts   tests/batch.test.ts   tests/ai-gateway-boundary.test.ts   tests/route-security-boundary.test.ts   tests/ui-surface.test.ts   tests/atlas-knowledge-bridge.test.ts)
+
+log "JuridIA · inventário de rotas"
+(cd "$JURIDIA" && bun_exec run routes:audit)
 
 log "JuridIA · build de produção"
 (
