@@ -46,9 +46,21 @@ async function main() {
     throw new Error(`caso-molde falhou: ${firstRes.status} ${JSON.stringify(first).slice(0, 400)}`);
   }
 
+  // Falha proposital no meio do lote: deve ficar isolada e não impedir o caso seguinte.
+  const failedRes = await generate(request(token, {
+    ...base,
+    templateSlug: "",
+    title: "Caso inválido do lote",
+    fields: { fatos: "Este item deve falhar isoladamente." },
+  }));
+  const failed = await failedRes.json();
+  if (failedRes.status === 200) {
+    throw new Error("caso inválido deveria falhar sem derrubar o lote");
+  }
+
   const secondRes = await generate(request(token, {
     ...base,
-    title: "Segundo caso do lote",
+    title: "Segundo caso válido do lote",
     moldContent: first.document.generatedContent,
     fields: {
       tipoAcao: "Obrigação de fazer",
@@ -62,7 +74,18 @@ async function main() {
   }));
   const second = await secondRes.json();
   if (secondRes.status !== 200 || !second.document?.id) {
-    throw new Error(`segundo caso falhou: ${secondRes.status} ${JSON.stringify(second).slice(0, 400)}`);
+    throw new Error(`segundo caso válido falhou após erro isolado: ${secondRes.status} ${JSON.stringify(second).slice(0, 400)}`);
+  }
+  for (const [label, item] of [["molde", first], ["segundo", second]] as const) {
+    if (!item.citationGate || typeof item.citationGate.bloquear !== "boolean") {
+      throw new Error(`${label}: Citation Gate ausente`);
+    }
+    if (!item.evidenceGate || typeof item.evidenceGate.bloquear !== "boolean") {
+      throw new Error(`${label}: Evidence Gate ausente`);
+    }
+    if (!item.pipeline || typeof item.pipeline.degraded !== "boolean") {
+      throw new Error(`${label}: telemetria do pipeline ausente`);
+    }
   }
 
   const docs = await db.document.findMany({
@@ -78,6 +101,11 @@ async function main() {
     batchId,
     documents: docs.map((d) => ({ id: d.id, title: d.title, chars: d.generatedContent.length })),
     sameBatch: true,
+    isolatedFailure: { status: failedRes.status, error: failed.error || "erro esperado" },
+    perDocumentGates: {
+      first: { citationBlocked: first.citationGate.bloquear, evidenceBlocked: first.evidenceGate.bloquear },
+      second: { citationBlocked: second.citationGate.bloquear, evidenceBlocked: second.evidenceGate.bloquear },
+    },
     moldAppliedToSecondRequest: true,
   }, null, 2));
 }
