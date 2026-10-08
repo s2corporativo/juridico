@@ -16,8 +16,6 @@ import { Editor } from "./editor";
 import { Dashboard } from "./dashboard";
 import { Settings } from "./settings";
 import { Cerebro } from "./cerebro";
-import { CalculadoraJuridica } from "./calculadora-juridica";
-import { VisualLaw } from "./visual-law";
 import { DataJudBusca } from "./datajud-busca";
 import { BibliotecaJuridica } from "./biblioteca-juridica";
 
@@ -31,7 +29,6 @@ const TABS = [
   { id: "settings" as const, label: "Governança", icon: Shield, key: "," },
 ];
 
-const ALL_TABS = TABS;
 
 export function AppShell() {
   const { appTab, setAppTab } = useAppStore();
@@ -42,7 +39,7 @@ export function AppShell() {
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable || target?.tagName === "SELECT") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const key = e.key.toLowerCase();
-      const tab = ALL_TABS.find((t) => t.key === key);
+      const tab = TABS.find((t) => t.key === key);
       if (tab) { e.preventDefault(); setAppTab(tab.id); }
     };
     window.addEventListener("keydown", handler);
@@ -77,8 +74,6 @@ export function AppShell() {
         {appTab === "cerebro" && <Cerebro />}
         {appTab === "generator" && <Generator />}
         {appTab === "editor" && <Editor />}
-        {appTab === "calculadora" && <CalculadoraJuridica />}
-        {appTab === "visuallaw" && <VisualLaw />}
         {appTab === "datajud" && <DataJudBusca />}
         {appTab === "settings" && <Settings />}
       </div>
