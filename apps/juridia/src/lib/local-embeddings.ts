@@ -32,7 +32,7 @@ export async function embedWithLocalOllama(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, input: text }),
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(45000),
   });
   if (!res.ok) throw new Error("LOCAL_OLLAMA_HTTP_" + res.status);
   const raw: unknown = await res.json();
