@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
-import { collectDjenDailyCandidates, collectStjResourceCandidates } from "./public-knowledge-collectors";
+import { collectDjenDailyCandidates, collectStjResourceCandidates, selectUnseenCandidates } from "./public-knowledge-collectors";
 
 export type EditorialCandidate = {
   sourceKey: string;
@@ -73,7 +73,7 @@ export function sanitizeEditorialError(error: unknown) {
   return text.replace(/https?:\/\/\S+/gi, "[url]").replace(/[\r\n\t]+/g, " ").slice(0, 480);
 }
 
-import { claimDailyEditorialRun, enqueueEditorialCandidates, finishEditorialRun } from "./db";
+import { claimDailyEditorialRun, enqueueEditorialCandidates, existingEditorialKeys, finishEditorialRun } from "./db";
 
 /**
  * Daily external scheduler entrypoint. Uses existing editorial tables and review queue.
@@ -95,8 +95,10 @@ export async function runEditorialUpdate() {
   try {
     try {
       const stj = await collectStjResourceCandidates();
-      candidates.push(...stj.candidates);
-      truncated ||= stj.truncated;
+      const existing = await existingEditorialKeys("stj-dados-abertos");
+      const plan = selectUnseenCandidates(stj.candidates, existing, 250);
+      candidates.push(...plan.selected);
+      truncated ||= stj.truncated || plan.deferred > 0;
     } catch (error) {
       failed.push("STJ:" + sanitizeEditorialError(error));
     }
@@ -114,7 +116,7 @@ export async function runEditorialUpdate() {
     const status = failed.length || truncated ? "partial" as const : "completed" as const;
     await finishEditorialRun(runId, {
       status, discoveredCount: candidates.length, queuedCount,
-      failedCount: failed.length, errorSummary: failed.join("; ").slice(0, 490) || undefined,
+      failedCount: failed.length, errorSummary: ([...failed, ...(truncated ? ["COVERAGE_TRUNCATED_BACKLOG_PENDING"] : [])].join("; ").slice(0, 490) || undefined),
     });
     return { runKey, status, discoveredCount: candidates.length, queuedCount };
   } catch (error) {
