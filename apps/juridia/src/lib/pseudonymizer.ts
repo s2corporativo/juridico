@@ -28,6 +28,7 @@ interface DetectionPattern {
 }
 
 const STRUCTURED_PATTERNS: DetectionPattern[] = [
+  { type: "PROCESSO", regex: /\b\d{7}-?\d{2}\.?\d{4}\.?\d{1}\.?\d{2}\.?\d{4}\b/g },
   { type: "CPF", regex: /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g },
   { type: "CNPJ", regex: /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g },
   { type: "RG", regex: /\b(?:RG\s*)?\d{2}\.?\d{3}\.?\d{3}-?\d{1}\b/gi },
