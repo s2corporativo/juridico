@@ -64,7 +64,7 @@ test("content-addressed immutable original can be retrieved only by matching cas
       await rm(restored, { recursive: true, force: true });
     }
     await writeFile(path, Buffer.from("tampered"));
-    await expect(readPrivateOriginal(caseA, expected)).rejects.toThrow("INVALID_ENCRYPTED_ORIGINAL_FORMAT");
+    await expect(readPrivateOriginal(caseA, expected)).rejects.toThrow("INVALID_PRIVATE_ORIGINAL_FILE");
   } finally {
     if (old === undefined) delete process.env.JURIDIA_PRIVATE_UPLOAD_ROOT;
     else process.env.JURIDIA_PRIVATE_UPLOAD_ROOT = old;
