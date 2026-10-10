@@ -316,3 +316,18 @@ export function ensureDraftMarker(text: string): string {
   }
   return text + "\n\n---\n⚠ **RASCUNHO GERADO POR IA** — Revisão por advogado é OBRIGATÓRIA antes de qualquer uso ou protocolo. Não constitui aconselhamento jurídico.";
 }
+
+/** Detects instruction attempts embedded in external case documents.
+ * This is a conservative deterministic preflight, not semantic protection.
+ * Suspected documents require manual review before any external model call.
+ */
+export function detectInstructionInjection(input: string): boolean {
+  const value = input.slice(0, 450_000);
+  return [
+    /\b(?:ignore|disregard)\s+(?:all\s+|the\s+)?(?:previous|prior|earlier)\s+instructions\b/i,
+    /\b(?:ignore|desconsidere)\s+(?:todas?\s+)?(?:as\s+)?(?:instru[cç][oõ]es|regras)\s+(?:anteriores|do\s+sistema)\b/i,
+    /\b(?:system|developer)\s+(?:prompt|message)\s*:/i,
+    /<\s*(?:system|developer|assistant)\s*>/i,
+    /\b(?:revele|mostre|imprima)\s+(?:seu\s+)?(?:prompt|instru[cç][oõ]es\s+internas|chave\s+de\s+api)\b/i,
+  ].some(pattern => pattern.test(value));
+}
