@@ -33,3 +33,16 @@ Lado JuridIA: `src/lib/atlas_client.ts`, passo 4 de `/api/brain` e `POST /api/at
 3. Anonimizar os fatos enviados ao LLM em `/api/brain`.
 4. Rate limit nas rotas do Cérebro.
 5. Proteção da chave privada OIDC em repouso.
+
+## Publicação e verificação
+
+Ordem na VPS (como root; arquitetura de releases em `publicacao-vps.md`):
+
+1. Backup pré-deploy (gate `REQUIRE_PREDEPLOY_BACKUP=1` permanece ligado) do MariaDB `atlas_ejc` e do SQLite do JuridIA.
+2. Atualizar o código da branch `atlas-forense` (`git pull --ff-only`), registrando o commit anterior para reversão.
+3. `bash apps/atlas-forense/deploy/render-env.sh --check` e, havendo pendência, `--render`. Gera `ATLAS_BRAIN_API_TOKEN` e `ATLAS_API_URL` sem imprimir valores. Não há migration de banco neste conjunto de mudanças.
+4. Build e testes: Atlas (`pnpm install --frozen-lockfile`, `tsc --noEmit`, `npx vitest run`, `pnpm build`); JuridIA (`bun install`, `tsc --noEmit`, `bun run tests/atlas-client.test.ts`, build do Next).
+5. Reiniciar `atlas-ejc` e o serviço do JuridIA (porta 3005).
+6. `bash apps/atlas-forense/deploy/verify-brain-integration.sh` e `node apps/juridia/scripts/contract-check.mjs`. Ambos devem terminar íntegros.
+
+Reversão: voltar ao commit (ou release) anterior, restaurar os `.bak` dos arquivos de env se necessário, reiniciar os dois serviços e repetir a verificação. Sem o token, a API do Atlas responde 503 e o Cérebro segue em modo degradado sinalizado, sem queda do JuridIA.
