@@ -38,6 +38,7 @@ interface LegalSource {
   vigente: boolean;
   urlOficial?: string | null;
   revisadoPor?: string | null;
+  dataConsulta?: string | null;
 }
 
 interface JurisprudenceResult {
@@ -56,6 +57,11 @@ export function BibliotecaJuridica() {
   const [searchJurisprudence, setSearchJurisprudence] = useState("");
   const [jurisprudenceResults, setJurisprudenceResults] = useState<JurisprudenceResult[]>([]);
   const [jurisprudenceLoading, setJurisprudenceLoading] = useState(false);
+
+  const sourceCheckIsStale = (source: LegalSource) => {
+    const checkedAt = Date.parse(source.dataConsulta ?? "");
+    return !Number.isFinite(checkedAt) || Date.now() - checkedAt > 30 * 86400_000;
+  };
 
   async function load() {
     setLoading(true);
@@ -259,6 +265,9 @@ export function BibliotecaJuridica() {
                               <Badge variant={s.revisadoPor?.startsWith("human:") ? "default" : "outline"} className="text-[9px]">
                                 {s.revisadoPor?.startsWith("human:") ? "Revisão humana" : "Aguardando revisão"}
                               </Badge>
+                              {sourceCheckIsStale(s) && (
+                                <Badge variant="outline" className="text-[9px]">Fonte sem checagem recente</Badge>
+                              )}
                             </div>
                           </div>
                         </CardHeader>
