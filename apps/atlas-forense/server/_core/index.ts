@@ -65,6 +65,8 @@ async function startServer() {
   // procurar a própria porta. Falha aqui não derruba o aplicativo.
   let notificationPort: number | null = null;
   try {
+    // Isolated homologation must not compete with DPT's own 3003 service.
+    if (process.env.ATLAS_REALTIME_ENABLED === "false") throw new Error("realtime_disabled_by_operator");
     const notification = await startNotificationService();
     notificationPort = notification.port;
     console.log(
@@ -123,17 +125,25 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-
+  const preferredPort = Number.parseInt(process.env.PORT || "3000", 10);
+  if (!Number.isSafeInteger(preferredPort) || preferredPort < 1024 || preferredPort > 65535) {
+    throw new Error("INVALID_ATLAS_LISTEN_PORT");
+  }
+  const strictPort = process.env.NODE_ENV === "production" || process.env.ATLAS_STRICT_PORT === "true";
+  if (strictPort && !(await isPortAvailable(preferredPort))) {
+    throw new Error("ATLAS_PORT_ALREADY_IN_USE");
+  }
+  const port = strictPort ? preferredPort : await findAvailablePort(preferredPort);
   if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    console.warn(`Atlas development port busy, using ${port}`);
   }
 
   server.listen(getServerListenOptions(port, process.env.HOST), () => {
     console.log(`Server running on http://localhost:${port}/`);
-    startDjenAutoSync();
-    startJurisprudenciaAutoSync();
+    if (process.env.ATLAS_BACKGROUND_SYNC_ENABLED !== "false") {
+      startDjenAutoSync();
+      startJurisprudenciaAutoSync();
+    }
   });
 }
 
