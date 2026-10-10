@@ -26,7 +26,7 @@ export function assertLocalAiEnabled(env: NodeJS.ProcessEnv = process.env) {
   if (env.JURIDIA_AI_ENABLED === "false" || env.JURIDIA_LOCAL_AI_ENABLED !== "true") {
     throw new Error("LOCAL_GENERATION_DISABLED");
   }
-  localModelName(env);
+  localModelName({ JURIDIA_LOCAL_AI_MODEL: env.JURIDIA_LOCAL_AI_MODEL });
 }
 
 export function createLocalChatAdapter(fetchImpl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> = fetch) {
