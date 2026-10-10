@@ -289,6 +289,16 @@ export async function finishEditorialRun(runId: number, result: { status: "compl
   await db.update(editorialUpdateRuns).set({ status: result.status, discoveredCount: result.discoveredCount, queuedCount: result.queuedCount, failedCount: result.failedCount, finishedAt: new Date(), errorSummary: result.errorSummary ?? null }).where(eq(editorialUpdateRuns.id, runId));
 }
 
+/** Existing unique keys allow incremental backlog processing without additional tables. */
+export async function existingEditorialKeys(sourceKey: string): Promise<Set<string>> {
+  const db = await getDb();
+  if (!db) throw new Error("EDITORIAL_DB_UNAVAILABLE");
+  const rows = await db.select({ key: editorialUpdates.externalKey })
+    .from(editorialUpdates).where(eq(editorialUpdates.sourceKey, sourceKey)).limit(100_000);
+  if (rows.length >= 100_000) throw new Error("EDITORIAL_KEY_INDEX_LIMIT");
+  return new Set(rows.map(row => row.key));
+}
+
 export async function enqueueEditorialCandidates(runId: number, candidates: Array<{ sourceKey: string; externalKey: string; kind: "jurisprudence" | "legislation" | "official_update"; title: string; summary: string; canonicalUrl: string; publishedAt: Date | null; contentHash: string }>) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
