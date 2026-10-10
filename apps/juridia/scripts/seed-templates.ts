@@ -1,5 +1,5 @@
 // seed-templates.ts — Popula APENAS templates (conteúdo operacional do gerador).
-// Diferente do seed.ts deprecated: não cria usuários fictícios, skills fake, nem news.
+// Usa somente os templates operacionais revisáveis; scripts legados de dados fictícios foram retirados.
 // Idempotente (upsert por slug). Seguro para rodar em qualquer ambiente.
 //
 // Uso: DATABASE_URL=file:... bun run scripts/seed-templates.ts
