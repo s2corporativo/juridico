@@ -253,6 +253,28 @@ export async function upsertEditorialScheduleTaskUid(name: string, taskUid: stri
   await db.insert(editorialUpdateSchedules).values({ name, cronExpression: "0 0 6 * * *", scheduleCronTaskUid: taskUid, enabled: 1 }).onDuplicateKeyUpdate({ set: { scheduleCronTaskUid: taskUid, enabled: 1 } });
 }
 
+/**
+ * Database-backed daily lock. A unique runKey can only be claimed once.
+ * Unlike recordEditorialRunStart, a second instance must NEVER reset a running run.
+ * Manual retry after failure requires an explicit, separately audited run key.
+ */
+export async function claimDailyEditorialRun(runKey: string, sourceCount: number): Promise<number | null> {
+  const db = await getDb();
+  if (!db) throw new Error("EDITORIAL_DB_UNAVAILABLE");
+  try {
+    await db.insert(editorialUpdateRuns).values({
+      runKey, status: "running", sourceCount,
+    });
+  } catch (error) {
+    const typed = error as { code?: string; cause?: { code?: string } };
+    if (typed.code === "ER_DUP_ENTRY" || typed.cause?.code === "ER_DUP_ENTRY") return null;
+    throw error;
+  }
+  const rows = await db.select({ id: editorialUpdateRuns.id })
+    .from(editorialUpdateRuns).where(eq(editorialUpdateRuns.runKey, runKey)).limit(1);
+  return rows[0]?.id ?? null;
+}
+
 export async function recordEditorialRunStart(runKey: string, sourceCount: number) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -265,6 +287,16 @@ export async function finishEditorialRun(runId: number, result: { status: "compl
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   await db.update(editorialUpdateRuns).set({ status: result.status, discoveredCount: result.discoveredCount, queuedCount: result.queuedCount, failedCount: result.failedCount, finishedAt: new Date(), errorSummary: result.errorSummary ?? null }).where(eq(editorialUpdateRuns.id, runId));
+}
+
+/** Existing unique keys allow incremental backlog processing without additional tables. */
+export async function existingEditorialKeys(sourceKey: string): Promise<Set<string>> {
+  const db = await getDb();
+  if (!db) throw new Error("EDITORIAL_DB_UNAVAILABLE");
+  const rows = await db.select({ key: editorialUpdates.externalKey })
+    .from(editorialUpdates).where(eq(editorialUpdates.sourceKey, sourceKey)).limit(100_000);
+  if (rows.length >= 100_000) throw new Error("EDITORIAL_KEY_INDEX_LIMIT");
+  return new Set(rows.map(row => row.key));
 }
 
 export async function enqueueEditorialCandidates(runId: number, candidates: Array<{ sourceKey: string; externalKey: string; kind: "jurisprudence" | "legislation" | "official_update"; title: string; summary: string; canonicalUrl: string; publishedAt: Date | null; contentHash: string }>) {
