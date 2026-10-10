@@ -109,19 +109,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (detectInstructionInjection(text)) return reject("documento_com_instrucoes_suspeitas_exige_revisao", 422);
 
   const rawPages = ext === "pdf" ? text.split("\f") : [text];
-  const pages = rawPages.filter((page) => page.trim().length > 0);
+  const pages = rawPages.map((text, index) => ({ text, number: index + 1 })).filter((page) => page.text.trim().length > 0);
   if (pages.length > MAX_PAGES) return reject("limite_de_60_paginas_atingido", 413);
 
   const documentHash = createHash("sha256").update(binary).digest("hex");
   let totalEvidence = 0;
   if (caseId) {
-    for (const [index, page] of pages.entries()) {
-      const excerpt = page.replace(/\s+/g, " ").trim().slice(0, 1500);
+    for (const page of pages) {
+      const excerpt = page.text.replace(/\s+/g, " ").trim().slice(0, 1500);
       if (excerpt.length < 10) continue;
       await createEvidence({
         caseId,
         quote: excerpt,
-        pageNumber: ext === "pdf" ? index + 1 : null,
+        pageNumber: ext === "pdf" ? page.number : null,
         sectionLabel: name,
         sourceKind: "text",
         retrievalMethod: "deterministic",
