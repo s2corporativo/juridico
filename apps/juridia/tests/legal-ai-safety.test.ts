@@ -43,6 +43,15 @@ test("output validator rejects unsupported numeric success odds and unverified p
   expect(r.violations.some(x=>x.rule==="PROBABILIDADE_SEM_JURIMETRIA_VALIDADA")).toBe(true);
 });
 
+test("invented standalone laws and AI-computed court deadlines require independent verification", () => {
+  const law = validateResponse("RASCUNHO. A Lei 13.999/2031 determina o êxito.");
+  expect(law.valid).toBe(false);
+  expect(law.violations.some(x => x.rule === "LEI_REQUER_FONTE_OFICIAL")).toBe(true);
+  const deadline = validateResponse("RASCUNHO. O prazo de 15 dias úteis foi calculado.");
+  expect(deadline.valid).toBe(false);
+  expect(deadline.violations.some(x => x.rule === "PRAZO_CALCULADO_AUTOMATICAMENTE")).toBe(true);
+});
+
 test("external model cannot be used by default, even when SDK installed", () => {
   const old=process.env.JURIDIA_EXTERNAL_AI_ENABLED;
   const oldApprove=process.env.JURIDIA_CONFIDENTIAL_DATA_EXPORT_APPROVED;
