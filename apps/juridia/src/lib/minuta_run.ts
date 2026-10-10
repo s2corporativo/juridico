@@ -1,3 +1,4 @@
+import { createGovernedZai } from "./external-ai-boundary";
 // minuta_run.ts — Orquestração do pipeline de minutas (multi-etapas).
 //
 // É a ÚNICA implementação do fluxo de geração: tanto a rota JSON clássica
@@ -344,7 +345,7 @@ export async function runMinutaPipeline(
 
   let zai: ZaiClient | null = null;
   try {
-    zai = await ZAI.create();
+    zai = await createGovernedZai();
   } catch {
     zai = null;
   }
