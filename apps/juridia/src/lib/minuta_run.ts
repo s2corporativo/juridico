@@ -14,7 +14,7 @@ import { createHash } from "node:crypto";
 import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
 import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
-import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
+import { validateResponse, ensureDraftMarker, detectInstructionInjection } from "@/lib/ai_governance";
 import { verifyCitations } from "@/lib/citation_gate";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
@@ -225,6 +225,10 @@ export async function runMinutaPipeline(
 
   // 2) Inteiro teor + contexto do Cérebro (pseudonimizado junto — tarja-1)
   const factsBlock = buildFactsBlock(body.fields);
+  if (detectInstructionInjection(factsBlock) ||
+      detectInstructionInjection(body.brainContext ?? "")) {
+    throw new PipelineError("Documento com instruções suspeitas requer revisão manual", 422);
+  }
   const rawContextForModel = body.brainContext?.trim()
     ? `${factsBlock}\n\n[Contexto do Cérebro Jurídico]\n${body.brainContext.trim()}`
     : factsBlock;
