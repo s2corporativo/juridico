@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { isReviewedCurrentLegalSource } from "./legal-source-trust";
 // citation_gate.ts — Gate anti-alucinação de citações jurídicas (portado do EJC)
 // Extrai citações do texto, verifica existência contra base curada, fail-closed.
 
@@ -163,29 +163,10 @@ export function verifyCitations(
     });
 
     if (match) {
-      // A populated URL or automated curator label is NOT human validation.
-      // The signed actor must be assigned from the authenticated admin session.
-      const humanReviewed = /^human:[A-Za-z0-9_-]{1,128}$/.test(match.revisadoPor ?? "");
-      let trustedOrigin = false;
-      try {
-        const u = new URL(match.urlOficial ?? "");
-        trustedOrigin = u.protocol === "https:" && !u.username && !u.password &&
-          (u.hostname.endsWith(".jus.br") || u.hostname.endsWith(".gov.br") ||
-           u.hostname === "www.planalto.gov.br");
-      } catch { /* fail closed */ }
-      // Existence of a judgment ID does NOT establish factual or thesis adherence.
-      // A separate lawyer review is required before any precedent can be promoted.
-      const consulted = match.dataConsulta instanceof Date
-        ? match.dataConsulta : match.dataConsulta ? new Date(match.dataConsulta) : null;
-      const ageMs = consulted ? Date.now() - consulted.getTime() : NaN;
-      // An old/manual review cannot forever certify a changing legal source.
-      const recentConsultation = Number.isFinite(ageMs) &&
-        ageMs >= -86_400_000 && ageMs <= 30 * 86_400_000;
-      const hashMatches = /^[a-f0-9]{64}$/i.test(match.hashConteudo ?? "") &&
-        createHash("sha256").update(match.textoTrecho).digest("hex") === match.hashConteudo?.toLowerCase();
-      const verified = Boolean(match.vigente && humanReviewed && trustedOrigin &&
-        recentConsultation && hashMatches &&
-        match.textoTrecho.trim().length >= 25 && ext.type !== "jurisprudencia");
+      // Identifier agreement is not thesis or factual adherence; precedents
+      // always require separate lawyer review, even if sourced from STJ/STF.
+      const verified = isReviewedCurrentLegalSource(match) &&
+        ext.type !== "jurisprudencia";
       citations.push({
         ...ext,
         status: verified ? "verificada" : "suspeita",
