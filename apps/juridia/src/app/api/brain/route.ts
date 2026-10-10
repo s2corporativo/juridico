@@ -5,13 +5,14 @@ import { db } from "@/lib/db";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
 import { requireAuth } from "@/lib/auth";
+import { pseudonymize } from "@/lib/pseudonymizer";
 import {
   decisionToBrainItem,
   extractSearchTerms,
   fetchAtlasJurimetry,
   isAtlasConfigured,
   searchAtlasCompendium,
-  webResultToBrainItem,
+
   type AtlasJurimetry,
   type BrainJurisprudenceItem,
 } from "@/lib/atlas_client";
@@ -91,7 +92,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let body: { facts?: string; title?: string; caseId?: string } = {};
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
-  const facts = (body.facts || "").trim();
+  const rawFacts = (body.facts || "").trim();
+  // Only pseudonymized context is ever presented to an external model.
+  // Preserve original client facts locally for the authenticated case dossier.
+  const safeCase = pseudonymize(rawFacts);
+  const facts = safeCase.text;
   const title = body.title?.trim() || `Análise — ${new Date().toLocaleDateString("pt-BR")}`;
 
   if (facts.length < 30) {
@@ -172,9 +177,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       textoTrecho: res.source.textoTrecho,
       vigente: res.source.vigente,
       urlOficial: res.source.urlOficial,
-      applicability: `RAG score: ${res.score.toFixed(3)} — ${res.source.diploma} ${res.source.numero} ${res.source.tribunal || ""}`,
+      applicability: `Fonte para revisão jurídica — ${res.source.diploma} ${res.source.numero} ${res.source.tribunal || ""}`,
       state: "direito_positivo" as const,
-      confidence: Math.min(1, res.score + 0.3), // ajusta confiança com base no score
+      confidence: 0, // retrieval rank is not a legal confidence estimate
     }));
     steps[3].status = "done"; steps[3].result = r.applicableLaw.length;
   } catch (e) { steps[3].status = "error"; steps[3].error = e instanceof Error ? e.message : "Erro"; r.applicableLaw = []; }
@@ -210,10 +215,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     if (needsWebFallback) {
-      r.atlas.fallback = true;
-      const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${facts.slice(0, 100)}`;
-      const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
-      r.jurisprudence = Array.isArray(raw) ? raw.slice(0, 8).map(webResultToBrainItem) : [];
+      // Never send facts, unique case context or extracted client claims to public search.
+      // An unavailable verified source is not a license to invent jurisprudence.
+      r.atlas.fallback = false;
+      r.atlas.status = "unavailable";
+      r.atlas.error = "NO_VERIFIED_JURISPRUDENCE_PROVIDER";
+      r.jurisprudence = [];
     }
     steps[4].status = "done"; steps[4].result = r.jurisprudence?.length ?? 0;
   } catch (e) { steps[4].status = "error"; steps[4].error = e instanceof Error ? e.message : "Erro"; r.jurisprudence = r.jurisprudence || []; }
@@ -278,7 +285,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         data: {
           caseId: body.caseId,
           title,
-          factsInput: facts,
+          factsInput: rawFacts,
           result: JSON.stringify({ ...r, steps, totalTokens: tokens }),
           ramoJuridico: r.ramoJuridico || null,
           hypothesis: r.viability?.hypothesis || null,
