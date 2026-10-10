@@ -133,7 +133,7 @@ const HYPOTHESIS_CONFIG = {
 } as const;
 
 export function Cerebro() {
-  const { setAppTab, setCurrentDocId, setBrainContext } = useAppStore();
+  const { setAppTab, setCurrentDocId, setBrainContext, currentCaseId } = useAppStore();
   const [facts, setFacts] = useState("");
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
@@ -205,19 +205,21 @@ export function Cerebro() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("caseId", "cerebro-session");
+      if (currentCaseId) formData.append("caseId", currentCaseId);
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
-      if (data.error) {
-        toast({ title: data.error, variant: "destructive" });
+      if (!res.ok || data.error) {
+        toast({ title: data.error || "Falha na importação", variant: "destructive" });
       } else {
         const extracted = data.text || "";
         const existing = facts.trim();
         const combined = existing ? `${existing}\n\n--- Documento: ${data.fileName} (${data.textLength} chars, ${data.totalEvidence} evidências) ---\n${extracted}` : extracted;
         setFacts(combined);
         toast({
-          title: `Documento importado: ${data.fileName}`,
-          description: `${data.textLength} caracteres extraídos · ${data.totalEvidence} evidências criadas com hash SHA-256`,
+          title: `Texto extraído: ${data.fileName}`,
+          description: data.evidencePersisted
+            ? `${data.textLength} caracteres · ${data.totalEvidence} referências vinculadas ao caso. Original não arquivado.`
+            : `${data.textLength} caracteres · arquivo não arquivado nem vinculado a um caso. Confira o texto.`,
         });
       }
     } catch {
