@@ -75,11 +75,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 });
   }
 
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-
   const client = await db.client.create({
     data: {
-      userId: demoUser?.id,
+      userId: authUser.uid,
       name: body.name.trim(),
       email: body.email?.trim() || null,
       phone: body.phone?.trim() || null,
