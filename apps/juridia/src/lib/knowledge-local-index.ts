@@ -3,7 +3,8 @@
  * This module does not create a second knowledge corpus and never touches Atlas DB.
  * Initialization is additive; original tables remain untouched.
  */
-import { Database } from "bun:sqlite";
+import type { Database } from "bun:sqlite";
+import { createRequire } from "node:module";
 import { statSync } from "node:fs";
 
 export type LocalHit = {
@@ -25,9 +26,36 @@ export function openKnowledgeDb(dbPath: string, readonly = false): Database {
   // Bun 1.3 rejects readonly:false + create:false (SQLITE_MISUSE).
   // Preflight prevents accidental creation before opening read/write.
   if (!statSync(dbPath).isFile()) throw new Error("JURIDIA_SQLITE_FILE_REQUIRED");
-  const db = readonly
-    ? new Database(dbPath, { readonly: true, create: false })
-    : new Database(dbPath);
+  // Next.js standalone commonly runs under Node, while CI runs under Bun.
+  // Both runtimes use the *same* SQLite file and FTS5 indexes.
+  const runtimeRequire = createRequire(import.meta.url);
+  let db: Database;
+  if (process.versions.bun) {
+    const BunSqlite = runtimeRequire("bun:sqlite") as typeof import("bun:sqlite");
+    db = readonly
+      ? new BunSqlite.Database(dbPath, { readonly: true, create: false })
+      : new BunSqlite.Database(dbPath);
+  } else {
+    const nodeSqlite = runtimeRequire("node:sqlite") as typeof import("node:sqlite");
+    const native = new nodeSqlite.DatabaseSync(dbPath, { readOnly: readonly });
+    // Minimal compatibility layer: no secondary storage, no native dependency.
+    db = {
+      exec: (statement: string) => native.exec(statement),
+      query: (statement: string) => {
+        const stmt = native.prepare(statement);
+        return {
+          get: (...args: unknown[]) => stmt.get(...args as []),
+          all: (...args: unknown[]) => stmt.all(...args as []),
+          run: (...args: unknown[]) => stmt.run(...args as []),
+        };
+      },
+      prepare: (statement: string) => {
+        const stmt = native.prepare(statement);
+        return { run: (...args: unknown[]) => stmt.run(...args as []) };
+      },
+      close: () => native.close(),
+    } as unknown as Database;
+  }
   db.exec("PRAGMA busy_timeout=4000");
   db.exec("PRAGMA foreign_keys=ON");
   return db;
