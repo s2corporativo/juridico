@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { buildSystemGraph, buildCaseGraph } from "@/lib/graph-agent";
 import { requireAuth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     if (!caseId) {
       return NextResponse.json({ error: "caseId obrigatório para view=case" }, { status: 400 });
     }
+    const permitted = await db.case.findFirst({
+      where: {
+        id: caseId,
+        ...(authUser.role === "admin" ? {} : { client: { is: { userId: authUser.uid } } }),
+      },
+      select: { id: true },
+    });
+    if (!permitted) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
     const graph = await buildCaseGraph(caseId);
     await logAuditEvent({
       action: "grafo_query",
