@@ -139,7 +139,7 @@ export async function ragSearch(query: string, topK = 5): Promise<RagResult[]> {
           },
         });
         const byId = new Map(sources.map(source => [source.id, source]));
-        return ids.map((id, rank) => {
+        return ids.map((id, rank): RagResult | null => {
           const source = byId.get(id);
           if (!source) return null;
           return { source, score: Math.max(0.05, 0.45 - rank * 0.015), matchedTerms: [] };
