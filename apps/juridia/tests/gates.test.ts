@@ -2,6 +2,7 @@
 // Run with: bun run tests/gates.test.ts
 
 import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
+import { createHash } from "node:crypto";
 import { quoteHash, normalizeQuote } from "@/lib/evidence";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
 import { verifyCitations } from "@/lib/citation_gate";
@@ -114,7 +115,8 @@ const legalSources = [
 
 // Text with real and fake citations
 const textWithCitations = "Conforme o art. 927 do CC e a Súmula 308 do TST. Também cito o art. 999 do CC que não existe.";
-const result = verifyCitations(textWithCitations, legalSources);
+const curatedSources = legalSources.map(item => ({ ...item, dataConsulta: new Date(), hashConteudo: createHash("sha256").update(item.textoTrecho).digest("hex") }));
+const result = verifyCitations(textWithCitations, curatedSources);
 
 assert(result.total === 3, `Detecta 3 citações (detectou ${result.total})`);
 assert(result.verificadas === 2, `Verifica 2 citações reais (art. 927 CC + Súmula 308 TST) (verificou ${result.verificadas})`);
