@@ -253,6 +253,28 @@ export async function upsertEditorialScheduleTaskUid(name: string, taskUid: stri
   await db.insert(editorialUpdateSchedules).values({ name, cronExpression: "0 0 6 * * *", scheduleCronTaskUid: taskUid, enabled: 1 }).onDuplicateKeyUpdate({ set: { scheduleCronTaskUid: taskUid, enabled: 1 } });
 }
 
+/**
+ * Database-backed daily lock. A unique runKey can only be claimed once.
+ * Unlike recordEditorialRunStart, a second instance must NEVER reset a running run.
+ * Manual retry after failure requires an explicit, separately audited run key.
+ */
+export async function claimDailyEditorialRun(runKey: string, sourceCount: number): Promise<number | null> {
+  const db = await getDb();
+  if (!db) throw new Error("EDITORIAL_DB_UNAVAILABLE");
+  try {
+    await db.insert(editorialUpdateRuns).values({
+      runKey, status: "running", sourceCount,
+    });
+  } catch (error) {
+    const typed = error as { code?: string; cause?: { code?: string } };
+    if (typed.code === "ER_DUP_ENTRY" || typed.cause?.code === "ER_DUP_ENTRY") return null;
+    throw error;
+  }
+  const rows = await db.select({ id: editorialUpdateRuns.id })
+    .from(editorialUpdateRuns).where(eq(editorialUpdateRuns.runKey, runKey)).limit(1);
+  return rows[0]?.id ?? null;
+}
+
 export async function recordEditorialRunStart(runKey: string, sourceCount: number) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
