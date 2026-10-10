@@ -230,6 +230,14 @@ export function validateResponse(text: string): ValidationResult {
     });
   }
 
+  if (/\bLei\s+(?:n[ºo.]?\s*)?\d[\d./-]{1,}/i.test(text)) {
+    violations.push({
+      rule: "LEI_REQUER_FONTE_OFICIAL",
+      severity: "error",
+      detail: "Lei mencionada deve ser conferida em fonte oficial e quanto à vigência.",
+    });
+  }
+
   // Regra 2: Vedação de aconselhamento sem ressalva
   if (lower.includes("você deve") && !lower.includes("revisão") && !lower.includes("advogado")) {
     violations.push({
@@ -280,7 +288,7 @@ export function validateResponse(text: string): ValidationResult {
     if (match) {
       violations.push({
         rule: "PRAZO_CALCULADO_AUTOMATICAMENTE",
-        severity: "warning",
+        severity: "error",
         detail: "Prazo processual calculado pela IA — confira calendário, feriados e rito aplicável",
         excerpt: match[0],
       });
