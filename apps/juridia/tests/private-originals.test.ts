@@ -1,12 +1,19 @@
 import { test, expect } from "bun:test";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdtemp, rm, mkdir, symlink, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, mkdir, symlink, readFile, writeFile, cp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { archivePrivateOriginal, readPrivateOriginal } from "../src/lib/private-originals";
 
 const caseA = "audit_case_one";
 const caseB = "audit_case_two";
+
+const originalKey = process.env.JURIDIA_PRIVATE_UPLOAD_KEY;
+const testKey = randomBytes(32).toString("hex");
+function resetKey() {
+  if (originalKey === undefined) delete process.env.JURIDIA_PRIVATE_UPLOAD_KEY;
+  else process.env.JURIDIA_PRIVATE_UPLOAD_KEY = originalKey;
+}
 
 test("private original storage disabled by default", async () => {
   const old = process.env.JURIDIA_PRIVATE_UPLOAD_ROOT;
@@ -23,6 +30,7 @@ test("content-addressed immutable original can be retrieved only by matching cas
   const root = await mkdtemp(join(tmpdir(), "juridia-private-"));
   const old = process.env.JURIDIA_PRIVATE_UPLOAD_ROOT;
   process.env.JURIDIA_PRIVATE_UPLOAD_ROOT = root;
+  process.env.JURIDIA_PRIVATE_UPLOAD_KEY = testKey;
   try {
     const bytes = Buffer.from("PDF bytes used for a synthetic test, not a real file.");
     const expected = createHash("sha256").update(bytes).digest("hex");
@@ -40,11 +48,27 @@ test("content-addressed immutable original can be retrieved only by matching cas
     // The directory name is a hash of the case ID, not the client name.
     const bucket = createHash("sha256").update(caseA).digest("hex");
     const path = join(root, bucket.slice(0, 2), bucket, expected);
+    const storedCiphertext = await readFile(path);
+    expect(storedCiphertext.toString("utf8")).not.toContain(bytes.toString("utf8"));
+    // Authentic encrypted envelope can be restored from an independent backup.
+    const restored = await mkdtemp(join(tmpdir(), "juridia-restore-"));
+    try {
+      await cp(root, restored, { recursive: true });
+      process.env.JURIDIA_PRIVATE_UPLOAD_ROOT = restored;
+      expect((await readPrivateOriginal(caseA, expected)).equals(bytes)).toBe(true);
+      process.env.JURIDIA_PRIVATE_UPLOAD_KEY = randomBytes(32).toString("hex");
+      await expect(readPrivateOriginal(caseA, expected)).rejects.toThrow("PRIVATE_ORIGINAL_DECRYPTION_FAILED");
+      process.env.JURIDIA_PRIVATE_UPLOAD_KEY = testKey;
+    } finally {
+      process.env.JURIDIA_PRIVATE_UPLOAD_ROOT = root;
+      await rm(restored, { recursive: true, force: true });
+    }
     await writeFile(path, Buffer.from("tampered"));
-    await expect(readPrivateOriginal(caseA, expected)).rejects.toThrow("PRIVATE_ORIGINAL_INTEGRITY_FAILED");
+    await expect(readPrivateOriginal(caseA, expected)).rejects.toThrow("INVALID_ENCRYPTED_ORIGINAL_FORMAT");
   } finally {
     if (old === undefined) delete process.env.JURIDIA_PRIVATE_UPLOAD_ROOT;
     else process.env.JURIDIA_PRIVATE_UPLOAD_ROOT = old;
+    resetKey();
     await rm(root, { recursive: true, force: true });
   }
 });
@@ -54,6 +78,7 @@ test("private original rejects traversal and symlink root", async () => {
   const real = join(base, "real");
   const shortcut = join(base, "link");
   const old = process.env.JURIDIA_PRIVATE_UPLOAD_ROOT;
+  process.env.JURIDIA_PRIVATE_UPLOAD_KEY = testKey;
   try {
     await mkdir(real);
     await symlink(real, shortcut);
@@ -64,6 +89,7 @@ test("private original rejects traversal and symlink root", async () => {
   } finally {
     if (old === undefined) delete process.env.JURIDIA_PRIVATE_UPLOAD_ROOT;
     else process.env.JURIDIA_PRIVATE_UPLOAD_ROOT = old;
+    resetKey();
     await rm(base, { recursive: true, force: true });
   }
 });
