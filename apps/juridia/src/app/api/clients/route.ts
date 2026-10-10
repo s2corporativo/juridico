@@ -148,10 +148,19 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (body.notes !== undefined) data.notes = body.notes.trim() || null;
   if (body.color !== undefined) data.color = body.color;
 
-  const updated = await db.client.update({
-    where: { id: body.id },
-    data,
+  const scope = {
+    id: body.id,
+    ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+  };
+  const changed = await db.client.updateMany({ where: scope, data });
+  if (changed.count !== 1) {
+    return NextResponse.json({ error: "client_not_found" }, { status: 404 });
+  }
+  const updated = await db.client.findFirst({
+    where: scope,
+    select: { name: true },
   });
+  if (!updated) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "update_client",
