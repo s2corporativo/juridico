@@ -64,9 +64,7 @@ async function startServer() {
   // servidor principal para que a porta 3003 já esteja reservada quando o app
   // procurar a própria porta. Falha aqui não derruba o aplicativo.
   let notificationPort: number | null = null;
-  try {
-    // Isolated homologation must not compete with DPT's own 3003 service.
-    if (process.env.ATLAS_REALTIME_ENABLED === "false") throw new Error("realtime_disabled_by_operator");
+  if (process.env.ATLAS_REALTIME_ENABLED !== "false") try {
     const notification = await startNotificationService();
     notificationPort = notification.port;
     console.log(
@@ -147,4 +145,7 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+startServer().catch(error => {
+  console.error("[Atlas] startup failed:", error instanceof Error ? error.message : "unexpected_error");
+  process.exitCode = 1;
+});
