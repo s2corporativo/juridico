@@ -123,6 +123,7 @@ export function verifyCitations(
     textoTrecho: string;
     vigente: boolean;
     urlOficial: string | null;
+    revisadoPor?: string | null;
   }[]
 ): VerifyResult {
   const extracted = extractCitations(text);
@@ -159,37 +160,38 @@ export function verifyCitations(
     });
 
     if (match) {
-      if (match.vigente) {
-        citations.push({
-          ...ext,
-          status: "verificada",
-          source: {
-            id: match.id,
-            textoTrecho: match.textoTrecho,
-            vigente: match.vigente,
-            urlOficial: match.urlOficial,
-          },
-          reason: "Fonte encontrada na base curada e vigente",
-        });
-      } else {
-        citations.push({
-          ...ext,
-          status: "suspeita",
-          source: {
-            id: match.id,
-            textoTrecho: match.textoTrecho,
-            vigente: match.vigente,
-            urlOficial: match.urlOficial,
-          },
-          reason: "Fonte encontrada na base, MAS marcada como NÃO vigente — verificar revogação",
-        });
-      }
+      // A populated URL or automated curator label is NOT human validation.
+      // The signed actor must be assigned from the authenticated admin session.
+      const humanReviewed = /^human:[A-Za-z0-9_-]{1,128}$/.test(match.revisadoPor ?? "");
+      let trustedOrigin = false;
+      try {
+        const u = new URL(match.urlOficial ?? "");
+        trustedOrigin = u.protocol === "https:" && !u.username && !u.password &&
+          (u.hostname.endsWith(".jus.br") || u.hostname.endsWith(".gov.br") ||
+           u.hostname === "www.planalto.gov.br");
+      } catch { /* fail closed */ }
+      // Existence of a judgment ID does NOT establish factual or thesis adherence.
+      // A separate lawyer review is required before any precedent can be promoted.
+      const verified = Boolean(match.vigente && humanReviewed && trustedOrigin &&
+        match.textoTrecho.trim().length >= 25 && ext.type !== "jurisprudencia");
+      citations.push({
+        ...ext,
+        status: verified ? "verificada" : "suspeita",
+        source: {
+          id: match.id,
+          textoTrecho: match.textoTrecho,
+          vigente: match.vigente,
+          urlOficial: match.urlOficial,
+        },
+        reason: verified
+          ? "Identificador encontrado; revisão humana registrada. Aderência exige conferência."
+          : "Sem validação suficiente de vigência, origem, aprovação humana ou aderência da tese.",
+      });
     } else if (ext.type === "jurisprudencia") {
-      // Jurisprudência não curada = identificada (não bloqueia, mas marca)
       citations.push({
         ...ext,
         status: "identificada",
-        reason: "Jurisprudência identificada mas não consta na base curada — conferir fonte oficial",
+        reason: "Referência não comprovada na base: BLOQUEADA até revisão jurídica humana.",
       });
     } else if (ext.diploma === "não identificado") {
       citations.push({
@@ -218,7 +220,7 @@ export function verifyCitations(
     identificadas,
     suspeitas,
     genericas,
-    bloquear: suspeitas > 0, // fail-closed: bloqueia aprovação se houver suspeitas
+    bloquear: suspeitas > 0 || identificadas > 0 || genericas > 0, // fail closed on any unverified reference
     citations,
   };
 }
