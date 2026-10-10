@@ -1,5 +1,5 @@
 // Tests for Evidence Gate, Citation Gate, Ownership, Hash Integrity
-// Run with: bun run tests/gates.test.ts
+// Run with: bun test tests/gates.test.ts (requires generated Prisma client)
 
 import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { quoteHash, normalizeQuote } from "@/lib/evidence";
