@@ -161,4 +161,4 @@ console.log(`\n=== RESULTADO ===`);
 console.log(`✓ ${passed} aprovados`);
 console.log(`✗ ${failed} reprovados`);
 console.log(failed === 0 ? "\n🎉 TODOS OS TESTES PASSARAM" : "\n⚠ ALGUNS TESTES FALHARAM");
-process.exit(failed > 0 ? 1 : 0);
+if (failed > 0) throw new Error(`${failed} gates failed`);
