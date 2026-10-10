@@ -3,6 +3,7 @@ import {
   collectStjResourceCandidates,
   collectDjenDailyCandidates,
   previousSaoPauloDate,
+  selectUnseenCandidates,
 } from "./public-knowledge-collectors";
 
 const fake = (body: unknown, status = 200) =>
@@ -59,6 +60,21 @@ describe("Public ingestion: bounded and privacy-first", () => {
     await expect(collectDjenDailyCandidates({ fetchImpl: fake({}, 429) })).rejects.toThrow("DJEN_HTTP_429_RETRY_AFTER_60S");
     await expect(collectDjenDailyCandidates({ fetchImpl: fake({ items: [] }) })).rejects.toThrow("DJEN_INVALID_PAYLOAD");
     await expect(collectDjenDailyCandidates({ tribunals: ["TJMG?"] })).rejects.toThrow("DJEN_INVALID_TRIBUNAL");
+  });
+
+  it("limits daily STJ ingestion while resuming from not-yet-queued keys", () => {
+    const prototype = {
+      sourceKey: "stj-dados-abertos", kind: "official_update" as const,
+      title: "STJ", summary: "metadados", canonicalUrl: "https://dadosabertos.web.stj.jus.br/",
+      publishedAt: null, contentHash: "a".repeat(64),
+    };
+    const batch = [1, 2, 3, 4].map(n => ({ ...prototype, externalKey: "r:" + n }));
+    const first = selectUnseenCandidates(batch, new Set<string>(), 2);
+    expect(first.selected.map(x => x.externalKey)).toEqual(["r:1", "r:2"]);
+    expect(first.deferred).toBe(2);
+    const next = selectUnseenCandidates(batch, new Set(["r:1", "r:2"]), 2);
+    expect(next.selected.map(x => x.externalKey)).toEqual(["r:3", "r:4"]);
+    expect(next.deferred).toBe(0);
   });
 
   it("uses Sao Paulo date around UTC midnight, not the VPS clock", () => {
