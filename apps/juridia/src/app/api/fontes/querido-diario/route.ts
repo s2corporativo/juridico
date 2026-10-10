@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/fontes/querido-diario — busca diários oficiais municipais
 // Uso: radar de normas municipais (D+0)
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth.response;
   const url = new URL(req.url);
   const query = url.searchParams.get("query") || "";
   const limit = url.searchParams.get("limit") || "10";
   const territoryId = url.searchParams.get("territoryId") || ""; // código IBGE do município
+  const n = Number.parseInt(limit, 10);
+  if (query.length > 120 || !Number.isSafeInteger(n) || n < 1 || n > 25 ||
+      (territoryId && !/^\d{7}$/.test(territoryId))) {
+    return NextResponse.json({ error: "consulta_de_diario_invalida" }, { status: 400 });
+  }
 
   try {
     const params = new URLSearchParams();
@@ -49,7 +57,6 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Erro ao acessar Querido Diário";
-    return NextResponse.json({ error: msg, fonte: "Querido Diário" }, { status: 500 });
+    return NextResponse.json({ error: "municipal_diary_unavailable", fonte: "Querido Diário" }, { status: 502 });
   }
 }
