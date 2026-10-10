@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { logAuditEvent } from "@/lib/audit";
+import type { Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/auth";
 import { hasCaseAccess } from "@/lib/case-access";
 import { quoteHash } from "@/lib/evidence";
@@ -36,14 +36,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!(await hasCaseAccess(caseId, actor.uid, actor.role))) return failure("case_not_found", 404);
   const reviewer = "human:" + actor.uid;
   const reviewedAt = new Date();
-  const audit = async (kind: string, metadata: Record<string, unknown>) =>
-    logAuditEvent({
-      action: "review_" + kind + "_" + body.action,
-      resource: kind,
-      resourceId: body.id,
-      userId: actor.uid,
-      metadata: { caseId, ...metadata },
-    });
+  // Review mutations and their audit records must be committed atomically.
+  // A missing AuditEvent table or failed audit write rolls back the review.
+  const auditedChange = async (
+    kind: "evidence" | "assertion" | "node",
+    metadata: Record<string, unknown>,
+    change: (tx: Prisma.TransactionClient) => Promise<{ count: number }>,
+  ): Promise<boolean> => {
+    try {
+      return await db.$transaction(async tx => {
+        const result = await change(tx);
+        if (result.count !== 1) throw new Error("REVIEW_WRITE_CONFLICT");
+        await tx.auditEvent.create({
+          data: {
+            action: "review_" + kind + "_" + body.action,
+            resource: kind,
+            resourceId: body.id,
+            userId: actor.uid,
+            metadata: JSON.stringify({ caseId, ...metadata }),
+          },
+        });
+        return true;
+      });
+    } catch {
+      return false;
+    }
+  };
 
   if (body.type === "evidence") {
     if (body.action === "correct") return failure("correct_evidence_requires_new_reference", 422);
@@ -53,12 +71,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         !["text", "ocr", "manual"].includes(ref.sourceKind))) {
       return failure("evidence_integrity_or_source_unverified", 422);
     }
-    const changed = await db.evidenceRef.updateMany({
-      where: { id: ref.id, caseId, quoteHash: ref.quoteHash },
-      data: { verified: body.action === "confirm", verifiedBy: reviewer, verifiedAt: reviewedAt },
-    });
-    if (changed.count !== 1) return failure("review_conflict", 409);
-    await audit("evidence", { verified: body.action === "confirm", quoteHash: ref.quoteHash });
+    const saved = await auditedChange("evidence",
+      { verified: body.action === "confirm", quoteHash: ref.quoteHash },
+      tx => tx.evidenceRef.updateMany({
+        where: { id: ref.id, caseId, quoteHash: ref.quoteHash },
+        data: { verified: body.action === "confirm", verifiedBy: reviewer, verifiedAt: reviewedAt },
+      }),
+    );
+    if (!saved) return failure("review_or_audit_unavailable", 503);
     return NextResponse.json({ ok: true, verified: body.action === "confirm" });
   }
 
@@ -86,19 +106,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     const status = body.action === "confirm" ? "confirmed"
       : body.action === "correct" ? "corrected" : "rejected";
-    const changed = await db.legalAssertion.updateMany({
-      where: { id: assertion.id, caseId },
-      data: {
-        reviewStatus: status, reviewedBy: reviewer, reviewedAt,
-        ...(body.action === "correct" ? {
-          text: body.correctedText!.trim(),
-          supportStatus: "absent",
-          evidenceIds: "[]",
-        } : {}),
-      },
-    });
-    if (changed.count !== 1) return failure("review_conflict", 409);
-    await audit("assertion", { kind: assertion.kind, status, supportStatus: assertion.supportStatus });
+    const saved = await auditedChange("assertion",
+      { kind: assertion.kind, status, supportStatus: assertion.supportStatus },
+      tx => tx.legalAssertion.updateMany({
+        where: { id: assertion.id, caseId },
+        data: {
+          reviewStatus: status, reviewedBy: reviewer, reviewedAt,
+          ...(body.action === "correct" ? {
+            text: body.correctedText!.trim(),
+            supportStatus: "absent", evidenceIds: "[]",
+          } : {}),
+        },
+      }),
+    );
+    if (!saved) return failure("review_or_audit_unavailable", 503);
     return NextResponse.json({ ok: true, reviewStatus: status });
   }
 
@@ -116,11 +137,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
   const status = body.action === "confirm" ? "confirmed" : "rejected";
-  const changed = await db.graphNode.updateMany({
-    where: { id: node.id, caseId },
-    data: { status, reviewedBy: reviewer, reviewedAt },
-  });
-  if (changed.count !== 1) return failure("review_conflict", 409);
-  await audit("node", { nodeType: node.nodeType, status });
+  const saved = await auditedChange("node", { nodeType: node.nodeType, status },
+    tx => tx.graphNode.updateMany({
+      where: { id: node.id, caseId },
+      data: { status, reviewedBy: reviewer, reviewedAt },
+    }),
+  );
+  if (!saved) return failure("review_or_audit_unavailable", 503);
   return NextResponse.json({ ok: true, status });
 }
