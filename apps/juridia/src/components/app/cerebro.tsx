@@ -140,23 +140,27 @@ export function Cerebro() {
   const [result, setResult] = useState<BrainResult | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [lastOriginalUrl, setLastOriginalUrl] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [history, setHistory] = useState<{ id: string; title: string; ramoJuridico: string | null; hypothesis: string | null; tokensUsed: number; createdAt: string }[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
   const SAMPLE = `O cliente João da Silva foi inscrito indevidamente no SERASA em 15/01/2026 pelo Banco XYZ, após já ter quitado o débito de R$ 5.000,00 em 10/12/2025. O cliente possui comprovante de pagamento. Sofreu constrangimento ao tentar obter crédito. Pede indenização por danos morais no valor de R$ 50.000,00. Relação de consumo caracterizada.`;
 
-  // Carrega histórico de análises ao montar
+  // No fictitious history IDs; only authorized real cases have persisted history.
   useEffect(() => {
-    loadHistory();
-  }, []);
+    setHistory([]);
+    setResult(null);
+    if (currentCaseId) void loadHistory(currentCaseId);
+  }, [currentCaseId]);
 
-  async function loadHistory() {
+  async function loadHistory(caseId: string) {
     try {
-      const res = await fetch("/api/brain?caseId=cerebro-session");
+      const res = await fetch("/api/brain?caseId=" + encodeURIComponent(caseId));
+      if (!res.ok) return;
       const data = await res.json();
       setHistory(data.analyses || []);
-    } catch { /* ignore */ }
+    } catch { /* no history while offline */ }
   }
 
   // Atualiza histórico após nova análise
@@ -177,7 +181,7 @@ export function Cerebro() {
       const res = await fetch("/api/brain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facts, title: title || undefined, caseId: "cerebro-session" }),
+        body: JSON.stringify({ facts, title: title || undefined, caseId: currentCaseId || undefined }),
       });
       const data = await res.json();
       clearInterval(stepInterval);
@@ -186,7 +190,7 @@ export function Cerebro() {
       } else {
         setResult(data);
         setCurrentStep(8);
-        await loadHistory(); // atualiza histórico
+        if (currentCaseId) await loadHistory(currentCaseId); // only linked cases persist history
         toast({
           title: "Análise cerebral concluída",
           description: `${data.steps?.filter((s: BrainStep) => s.status === "done").length || 0}/8 etapas completas · análise persistida`,
@@ -211,15 +215,17 @@ export function Cerebro() {
       if (!res.ok || data.error) {
         toast({ title: data.error || "Falha na importação", variant: "destructive" });
       } else {
+        setLastOriginalUrl(data.originalRetained && typeof data.originalUrl === "string" &&
+          data.originalUrl.startsWith("/api/originals?") ? data.originalUrl : null);
         const extracted = data.text || "";
         const existing = facts.trim();
         const combined = existing ? `${existing}\n\n--- Documento: ${data.fileName} (${data.textLength} chars, ${data.totalEvidence} evidências) ---\n${extracted}` : extracted;
         setFacts(combined);
         toast({
           title: `Texto extraído: ${data.fileName}`,
-          description: data.evidencePersisted
-            ? `${data.textLength} caracteres · ${data.totalEvidence} referências vinculadas ao caso. Original não arquivado.`
-            : `${data.textLength} caracteres · arquivo não arquivado nem vinculado a um caso. Confira o texto.`,
+          description: data.originalRetained
+            ? `${data.textLength} caracteres · ${data.totalEvidence} evidências · original no cofre privado.`
+            : `${data.textLength} caracteres · original não arquivado. Confira o texto extraído.`,
         });
       }
     } catch {
@@ -246,7 +252,7 @@ export function Cerebro() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Cérebro</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              IA de entendimento profundo de casos jurídicos — raciocina em 7 etapas
+              Pesquisa e análise assistida de casos — revisão jurídica obrigatória
             </p>
           </div>
         </div>
@@ -312,6 +318,11 @@ export function Cerebro() {
                 </label>
               )}
             </div>
+            {lastOriginalUrl && (
+              <a href={lastOriginalUrl} target="_blank" rel="noopener noreferrer" className="text-xs underline text-primary">
+                Baixar arquivo original armazenado (acesso autorizado)
+              </a>
+            )}
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => { setFacts(SAMPLE); setTitle("Inscrição indevida SERASA"); }}>
                 Usar exemplo
@@ -334,7 +345,7 @@ export function Cerebro() {
               )}
             </Button>
             <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2.5 text-xs text-muted-foreground">
-              <strong className="text-primary">Como funciona:</strong> O cérebro analisa seu caso em 7 etapas: extração → questões jurídicas → legislação → jurisprudência → viabilidade → lacunas → estratégia. Cada etapa usa IA, busca na base curada e pesquisa real.
+              <strong className="text-primary">Como funciona:</strong> O sistema organiza fatos, aponta lacunas e consulta as fontes disponíveis. Não presume jurisprudência confirmada nem substitui a revisão do advogado.
             </div>
           </CardContent>
         </Card>
