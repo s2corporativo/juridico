@@ -93,17 +93,19 @@ const NODE_TYPE_CONFIG: Record<string, { label: string; icon: React.ComponentTyp
 };
 
 export function Inteligencia() {
-  const { brainContext, setBrainContext } = useAppStore();
+  const { brainContext, setBrainContext, currentCaseId } = useAppStore();
   const [facts, setFacts] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<MapResult | null>(null);
   const [stored, setStored] = useState<StoredData | null>(null);
   const [activeTab, setActiveTab] = useState<"resumo" | "fatos" | "grafo" | "afirmacoes">("resumo");
 
-  // Carrega dados persistidos ao montar
+  // Refresh on real case change; never fetch the historic synthetic default-case.
   useEffect(() => {
-    loadStored();
-  }, []);
+    setStored(null);
+    setResult(null);
+    if (currentCaseId) void loadStored();
+  }, [currentCaseId]);
 
   // Usa brainContext se vier do Cérebro
   useEffect(() => {
@@ -113,14 +115,20 @@ export function Inteligencia() {
   }, [brainContext, facts]);
 
   const loadStored = useCallback(async () => {
+    if (!currentCaseId) return;
     try {
-      const res = await fetch("/api/intelligence/map");
+      const res = await fetch("/api/intelligence/map?caseId=" + encodeURIComponent(currentCaseId));
+      if (!res.ok) return;
       const data = await res.json();
       setStored(data);
-    } catch { /* ignore */ }
-  }, []);
+    } catch { /* offline */ }
+  }, [currentCaseId]);
 
   async function mapCase() {
+    if (!currentCaseId) {
+      toast({ title: "Selecione um caso real antes de mapear", variant: "destructive" });
+      return;
+    }
     if (facts.trim().length < 30) {
       toast({ title: "Texto insuficiente (mín. 30 caracteres)", variant: "destructive" });
       return;
@@ -131,7 +139,7 @@ export function Inteligencia() {
       const res = await fetch("/api/intelligence/map", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facts, caseId: "default-case" }),
+        body: JSON.stringify({ facts, caseId: currentCaseId }),
       });
       const data = await res.json();
       if (data.error) {
@@ -152,11 +160,15 @@ export function Inteligencia() {
   }
 
   async function review(type: "assertion" | "node", id: string, action: "confirm" | "correct" | "reject") {
+    if (!currentCaseId) {
+      toast({ title: "Selecione um caso antes da revisão", variant: "destructive" });
+      return;
+    }
     try {
       const res = await fetch("/api/intelligence/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, id, action, caseId: "default-case" }),
+        body: JSON.stringify({ type, id, action, caseId: currentCaseId }),
       });
       const data = await res.json();
       if (data.error) {
@@ -408,7 +420,7 @@ function ResultView({
 
         {activeTab === "grafo" && (
           <motion.div key="grafo" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-            <GraphVisual caseId="default-case" />
+            {currentCaseId ? <GraphVisual caseId={currentCaseId} /> : <p className="text-sm text-muted-foreground">Selecione um caso para visualizar o grafo.</p>}
             {/* Lista de nós para review (mantém a funcionalidade de confirmar/rejeitar) */}
             {stored?.nodes && stored.nodes.filter((n) => n.status === "candidate").length > 0 && (
               <Card>
