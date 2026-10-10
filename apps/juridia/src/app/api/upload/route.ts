@@ -113,6 +113,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const rawPages = ext === "pdf" ? text.split("\f") : [text];
   const pages = rawPages.map((text, index) => ({ text, number: index + 1 })).filter((page) => page.text.trim().length > 0);
   if (pages.length > MAX_PAGES) return reject("limite_de_60_paginas_atingido", 413);
+  if (caseId && !pages.some(page => page.text.replace(/\\s+/g, " ").trim().length >= 10)) {
+    return reject("documento_sem_trecho_apto_a_evidencia", 422);
+  }
 
   const documentHash = createHash("sha256").update(binary).digest("hex");
   // Original archive is strictly opt-in, case-owned and outside the Next public tree.
@@ -169,9 +172,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     totalEvidence,
     documentHash,
     pages: pages.length,
-    evidencePersisted: Boolean(caseId),
+    evidencePersisted: totalEvidence > 0,
     originalRetained: retained,
-    originalUrl: retained ? "/api/originals?caseId=" + encodeURIComponent(caseId) + "&hash=" + documentHash : null,
+    originalUrl: retained && totalEvidence > 0 ? "/api/originals?caseId=" + encodeURIComponent(caseId) + "&hash=" + documentHash : null,
     warning: retained
       ? "Texto extraído. Original armazenado em cofre privado, mas ainda não validado juridicamente."
       : "Texto extraído, não validado juridicamente. O arquivo original não foi arquivado.",
