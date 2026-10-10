@@ -3,6 +3,7 @@
  * NOT a human-annotated jurisprudence relevance benchmark or model accuracy measure.
  */
 import { test, expect } from "bun:test";
+import { createHash } from "node:crypto";
 import { verifyCitations } from "../src/lib/citation_gate";
 import { pseudonymize } from "../src/lib/pseudonymizer";
 
@@ -16,6 +17,8 @@ const law = (n: number) => ({
   vigente: true,
   urlOficial: "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
   revisadoPor: "human:lawyer-test",
+  dataConsulta: new Date(),
+  hashConteudo: createHash("sha256").update("Trecho inventado exclusivamente para validar a política de citações sem fonte jurídica real.").digest("hex"),
 });
 
 for (let i = 0; i < 10; i++) {
