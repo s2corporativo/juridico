@@ -574,7 +574,7 @@ export async function runMinutaPipeline(
       markers: "[]", // intencional: o mapa de PII não é persistido (tarja-1)
       generatedContent: finalContent,
       skillSlugs: JSON.stringify(skills.map((s) => s.slug)),
-      status: degraded ? "draft" : "generated",
+      status: degraded || !validation.valid ? "draft" : "generated", // invalid citations never auto-promote
       batchId: body.batchId || null,
     },
   });
@@ -589,7 +589,7 @@ export async function runMinutaPipeline(
   await db.agentRun.update({
     where: { id: run.id },
     data: {
-      status: degraded ? "failed" : "completed",
+      status: degraded || !validation.valid ? "failed" : "completed",
       tokensIn: 0,
       tokensOut: tokensTotal,
       providerSnapshot: JSON.stringify({
@@ -657,7 +657,7 @@ export async function runMinutaPipeline(
     references,
     pipeline: {
       stages,
-      degraded,
+      degraded: degraded || !validation.valid,
       skillsAutoRouted: skills.filter((s) => s.origin === "auto").map((s) => s.slug),
       reviewCorrections,
     },
