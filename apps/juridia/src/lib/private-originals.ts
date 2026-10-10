@@ -3,7 +3,7 @@
  * Explicit opt-in: JURIDIA_PRIVATE_UPLOAD_ROOT=/absolute/private/path
  * Authorization MUST be checked at the caller before storing or loading.
  */
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, mkdir, open, readFile, realpath, link, unlink } from "node:fs/promises";
 import { isAbsolute, join, resolve, sep } from "node:path";
@@ -11,6 +11,40 @@ import { isAbsolute, join, resolve, sep } from "node:path";
 const MAX_ORIGINAL_BYTES = 8 * 1024 * 1024;
 const HASH = /^[a-f0-9]{64}$/;
 const CASE_ID = /^[a-zA-Z0-9_-]{8,128}$/;
+
+const MAGIC = Buffer.from("JIO1");
+const NONCE_BYTES = 12;
+const TAG_BYTES = 16;
+const ENVELOPE_BYTES = MAGIC.length + NONCE_BYTES + TAG_BYTES;
+
+function privateEncryptionKey(): Buffer {
+  const value = process.env.JURIDIA_PRIVATE_UPLOAD_KEY ?? "";
+  if (!/^[a-fA-F0-9]{64}$/.test(value)) {
+    throw new PrivateOriginalError("PRIVATE_ORIGINAL_ENCRYPTION_KEY_MISSING");
+  }
+  return Buffer.from(value, "hex");
+}
+function encryptOriginal(plaintext: Buffer): Buffer {
+  const nonce = randomBytes(NONCE_BYTES);
+  const cipher = createCipheriv("aes-256-gcm", privateEncryptionKey(), nonce);
+  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  return Buffer.concat([MAGIC, nonce, cipher.getAuthTag(), ciphertext]);
+}
+function decryptOriginal(envelope: Buffer): Buffer {
+  if (envelope.length <= ENVELOPE_BYTES ||
+      !envelope.subarray(0, MAGIC.length).equals(MAGIC)) {
+    throw new PrivateOriginalError("INVALID_ENCRYPTED_ORIGINAL_FORMAT");
+  }
+  const nonce = envelope.subarray(MAGIC.length, MAGIC.length + NONCE_BYTES);
+  const tag = envelope.subarray(MAGIC.length + NONCE_BYTES, ENVELOPE_BYTES);
+  try {
+    const decipher = createDecipheriv("aes-256-gcm", privateEncryptionKey(), nonce);
+    decipher.setAuthTag(tag);
+    return Buffer.concat([decipher.update(envelope.subarray(ENVELOPE_BYTES)), decipher.final()]);
+  } catch {
+    throw new PrivateOriginalError("PRIVATE_ORIGINAL_DECRYPTION_FAILED");
+  }
+}
 
 export class PrivateOriginalError extends Error {
   constructor(message: string) {
@@ -69,7 +103,7 @@ export async function archivePrivateOriginal(caseId: string, bytes: Buffer): Pro
   let handle;
   try {
     handle = await open(temporary, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600);
-    await handle.writeFile(bytes);
+    await handle.writeFile(encryptOriginal(bytes));
     await handle.sync();
     await handle.close();
     handle = undefined;
@@ -101,10 +135,11 @@ export async function readPrivateOriginal(caseId: string, hash: string): Promise
   const handle = await open(location, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const stat = await handle.stat();
-    if (!stat.isFile() || stat.size > MAX_ORIGINAL_BYTES || stat.size < 1) {
+    if (!stat.isFile() || stat.size > MAX_ORIGINAL_BYTES + ENVELOPE_BYTES || stat.size <= ENVELOPE_BYTES) {
       throw new PrivateOriginalError("INVALID_PRIVATE_ORIGINAL_FILE");
     }
-    const data = await readFile(handle);
+    const envelope = await readFile(handle);
+    const data = decryptOriginal(envelope);
     if (createHash("sha256").update(data).digest("hex") !== hash) {
       throw new PrivateOriginalError("PRIVATE_ORIGINAL_INTEGRITY_FAILED");
     }
