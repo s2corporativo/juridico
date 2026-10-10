@@ -151,10 +151,16 @@ export async function discoverStjCkanResources(options: {
       throw new Error("STJ_CKAN_INVALID_COUNT");
     }
     if (page === 0) reportedCount = count;
+    if (page > 0 && count !== reportedCount) {
+      throw new Error("STJ_CKAN_PAGINATION_RACE");
+    }
     const datasets = body.result.results;
     pagesScanned += 1;
     if (datasets.length === 0 && page * pageSize < reportedCount) {
       throw new Error("STJ_CKAN_PREMATURE_EMPTY_PAGE");
+    }
+    if (datasets.length < pageSize && page * pageSize + datasets.length < reportedCount) {
+      throw new Error("STJ_CKAN_INCOMPLETE_PAGE");
     }
     for (const raw of datasets) {
       if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
