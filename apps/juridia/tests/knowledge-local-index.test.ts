@@ -13,7 +13,7 @@ test("FTS5 indexes EXISTING knowledge and filters unapproved/fictitious material
     db.exec("CREATE TABLE LegalSource(id TEXT PRIMARY KEY,diploma TEXT,numero TEXT,textoTrecho TEXT,urlOficial TEXT,vigente INTEGER,revisadoPor TEXT)");
     db.exec("CREATE TABLE KnowledgeDocument(id TEXT PRIMARY KEY,status TEXT,vigente INTEGER,dadosFicticios INTEGER,urlFonte TEXT)");
     db.exec("CREATE TABLE KnowledgeChunk(id TEXT PRIMARY KEY,documentId TEXT,contexto TEXT,texto TEXT)");
-    db.exec("INSERT INTO LegalSource VALUES('L1','CDC','art. 18','responsabilidade solidaria defeito do produto','https://www.planalto.gov.br/',1,'advogado')");
+    db.exec("INSERT INTO LegalSource VALUES('L1','CDC','art. 18','responsabilidade solidaria defeito do produto','https://www.planalto.gov.br/',1,'human:lawyer-1')");
     db.exec("INSERT INTO KnowledgeDocument VALUES('D1','ATIVO',1,0,'https://www.stj.jus.br/')");
     db.exec("INSERT INTO KnowledgeDocument VALUES('D2','ATIVO',1,1,NULL)");
     db.exec("INSERT INTO KnowledgeChunk VALUES('C1','D1','STJ','prazo processual de consumidor')");
