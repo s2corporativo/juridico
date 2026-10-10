@@ -96,7 +96,8 @@ export async function POST(req: NextRequest) {
         textoTrecho: body.textoTrecho || "",
         vigente: body.vigente ?? true,
         urlOficial: body.urlOficial || null,
-        dataConsulta: body.urlOficial ? new Date() : null,
+        // A submitted link does not prove it was consulted; human review sets date.
+        dataConsulta: null,
         // Creating a record is ingestion, NOT an editorial human approval.
         revisadoPor: null,
         hashConteudo: shaText(body.textoTrecho || ""),
@@ -142,6 +143,14 @@ export async function PATCH(req: NextRequest) {
     vigente?: boolean;
     urlOficial?: string;
     approve?: boolean;
+    review?: {
+      viewedOfficialPublication?: boolean;
+      comparedFullExcerpt?: boolean;
+      checkedValidityAsOfToday?: boolean;
+      checkedApplicability?: boolean;
+      expectedContentHash?: string;
+      expectedUpdatedAt?: string;
+    };
   } = {};
   try {
     body = await req.json();
@@ -172,25 +181,45 @@ export async function PATCH(req: NextRequest) {
   if (body.vigente !== undefined) data.vigente = body.vigente;
   if (body.urlOficial !== undefined) {
     data.urlOficial = body.urlOficial;
-    data.dataConsulta = new Date();
+    // Changing a URL is ingestion/editing, never proof of a new official consultation.
+    data.dataConsulta = undefined;
     data.revisadoPor = null;
   }
-  // Editorial approval is an explicit admin action, not a client-provided label.
+  // A simple confirmation click is not evidence of actual editorial review.
+  // Require explicit attestations against the exact immutable source snapshot.
   if (body.approve === true) {
-    const excerpt = body.textoTrecho ?? existing.textoTrecho;
-    const url = body.urlOficial ?? existing.urlOficial;
-    if (!officialHttpsUrl(url) || excerpt.trim().length < 25 || body.vigente === false || !existing.vigente) {
-      return NextResponse.json({ error: "official_source_and_valid_text_required" }, { status: 422 });
+    const r = body.review;
+    if (body.textoTrecho !== undefined || body.urlOficial !== undefined || body.vigente !== undefined ||
+        !r?.viewedOfficialPublication || !r.comparedFullExcerpt ||
+        !r.checkedValidityAsOfToday || !r.checkedApplicability ||
+        r.expectedContentHash !== shaText(existing.textoTrecho) ||
+        r.expectedUpdatedAt !== existing.updatedAt.toISOString() ||
+        !officialHttpsUrl(existing.urlOficial) || !existing.vigente ||
+        existing.textoTrecho.trim().length < 25) {
+      return NextResponse.json({ error: "documented_manual_editorial_review_required" }, { status: 422 });
     }
-    data.hashConteudo = shaText(excerpt);
+    data.hashConteudo = shaText(existing.textoTrecho);
     data.revisadoPor = `human:${__auth.user.uid}`;
     data.dataConsulta = new Date();
   }
 
-  const updated = await db.legalSource.update({
-    where: { id: body.id },
+  if (body.textoTrecho !== undefined &&
+      (typeof body.textoTrecho !== "string" || body.textoTrecho.length > 70_000 ||
+       body.textoTrecho.trim().length < 25)) {
+    return NextResponse.json({ error: "invalid_legal_excerpt" }, { status: 422 });
+  }
+  if (body.urlOficial !== undefined && !officialHttpsUrl(body.urlOficial)) {
+    return NextResponse.json({ error: "invalid_official_url" }, { status: 422 });
+  }
+  if (body.vigente === false) data.revisadoPor = null;
+
+  const changed = await db.legalSource.updateMany({
+    where: { id: body.id, updatedAt: existing.updatedAt },
     data,
   });
+  if (changed.count !== 1) return NextResponse.json({ error: "source_review_conflict" }, { status: 409 });
+  const updated = await db.legalSource.findUnique({ where: { id: body.id } });
+  if (!updated) return NextResponse.json({ error: "source_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "update_legal_source",
@@ -212,14 +241,15 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const src = await db.legalSource.findUnique({ where: { id }, select: { diploma: true, numero: true } });
-  await db.legalSource.delete({ where: { id } });
-
+  if (!src) return NextResponse.json({ error: "source_not_found" }, { status: 404 });
+  // Historical source identities must remain available for auditing prior drafts.
+  await db.legalSource.update({ where: { id }, data: { vigente: false, revisadoPor: null } });
   await logAuditEvent({
-    action: "delete_legal_source",
+    action: "retire_legal_source",
     resource: "legal_source",
     resourceId: id,
-    metadata: { diploma: src?.diploma, numero: src?.numero },
+    userId: __auth.user.uid,
+    metadata: { diploma: src.diploma, numero: src.numero },
   });
-
   return NextResponse.json({ ok: true });
 }
