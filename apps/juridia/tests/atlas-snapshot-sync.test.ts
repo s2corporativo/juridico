@@ -33,7 +33,7 @@ test("fetches paginated Atlas metadata, verifies hash and replaces local cache a
         ok:true,contractVersion:1,snapshotVersion:version,total:2,
         page,pageSize:1,complete:page===1,items:[records[page]], methodology:"Discovery only",
       }),{status:200,headers:{"content-type":"application/json"}});
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
     const first=await syncApprovedDiscovery(db,{config:cfg,fetchImpl});
     expect(first).toEqual({status:"updated",version,total:2});
     expect(listApprovedDiscovery(db)).toHaveLength(2);
@@ -47,7 +47,7 @@ test("fetches paginated Atlas metadata, verifies hash and replaces local cache a
         ok:true,contractVersion:1,snapshotVersion:version,total:2,
         page:0,pageSize:1,complete:false,items:[records[0]],methodology:"Discovery only",
       }));
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
     await expect(syncApprovedDiscovery(db,{config:cfg,fetchImpl:broken})).rejects.toThrow("ATLAS_SNAPSHOT_FETCH_FAILED_409");
     expect(listApprovedDiscovery(db)).toHaveLength(2);
   } finally {
@@ -64,7 +64,7 @@ test("rejects source URL impersonation and fabricated citable-as-precedent statu
     const fetchImpl=(async()=>new Response(JSON.stringify({
       ok:true,contractVersion:1,snapshotVersion:versionOf(payload),page:0,
       total:1,pageSize:50,complete:true,items:payload,methodology:"Discovery only",
-    }))) as typeof fetch;
+    }))) as unknown as typeof fetch;
     await expect(syncApprovedDiscovery(db,{config:cfg,fetchImpl})).rejects.toThrow("ATLAS_SNAPSHOT_CONTRACT_INVALID");
     const tables = db.query("SELECT name FROM sqlite_master WHERE name='AtlasDiscoveryCache'").all();
     expect(tables).toHaveLength(0);
