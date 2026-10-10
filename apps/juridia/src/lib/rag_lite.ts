@@ -44,7 +44,7 @@ let docCountCache = 0;
 
 async function ensureIdfCache() {
   if (idfCache) return;
-  const sources = await db.legalSource.findMany({ select: { textoTrecho: true } });
+  const sources = await db.legalSource.findMany({ where: { vigente: true, revisadoPor: { startsWith: "human:" }, urlOficial: { not: null } }, select: { textoTrecho: true } });
   const N = sources.length || 1;
   const df = new Map<string, number>(); // document frequency
 
@@ -130,6 +130,7 @@ export async function ragSearch(query: string, topK = 5): Promise<RagResult[]> {
         const result = await hybridKnowledgeSearch(local, query, {
           topK: Math.min(30, Math.max(topK * 3, 10)),
           enabled: process.env.JURIDIA_USE_LOCAL_EMBEDDINGS === "true",
+          sourceKind: "legal_source",
         });
         ids = result.hits
           .filter(hit => hit.entityKind === "legal_source" && hit.citable)
