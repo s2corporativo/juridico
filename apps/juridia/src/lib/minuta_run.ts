@@ -466,6 +466,14 @@ export async function runMinutaPipeline(
     }
   }
 
+  // A successful HTTP response is not evidence that a document is complete.
+  // Small/local models can end at max_tokens in the middle of a petition.
+  const minDraftChars = ["peticao", "recurso", "defesa", "sentenca"].includes(tpl.category)
+    ? 850 : 260;
+  if (generated.trim() && generated.trim().length < minDraftChars) {
+    degraded = true;
+  }
+
   if (!generated) {
     // Fallback AGORA SINALIZADO (antes era 200 silencioso)
     degraded = true;
@@ -585,9 +593,9 @@ export async function runMinutaPipeline(
   }
   if (degraded) {
     validation.violations.push({
-      rule: "GERACAO_SEM_MODELO",
+      rule: "GERACAO_INCOMPLETA_OU_SEM_MODELO",
       severity: "error",
-      detail: "A geração por IA não foi concluída. O texto devolvido é apenas um rascunho de contingência e precisa de redação e revisão jurídica.",
+      detail: "A geração está incompleta ou o modelo está indisponível. Não é uma peça jurídica final; exige complementação e revisão por advogado.",
     });
   }
   validation.valid = validation.violations.filter((v) => v.severity === "error").length === 0;
