@@ -575,6 +575,13 @@ export async function runMinutaPipeline(
       excerpt: labelLeaks[0],
     });
   }
+  if (degraded) {
+    validation.violations.push({
+      rule: "GERACAO_SEM_MODELO",
+      severity: "error",
+      detail: "A geração por IA não foi concluída. O texto devolvido é apenas um rascunho de contingência e precisa de redação e revisão jurídica.",
+    });
+  }
   validation.valid = validation.violations.filter((v) => v.severity === "error").length === 0;
 
   // 7) Persistência — DONO É O USUÁRIO AUTENTICADO (corrige posse demo).
@@ -597,11 +604,14 @@ export async function runMinutaPipeline(
     },
   });
 
-  // Cota do usuário autenticado (antes nunca era checada)
-  await db.user.update({
-    where: { id: authUser.uid },
-    data: { minutasUsed: { increment: 1 } },
-  });
+  // A geração degradada ou juridicamente reprovada não é uma minuta cobrável.
+  const chargeable = !degraded && validation.valid && tokensTotal > 0;
+  if (chargeable) {
+    await db.user.update({
+      where: { id: authUser.uid },
+      data: { minutasUsed: { increment: 1 } },
+    });
+  }
 
   // 8) Agente fechado + auditoria + ledger
   await db.agentRun.update({
@@ -640,14 +650,16 @@ export async function runMinutaPipeline(
     },
     userId: authUser.uid,
   });
-  await logUsageEntry({
-    type: "debit",
-    operation: "minuta",
-    amount: -1,
-    reason: `Geração de ${tpl.name}`,
-    metadata: { documentId: doc.id, templateSlug: tpl.slug, tokensUsed: tokensTotal },
-    userId: authUser.uid,
-  });
+  if (chargeable) {
+    await logUsageEntry({
+      type: "debit",
+      operation: "minuta",
+      amount: -1,
+      reason: `Geração de ${tpl.name}`,
+      metadata: { documentId: doc.id, templateSlug: tpl.slug, tokensUsed: tokensTotal },
+      userId: authUser.uid,
+    });
+  }
 
   const documentDTO: DocumentDTO = {
     id: doc.id,
