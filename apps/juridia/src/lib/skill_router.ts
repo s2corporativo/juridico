@@ -35,7 +35,7 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
 
   // 2. Carrega skills approved (apenas a versão mais recente de cada slug)
   const allSkills = await db.skillVersion.findMany({
-    where: { status: "approved" },
+    where: { status: "approved", approvedBy: { startsWith: "human:" } }, // system imports are candidate instructions, not human-approved legal skills
     orderBy: [{ slug: "asc" }, { version: "desc" }],
   });
 
@@ -72,7 +72,7 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
     const issueBonus = issues.some((i) => i.area === skill.area) ? 0.2 : 0;
     const matchScore = Math.min(1, triggerScore + issueBonus);
 
-    if (matchScore > 0) {
+    if (matchedTriggers.length > 0) { // area label alone is not legal relevance
       matches.push({
         slug: skill.slug,
         name: skill.description,
