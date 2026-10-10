@@ -1,7 +1,7 @@
 # Continuidade da auditoria — JuridIA/Atlas, cofre de provas e gates
 
 **Data:** 10/10/2026  
-**Commit de código compilado e testado:** `3c1007a` na branch `fix/juridia-rag-safety-audit-20261010`  
+**Commit de código compilado e testado:** `cdd561f` na branch `fix/juridia-rag-safety-audit-20261010`  
 **Ambiente:** worktree isolado `/opt/atlas-juridico/audit-vps-rag-20261010`; banco de homologação SQLite e MariaDB staging; sem corte de produção.  
 **Decisão:** **NO-GO** para publicação como IA jurídica profissional autônoma.
 
@@ -13,7 +13,8 @@
 4. **Download seguro**. Nova rota `GET /api/originals?caseId=...&hash=...`: exige sessão e propriedade do caso ou administrador; exige evidência vinculada com marca de original arquivado; revalida integridade, gera download como anexo com `no-store`, `nosniff` e registra evento de auditoria. Arquivo adulterado recusa download (503).
 5. **UI do Cérebro**. Exibe link autorizado de recuperação quando há original; indicação visual diferente quando original não foi guardado. Corrigido identificador fantasma `cerebro-session`: histórico e vínculo usam apenas o ID de um caso real autorizado. Removida promessa imprecisa de pesquisa jurídica em todas as etapas.
 6. **Auditoria do cofre**. Novo `scripts/audit-private-originals.ts` percorre evidências marcadas `originalRetained=true` e verifica existência, autenticação GCM e hash do arquivo. Relata totais, não revela nomes nem caminhos. Bloqueia a liberação quando os parâmetros do cofre não existem ou há objetos ilegíveis.
-7. **Gate de publicação de conhecimento**. Novo `scripts/knowledge-release-readiness.ts` lê o acervo e emite JSON com bloqueadores concretos; **não** transforma sucesso da compilação em licença para liberar pareceres. Os controles externos e revisão humana não podem ser aprovados automaticamente.
+7. **Verificação de consistência do upload**. O download só é anunciado quando há evidência efetivamente persistida; arquivos sem trecho utilizável para evidência são recusados antes do arquivamento.
+8. **Gate de publicação de conhecimento**. Novo `scripts/knowledge-release-readiness.ts` lê o acervo e emite JSON com bloqueadores concretos; **não** transforma sucesso da compilação em licença para liberar pareceres. Os controles externos e revisão humana não podem ser aprovados automaticamente.
 
 ## Testes e evidências executados
 
