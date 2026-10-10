@@ -137,7 +137,7 @@ export async function ragSearch(query: string, topK = 5): Promise<RagResult[]> {
       } finally { local.close(); }
       if (ids.length) {
         const sources = await db.legalSource.findMany({
-          where: { id: { in: ids }, vigente: true, revisadoPor: { not: null }, urlOficial: { not: null } },
+          where: { id: { in: ids }, vigente: true, revisadoPor: { startsWith: "human:" }, urlOficial: { not: null } },
           select: {
             id: true, diploma: true, numero: true, tribunal: true,
             textoTrecho: true, urlOficial: true, vigente: true,
@@ -168,7 +168,7 @@ async function ragSearchTfidf(query: string, topK = 5): Promise<RagResult[]> {
   const queryVec = tfidfVector(queryTokens, idfCache);
 
   const sources = await db.legalSource.findMany({
-    where: { vigente: true },
+    where: { vigente: true, revisadoPor: { startsWith: "human:" }, urlOficial: { not: null } },
     select: {
       id: true, diploma: true, numero: true, tribunal: true,
       textoTrecho: true, urlOficial: true, vigente: true,
