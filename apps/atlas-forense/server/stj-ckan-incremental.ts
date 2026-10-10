@@ -119,8 +119,10 @@ export async function discoverStjCkanResources(options: {
   fetchImpl?: typeof fetch;
 } = {}): Promise<StjCatalogDiscovery> {
   const query = options.query?.trim() || "jurisprudencia";
-  const pageSize = Math.max(1, Math.min(100, Math.trunc(options.pageSize ?? 50)));
-  const maxPages = Math.max(1, Math.min(10, Math.trunc(options.maxPages ?? 3)));
+  const bounded = (value: number | undefined, fallback: number, max: number) =>
+    value === undefined || !Number.isFinite(value) ? fallback : Math.max(1, Math.min(max, Math.trunc(value)));
+  const pageSize = bounded(options.pageSize, 50, 100);
+  const maxPages = bounded(options.maxPages, 3, 10);
   const fetchImpl = options.fetchImpl ?? fetch;
   const seen = new Map<string, StjCatalogResource>();
   let reportedCount = 0;
