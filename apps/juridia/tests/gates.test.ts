@@ -5,7 +5,9 @@ import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { quoteHash, normalizeQuote } from "@/lib/evidence";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
 import { verifyCitations } from "@/lib/citation_gate";
+import { test } from "bun:test";
 
+test("Evidence, Citation, privacy and ownership gates", () => {
 let passed = 0;
 let failed = 0;
 
@@ -161,4 +163,5 @@ console.log(`\n=== RESULTADO ===`);
 console.log(`✓ ${passed} aprovados`);
 console.log(`✗ ${failed} reprovados`);
 console.log(failed === 0 ? "\n🎉 TODOS OS TESTES PASSARAM" : "\n⚠ ALGUNS TESTES FALHARAM");
-process.exit(failed > 0 ? 1 : 0);
+if (failed > 0) throw new Error(`${failed} verificações de gates reprovadas`);
+});
