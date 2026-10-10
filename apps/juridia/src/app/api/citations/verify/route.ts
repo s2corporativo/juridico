@@ -28,6 +28,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  if (body.documentId) {
+    const owned = await db.document.findFirst({
+      where: { id: body.documentId, userId: authUser.uid },
+      select: { id: true },
+    });
+    if (!owned) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
+  }
+
   // Carrega TODAS as fontes curadas para verificação
   const sources = await db.legalSource.findMany({
     orderBy: [{ diploma: "asc" }, { numero: "asc" }],
@@ -44,6 +52,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       total: result.total,
       verificadas: result.verificadas,
       suspeitas: result.suspeitas,
+      identificadas: result.identificadas,
       bloquear: result.bloquear,
     },
   });
