@@ -13,11 +13,8 @@ export async function logAuditEvent(params: {
   ip?: string | null;
 }): Promise<void> {
   try {
-    let userId = params.userId;
-    if (!userId) {
-      const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-      userId = demoUser?.id;
-    }
+    // Never impersonate the demonstration account. No user ID means a system event.
+    const userId = params.userId ?? null;
     await db.auditEvent.create({
       data: {
         userId: userId || null,
@@ -46,11 +43,8 @@ export async function logUsageEntry(params: {
   userId?: string | null;
 }): Promise<void> {
   try {
-    let userId = params.userId;
-    if (!userId) {
-      const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-      userId = demoUser?.id;
-    }
+    // Never impersonate the demonstration account. No user ID means a system event.
+    const userId = params.userId ?? null;
 
     // Pega o saldo mais recente
     const last = await db.usageLedger.findFirst({
