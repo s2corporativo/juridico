@@ -3,6 +3,7 @@
 // Mais: RATIO_DECIDENDI, MOLDE, ESTILO, REFORMULAR
 
 import ZAI from "z-ai-web-dev-sdk";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { db } from "@/lib/db";
 import { ragSearch } from "@/lib/rag_lite";
 import {
@@ -57,10 +58,12 @@ function getZai() {
   });
   return zaiPromise;
 }
-let totalTokens = 0;
+// One token ledger per analysis; global counters incorrectly mix concurrent users.
+const usageContext = new AsyncLocalStorage<{ totalTokens: number }>();
 
 function tok(c: unknown) {
-  totalTokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
+  const state = usageContext.getStore();
+  if (state) state.totalTokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
 }
 
 async function llmCall(system: string, user: string, maxTokens = 1000): Promise<string> {
@@ -84,7 +87,7 @@ function parseJSON(text: string): Record<string, unknown> | null {
   try { return JSON.parse(match[0]); } catch { return null; }
 }
 
-export async function runPipeline(params: {
+async function runPipelineCore(params: {
   pedido: string;
   tipoPeca: string;
   autos: string;
@@ -292,6 +295,8 @@ export async function runPipeline(params: {
   // ── Monta texto final ─────────────────────────────────────────────────
   const textoFinal = (result.secoesRedigidas || []).map((s) => s.texto).join("\n\n");
 
+  const totalTokens = usageContext.getStore()?.totalTokens ?? 0;
+
   await logAuditEvent({
     action: "lexvalida_pipeline",
     resource: "case",
@@ -310,4 +315,9 @@ export async function runPipeline(params: {
   });
 
   return { ...result, steps, totalTokens, textoFinal } as PipelineResult;
+}
+
+/** Public entrypoint isolates usage counters across simultaneous authenticated requests. */
+export function runPipeline(params: Parameters<typeof runPipelineCore>[0]): Promise<PipelineResult> {
+  return usageContext.run({ totalTokens: 0 }, () => runPipelineCore(params));
 }
