@@ -1,3 +1,4 @@
+import { createGovernedZai } from "./external-ai-boundary";
 // lexvalida_pipeline.ts — Pipeline de minuta com etapas do LexValida
 // PLANEJAR → ROTEIRO → REDIGIR_SECAO → ADERENCIA → CONTRARIA → DISTINGUISHING → AUDITORIA
 // Mais: RATIO_DECIDENDI, MOLDE, ESTILO, REFORMULAR
@@ -52,7 +53,7 @@ export interface PipelineResult {
 // SDK is initialized on demand, never while Next.js imports a route at build time.
 let zaiPromise: ReturnType<typeof ZAI.create> | null = null;
 function getZai() {
-  if (!zaiPromise) zaiPromise = ZAI.create().catch(error => {
+  if (!zaiPromise) zaiPromise = createGovernedZai().catch(error => {
     zaiPromise = null; // allow operator to configure provider and retry
     throw error;
   });
