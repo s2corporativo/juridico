@@ -39,6 +39,8 @@ interface LegalSource {
   urlOficial?: string | null;
   revisadoPor?: string | null;
   dataConsulta?: string | null;
+  hashConteudo?: string | null;
+  updatedAt?: string;
 }
 
 interface JurisprudenceResult {
@@ -57,6 +59,16 @@ export function BibliotecaJuridica() {
   const [searchJurisprudence, setSearchJurisprudence] = useState("");
   const [jurisprudenceResults, setJurisprudenceResults] = useState<JurisprudenceResult[]>([]);
   const [jurisprudenceLoading, setJurisprudenceLoading] = useState(false);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [reviewChecks, setReviewChecks] = useState([false, false, false, false]);
+  const reviewLabels = [
+    "Conferi o texto na publicação oficial vinculada",
+    "Comparei o trecho completo com a fonte oficial",
+    "Conferi a vigência e alterações na data de hoje",
+    "Conferi a aplicabilidade e as limitações para o uso jurídico",
+  ];
+  const reviewReady = reviewChecks.every(Boolean);
+
 
   const sourceCheckIsStale = (source: LegalSource) => {
     const checkedAt = Date.parse(source.dataConsulta ?? "");
@@ -84,22 +96,35 @@ export function BibliotecaJuridica() {
   useEffect(() => { load(); }, []);
 
   async function approveLegalSource(source: LegalSource) {
-    if (!source.urlOficial?.startsWith("https://")) {
-      toast({ title: "Fonte sem URL oficial HTTPS", variant: "destructive" });
+    if (!reviewReady || !source.urlOficial?.startsWith("https://") ||
+        !source.hashConteudo || !source.updatedAt) {
+      toast({ title: "Conferência individual da fonte ainda incompleta", variant: "destructive" });
       return;
     }
-    if (!window.confirm("Você verificou pessoalmente o texto, vigência, URL oficial e aplicabilidade dessa fonte? Esta ação será registrada em seu usuário.")) return;
     try {
       const result = await fetch("/api/legal-sources", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: source.id, approve: true }),
+        body: JSON.stringify({
+          id: source.id, approve: true,
+          review: {
+            viewedOfficialPublication: reviewChecks[0],
+            comparedFullExcerpt: reviewChecks[1],
+            checkedValidityAsOfToday: reviewChecks[2],
+            checkedApplicability: reviewChecks[3],
+            expectedContentHash: source.hashConteudo,
+            expectedUpdatedAt: source.updatedAt,
+          },
+        }),
       });
+      const data = await result.json().catch(() => ({}));
       if (!result.ok) {
-        toast({ title: "Aprovação não autorizada ou fonte inválida", variant: "destructive" });
+        toast({ title: data.error || "A revisão não foi aceita: confira a versão da fonte", variant: "destructive" });
         return;
       }
-      toast({ title: "Revisão registrada com sucesso" });
+      setReviewingId(null);
+      setReviewChecks([false, false, false, false]);
+      toast({ title: "Revisão individual registrada no usuário autenticado" });
       await load();
     } catch {
       toast({ title: "Não foi possível registrar a revisão", variant: "destructive" });
@@ -279,9 +304,32 @@ export function BibliotecaJuridica() {
                             </a>
                           )}
                           {!s.revisadoPor?.startsWith("human:") && (
-                            <Button variant="outline" size="sm" className="mt-2" onClick={() => void approveLegalSource(s)}>
-                              Confirmar revisão humana (admin)
-                            </Button>
+                            <div className="mt-2 space-y-2">
+                              <Button variant="outline" size="sm" onClick={() => {
+                                setReviewingId(reviewingId === s.id ? null : s.id);
+                                setReviewChecks([false, false, false, false]);
+                              }}>
+                                {reviewingId === s.id ? "Fechar conferência" : "Iniciar revisão individual (admin)"}
+                              </Button>
+                              {reviewingId === s.id && (
+                                <div className="space-y-2 rounded-md border p-2 text-xs">
+                                  <p className="font-medium">Confira a fonte oficial antes de atestar:</p>
+                                  {reviewLabels.map((label, index) => (
+                                    <label key={index} className="flex items-start gap-2">
+                                      <input type="checkbox" checked={reviewChecks[index]}
+                                        onChange={event => setReviewChecks(values =>
+                                          values.map((value, i) => i === index ? event.target.checked : value))}
+                                        className="mt-0.5" />
+                                      <span>{label}</span>
+                                    </label>
+                                  ))}
+                                  <Button size="sm" disabled={!reviewReady}
+                                    onClick={() => void approveLegalSource(s)}>
+                                    Assinar revisão desta versão
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
                           )}
                           <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
                             <code className="font-mono">{s.numero}</code>
