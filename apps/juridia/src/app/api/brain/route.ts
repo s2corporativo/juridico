@@ -1,3 +1,4 @@
+import { createGovernedZai } from "@/lib/external-ai-boundary";
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const steps: BrainStep[] = STEPS.map((s) => ({ ...s, status: "pending" as const }));
   const r: Partial<BrainResult> = { steps };
   let tokens = 0;
-  const zai = await ZAI.create();
+  const zai = await createGovernedZai();
 
   const tok = (c: unknown) => tokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
 
