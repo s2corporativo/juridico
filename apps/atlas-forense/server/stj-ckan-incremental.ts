@@ -51,6 +51,7 @@ export type StjCatalogResource = {
 export type StjCatalogDiscovery = {
   reportedCount: number;
   pagesScanned: number;
+  paginationRace: boolean;
   resources: StjCatalogResource[];
 };
 
@@ -129,6 +130,7 @@ export async function discoverStjCkanResources(options: {
   const seen = new Map<string, StjCatalogResource>();
   let reportedCount = 0;
   let pagesScanned = 0;
+  let paginationRace = false;
 
   for (let page = 0; page < maxPages; page++) {
     const url = new URL(STJ_CKAN_PACKAGE_SEARCH);
@@ -154,7 +156,9 @@ export async function discoverStjCkanResources(options: {
     }
     if (page === 0) reportedCount = count;
     if (page > 0 && count !== reportedCount) {
-      throw new Error("STJ_CKAN_PAGINATION_RACE");
+      // Preserve verified earlier pages, never silently claim complete coverage.
+      paginationRace = true;
+      break;
     }
     const datasets = body.result.results;
     pagesScanned += 1;
@@ -172,7 +176,7 @@ export async function discoverStjCkanResources(options: {
     }
     if (datasets.length < pageSize || (page + 1) * pageSize >= reportedCount) break;
   }
-  return { reportedCount, pagesScanned, resources: Array.from(seen.values()) };
+  return { reportedCount, pagesScanned, paginationRace, resources: Array.from(seen.values()) };
 }
 
 export function planStjMetadataChanges(
