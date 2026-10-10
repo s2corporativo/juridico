@@ -59,6 +59,7 @@ entries=(
   "A|EJC_OIDC_ISSUER|lit|$EJC_ISSUER"
   "A|EJC_OIDC_CLIENT_ID|lit|atlas-forense"
   "A|EJC_OIDC_CLIENT_SECRET|gen|"
+  "A|ATLAS_BRAIN_API_TOKEN|gen|"
   "J|NODE_ENV|lit|production"
   "J|PORT|lit|3005"
   "J|DATABASE_URL|ext|file:/opt/juridia/data/juridia.db"
@@ -66,6 +67,8 @@ entries=(
   "J|JURIDIA_OIDC_ISSUER|lit|$EJC_ISSUER"
   "J|EJC_OIDC_CLIENT_ID|lit|atlas-forense"
   "J|EJC_OIDC_CLIENT_SECRET|gen|"
+  "J|ATLAS_BRAIN_API_TOKEN|gen|"
+  "J|ATLAS_API_URL|lit|http://127.0.0.1:3010"
   "J|EJC_OIDC_REDIRECT_URIS|lit|$ATLAS_PUBLIC_URL/api/ejc-sso/callback"
 )
 
@@ -84,8 +87,8 @@ set_env_file() { # $1=arquivo $2=VAR $3=valor
   fi
 }
 
-# CLIENT_SECRET e issuer são COMPARTILHADOS (mesmo cliente OIDC nos dois apps)
-SHARED_SECRET_VARS="EJC_OIDC_CLIENT_SECRET"
+# CLIENT_SECRET e ATLAS_BRAIN_API_TOKEN são COMPARTILHADOS (mesmo valor nos dois apps)
+SHARED_SECRET_VARS="EJC_OIDC_CLIENT_SECRET ATLAS_BRAIN_API_TOKEN"
 
 STATUS=0
 declare -a ACTIONS

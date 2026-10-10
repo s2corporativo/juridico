@@ -60,7 +60,9 @@ interface BrainResult {
   values: { label: string; amount: string; state: EpistemicState }[];
   legalIssues: { question: string; area: string; relevance: string; state: EpistemicState; note?: string }[];
   applicableLaw: { diploma: string; numero: string; textoTrecho: string; vigente: boolean; urlOficial?: string | null; applicability: string; state: "direito_positivo"; confidence: number }[];
-  jurisprudence: { name: string; url: string; snippet: string; host_name: string; favorable: boolean | null; state: "jurisprudencia"; confidence: number }[];
+  jurisprudence: { name: string; url: string; snippet: string; host_name: string; favorable: boolean | null; state: "jurisprudencia" | "hipotese"; confidence: number; origin?: "atlas_compendio" | "web_nao_verificado"; citationId?: string; sourceStatus?: string; decisionDate?: string | null }[];
+  jurimetry?: { partial: boolean; limits: string[]; promptBlock: string } | null;
+  atlas?: { configured: boolean; status: "ok" | "partial" | "unavailable" | "no_terms"; error?: string; termsUsed: string[]; fallback: boolean };
   viability: {
     hypothesis: string;
     hypothesisNote: string;
@@ -632,16 +634,56 @@ export function Cerebro() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {result.jurisprudence.map((j, i) => (
-                        <a key={i} href={j.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-border p-2.5 transition-colors hover:border-primary/40 hover:bg-accent/30">
-                          <div className="mb-1 flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">{j.host_name}</span>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                          <p className="text-xs font-medium leading-tight">{j.name}</p>
-                          <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">{j.snippet}</p>
-                        </a>
-                      ))}
+                      {result.jurisprudence.map((j, i) => {
+                        const verified = j.origin === "atlas_compendio";
+                        const body = (
+                          <>
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                              <span className="text-[10px] text-muted-foreground">{j.host_name}</span>
+                              <span className="flex items-center gap-1">
+                                <Badge variant="outline" className={`text-[10px] ${verified ? "border-emerald-500/50 text-emerald-600" : "border-amber-500/50 text-amber-600"}`}>
+                                  {verified ? "Compêndio Atlas" : "não verificado"}
+                                </Badge>
+                                {j.url && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                              </span>
+                            </div>
+                            <p className="text-xs font-medium leading-tight">{j.name}</p>
+                            <p className="mt-1 text-[11px] text-muted-foreground line-clamp-3">{j.snippet}</p>
+                            {j.citationId && <p className="mt-1 text-[10px] text-muted-foreground">Ref.: {j.citationId}{j.url ? "" : " (sem URL oficial registrada)"}</p>}
+                          </>
+                        );
+                        const cls = "block rounded-lg border border-border p-2.5 transition-colors hover:border-primary/40 hover:bg-accent/30";
+                        return j.url ? (
+                          <a key={i} href={j.url} target="_blank" rel="noopener noreferrer" className={cls}>{body}</a>
+                        ) : (
+                          <div key={i} className={cls}>{body}</div>
+                        );
+                      })}
+                      {result.atlas?.fallback && (
+                        <p className="text-[11px] text-amber-600">Compêndio indisponível ou sem resultado: itens de busca web aberta, tratados como hipótese. Conferir na fonte oficial.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Jurimetria (Atlas, descritiva) */}
+              {result.jurimetry && (
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        <ListChecks className="h-4 w-4 text-primary" /> Jurimetria (Atlas, descritiva)
+                        {result.jurimetry.partial && <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-600">parcial</Badge>}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <pre className="whitespace-pre-wrap font-sans text-[11px] text-muted-foreground">{result.jurimetry.promptBlock}</pre>
+                      {result.jurimetry.limits.length > 0 && (
+                        <ul className="list-disc space-y-0.5 pl-4 text-[10px] text-muted-foreground">
+                          {result.jurimetry.limits.map((l, i) => <li key={i}>{l}</li>)}
+                        </ul>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>

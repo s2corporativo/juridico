@@ -4,6 +4,16 @@ import { db } from "@/lib/db";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
 import { requireAuth } from "@/lib/auth";
+import {
+  decisionToBrainItem,
+  extractSearchTerms,
+  fetchAtlasJurimetry,
+  isAtlasConfigured,
+  searchAtlasCompendium,
+  webResultToBrainItem,
+  type AtlasJurimetry,
+  type BrainJurisprudenceItem,
+} from "@/lib/atlas_client";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -43,7 +53,9 @@ interface BrainResult {
   values: { label: string; amount: string; state: EpistemicState }[];
   legalIssues: { question: string; area: string; relevance: "alta" | "média" | "baixa"; state: EpistemicState; note?: string }[];
   applicableLaw: { diploma: string; numero: string; textoTrecho: string; vigente: boolean; urlOficial?: string | null; applicability: string; state: "direito_positivo"; confidence: number }[];
-  jurisprudence: { name: string; url: string; snippet: string; host_name: string; favorable: boolean | null; state: "jurisprudencia"; confidence: number }[];
+  jurisprudence: BrainJurisprudenceItem[];
+  jurimetry: AtlasJurimetry | null;
+  atlas: { configured: boolean; status: "ok" | "partial" | "unavailable" | "no_terms"; error?: string; termsUsed: string[]; fallback: boolean };
   viability: {
     hypothesis: "favorável" | "incerto" | "desfavorável";
     hypothesisNote: string;
@@ -63,7 +75,7 @@ const STEPS = [
   { id: "extract", name: "Extração estruturada" },
   { id: "issues", name: "Questões jurídicas" },
   { id: "law", name: "Legislação aplicável" },
-  { id: "jurisprudence", name: "Jurisprudência" },
+  { id: "jurisprudence", name: "Jurisprudência e jurimetria (Atlas)" },
   { id: "viability", name: "Análise de viabilidade" },
   { id: "gaps", name: "Lacunas e perguntas" },
   { id: "strategy", name: "Estratégia recomendada" },
@@ -166,29 +178,57 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     steps[3].status = "done"; steps[3].result = r.applicableLaw.length;
   } catch (e) { steps[3].status = "error"; steps[3].error = e instanceof Error ? e.message : "Erro"; r.applicableLaw = []; }
 
-  // ── ETAPA 4: Jurisprudência (web_search) ──────────────────────────────────
+  // ── ETAPA 4: Jurisprudência (Compêndio Atlas) + jurimetria descritiva ─────
+  // Fonte primária: Compêndio do Atlas (fontes oficiais e citáveis) e jurimetria descritiva.
+  // Somente termos jurídicos genéricos saem daqui (sem nomes, números ou valores do caso).
+  // Fallback (Atlas desligado/indisponível): busca web aberta, SEMPRE sinalizada como hipótese.
   steps[4].status = "running";
+  r.jurimetry = null;
+  r.atlas = { configured: isAtlasConfigured(), status: "unavailable", termsUsed: [], fallback: false };
   try {
     const issues = r.legalIssues || [];
-    const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${facts.slice(0, 100)}`;
-    const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
-    r.jurisprudence = Array.isArray(raw)
-      ? raw.slice(0, 8).map((x) => ({ name: x.name, url: x.url, snippet: x.snippet, host_name: x.host_name, favorable: null, state: "jurisprudencia" as const, confidence: 0.7 }))
-      : [];
-    steps[4].status = "done"; steps[4].result = r.jurisprudence.length;
-  } catch (e) { steps[4].status = "error"; steps[4].error = e instanceof Error ? e.message : "Erro"; r.jurisprudence = []; }
+    const terms = extractSearchTerms(issues.map((i) => `${i.question} ${i.note || ""}`).join(" "), 3);
+    let needsWebFallback = !r.atlas.configured;
+
+    if (r.atlas.configured) {
+      if (terms.length === 0) {
+        r.atlas.status = "no_terms";
+        r.jurisprudence = [];
+      } else {
+        const [search, jurimetry] = await Promise.all([searchAtlasCompendium(terms, { limit: 8 }), fetchAtlasJurimetry()]);
+        r.jurimetry = jurimetry.ok ? jurimetry.data : null;
+        if (search.ok) {
+          r.jurisprudence = search.data.items.map(decisionToBrainItem);
+          r.atlas.termsUsed = search.data.termsUsed;
+          r.atlas.status = search.data.failedTerms > 0 || !jurimetry.ok ? "partial" : "ok";
+        } else {
+          r.atlas.error = search.error;
+          needsWebFallback = true;
+        }
+      }
+    }
+
+    if (needsWebFallback) {
+      r.atlas.fallback = true;
+      const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${facts.slice(0, 100)}`;
+      const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
+      r.jurisprudence = Array.isArray(raw) ? raw.slice(0, 8).map(webResultToBrainItem) : [];
+    }
+    steps[4].status = "done"; steps[4].result = r.jurisprudence?.length ?? 0;
+  } catch (e) { steps[4].status = "error"; steps[4].error = e instanceof Error ? e.message : "Erro"; r.jurisprudence = r.jurisprudence || []; }
 
   // ── ETAPA 5: Análise de viabilidade (com Evidence Ledger + hipótese) ─────
   steps[5].status = "running";
   try {
     const lawCtx = (r.applicableLaw || []).map((l) => `${l.diploma} ${l.numero}: ${l.textoTrecho.slice(0, 120)}`).join("\n");
-    const jurCtx = (r.jurisprudence || []).map((j) => `- ${j.name}: ${j.snippet.slice(0, 100)}`).join("\n");
+    const jurCtx = (r.jurisprudence || []).map((j) => `- [${j.origin}] ${j.name}: ${j.snippet.slice(0, 100)}`).join("\n");
+    const jurimetryCtx = r.jurimetry?.promptBlock ?? "Indisponível (Atlas não consultado ou sem dados).";
     const c = await zai.chat.completions.create({
       messages: [
-        { role: "system", content: `Você é um advogado sênior emitindo um PARECER DE VIABILIDADE. NUNCA use percentual ou "chance de êxito" — isso é HIPÓTESE sem base estatística. Para cada ponto forte/fraco, rotule o estado epistêmico. Responda APENAS com JSON:
+        { role: "system", content: `Você é um advogado sênior emitindo um PARECER DE VIABILIDADE. NUNCA use percentual ou "chance de êxito" — isso é HIPÓTESE sem base estatística. A jurimetria fornecida é apenas DESCRITIVA (volume de distribuição): jamais a use para estimar êxito ou tendência decisória. Itens de jurisprudência com origem "web_nao_verificado" são hipóteses não verificadas; só trate como jurisprudência os itens "atlas_compendio". Para cada ponto forte/fraco, rotule o estado epistêmico. Responda APENAS com JSON:
 
 {"hypothesis":"favorável|incerto|desfavorável","hypothesisNote":"explicar que é hipótese sem base estatística, requer validação jurisprudencial","strengths":[{"claim":"ponto forte","state":"fato_extraido|alegacao_cliente|inferencia_ia|direito_positivo|jurisprudencia","source":"origem","confidence":0.0-1.0,"note":"explicação"}],"weaknesses":[{"claim":"ponto fraco","state":"fato_extraido|alegacao_cliente|inferencia_ia","source":"origem","confidence":0.0-1.0,"note":"explicação"}],"reasoning":"raciocínio conectando fatos, lei e jurisprudência","evidence":[{"claim":"afirmação consolidada","state":"fato_extraido|inferencia_ia|direito_positivo|jurisprudencia","source":"origem","confidence":0.0-1.0,"note":"nota"}]}` },
-        { role: "user", content: `## Fatos\n${facts}\n\n## Legislação\n${lawCtx}\n\n## Jurisprudência\n${jurCtx}\n\n## Pedidos\n${JSON.stringify(r.requests)}` },
+        { role: "user", content: `## Fatos\n${facts}\n\n## Legislação\n${lawCtx}\n\n## Jurisprudência\n${jurCtx}\n\n## Jurimetria (Atlas, descritiva)\n${jurimetryCtx}\n\n## Pedidos\n${JSON.stringify(r.requests)}` },
       ],
       thinking: { type: "disabled" }, temperature: 0.4, max_tokens: 1500,
     });

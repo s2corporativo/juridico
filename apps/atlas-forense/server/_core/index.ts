@@ -6,6 +6,7 @@ import httpProxy from "http-proxy";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerEjcSsoRoutes } from "./ejc-sso";
+import { registerBrainApiRoutes } from "../brain-api";
 import { registerStorageProxy } from "./storageProxy";
 import { getServerListenOptions } from "./network";
 import { appRouter } from "../routers";
@@ -46,6 +47,7 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerEjcSsoRoutes(app);
+  registerBrainApiRoutes(app);
   registerEditorialScheduledRoute(app);
   // tRPC API
   app.use(

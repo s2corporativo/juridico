@@ -375,6 +375,8 @@ export type CompendiumSearchInput = {
   city?: string;
   legalArea?: string;
   sourceStatus?: "official_confirmed" | "official_without_number" | "attachment_reviewed" | "secondary_pending" | "movement_observed" | "search_thematic";
+  /** Restringe a busca a vários status de fonte (ex.: somente citáveis). Combina com `sourceStatus` por interseção. */
+  sourceStatuses?: ReadonlyArray<"official_confirmed" | "official_without_number" | "attachment_reviewed" | "secondary_pending" | "movement_observed" | "search_thematic">;
   page?: number;
   pageSize?: number;
 };
@@ -394,6 +396,7 @@ export async function searchCompendium(input: CompendiumSearchInput) {
   if (input.city) conditions.push(eq(jurisprudenceRecords.city, input.city));
   if (input.legalArea) conditions.push(eq(jurisprudenceRecords.legalArea, input.legalArea));
   if (input.sourceStatus) conditions.push(eq(jurisprudenceRecords.sourceStatus, input.sourceStatus));
+  if (input.sourceStatuses) conditions.push(inArray(jurisprudenceRecords.sourceStatus, [...input.sourceStatuses]));
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
   const [totalRows, decisions] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(jurisprudenceRecords).where(whereClause),

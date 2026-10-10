@@ -7,4 +7,6 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  /** Token de serviço da API interna Atlas ⇄ Cérebro (JuridIA). Ausente ou curto = API desligada (fail-closed). */
+  brainApiToken: process.env.ATLAS_BRAIN_API_TOKEN ?? "",
 };

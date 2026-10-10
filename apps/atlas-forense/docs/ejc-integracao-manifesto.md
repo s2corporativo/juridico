@@ -24,3 +24,7 @@ Na etapa atualmente autorizada, o EJC terá função exclusiva de **provedor de 
 ## Contrato de extensão
 
 O arquivo `shared/ejc-integration.ts` centraliza as rotas, módulos, papéis e restrições. Ele foi deliberadamente definido como `pending_approval`; não contém URL externa, token ou conector ativo. A aplicação consome esse contrato no roteamento e a página **Estrutura Interna** consulta o status técnico por procedimento público, sem habilitar SSO, sincronização ou transferência de dados.
+
+## Revisão de 10/10/2026: integração Cérebro Jurídico ↔ Atlas
+
+Por decisão expressa do titular em 10/10/2026, a decisão de 27/08/2026 (EJC limitado a provedor de identidade) é ampliada nos limites de `docs/integracao-cerebro-atlas.md`: o Cérebro consulta o Compêndio e a jurimetria descritiva do Atlas, e teses aprovadas retornam à fila editorial em `pending_review`. Permanecem vedados o envio de dados de caso ou de parte ao Atlas e qualquer publicação automática.

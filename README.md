@@ -102,14 +102,15 @@ JuridIA's REST endpoints with an `X-API-Token` auth header:
 
 ### 3. Compendium → RAG sync — Atlas publishes, JuridIA consumes
 
-Atlas exposes its Compendium (teses) as public metadata:
-- `GET /api/compendium/teses` — all teses
-- `GET /api/compendium/teses/:slug` — specific tese
-- `GET /api/compendium/search?q=...` — keyword search
+Atlas exposes a service-to-service API for the Cérebro Jurídico (details in
+`docs/integracao-cerebro-atlas.md`), authenticated by the shared bearer token
+`ATLAS_BRAIN_API_TOKEN` (fail-closed: absent or shorter than 32 chars = 503):
+- `GET  /api/internal/brain/compendium/search` — public Compêndio metadata (only citable source statuses)
+- `GET  /api/internal/brain/jurimetry` — descriptive jurimetry with coverage and limits (no success rate, no magistrate ranking)
+- `POST /api/internal/brain/theses` — approved theses from JuridIA enter the editorial queue as `pending_review`
 
-JuridIA's `src/lib/compendium-sync.ts` caches these teses in-memory and exposes
-`syncCompendium()`, `searchCompendium(query)` and `getTeseBySlug(slug)` so that
-the Cérebro can enrich its LLM prompts with Atlas's Compendium before generation.
+JuridIA consumes it through `apps/juridia/src/lib/atlas_client.ts` (`/api/brain`
+step 4) and returns theses through the authenticated `POST /api/atlas/theses`.
 
 ## Integration status
 

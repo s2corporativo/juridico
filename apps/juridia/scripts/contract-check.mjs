@@ -42,6 +42,7 @@ const CONFIDENTIAL = [
   { m: "POST", p: "molde" }, { m: "POST", p: "suggest" },
   { m: "POST", p: "skill-router" }, { m: "POST", p: "triagem-documento" },
   { m: "POST", p: "valor-causa" }, { m: "POST", p: "vedacao-surpresa" },
+  { m: "POST", p: "atlas/theses" },
 ];
 
 const ADMIN_ANON = [

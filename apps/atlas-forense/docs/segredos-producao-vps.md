@@ -24,6 +24,7 @@ documento define O QUE existe, COMO é gerado e ONDE fica; a execução é do
 | `EJC_OIDC_ISSUER` | literal | issuer HTTPS do IdP do EJC (ex.: `https://sso.<dominio>/api/auth/oidc`) |
 | `EJC_OIDC_CLIENT_ID` | literal | `atlas-forense` |
 | `EJC_OIDC_CLIENT_SECRET` | **segredo** | `openssl rand -hex 32` — **o MESMO valor nos dois apps** (cliente OIDC único) |
+| `ATLAS_BRAIN_API_TOKEN` | **segredo** | `openssl rand -hex 32` (>= 32 chars) — **o MESMO valor nos dois apps** (API interna Cérebro ↔ Atlas; sem ele a API responde 503) |
 | `EJC_SSO_REDIRECT_URI` | opcional | deriva do Host se ausente |
 
 **Intencionalmente AUSENTES na VPS:** `OAUTH_SERVER_URL`, `OWNER_OPEN_ID`,
@@ -40,6 +41,8 @@ documento define O QUE existe, COMO é gerado e ONDE fica; a execução é do
 | `JURIDIA_OIDC_ISSUER` | literal | **idêntico** ao `EJC_OIDC_ISSUER` do Atlas |
 | `EJC_OIDC_CLIENT_ID` | literal | `atlas-forense` |
 | `EJC_OIDC_CLIENT_SECRET` | **segredo** | **idêntico** ao do Atlas (espelhado pelo script) |
+| `ATLAS_BRAIN_API_TOKEN` | **segredo** | **idêntico** ao do Atlas (espelhado pelo script) |
+| `ATLAS_API_URL` | literal | `http://127.0.0.1:3010` (loopback; HTTPS obrigatório fora dela) |
 | `EJC_OIDC_REDIRECT_URIS` | literal | `https://atlas.depaulateixeira.adv.br/api/ejc-sso/callback` (allowlist exata) |
 | `EJC_ADMIN_EMAIL/PASSWORD/NAME` | opcional | somente para `scripts/seed-admin.ts` (uma vez, depois remover do env) |
 
