@@ -84,3 +84,15 @@ test("local adapter fails closed when upstream is unavailable", async () => {
     })).rejects.toThrow("LOCAL_MODEL_UNAVAILABLE");
   });
 });
+
+test("incomplete upstream stream is rejected instead of producing a seemingly valid legal draft", async () => {
+  await withLocal(async () => {
+    const upstream = JSON.stringify({ message: { content: "A sentença é " }, done: false }) + "\\n";
+    const adapter = createLocalChatAdapter(async () => new Response(upstream, { status: 200 }));
+    const result = await adapter.chat.completions.create({
+      messages: [{ role: "user", content: "Caso fictício" }], stream: true,
+    });
+    if (!(result instanceof ReadableStream)) throw new Error("stream missing");
+    await expect(new Response(result).text()).rejects.toThrow("LOCAL_STREAM_INTERRUPTED");
+  });
+});
