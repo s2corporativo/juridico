@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test";
+import { createHash } from "node:crypto";
 import { verifyCitations } from "../src/lib/citation_gate";
 import { validateResponse, detectInstructionInjection } from "../src/lib/ai_governance";
 import { pseudonymize } from "../src/lib/pseudonymizer";
@@ -9,6 +10,8 @@ const source = {
   tribunal: null, textoTrecho: "Responsabilidade por vício de produto e serviço nos termos legais.",
   vigente: true, urlOficial: "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
   revisadoPor: "human:advogado-123",
+  dataConsulta: new Date(),
+  hashConteudo: createHash("sha256").update("Responsabilidade por vício de produto e serviço nos termos legais.").digest("hex"),
 };
 
 test("legal citation gate denies fabricated jurisprudence instead of identifying as safe", () => {
@@ -24,6 +27,10 @@ test("legal citation gate requires signed human reviewer, official URL and match
   expect(verifyCitations(txt, [{ ...source, revisadoPor: null }]).bloquear).toBe(true);
   expect(verifyCitations(txt, [{ ...source, urlOficial: null }]).bloquear).toBe(true);
   expect(verifyCitations(txt, [source]).bloquear).toBe(false);
+  expect(verifyCitations(txt, [{ ...source, dataConsulta: new Date("2020-01-01") }]).bloquear).toBe(true);
+  expect(verifyCitations(txt, [{ ...source, dataConsulta: null }]).bloquear).toBe(true);
+  expect(verifyCitations(txt, [{ ...source, hashConteudo: "0".repeat(64) }]).bloquear).toBe(true);
+  expect(verifyCitations(txt, [{ ...source, textoTrecho: source.textoTrecho + " ALTERADO" }]).bloquear).toBe(true);
 });
 
 test("jurisprudence matches by identifier do not prove adherence of the thesis", () => {
