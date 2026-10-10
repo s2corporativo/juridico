@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
-import { logAuditEvent } from "@/lib/audit";
+
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -87,29 +87,28 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const source = await db.legalSource.create({
-      data: {
-        tipo: body.tipo,
-        diploma: body.diploma,
-        numero: body.numero,
-        tribunal: body.tribunal || null,
-        textoTrecho: body.textoTrecho || "",
-        vigente: body.vigente ?? true,
-        urlOficial: body.urlOficial || null,
-        // A submitted link does not prove it was consulted; human review sets date.
-        dataConsulta: null,
-        // Creating a record is ingestion, NOT an editorial human approval.
-        revisadoPor: null,
-        hashConteudo: shaText(body.textoTrecho || ""),
-      },
-    });
-
-    await logAuditEvent({
-      action: "create_legal_source",
-      userId: __auth.user.uid,
-      resource: "legal_source",
-      resourceId: source.id,
-      metadata: { tipo: body.tipo, diploma: body.diploma, numero: body.numero },
+    const source = await db.$transaction(async tx => {
+      const record = await tx.legalSource.create({
+        data: {
+          tipo: body.tipo!,
+          diploma: body.diploma!,
+          numero: body.numero!,
+          tribunal: body.tribunal || null,
+          textoTrecho: body.textoTrecho || "",
+          vigente: body.vigente ?? true,
+          urlOficial: body.urlOficial || null,
+          dataConsulta: null,
+          revisadoPor: null,
+          hashConteudo: shaText(body.textoTrecho || ""),
+        },
+      });
+      await tx.auditEvent.create({ data: {
+        action: "create_legal_source",
+        userId: __auth.user.uid, resource: "legal_source",
+        resourceId: record.id,
+        metadata: JSON.stringify({ tipo: record.tipo, diploma: record.diploma, numero: record.numero }),
+      } });
+      return record;
     });
 
     return NextResponse.json({
@@ -214,21 +213,31 @@ export async function PATCH(req: NextRequest) {
   }
   if (body.vigente === false) data.revisadoPor = null;
 
-  const changed = await db.legalSource.updateMany({
-    where: { id: body.id, updatedAt: existing.updatedAt },
-    data,
-  });
-  if (changed.count !== 1) return NextResponse.json({ error: "source_review_conflict" }, { status: 409 });
-  const updated = await db.legalSource.findUnique({ where: { id: body.id } });
-  if (!updated) return NextResponse.json({ error: "source_not_found" }, { status: 404 });
-
-  await logAuditEvent({
-    action: "update_legal_source",
-    userId: __auth.user.uid,
-    resource: "legal_source",
-    resourceId: body.id,
-    metadata: { diploma: updated.diploma, numero: updated.numero, vigente: updated.vigente, editorialApproval: body.approve === true, actor: __auth.user.uid },
-  });
+  // Source mutation and its review audit must be all-or-nothing.
+  try {
+    await db.$transaction(async tx => {
+      const changed = await tx.legalSource.updateMany({
+        where: { id: body.id, updatedAt: existing.updatedAt }, data,
+      });
+      if (changed.count !== 1) throw new Error("SOURCE_VERSION_CONFLICT");
+      const updated = await tx.legalSource.findUniqueOrThrow({ where: { id: body.id } });
+      await tx.auditEvent.create({ data: {
+        action: "update_legal_source",
+        userId: __auth.user.uid, resource: "legal_source",
+        resourceId: body.id,
+        metadata: JSON.stringify({
+          diploma: updated.diploma, numero: updated.numero,
+          vigente: updated.vigente, editorialApproval: body.approve === true,
+          reviewVersion: updated.updatedAt.toISOString(), contentHash: updated.hashConteudo,
+          consultedOfficialPublication: body.approve === true,
+        }),
+      } });
+    });
+  } catch (error) {
+    const conflict = error instanceof Error && error.message === "SOURCE_VERSION_CONFLICT";
+    return NextResponse.json({ error: conflict ? "source_review_conflict" : "source_review_audit_unavailable" },
+      { status: conflict ? 409 : 503 });
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -244,14 +253,20 @@ export async function DELETE(req: NextRequest) {
 
   const src = await db.legalSource.findUnique({ where: { id }, select: { diploma: true, numero: true } });
   if (!src) return NextResponse.json({ error: "source_not_found" }, { status: 404 });
-  // Historical source identities must remain available for auditing prior drafts.
-  await db.legalSource.update({ where: { id }, data: { vigente: false, revisadoPor: null } });
-  await logAuditEvent({
-    action: "retire_legal_source",
-    resource: "legal_source",
-    resourceId: id,
-    userId: __auth.user.uid,
-    metadata: { diploma: src.diploma, numero: src.numero },
-  });
+  // Historical source identities remain for auditing. Never retire without
+  // an audit event committed in the same transaction.
+  try {
+    await db.$transaction(async tx => {
+      await tx.legalSource.update({ where: { id }, data: { vigente: false, revisadoPor: null } });
+      await tx.auditEvent.create({ data: {
+        action: "retire_legal_source",
+        resource: "legal_source", resourceId: id,
+        userId: __auth.user.uid,
+        metadata: JSON.stringify({ diploma: src.diploma, numero: src.numero }),
+      } });
+    });
+  } catch {
+    return NextResponse.json({ error: "source_retirement_audit_unavailable" }, { status: 503 });
+  }
   return NextResponse.json({ ok: true });
 }
