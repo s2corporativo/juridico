@@ -73,4 +73,17 @@ describe("STJ CKAN incremental metadata foundation", () => {
     const rateLimited = (async () => new Response("blocked", { status: 429 })) as typeof fetch;
     await expect(discoverStjCkanResources({ fetchImpl: rateLimited })).rejects.toThrow("STJ_CKAN_HTTP_429");
   });
+  it("rejects truncated intermediate pages and changing counts", async () => {
+    const truncated = mockedCkan([
+      { success: true, result: { count: 4, results: [source] } },
+    ]);
+    await expect(discoverStjCkanResources({ pageSize: 2, fetchImpl: truncated })).rejects.toThrow("STJ_CKAN_INCOMPLETE_PAGE");
+
+    const racing = mockedCkan([
+      { success: true, result: { count: 2, results: [source] } },
+      { success: true, result: { count: 3, results: [source] } },
+    ]);
+    await expect(discoverStjCkanResources({ pageSize: 1, fetchImpl: racing })).rejects.toThrow("STJ_CKAN_PAGINATION_RACE");
+  });
+
 });
