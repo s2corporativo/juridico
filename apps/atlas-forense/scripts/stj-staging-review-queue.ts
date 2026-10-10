@@ -13,7 +13,7 @@ import {
 } from "../server/public-knowledge-collectors";
 import {
   claimDailyEditorialRun, enqueueEditorialCandidates,
-  existingEditorialKeys, finishEditorialRun,
+  existingEditorialKeys, finishEditorialRun, getDb,
 } from "../server/db";
 
 export function isStagingEditorialDb(raw: string | undefined) {
@@ -66,11 +66,25 @@ export async function queueStjStaging() {
   }
 }
 
+/** A one-shot CLI must release its pool; leaving idle connections keeps Bun alive. */
+export async function closeStagingEditorialPool() {
+  const db = await getDb();
+  const client = (db as unknown as { $client?: { end?: () => Promise<void> } } | null)?.$client;
+  if (typeof client?.end === "function") await client.end();
+}
+
 if (import.meta.main) {
-  queueStjStaging()
-    .then(result => console.log(JSON.stringify(result)))
-    .catch(error => {
-      console.error("STJ_STAGING_QUEUE_FAILED", error instanceof Error ? error.message : "unknown");
-      process.exitCode = 2;
-    });
+  let exitCode = 0;
+  try {
+    const result = await queueStjStaging();
+    console.log(JSON.stringify(result));
+  } catch (error) {
+    console.error("STJ_STAGING_QUEUE_FAILED", error instanceof Error ? error.message : "unknown");
+    exitCode = 2;
+  } finally {
+    try { await closeStagingEditorialPool(); }
+    catch { exitCode = 3; }
+  }
+  // Dedicated CLI only. All writes/queries and pool closure have completed.
+  process.exit(exitCode);
 }
