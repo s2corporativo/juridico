@@ -9,6 +9,8 @@ import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { createEvidence } from "@/lib/evidence";
 import { detectInstructionInjection } from "@/lib/ai_governance";
+import { archivePrivateOriginal } from "@/lib/private-originals";
+import { logAuditEvent } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -113,12 +115,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (pages.length > MAX_PAGES) return reject("limite_de_60_paginas_atingido", 413);
 
   const documentHash = createHash("sha256").update(binary).digest("hex");
+  // Original archive is strictly opt-in, case-owned and outside the Next public tree.
+  // If configured but unhealthy, reject; never promise that an original was stored.
+  let retained = false;
+  if (caseId && process.env.JURIDIA_PRIVATE_UPLOAD_ROOT) {
+    try {
+      const stored = await archivePrivateOriginal(caseId, binary);
+      retained = stored.hash === documentHash;
+    } catch {
+      return reject("arquivo_original_privado_indisponivel", 503);
+    }
+  }
   let totalEvidence = 0;
   if (caseId) {
     for (const page of pages) {
       const excerpt = page.text.replace(/\s+/g, " ").trim().slice(0, 1500);
       if (excerpt.length < 10) continue;
-      await createEvidence({
+      const reference = await createEvidence({
         caseId,
         quote: excerpt,
         pageNumber: ext === "pdf" ? page.number : null,
@@ -126,10 +139,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         sourceKind: "text",
         retrievalMethod: "deterministic",
         documentHash,
-        metadata: { fileName: name, uploadKind: ext, originalRetained: false },
+        metadata: { fileName: name, uploadKind: ext, originalRetained: retained },
       });
+      // Existing deduplicated references may predate private archival.
+      if (retained) {
+        const existing = await db.evidenceRef.findUnique({ where: { id: reference.id }, select: { metadata: true } });
+        let previous: Record<string, unknown> = {};
+        try { previous = JSON.parse(existing?.metadata ?? "{}"); } catch { /* replace invalid legacy JSON */ }
+        await db.evidenceRef.update({
+          where: { id: reference.id },
+          data: { metadata: JSON.stringify({ ...previous, fileName: name, uploadKind: ext, originalRetained: true }) },
+        });
+      }
       totalEvidence++;
     }
+    await logAuditEvent({
+      action: "case_file_uploaded",
+      resource: "case",
+      resourceId: caseId,
+      userId: auth.user.uid,
+      metadata: { hash: documentHash, bytes: binary.length, pages: pages.length, retained, evidenceCount: totalEvidence },
+    });
   }
 
   return NextResponse.json({
@@ -140,7 +170,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     documentHash,
     pages: pages.length,
     evidencePersisted: Boolean(caseId),
-    originalRetained: false,
-    warning: "Texto extraído, não validado juridicamente. O arquivo original não foi arquivado.",
+    originalRetained: retained,
+    originalUrl: retained ? "/api/originals?caseId=" + encodeURIComponent(caseId) + "&hash=" + documentHash : null,
+    warning: retained
+      ? "Texto extraído. Original armazenado em cofre privado, mas ainda não validado juridicamente."
+      : "Texto extraído, não validado juridicamente. O arquivo original não foi arquivado.",
   });
 }
