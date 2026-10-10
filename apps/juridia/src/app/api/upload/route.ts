@@ -113,7 +113,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const rawPages = ext === "pdf" ? text.split("\f") : [text];
   const pages = rawPages.map((text, index) => ({ text, number: index + 1 })).filter((page) => page.text.trim().length > 0);
   if (pages.length > MAX_PAGES) return reject("limite_de_60_paginas_atingido", 413);
-  if (caseId && !pages.some(page => page.text.replace(/\\s+/g, " ").trim().length >= 10)) {
+  if (caseId && !pages.some(page => page.text.replace(/\s+/g, " ").trim().length >= 10)) {
     return reject("documento_sem_trecho_apto_a_evidencia", 422);
   }
 
