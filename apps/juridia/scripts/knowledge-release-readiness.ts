@@ -4,6 +4,7 @@
  */
 import { db } from "../src/lib/db";
 import { evaluateKnowledgeReadiness, type KnowledgeMetrics } from "../src/lib/knowledge-readiness";
+import { openKnowledgeDb } from "../src/lib/knowledge-local-index";
 
 function officialHttps(value: string | null): boolean {
   if (!value) return false;
@@ -16,14 +17,24 @@ function officialHttps(value: string | null): boolean {
 
 async function main() {
   const cutoff = new Date(Date.now() - 30 * 86_400_000);
-  const [sources, skills, docsMissingUrl, templatesTotal] = await Promise.all([
+  const [sources, skills, templatesTotal] = await Promise.all([
     db.legalSource.findMany({
       select: { revisadoPor: true, urlOficial: true, vigente: true, dataConsulta: true, hashConteudo: true, textoTrecho: true },
     }),
     db.skillVersion.findMany({ select: { status: true, approvedBy: true, approvedAt: true } }),
-    db.knowledgeDocument.count({ where: { OR: [{ urlFonte: null }, { urlFonte: "" }] } }),
     db.template.count(),
   ]);
+  const dbLocation = process.env.JURIDIA_KNOWLEDGE_DB_PATH ||
+    (process.env.DATABASE_URL?.startsWith("file:") ? process.env.DATABASE_URL.slice(5) : "");
+  if (!dbLocation?.startsWith("/")) throw new Error("READINESS_LOCAL_KNOWLEDGE_DB_PATH_REQUIRED");
+  const knowledge = openKnowledgeDb(dbLocation, true);
+  let docsMissingUrl = 0;
+  try {
+    const result = knowledge.query("SELECT COUNT(*) AS n FROM KnowledgeDocument WHERE urlFonte IS NULL OR TRIM(urlFonte) = ''").get() as { n: number };
+    docsMissingUrl = result.n;
+  } finally {
+    knowledge.close();
+  }
   const reviewed = sources.filter(source =>
     /^human:[A-Za-z0-9_-]+$/.test(source.revisadoPor ?? "") &&
     source.vigente &&
