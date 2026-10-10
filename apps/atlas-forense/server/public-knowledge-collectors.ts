@@ -111,6 +111,7 @@ type DjenEnvelope = {
 };
 function communicationId(item: Record<string, unknown>): string | null {
   const value = item.hash ?? item.idComunicacao ?? item.id;
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) return String(value);
   return typeof value === "string" && /^[a-zA-Z0-9_-]{1,128}$/.test(value) ? value : null;
 }
 
@@ -161,10 +162,12 @@ export async function collectDjenDailyCandidates(options: {
       total += page === 1 ? data.count : 0;
       const remaining = data.count - (page - 1) * pageSize;
       if (remaining > data.items.length && data.items.length < pageSize) throw new Error("DJEN_INCOMPLETE_PAGE");
+      let stableIds = 0;
       for (const raw of data.items) {
         if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
         const id = communicationId(raw as Record<string, unknown>);
         if (!id) continue;
+        stableIds += 1;
         const sourceKey = "cnj-djen-daily";
         const externalKey = "djen:" + sha(tribunal + ":" + date + ":" + id).slice(0, 48);
         const summary = "Registro de publicação pública disponibilizado em " + date +
@@ -178,6 +181,7 @@ export async function collectDjenDailyCandidates(options: {
           contentHash: sha(externalKey),
         });
       }
+      if (data.items.length > 0 && stableIds === 0) throw new Error("DJEN_MISSING_STABLE_IDENTIFIERS");
       if (page * pageSize >= data.count) break;
       if (page === maxPages) truncated = true;
     }
