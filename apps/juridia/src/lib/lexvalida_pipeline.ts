@@ -157,6 +157,7 @@ export async function runPipeline(params: {
     // web_search para jurisprudência
     for (const q of (queries.jurisprudencia || [pedido]).slice(0, 2)) {
       try {
+        const zai = await getZai();
         const raw = (await zai.functions.invoke("web_search", { query: `jurisprudência ${q}`, num: 5 })) as unknown as { url: string; name: string; snippet: string }[];
         if (Array.isArray(raw)) {
           for (const r of raw.slice(0, 5)) {
