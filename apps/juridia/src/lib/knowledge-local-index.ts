@@ -119,6 +119,6 @@ export function searchKnowledgeBm25(db: Database, query: string, topK = 8): Loca
   return (db.query(sql).all(match, limit) as Row[]).map(r => ({
     entityKind: r.entityKind, id: r.entityId, title: r.title,
     snippet: r.snippet, documentId: r.docId, url: r.url, bm25: -r.score,
-    citable: r.entityKind === "legal_source" && Boolean(r.revisadoPor) && Boolean(r.url),
+    citable: r.entityKind === "legal_source" && /^human:[A-Za-z0-9_-]+$/.test(r.revisadoPor ?? "") && /^https:\/\//.test(r.url ?? ""),
   }));
 }
