@@ -75,6 +75,21 @@ export function sanitizeEditorialError(error: unknown) {
 
 import { claimDailyEditorialRun, enqueueEditorialCandidates, existingEditorialKeys, finishEditorialRun } from "./db";
 
+/** Bounds each remote provider. A hung source cannot hold the daily job open forever. */
+export async function withinEditorialDeadline<T>(task: Promise<T>, timeoutMs = 45_000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      task,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("EDITORIAL_SOURCE_TIMEOUT")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 /**
  * Daily external scheduler entrypoint. Uses existing editorial tables and review queue.
  * No collector can approve its own candidates. DataJud disabled by default.
@@ -94,7 +109,7 @@ export async function runEditorialUpdate() {
   let truncated = false;
   try {
     try {
-      const stj = await collectStjResourceCandidates();
+      const stj = await withinEditorialDeadline(collectStjResourceCandidates());
       const existing = await existingEditorialKeys("stj-dados-abertos");
       const plan = selectUnseenCandidates(stj.candidates, existing, 250);
       candidates.push(...plan.selected);
@@ -103,7 +118,7 @@ export async function runEditorialUpdate() {
       failed.push("STJ:" + sanitizeEditorialError(error));
     }
     try {
-      const djen = await collectDjenDailyCandidates();
+      const djen = await withinEditorialDeadline(collectDjenDailyCandidates());
       candidates.push(...djen.candidates);
       truncated ||= djen.truncated;
     } catch (error) {
