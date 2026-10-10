@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Building2, MapPin, Briefcase, FileStack } from "lucide-react";
+import { FileStack } from "lucide-react";
 
 interface Stats {
   totalUsers: number;
@@ -17,8 +17,8 @@ export function Stats() {
 
   useEffect(() => {
     fetch("/api/stats")
-      .then((r) => r.json())
-      .then((d) => setStats(d))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setStats(d && typeof d.totalDocuments === "number" ? d : null))
       .catch(() => null);
   }, []);
 
@@ -29,16 +29,15 @@ export function Stats() {
   };
 
   const items = [
-    { icon: Building2, value: stats?.publicInstitutions ?? 153, label: "Instituições públicas" },
-    { icon: MapPin, value: stats?.statesServed ?? 27, label: "Estados atendidos" },
-    { icon: Briefcase, value: stats?.lawOffices ?? 5217, label: "Escritórios" },
-    { icon: FileStack, value: stats?.totalDocuments ?? 35291483, label: "Minutas geradas", big: true },
+    { icon: FileStack, value: stats?.totalDocuments ?? 0, label: "Documentos no ambiente", big: true },
   ];
+
+  if (!stats) return null; // Do not fabricate statistics while unsigned or offline.
 
   return (
     <section className="border-b border-border bg-secondary/30">
       <div className="container-juridia py-12">
-        <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6">
           {items.map((it, i) => (
             <motion.div
               key={it.label}
