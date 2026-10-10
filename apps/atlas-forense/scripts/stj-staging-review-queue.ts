@@ -11,6 +11,8 @@
 import {
   collectStjResourceCandidates, selectUnseenCandidates,
 } from "../server/public-knowledge-collectors";
+import { eq } from "drizzle-orm";
+import { editorialUpdateRuns } from "../drizzle/schema";
 import {
   claimDailyEditorialRun, enqueueEditorialCandidates,
   existingEditorialKeys, finishEditorialRun, getDb,
@@ -33,9 +35,19 @@ export async function queueStjStaging() {
     throw new Error("EDITORIAL_STAGING_GUARD_REQUIRED");
   }
 
+  // Idempotency is checked BEFORE remote collection. A duplicate daily run
+  // must never repeatedly hit an unavailable provider or leave an idle CLI.
+  const db = await getDb();
+  if (!db) throw new Error("EDITORIAL_STAGING_DB_UNAVAILABLE");
+  const previous = await db.select({ id: editorialUpdateRuns.id })
+    .from(editorialUpdateRuns).where(eq(editorialUpdateRuns.runKey, PROOF_RUN_KEY)).limit(1);
+  if (previous.length) return {
+    runKey: PROOF_RUN_KEY, status: "already_claimed", queuedCount: 0,
+  };
+
   const discovery = await collectStjResourceCandidates({ maxPages: 1 });
-  const previous = await existingEditorialKeys("stj-dados-abertos");
-  const plan = selectUnseenCandidates(discovery.candidates, previous, 20);
+  const existing = await existingEditorialKeys("stj-dados-abertos");
+  const plan = selectUnseenCandidates(discovery.candidates, existing, 20);
   const runId = await claimDailyEditorialRun(PROOF_RUN_KEY, 1);
   if (!runId) return {
     runKey: PROOF_RUN_KEY, status: "already_claimed", queuedCount: 0,
