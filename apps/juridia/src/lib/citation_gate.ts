@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 // citation_gate.ts — Gate anti-alucinação de citações jurídicas (portado do EJC)
 // Extrai citações do texto, verifica existência contra base curada, fail-closed.
 
@@ -124,6 +125,8 @@ export function verifyCitations(
     vigente: boolean;
     urlOficial: string | null;
     revisadoPor?: string | null;
+    dataConsulta?: Date | string | null;
+    hashConteudo?: string | null;
   }[]
 ): VerifyResult {
   const extracted = extractCitations(text);
@@ -172,7 +175,16 @@ export function verifyCitations(
       } catch { /* fail closed */ }
       // Existence of a judgment ID does NOT establish factual or thesis adherence.
       // A separate lawyer review is required before any precedent can be promoted.
+      const consulted = match.dataConsulta instanceof Date
+        ? match.dataConsulta : match.dataConsulta ? new Date(match.dataConsulta) : null;
+      const ageMs = consulted ? Date.now() - consulted.getTime() : NaN;
+      // An old/manual review cannot forever certify a changing legal source.
+      const recentConsultation = Number.isFinite(ageMs) &&
+        ageMs >= -86_400_000 && ageMs <= 30 * 86_400_000;
+      const hashMatches = /^[a-f0-9]{64}$/i.test(match.hashConteudo ?? "") &&
+        createHash("sha256").update(match.textoTrecho).digest("hex") === match.hashConteudo?.toLowerCase();
       const verified = Boolean(match.vigente && humanReviewed && trustedOrigin &&
+        recentConsultation && hashMatches &&
         match.textoTrecho.trim().length >= 25 && ext.type !== "jurisprudencia");
       citations.push({
         ...ext,
@@ -185,7 +197,7 @@ export function verifyCitations(
         },
         reason: verified
           ? "Identificador encontrado; revisão humana registrada. Aderência exige conferência."
-          : "Sem validação suficiente de vigência, origem, aprovação humana ou aderência da tese.",
+          : "Sem aprovação humana, consulta recente, hash íntegro, origem oficial, vigência ou comprovação de pertinência.",
       });
     } else if (ext.type === "jurisprudencia") {
       citations.push({
