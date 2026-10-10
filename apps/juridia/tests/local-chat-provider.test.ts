@@ -30,6 +30,7 @@ test("local model gate is disabled unless the operator explicitly enables it", (
 test("local provider excludes embedding-only and unsafe model names", () => {
   expect(() => localModelName({ JURIDIA_LOCAL_AI_MODEL: "nomic-embed-text:latest" })).toThrow();
   expect(() => localModelName({ JURIDIA_LOCAL_AI_MODEL: "../inject" })).toThrow();
+  expect(() => localModelName({ JURIDIA_LOCAL_AI_MODEL: "qwen2.5:3b-instruct" })).toThrow("MODEL_LICENSE_NOT_APPROVED");
   expect(localModelName({ JURIDIA_LOCAL_AI_MODEL: "qwen3:4b" })).toBe("qwen3:4b");
 });
 
