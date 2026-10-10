@@ -277,7 +277,7 @@ export function Inteligencia() {
           )}
 
           {result && (
-            <ResultView result={result} stored={stored} onReview={review} activeTab={activeTab} setActiveTab={setActiveTab} />
+            <ResultView result={result} stored={stored} onReview={review} activeTab={activeTab} setActiveTab={setActiveTab} caseId={currentCaseId} />
           )}
         </div>
       </div>
@@ -292,7 +292,9 @@ function ResultView({
   onReview,
   activeTab,
   setActiveTab,
+  caseId,
 }: {
+  caseId: string | null;
   result: MapResult;
   stored: StoredData | null;
   onReview: (t: "assertion" | "node", id: string, a: "confirm" | "correct" | "reject") => void;
@@ -420,7 +422,7 @@ function ResultView({
 
         {activeTab === "grafo" && (
           <motion.div key="grafo" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-            {currentCaseId ? <GraphVisual caseId={currentCaseId} /> : <p className="text-sm text-muted-foreground">Selecione um caso para visualizar o grafo.</p>}
+            {caseId ? <GraphVisual caseId={caseId} /> : <p className="text-sm text-muted-foreground">Selecione um caso para visualizar o grafo.</p>}
             {/* Lista de nós para review (mantém a funcionalidade de confirmar/rejeitar) */}
             {stored?.nodes && stored.nodes.filter((n) => n.status === "candidate").length > 0 && (
               <Card>
