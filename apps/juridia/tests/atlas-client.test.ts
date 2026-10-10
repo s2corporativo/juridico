@@ -4,6 +4,7 @@ import {
   decisionToBrainItem,
   extractSearchTerms,
   fetchAtlasJurimetry,
+  fetchAtlasKnowledgeSnapshot,
   getAtlasConfig,
   searchAtlasCompendium,
   submitThesisToAtlas,
@@ -122,6 +123,36 @@ function mockFetch(handler: (url: URL, init: RequestInit) => { status?: number; 
   assert(decisionToBrainItem(decision("w", null, { sourceStatus: "outro" })).confidence === 0.5, "status desconhecido: 0.5");
   const web = webResultToBrainItem({ url: "https://x.com", name: "n", snippet: "s", host_name: "x.com" });
   assert(web.state === "hipotese" && web.origin === "web_nao_verificado" && web.confidence === 0.3, "web aberta vira hipótese");
+}
+
+// ── Snapshot de conhecimento aprovado (Atlas → JuridIA, sem DB remoto) ───────
+{
+  const version = "v1:" + "a".repeat(64);
+  const body = {
+    ok: true, contractVersion: 1, snapshotVersion: version,
+    total: 1, page: 0, pageSize: 50, complete: true,
+    methodology: "Metadados de descoberta, sem precedente",
+    items: [{
+      atlasItemId: "7", sourceKey: "stj-dados-abertos", sourceType: "official_update",
+      tribunal: "STJ", title: "Dataset STJ", officialUrl: "https://dadosabertos.web.stj.jus.br/dataset/x",
+      publishedAt: null, provenanceHash: "b".repeat(64), editorialStatus: "approved",
+      documentStatus: "discovery_only", citableAsPrecedent: false, text: null,
+    }],
+  };
+  const ok = await fetchAtlasKnowledgeSnapshot(0, undefined, {
+    config, fetchImpl: mockFetch(() => ({ body })),
+  });
+  assert(ok.ok && ok.data.snapshotVersion === version && ok.data.items.length === 1, "snapshot aprovado validado");
+  const wrong = await fetchAtlasKnowledgeSnapshot(0, undefined, {
+    config, fetchImpl: mockFetch(() => ({ body: { ...body, items: [{ ...body.items[0], citableAsPrecedent: true }] } })),
+  });
+  assert(!wrong.ok && wrong.error === "invalid_atlas_knowledge_contract", "snapshot não pode inventar precedente citável");
+  const invalidCursor = await fetchAtlasKnowledgeSnapshot(1, undefined, { config });
+  assert(!invalidCursor.ok && invalidCursor.error === "invalid_snapshot_cursor", "pagina posterior exige versão");
+  const changed = await fetchAtlasKnowledgeSnapshot(0, "v1:" + "c".repeat(64), {
+    config, fetchImpl: mockFetch(() => ({ status: 409, body: { error: "snapshot_changed" } })),
+  });
+  assert(!changed.ok && changed.status === 409, "snapshot alterado rejeita cursor antigo");
 }
 
 console.log(`\n${passed} passaram, ${failed} falharam`);
