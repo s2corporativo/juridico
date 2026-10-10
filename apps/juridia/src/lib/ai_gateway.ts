@@ -129,7 +129,7 @@ async function callOllama(spec: ProviderSpec, request: AIRequest, messages: AIMe
     }),
     signal: AbortSignal.timeout(ollamaTimeoutMs()),
   });
-  if (!resp.ok) throw new Error(`Ollama ${resp.status}: ${await resp.text()}`);
+  if (!resp.ok) throw new Error(`ollama_HTTP_${resp.status}`);
   const data = await resp.json() as {
     message?: { content?: string };
     prompt_eval_count?: number;
@@ -165,7 +165,7 @@ async function callOpenAICompatible(spec: ProviderSpec, request: AIRequest, mess
     }),
     signal: AbortSignal.timeout(180_000),
   });
-  if (!resp.ok) throw new Error(`${spec.name} ${resp.status}: ${await resp.text()}`);
+  if (!resp.ok) throw new Error(`${spec.name}_HTTP_${resp.status}`);
   const data = await resp.json() as {
     choices?: { message?: { content?: string } }[];
     usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
@@ -187,6 +187,14 @@ async function callProvider(spec: ProviderSpec, request: AIRequest, messages: AI
   throw new Error(`Provider ${spec.name} ainda não possui adapter ativo no gateway`);
 }
 
+/** Converte falhas externas em códigos fixos, sem expor corpo HTTP, URL ou segredos. */
+export function safeGatewayErrorCode(error: unknown): string {
+  if (!(error instanceof Error)) return "PROVIDER_REQUEST_FAILED";
+  if (/^(ollama|groq|maritaca)_HTTP_[1-5][0-9]{2}$/.test(error.message)) return error.message;
+  if (/BASE_URL, API_KEY e MODEL são obrigatórios/.test(error.message)) return "PROVIDER_NOT_CONFIGURED";
+  return "PROVIDER_REQUEST_FAILED";
+}
+
 export async function aiGatewayChat(request: AIRequest): Promise<AIResponse> {
   const mode = request.sanitizationMode ?? getSanitizationMode(request.taskType);
   const candidates = resolveProviders(request.taskType, mode);
@@ -195,7 +203,7 @@ export async function aiGatewayChat(request: AIRequest): Promise<AIResponse> {
   }
 
   const prepared = prepareMessages(request.messages, mode);
-  let lastError: unknown = null;
+  let lastFailureCode = "PROVIDER_REQUEST_FAILED";
   for (const provider of candidates) {
     const started = performance.now();
     try {
@@ -207,13 +215,11 @@ export async function aiGatewayChat(request: AIRequest): Promise<AIResponse> {
         sanitizationMode: mode,
       };
     } catch (error) {
-      lastError = error;
+      lastFailureCode = safeGatewayErrorCode(error);
     }
   }
 
-  throw new AIProviderUnavailable(
-    lastError instanceof Error ? lastError.message : "Todos os providers elegíveis falharam",
-  );
+  throw new AIProviderUnavailable(lastFailureCode);
 }
 
 export function extractJson<T>(text: string): T | null {
