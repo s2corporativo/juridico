@@ -20,7 +20,7 @@ export function localModelName(env: { JURIDIA_LOCAL_AI_MODEL?: string } = proces
   if (!/^[a-zA-Z0-9_.:/-]{1,90}$/.test(model) || model.includes("..") ||
       /(?:embed|nomic)/i.test(model)) throw new Error("INVALID_LOCAL_GENERATION_MODEL");
   // Qwen2.5-3B has research-only licensing in the published weights.
-  if (/^qwen2\\.5:3b(?:-|$)/i.test(model)) throw new Error("MODEL_LICENSE_NOT_APPROVED");
+  if (/^qwen2\.5:3b(?:-|$)/i.test(model)) throw new Error("MODEL_LICENSE_NOT_APPROVED");
   return model;
 }
 
