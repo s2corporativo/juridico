@@ -35,6 +35,7 @@ type CkanEnvelope = {
 
 export type StjCatalogResource = {
   datasetId: string;
+  datasetSlug: string | null;
   resourceId: string;
   title: string;
   format: string | null;
@@ -77,6 +78,7 @@ function digest(value: unknown): string {
 export function normalizeStjCkanResources(dataset: CkanPackage): StjCatalogResource[] {
   const datasetId = nonEmpty(dataset.id, 191) ?? nonEmpty(dataset.name, 191);
   if (!datasetId || !Array.isArray(dataset.resources)) return [];
+  const datasetSlug = nonEmpty(dataset.name, 191);
   const license = nonEmpty(dataset.license_id, 191) ?? nonEmpty(dataset.license_title, 191);
   const licenseUrl = httpsUrl(dataset.license_url);
   const title = nonEmpty(dataset.title, 500) ?? nonEmpty(dataset.name, 500) ?? "Dataset STJ";
@@ -98,7 +100,7 @@ export function normalizeStjCkanResources(dataset: CkanPackage): StjCatalogResou
       sourceDeclaredHash: nonEmpty(item.hash, 191),
     });
     result.push({
-      datasetId, resourceId, title, format, resourceUrl,
+      datasetId, datasetSlug, resourceId, title, format, resourceUrl,
       datasetUpdatedAt: updatedAt, resourceUpdatedAt,
       license, licenseUrl,
       licenseStatus: license ? "declared_unverified" : "needs_review",
