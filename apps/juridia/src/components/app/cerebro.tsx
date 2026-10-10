@@ -151,6 +151,7 @@ export function Cerebro() {
   useEffect(() => {
     setHistory([]);
     setResult(null);
+    setLastOriginalUrl(null);
     if (currentCaseId) void loadHistory(currentCaseId);
   }, [currentCaseId]);
 
@@ -193,7 +194,7 @@ export function Cerebro() {
         if (currentCaseId) await loadHistory(currentCaseId); // only linked cases persist history
         toast({
           title: "Análise cerebral concluída",
-          description: `${data.steps?.filter((s: BrainStep) => s.status === "done").length || 0}/8 etapas completas · análise persistida`,
+          description: `${data.steps?.filter((s: BrainStep) => s.status === "done").length || 0}/8 etapas completas · ${currentCaseId ? "histórico vinculado ao caso" : "análise avulsa sem vínculo ao caso"}`,
         });
       }
     } catch {
