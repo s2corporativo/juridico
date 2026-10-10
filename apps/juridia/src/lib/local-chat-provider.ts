@@ -13,7 +13,7 @@ export interface ChatResult {
   usage: { total_tokens: number };
 }
 const ENDPOINT = "http://127.0.0.1:11434";
-const DEFAULT_MODEL = "qwen3:4b";
+const DEFAULT_MODEL = "qwen3:4b-instruct";
 
 export function localModelName(env: { JURIDIA_LOCAL_AI_MODEL?: string } = process.env as unknown as { JURIDIA_LOCAL_AI_MODEL?: string }): string {
   const model = env.JURIDIA_LOCAL_AI_MODEL || DEFAULT_MODEL;
