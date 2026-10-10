@@ -1,3 +1,4 @@
+import { createGovernedZai } from "./external-ai-boundary";
 // judge_simulator.ts — Simulação do julgador (diferencial sobre MinutaIA)
 //
 // Lacuna do MinutaIA: simula o ADVERSÁRIO (peça contrária), não o JULGADOR.
@@ -63,7 +64,7 @@ export async function simulateJudge(params: {
 
   // ── Análise de mérito via LLM ──────────────────────────────────────────
   try {
-    const zai = await ZAI.create();
+    const zai = await createGovernedZai();
     const completion = await zai.chat.completions.create({
       messages: [
         {
