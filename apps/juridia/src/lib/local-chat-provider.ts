@@ -36,7 +36,7 @@ export function createLocalChatAdapter(fetchImpl: (input: RequestInfo | URL, ini
   const model = localModelName();
   const encoder = new TextEncoder();
   const ceilingRaw = Number(process.env.JURIDIA_LOCAL_AI_MAX_TOKENS || "1800");
-  const ceiling = Number.isSafeInteger(ceilingRaw) && ceilingRaw >= 128 && ceilingRaw <= 1800
+  const ceiling = Number.isSafeInteger(ceilingRaw) && ceilingRaw >= 64 && ceilingRaw <= 1800
     ? ceilingRaw : 1800;
   const tokenLimit = (requested?: number) =>
     Math.min(Math.max(requested ?? 600, 64), ceiling);
