@@ -15,7 +15,7 @@ export interface ChatResult {
 const ENDPOINT = "http://127.0.0.1:11434";
 const DEFAULT_MODEL = "qwen3:4b";
 
-export function localModelName(env: NodeJS.ProcessEnv = process.env): string {
+export function localModelName(env: { JURIDIA_LOCAL_AI_MODEL?: string } = process.env): string {
   const model = env.JURIDIA_LOCAL_AI_MODEL || DEFAULT_MODEL;
   if (!/^[a-zA-Z0-9_.:/-]{1,90}$/.test(model) || model.includes("..") ||
       /(?:embed|nomic)/i.test(model)) throw new Error("INVALID_LOCAL_GENERATION_MODEL");
@@ -29,7 +29,7 @@ export function assertLocalAiEnabled(env: NodeJS.ProcessEnv = process.env) {
   localModelName(env);
 }
 
-export function createLocalChatAdapter(fetchImpl: typeof fetch = fetch) {
+export function createLocalChatAdapter(fetchImpl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> = fetch) {
   assertLocalAiEnabled();
   const model = localModelName();
   const encoder = new TextEncoder();
