@@ -3,9 +3,9 @@
  * Explicit opt-in: JURIDIA_PRIVATE_UPLOAD_ROOT=/absolute/private/path
  * Authorization MUST be checked at the caller before storing or loading.
  */
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { constants } from "node:fs";
-import { lstat, mkdir, open, readFile, realpath } from "node:fs/promises";
+import { lstat, mkdir, open, readFile, realpath, link, unlink } from "node:fs/promises";
 import { isAbsolute, join, resolve, sep } from "node:path";
 
 const MAX_ORIGINAL_BYTES = 8 * 1024 * 1024;
@@ -63,17 +63,27 @@ export async function archivePrivateOriginal(caseId: string, bytes: Buffer): Pro
   await safeDirectory(directory);
 
   let newlyStored = false;
+  // Publish only a fully flushed object. Crash before hard-link leaves no partial
+  // file visible under the content hash; hard link never overwrites existing data.
+  const temporary = join(directory, ".incoming-" + randomBytes(16).toString("hex"));
+  let handle;
   try {
-    const handle = await open(location, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600);
-    newlyStored = true;
+    handle = await open(temporary, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW, 0o600);
+    await handle.writeFile(bytes);
+    await handle.sync();
+    await handle.close();
+    handle = undefined;
     try {
-      await handle.writeFile(bytes);
-      await handle.sync();
-    } finally {
-      await handle.close();
+      await link(temporary, location);
+      newlyStored = true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     }
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+  } finally {
+    await handle?.close();
+    await unlink(temporary).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+    });
   }
   // Re-read and verify both new and pre-existing bytes. No blindly trusted dedup.
   const stored = await readPrivateOriginal(caseId, hash);
