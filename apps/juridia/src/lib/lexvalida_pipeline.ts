@@ -3,6 +3,7 @@
 // Mais: RATIO_DECIDENDI, MOLDE, ESTILO, REFORMULAR
 
 import ZAI from "z-ai-web-dev-sdk";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { db } from "@/lib/db";
 import { ragSearch } from "@/lib/rag_lite";
 import {
@@ -48,14 +49,25 @@ export interface PipelineResult {
   textoFinal: string;
 }
 
-const zai = await ZAI.create();
-let totalTokens = 0;
+// SDK is initialized on demand, never while Next.js imports a route at build time.
+let zaiPromise: ReturnType<typeof ZAI.create> | null = null;
+function getZai() {
+  if (!zaiPromise) zaiPromise = ZAI.create().catch(error => {
+    zaiPromise = null; // allow operator to configure provider and retry
+    throw error;
+  });
+  return zaiPromise;
+}
+// One token ledger per analysis; global counters incorrectly mix concurrent users.
+const usageContext = new AsyncLocalStorage<{ totalTokens: number }>();
 
 function tok(c: unknown) {
-  totalTokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
+  const state = usageContext.getStore();
+  if (state) state.totalTokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
 }
 
 async function llmCall(system: string, user: string, maxTokens = 1000): Promise<string> {
+  const zai = await getZai();
   const c = await zai.chat.completions.create({
     messages: [
       { role: "system", content: system },
@@ -75,7 +87,7 @@ function parseJSON(text: string): Record<string, unknown> | null {
   try { return JSON.parse(match[0]); } catch { return null; }
 }
 
-export async function runPipeline(params: {
+async function runPipelineCore(params: {
   pedido: string;
   tipoPeca: string;
   autos: string;
@@ -148,6 +160,7 @@ export async function runPipeline(params: {
     // web_search para jurisprudência
     for (const q of (queries.jurisprudencia || [pedido]).slice(0, 2)) {
       try {
+        const zai = await getZai();
         const raw = (await zai.functions.invoke("web_search", { query: `jurisprudência ${q}`, num: 5 })) as unknown as { url: string; name: string; snippet: string }[];
         if (Array.isArray(raw)) {
           for (const r of raw.slice(0, 5)) {
@@ -282,6 +295,8 @@ export async function runPipeline(params: {
   // ── Monta texto final ─────────────────────────────────────────────────
   const textoFinal = (result.secoesRedigidas || []).map((s) => s.texto).join("\n\n");
 
+  const totalTokens = usageContext.getStore()?.totalTokens ?? 0;
+
   await logAuditEvent({
     action: "lexvalida_pipeline",
     resource: "case",
@@ -300,4 +315,9 @@ export async function runPipeline(params: {
   });
 
   return { ...result, steps, totalTokens, textoFinal } as PipelineResult;
+}
+
+/** Public entrypoint isolates usage counters across simultaneous authenticated requests. */
+export function runPipeline(params: Parameters<typeof runPipelineCore>[0]): Promise<PipelineResult> {
+  return usageContext.run({ totalTokens: 0 }, () => runPipelineCore(params));
 }
