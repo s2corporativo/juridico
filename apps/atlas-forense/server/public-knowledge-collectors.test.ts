@@ -48,6 +48,16 @@ describe("Public ingestion: bounded and privacy-first", () => {
     expect(result.candidates[0].canonicalUrl).toBe("https://comunica.pje.jus.br/");
   });
 
+  it("supports numeric official identifiers, never reports all-unusable entries as a clean collection", async () => {
+    const good = await collectDjenDailyCandidates({
+      date: "2026-10-09", fetchImpl: fake({ count: 1, items: [{ id: 42 }] }),
+    });
+    expect(good.candidates).toHaveLength(1);
+    await expect(collectDjenDailyCandidates({
+      date: "2026-10-09", fetchImpl: fake({ count: 1, items: [{ id: { invalid: true } }] }),
+    })).rejects.toThrow("DJEN_MISSING_STABLE_IDENTIFIERS");
+  });
+
   it("deduplicates same DJEN identifier deterministically across daily runs", async () => {
     const payload = { count: 1, items: [{ id: "hash-stable" }] };
     const opts = { date: "2026-10-09", fetchImpl: fake(payload) };
