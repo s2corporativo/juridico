@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { fetchStjJurisprudenceCatalog } from "./public-sources";
+import { collectDjenDailyCandidates, collectStjResourceCandidates } from "./public-knowledge-collectors";
 
 export type EditorialCandidate = {
   sourceKey: string;
@@ -72,20 +73,55 @@ export function sanitizeEditorialError(error: unknown) {
   return text.replace(/https?:\/\/\S+/gi, "[url]").replace(/[\r\n\t]+/g, " ").slice(0, 480);
 }
 
-import { enqueueEditorialCandidates, finishEditorialRun, recordEditorialRunStart } from "./db";
+import { claimDailyEditorialRun, enqueueEditorialCandidates, finishEditorialRun } from "./db";
 
+/**
+ * Daily external scheduler entrypoint. Uses existing editorial tables and review queue.
+ * No collector can approve its own candidates. DataJud disabled by default.
+ */
 export async function runEditorialUpdate() {
-  const runKey = `editorial-daily-${new Date().toISOString().slice(0, 10)}`;
-  const runId = await recordEditorialRunStart(runKey, 3);
-  if (!runId) throw new Error("Execução editorial não pôde ser criada.");
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+  const runKey = "editorial-daily-" + today;
+  const runId = await claimDailyEditorialRun(runKey, 2);
+  if (!runId) {
+    return { runKey, status: "already_claimed" as const, discoveredCount: 0, queuedCount: 0 };
+  }
+
+  const candidates: EditorialCandidate[] = [];
+  const failed: string[] = [];
+  let truncated = false;
   try {
-    const candidates = await collectOfficialEditorialCandidates();
+    try {
+      const stj = await collectStjResourceCandidates();
+      candidates.push(...stj.candidates);
+      truncated ||= stj.truncated;
+    } catch (error) {
+      failed.push("STJ:" + sanitizeEditorialError(error));
+    }
+    try {
+      const djen = await collectDjenDailyCandidates();
+      candidates.push(...djen.candidates);
+      truncated ||= djen.truncated;
+    } catch (error) {
+      failed.push("DJEN:" + sanitizeEditorialError(error));
+    }
+    if (failed.length === 2) {
+      throw new Error("ALL_OFFICIAL_PROVIDERS_UNAVAILABLE");
+    }
     const queuedCount = await enqueueEditorialCandidates(runId, candidates);
-    await finishEditorialRun(runId, { status: "completed", discoveredCount: candidates.length, queuedCount, failedCount: 0 });
-    return { runKey, status: "completed" as const, discoveredCount: candidates.length, queuedCount };
+    const status = failed.length || truncated ? "partial" as const : "completed" as const;
+    await finishEditorialRun(runId, {
+      status, discoveredCount: candidates.length, queuedCount,
+      failedCount: failed.length, errorSummary: failed.join("; ").slice(0, 490) || undefined,
+    });
+    return { runKey, status, discoveredCount: candidates.length, queuedCount };
   } catch (error) {
-    const errorSummary = sanitizeEditorialError(error);
-    await finishEditorialRun(runId, { status: "failed", discoveredCount: 0, queuedCount: 0, failedCount: 1, errorSummary });
+    await finishEditorialRun(runId, {
+      status: "failed", discoveredCount: candidates.length, queuedCount: 0,
+      failedCount: Math.max(1, failed.length), errorSummary: sanitizeEditorialError(error),
+    });
     throw error;
   }
 }
