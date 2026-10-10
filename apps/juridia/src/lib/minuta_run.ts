@@ -300,6 +300,8 @@ export async function runMinutaPipeline(
     )
     .digest("hex")
     .slice(0, 32);
+  const modelProvider = process.env.JURIDIA_LOCAL_AI_ENABLED === "true" ? "ollama_local" : "zai";
+  const modelName = modelProvider === "ollama_local" ? (process.env.JURIDIA_LOCAL_AI_MODEL || "qwen3:4b") : "juridia-default";
   const run = await db.agentRun.create({
     data: {
       agentSlug: "legal_draft",
@@ -349,8 +351,7 @@ export async function runMinutaPipeline(
     });
   }
 
-  const modelProvider = process.env.JURIDIA_LOCAL_AI_ENABLED === "true" ? "ollama_local" : "zai";
-  const modelName = modelProvider === "ollama_local" ? (process.env.JURIDIA_LOCAL_AI_MODEL || "qwen3:4b") : "juridia-default";
+
   let zai: ZaiClient | null = null;
   try {
     zai = await createGovernedZai();
