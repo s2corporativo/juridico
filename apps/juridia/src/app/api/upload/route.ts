@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { createEvidence } from "@/lib/evidence";
+import { detectInstructionInjection } from "@/lib/ai_governance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (!text.trim()) return reject("arquivo_sem_texto_extraivel", 422);
   if (text.length > MAX_TEXT) return reject("arquivo_com_texto_acima_do_limite", 413);
+  if (detectInstructionInjection(text)) return reject("documento_com_instrucoes_suspeitas_exige_revisao", 422);
 
   const rawPages = ext === "pdf" ? text.split("\f") : [text];
   const pages = rawPages.filter((page) => page.trim().length > 0);
