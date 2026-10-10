@@ -29,7 +29,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       });
       const caseIds = cases.map((cs) => cs.id);
       const docCount = await db.document.count({
-        where: { caseId: { in: caseIds } },
+        where: { caseId: { in: caseIds }, ...(authUser.role === 'admin' ? {} : { userId: authUser.uid }) },
       });
       return {
         id: c.id,
