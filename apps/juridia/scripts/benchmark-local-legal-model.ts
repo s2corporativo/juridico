@@ -39,7 +39,7 @@ const CASES: Case[] = [
 
 export async function runModelBenchmark(maxCases = CASES.length) {
   const client = await createGovernedZai();
-  const data = [];
+  const data: { id: string; passed: boolean; durationSeconds?: number; totalTokens?: number; expectedChecks?: boolean[]; prohibited?: boolean; meta?: boolean; sample?: string; error?: string }[] = [];
   for (const c of CASES.slice(0, Math.max(1, Math.min(maxCases, CASES.length)))) {
     const start = performance.now();
     try {
