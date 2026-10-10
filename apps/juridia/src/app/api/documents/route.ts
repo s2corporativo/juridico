@@ -13,6 +13,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const docs = await db.document.findMany({
+    where: { userId: authUser.uid },
     orderBy: { updatedAt: "desc" },
     take: 100,
   });
@@ -42,8 +43,14 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const doc = await db.document.findUnique({ where: { id }, select: { title: true, templateName: true } });
-  await db.document.delete({ where: { id } });
+  // Never inspect or mutate another user's document, even with a guessed ID.
+  const doc = await db.document.findFirst({
+    where: { id, userId: authUser.uid },
+    select: { title: true, templateName: true },
+  });
+  if (!doc) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
+  const deleted = await db.document.deleteMany({ where: { id, userId: authUser.uid } });
+  if (deleted.count !== 1) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "delete_document",
@@ -63,13 +70,28 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
 
   const body = (await req.json().catch(() => null)) as { id?: string; content?: string; title?: string } | null;
   if (!body?.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-  const data: { generatedContent?: string; title?: string } = {};
-  if (typeof body.content === "string") data.generatedContent = body.content;
-  if (typeof body.title === "string") data.title = body.title;
-  const updated = await db.document.update({
-    where: { id: body.id },
+  if ((body.content !== undefined && (typeof body.content !== "string" || body.content.length > 150_000)) ||
+      (body.title !== undefined && (typeof body.title !== "string" || body.title.length > 240))) {
+    return NextResponse.json({ error: "invalid_document_update" }, { status: 400 });
+  }
+  const data: { generatedContent?: string; title?: string; status?: string } = {};
+  if (typeof body.content === "string") {
+    data.generatedContent = body.content;
+    // Editing invalidates any prior generated/reviewed status.
+    data.status = "draft";
+  }
+  if (typeof body.title === "string") data.title = body.title.trim();
+  if (Object.keys(data).length === 0) return NextResponse.json({ error: "no_changes" }, { status: 400 });
+  const changed = await db.document.updateMany({
+    where: { id: body.id, userId: authUser.uid },
     data,
   });
+  if (changed.count !== 1) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
+  const updated = await db.document.findFirst({
+    where: { id: body.id, userId: authUser.uid },
+    select: { id: true, title: true },
+  });
+  if (!updated) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "edit_document",
