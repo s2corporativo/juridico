@@ -170,7 +170,7 @@ export async function discoverStjCkanResources(options: {
     }
     if (datasets.length < pageSize || (page + 1) * pageSize >= reportedCount) break;
   }
-  return { reportedCount, pagesScanned, resources: [...seen.values()] };
+  return { reportedCount, pagesScanned, resources: Array.from(seen.values()) };
 }
 
 export function planStjMetadataChanges(
