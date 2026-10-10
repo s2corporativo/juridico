@@ -55,7 +55,7 @@ export async function collectStjResourceCandidates(options: {
     if (!resource.resourceUrl || !resource.license || resource.licenseStatus !== "declared_unverified") continue;
     // Resources can be hosted elsewhere. We publish only the trusted STJ dataset page,
     // never download unverified URLs or claim any licence is approved.
-    const catalog = new URL("dataset/" + encodeURIComponent(resource.datasetId), allowedStj).toString();
+    const catalog = new URL("dataset/" + encodeURIComponent(resource.datasetSlug ?? resource.datasetId), allowedStj).toString();
     const key = "stj:" + sha(resource.datasetId + ":" + resource.resourceId).slice(0, 24) +
       ":" + resource.metadataFingerprint.slice(0, 24);
     const title = "STJ, dataset atualizado: " + resource.title.slice(0, 425);
