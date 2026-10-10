@@ -46,7 +46,12 @@ export async function collectStjResourceCandidates(options: {
     fetchImpl: options.fetchImpl, pageSize: 50, maxPages,
   });
   const candidates: PublicCandidate[] = [];
-  for (const resource of manifest.resources) {
+  const newestFirst = [...manifest.resources].sort((a, b) =>
+    (b.resourceUpdatedAt ?? b.datasetUpdatedAt ?? "").localeCompare(
+      a.resourceUpdatedAt ?? a.datasetUpdatedAt ?? "",
+    ),
+  );
+  for (const resource of newestFirst) {
     if (!resource.resourceUrl || !resource.license || resource.licenseStatus !== "declared_unverified") continue;
     // Resources can be hosted elsewhere. We publish only the trusted STJ dataset page,
     // never download unverified URLs or claim any licence is approved.
@@ -74,6 +79,29 @@ export async function collectStjResourceCandidates(options: {
     candidates, discoveredResources: manifest.resources.length,
     truncated: manifest.pagesScanned === maxPages && manifest.reportedCount > maxPages * 50,
   };
+}
+
+/** Bounded database-write plan, resuming from existing keys on the next daily run. */
+export function selectUnseenCandidates(
+  candidates: readonly PublicCandidate[],
+  existingKeys: ReadonlySet<string>,
+  maxPerRun = 250,
+): { selected: PublicCandidate[]; deferred: number; alreadyKnown: number } {
+  const limit = Number.isSafeInteger(maxPerRun) ? Math.max(1, Math.min(500, maxPerRun)) : 250;
+  const selected: PublicCandidate[] = [];
+  let deferred = 0;
+  let alreadyKnown = 0;
+  const seen = new Set<string>();
+  for (const item of candidates) {
+    if (existingKeys.has(item.externalKey) || seen.has(item.externalKey)) {
+      alreadyKnown++;
+      continue;
+    }
+    seen.add(item.externalKey);
+    if (selected.length < limit) selected.push(item);
+    else deferred++;
+  }
+  return { selected, deferred, alreadyKnown };
 }
 
 type DjenEnvelope = {
