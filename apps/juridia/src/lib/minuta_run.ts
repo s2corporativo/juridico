@@ -309,7 +309,8 @@ export async function runMinutaPipeline(
       userId: authUser.uid,
       tokensBudget: 30000,
       providerSnapshot: JSON.stringify({
-        provider: "zai",
+        provider: modelProvider,
+        model: modelName,
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
       }),
     },
@@ -339,8 +340,8 @@ export async function runMinutaPipeline(
         inputHash: null,
         outputHash: hashOf(JSON.stringify(output)),
         output: JSON.stringify(output).slice(0, 4000),
-        provider: "zai",
-        model: "juridia-default",
+        provider: modelProvider,
+        model: modelName,
         tokensIn,
         tokensOut,
         durationMs,
@@ -348,6 +349,8 @@ export async function runMinutaPipeline(
     });
   }
 
+  const modelProvider = process.env.JURIDIA_LOCAL_AI_ENABLED === "true" ? "ollama_local" : "zai";
+  const modelName = modelProvider === "ollama_local" ? (process.env.JURIDIA_LOCAL_AI_MODEL || "qwen3:4b") : "juridia-default";
   let zai: ZaiClient | null = null;
   try {
     zai = await createGovernedZai();
@@ -603,7 +606,7 @@ export async function runMinutaPipeline(
       markers: "[]", // intencional: o mapa de PII não é persistido (tarja-1)
       generatedContent: finalContent,
       skillSlugs: JSON.stringify(skills.map((s) => s.slug)),
-      status: degraded || !validation.valid ? "draft" : "generated", // invalid citations never auto-promote
+      status: "draft", // even a valid model draft requires a lawyer to approve it
       batchId: body.batchId || null,
     },
   });
@@ -625,7 +628,8 @@ export async function runMinutaPipeline(
       tokensIn: 0,
       tokensOut: tokensTotal,
       providerSnapshot: JSON.stringify({
-        provider: "zai",
+        provider: modelProvider,
+        model: modelName,
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
         stages: stages.map((s) => ({ stage: s.stage, ok: s.ok, tokens: s.tokens })),
       }),
@@ -645,6 +649,8 @@ export async function runMinutaPipeline(
       markersCount: pseudonymization.total,
       validationViolations: validation.violations.length,
       validationErrors: validation.violations.filter((v) => v.severity === "error").length,
+      requiresHumanReview: true,
+      modelProvider,
       tokensUsed: tokensTotal,
       anonymized: true,
       degraded,
