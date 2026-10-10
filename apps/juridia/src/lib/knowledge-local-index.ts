@@ -4,6 +4,7 @@
  * Initialization is additive; original tables remain untouched.
  */
 import { Database } from "bun:sqlite";
+import { statSync } from "node:fs";
 
 export type LocalHit = {
   entityKind: "legal_source" | "knowledge_chunk";
@@ -21,7 +22,12 @@ export function openKnowledgeDb(dbPath: string, readonly = false): Database {
   if (!dbPath || !dbPath.startsWith("/") || !dbPath.endsWith(".db")) {
     throw new Error("JURIDIA_SQLITE_PATH_REQUIRED");
   }
-  const db = new Database(dbPath, { readonly, create: false });
+  // Bun 1.3 rejects readonly:false + create:false (SQLITE_MISUSE).
+  // Preflight prevents accidental creation before opening read/write.
+  if (!statSync(dbPath).isFile()) throw new Error("JURIDIA_SQLITE_FILE_REQUIRED");
+  const db = readonly
+    ? new Database(dbPath, { readonly: true, create: false })
+    : new Database(dbPath);
   db.exec("PRAGMA busy_timeout=4000");
   db.exec("PRAGMA foreign_keys=ON");
   return db;
