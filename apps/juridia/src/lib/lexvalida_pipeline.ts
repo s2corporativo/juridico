@@ -48,7 +48,15 @@ export interface PipelineResult {
   textoFinal: string;
 }
 
-const zai = await ZAI.create();
+// SDK is initialized on demand, never while Next.js imports a route at build time.
+let zaiPromise: ReturnType<typeof ZAI.create> | null = null;
+function getZai() {
+  if (!zaiPromise) zaiPromise = ZAI.create().catch(error => {
+    zaiPromise = null; // allow operator to configure provider and retry
+    throw error;
+  });
+  return zaiPromise;
+}
 let totalTokens = 0;
 
 function tok(c: unknown) {
@@ -56,6 +64,7 @@ function tok(c: unknown) {
 }
 
 async function llmCall(system: string, user: string, maxTokens = 1000): Promise<string> {
+  const zai = await getZai();
   const c = await zai.chat.completions.create({
     messages: [
       { role: "system", content: system },
