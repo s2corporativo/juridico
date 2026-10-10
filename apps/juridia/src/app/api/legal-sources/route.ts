@@ -106,6 +106,7 @@ export async function POST(req: NextRequest) {
 
     await logAuditEvent({
       action: "create_legal_source",
+      userId: __auth.user.uid,
       resource: "legal_source",
       resourceId: source.id,
       metadata: { tipo: body.tipo, diploma: body.diploma, numero: body.numero },
@@ -223,6 +224,7 @@ export async function PATCH(req: NextRequest) {
 
   await logAuditEvent({
     action: "update_legal_source",
+    userId: __auth.user.uid,
     resource: "legal_source",
     resourceId: body.id,
     metadata: { diploma: updated.diploma, numero: updated.numero, vigente: updated.vigente, editorialApproval: body.approve === true, actor: __auth.user.uid },
