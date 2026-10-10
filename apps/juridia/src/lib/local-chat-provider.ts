@@ -40,6 +40,8 @@ export function createLocalChatAdapter(fetchImpl: (input: RequestInfo | URL, ini
     Math.min(Math.max(requested ?? 600, 64), ceiling);
   const prepare = (input: ChatInput) => {
     if (!Array.isArray(input.messages) || input.messages.length < 1 ||
+        input.messages.length > 12 ||
+        input.messages.reduce((sum, m) => sum + (typeof m.content === "string" ? m.content.length : 0), 0) > 85_000 ||
         input.messages.some(m => !["system", "user", "assistant"].includes(m.role) ||
                                   typeof m.content !== "string" || m.content.length > 70_000)) {
       throw new Error("INVALID_LOCAL_MESSAGES");
@@ -81,6 +83,7 @@ export function createLocalChatAdapter(fetchImpl: (input: RequestInfo | URL, ini
       async start(controller) {
         const decoder = new TextDecoder();
         let buffer = "";
+        let sawDone = false;
         try {
           while (true) {
             const chunk = await upstream.read();
@@ -100,11 +103,13 @@ export function createLocalChatAdapter(fetchImpl: (input: RequestInfo | URL, ini
                   choices: [{ delta: { content: data.message.content } }],
                 }) + "\n\n"));
               }
+              if (data.done) sawDone = true;
               if (data.done) controller.enqueue(encoder.encode("data: " + JSON.stringify({
                 usage: { total_tokens: (data.prompt_eval_count || 0) + (data.eval_count || 0) },
               }) + "\n\n"));
             }
           }
+          if (!sawDone) throw new Error("LOCAL_STREAM_TRUNCATED");
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch {
