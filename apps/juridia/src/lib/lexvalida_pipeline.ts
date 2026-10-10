@@ -1,3 +1,4 @@
+import { createGovernedZai } from "./external-ai-boundary";
 // lexvalida_pipeline.ts — Pipeline de minuta com etapas do LexValida
 // PLANEJAR → ROTEIRO → REDIGIR_SECAO → ADERENCIA → CONTRARIA → DISTINGUISHING → AUDITORIA
 // Mais: RATIO_DECIDENDI, MOLDE, ESTILO, REFORMULAR
@@ -52,7 +53,7 @@ export interface PipelineResult {
 // SDK is initialized on demand, never while Next.js imports a route at build time.
 let zaiPromise: ReturnType<typeof ZAI.create> | null = null;
 function getZai() {
-  if (!zaiPromise) zaiPromise = ZAI.create().catch(error => {
+  if (!zaiPromise) zaiPromise = createGovernedZai().catch(error => {
     zaiPromise = null; // allow operator to configure provider and retry
     throw error;
   });
@@ -157,19 +158,10 @@ async function runPipelineCore(params: {
       }
     }
 
-    // web_search para jurisprudência
-    for (const q of (queries.jurisprudencia || [pedido]).slice(0, 2)) {
-      try {
-        const zai = await getZai();
-        const raw = (await zai.functions.invoke("web_search", { query: `jurisprudência ${q}`, num: 5 })) as unknown as { url: string; name: string; snippet: string }[];
-        if (Array.isArray(raw)) {
-          for (const r of raw.slice(0, 5)) {
-            jurisprudencia.push({ id: r.url, rotulo: r.name.slice(0, 100), ementa: r.snippet.slice(0, 200) });
-          }
-        }
-      } catch { /* web_search pode falhar */ }
-    }
-
+    // Não converter resultados de busca pública em precedentes citáveis.
+    // A integração oficial Atlas deverá retornar decisões com inteiro teor e
+    // aprovação editorial humana; até lá, jurisprudência fica não confirmada.
+    // O RAG local de legislação mantém seus próprios critérios de origem.
     result.pesquisa = { jurisprudencia, legislacao };
     steps[2].status = "done";
     steps[2].result = { jurisprudenciaCount: jurisprudencia.length, legislacaoCount: legislacao.length };

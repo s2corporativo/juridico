@@ -1,3 +1,4 @@
+import { createGovernedZai } from "./external-ai-boundary";
 // thesis_checker.ts — Verificador de aderência da tese (diferencial sobre MinutaIA)
 //
 // Lacuna do MinutaIA: confirma que a citação existe e foi transcrita fielmente,
@@ -49,7 +50,7 @@ export async function checkThesisAdherence(input: ThesisCheckInput): Promise<The
   }
 
   try {
-    const zai = await ZAI.create();
+    const zai = await createGovernedZai();
     const completion = await zai.chat.completions.create({
       messages: [
         {

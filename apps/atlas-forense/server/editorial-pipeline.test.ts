@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { editorialMetadataHash, sanitizeEditorialError } from "./editorial-pipeline";
+import { editorialMetadataHash, sanitizeEditorialError, withinEditorialDeadline } from "./editorial-pipeline";
 
 describe("editorial pipeline privacy contract", () => {
   const base = {
@@ -15,6 +15,11 @@ describe("editorial pipeline privacy contract", () => {
   it("produces a stable metadata-only hash", () => {
     expect(editorialMetadataHash(base)).toHaveLength(64);
     expect(editorialMetadataHash(base)).toBe(editorialMetadataHash({ ...base }));
+  });
+
+  it("bounds a hung collector and preserves success of responsive collectors", async () => {
+    expect(await withinEditorialDeadline(Promise.resolve("STJ_OK"), 100)).toBe("STJ_OK");
+    await expect(withinEditorialDeadline(new Promise<never>(() => {}), 5)).rejects.toThrow("EDITORIAL_SOURCE_TIMEOUT");
   });
 
   it("sanitizes URLs and line breaks from failures", () => {

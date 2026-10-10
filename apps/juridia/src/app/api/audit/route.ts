@@ -61,11 +61,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "action obrigatório" }, { status: 400 });
   }
 
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-
   const event = await db.auditEvent.create({
     data: {
-      userId: demoUser?.id,
+      userId: authUser.uid,
       action: body.action,
       resource: body.resource || "unknown",
       resourceId: body.resourceId || null,

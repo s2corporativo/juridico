@@ -1,3 +1,4 @@
+import { createGovernedZai } from "@/lib/external-ai-boundary";
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let tokensUsed = 0;
 
   try {
-    const zai = await ZAI.create();
+    const zai = await createGovernedZai();
     const completion = await zai.chat.completions.create({
       messages: [
         {

@@ -13,7 +13,7 @@ test("FTS5 indexes EXISTING knowledge and filters unapproved/fictitious material
     db.exec("CREATE TABLE LegalSource(id TEXT PRIMARY KEY,diploma TEXT,numero TEXT,textoTrecho TEXT,urlOficial TEXT,vigente INTEGER,revisadoPor TEXT)");
     db.exec("CREATE TABLE KnowledgeDocument(id TEXT PRIMARY KEY,status TEXT,vigente INTEGER,dadosFicticios INTEGER,urlFonte TEXT)");
     db.exec("CREATE TABLE KnowledgeChunk(id TEXT PRIMARY KEY,documentId TEXT,contexto TEXT,texto TEXT)");
-    db.exec("INSERT INTO LegalSource VALUES('L1','CDC','art. 18','responsabilidade solidaria defeito do produto','https://www.planalto.gov.br/',1,'advogado')");
+    db.exec("INSERT INTO LegalSource VALUES('L1','CDC','art. 18','responsabilidade solidaria defeito do produto','https://www.planalto.gov.br/',1,'human:lawyer-1')");
     db.exec("INSERT INTO KnowledgeDocument VALUES('D1','ATIVO',1,0,'https://www.stj.jus.br/')");
     db.exec("INSERT INTO KnowledgeDocument VALUES('D2','ATIVO',1,1,NULL)");
     db.exec("INSERT INTO KnowledgeChunk VALUES('C1','D1','STJ','prazo processual de consumidor')");
@@ -28,6 +28,14 @@ test("FTS5 indexes EXISTING knowledge and filters unapproved/fictitious material
     const chunks = searchKnowledgeBm25(db, "prazo processual", 5);
     expect(chunks.map(r => r.id)).toEqual(["C1"]);
     expect(chunks[0].citable).toBe(false);
+    const onlyLaw = searchKnowledgeBm25(db, "prazo processual", 5, "legal_source");
+    expect(onlyLaw.every(h => h.entityKind === "legal_source")).toBe(true);
+    expect(searchKnowledgeBm25(db, "inexiste assunto xyzqwertysemfato", 5)).toHaveLength(0);
+    db.exec("UPDATE LegalSource SET revisadoPor='atlas-curadoria' WHERE id='L1'");
+    expect(searchKnowledgeBm25(db, "responsabilidade defeito", 5)
+      .find(h => h.id === "L1")?.citable).toBe(false);
+    db.exec("UPDATE LegalSource SET revisadoPor='human:lawyer-1' WHERE id='L1'");
+
     db.exec("UPDATE KnowledgeChunk SET texto='prazo legal prorrogado' WHERE id='C1'");
     expect(searchKnowledgeBm25(db, "prorrogado")[0]?.id).toBe("C1");
     db.exec("DELETE FROM KnowledgeChunk WHERE id='C1'");

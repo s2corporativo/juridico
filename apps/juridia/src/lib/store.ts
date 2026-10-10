@@ -87,13 +87,13 @@ interface AppState {
 }
 
 const DEFAULT_PROFILE: LawyerProfile = {
-  name: "Advogado Demo",
-  oab: "123456",
-  oabUf: "SP",
-  office: "Escritório JuridIA Advocacia",
-  email: "demo@juridia.com.br",
-  phone: "(11) 99999-0000",
-  address: "Av. Paulista, 1000 — São Paulo/SP",
+  name: "",
+  oab: "",
+  oabUf: "",
+  office: "",
+  email: "",
+  phone: "",
+  address: "",
 };
 
 export const useAppStore = create<AppState>()(
@@ -123,7 +123,7 @@ export const useAppStore = create<AppState>()(
       clearSkills: () => set({ selectedSkillSlugs: [] }),
       authOpen: false,
       setAuthOpen: (authOpen) => set({ authOpen }),
-      user: { email: "demo@juridia.com.br", name: "Advogado Demo" },
+      user: null,
       setUser: (user) => set({ user }),
       // Perfil e estilo
       profile: DEFAULT_PROFILE,
@@ -142,6 +142,15 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "juridia-store",
+      version: 1,
+      migrate: (persisted: unknown) => {
+        const old = (persisted ?? {}) as Partial<AppState>;
+        // Clear only legacy fixture identity; retain legitimate user preferences.
+        const user = old.user?.email === "demo@juridia.com.br" ? null : old.user;
+        const profile = old.profile?.email === "demo@juridia.com.br"
+          ? DEFAULT_PROFILE : old.profile;
+        return { ...old, user: user ?? null, profile: profile ?? DEFAULT_PROFILE } as AppState;
+      },
       partialize: (s) => ({
         view: s.view,
         appTab: s.appTab,

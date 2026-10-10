@@ -13,38 +13,52 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const clients = await db.client.findMany({
+    where: authUser.role === "admin" ? {} : { userId: authUser.uid },
     orderBy: { updatedAt: "desc" },
     include: {
       _count: { select: { cases: true } },
     },
   });
 
-  // Conta documentos por cliente (via cases)
-  const clientsWithStats = await Promise.all(
-    clients.map(async (c) => {
-      const cases = await db.case.findMany({
-        where: { clientId: c.id },
-        select: { id: true },
-      });
-      const caseIds = cases.map((cs) => cs.id);
-      const docCount = await db.document.count({
-        where: { caseId: { in: caseIds } },
-      });
-      return {
-        id: c.id,
-        name: c.name,
-        email: c.email,
-        phone: c.phone,
-        document: c.document,
-        notes: c.notes,
-        color: c.color,
-        casesCount: c._count.cases,
-        documentsCount: docCount,
-        createdAt: c.createdAt.toISOString(),
-        updatedAt: c.updatedAt.toISOString(),
-      };
-    })
-  );
+  // Two batched queries avoid one case lookup + document count per client.
+  const clientIds = clients.map(client => client.id);
+  const caseLinks = clientIds.length
+    ? await db.case.findMany({
+        where: { clientId: { in: clientIds } },
+        select: { id: true, clientId: true },
+      })
+    : [];
+  const caseToClient = new Map(caseLinks.map(link => [link.id, link.clientId]));
+  const grouped = caseLinks.length
+    ? await db.document.groupBy({
+        by: ["caseId"],
+        where: {
+          caseId: { in: caseLinks.map(link => link.id) },
+          ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+        },
+        _count: { _all: true },
+      })
+    : [];
+  const documentCounts = new Map<string, number>();
+  for (const group of grouped) {
+    const clientId = caseToClient.get(group.caseId ?? "");
+    if (clientId) {
+      documentCounts.set(clientId, (documentCounts.get(clientId) ?? 0) + group._count._all);
+    }
+  }
+  const clientsWithStats = clients.map(client => ({
+    id: client.id,
+    name: client.name,
+    email: client.email,
+    phone: client.phone,
+    document: client.document,
+    notes: client.notes,
+    color: client.color,
+    casesCount: client._count.cases,
+    documentsCount: documentCounts.get(client.id) ?? 0,
+    createdAt: client.createdAt.toISOString(),
+    updatedAt: client.updatedAt.toISOString(),
+  }));
 
   return NextResponse.json({ clients: clientsWithStats });
 }
@@ -74,11 +88,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 });
   }
 
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-
   const client = await db.client.create({
     data: {
-      userId: demoUser?.id,
+      userId: authUser.uid,
       name: body.name.trim(),
       email: body.email?.trim() || null,
       phone: body.phone?.trim() || null,
@@ -149,10 +161,19 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (body.notes !== undefined) data.notes = body.notes.trim() || null;
   if (body.color !== undefined) data.color = body.color;
 
-  const updated = await db.client.update({
-    where: { id: body.id },
-    data,
+  const scope = {
+    id: body.id,
+    ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+  };
+  const changed = await db.client.updateMany({ where: scope, data });
+  if (changed.count !== 1) {
+    return NextResponse.json({ error: "client_not_found" }, { status: 404 });
+  }
+  const updated = await db.client.findFirst({
+    where: scope,
+    select: { name: true },
   });
+  if (!updated) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "update_client",
@@ -175,8 +196,16 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const client = await db.client.findUnique({ where: { id }, select: { name: true } });
-  await db.client.delete({ where: { id } });
+  const scope = {
+    id,
+    ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+  };
+  const client = await db.client.findFirst({ where: scope, select: { name: true } });
+  if (!client) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
+  const changed = await db.client.deleteMany({ where: scope });
+  if (changed.count !== 1) {
+    return NextResponse.json({ error: "client_not_found" }, { status: 404 });
+  }
 
   await logAuditEvent({
     action: "delete_client",

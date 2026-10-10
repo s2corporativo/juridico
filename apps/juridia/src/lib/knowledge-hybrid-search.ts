@@ -26,10 +26,10 @@ function indexedVector(db: Database, hit: LocalHit, model: string): number[] | n
 export async function hybridKnowledgeSearch(
   db: Database,
   query: string,
-  options: { topK?: number; enabled?: boolean; fetchImpl?: typeof fetch } = {},
+  options: { topK?: number; enabled?: boolean; fetchImpl?: typeof fetch; sourceKind?: "legal_source" | "knowledge_chunk" } = {},
 ): Promise<HybridKnowledgeResult> {
   const count = Math.max(1, Math.min(30, options.topK ?? 8));
-  const hits = searchKnowledgeBm25(db, query, Math.max(30, count));
+  const hits = searchKnowledgeBm25(db, query, Math.max(30, count), options.sourceKind);
   const lexical = { strategy: "bm25" as const, hits: hits.slice(0, count) };
   if (!options.enabled || !hits.length) return lexical;
   try {

@@ -107,9 +107,9 @@ assert(!already.includes("RASCUNHO GERADO POR IA** — Revisão por advogado"), 
 console.log("\n=== CITATION GATE ===");
 
 const legalSources = [
-  { id: "1", tipo: "artigo_lei", diploma: "CC", numero: "art. 927", tribunal: null, textoTrecho: "Responsabilidade civil", vigente: true, urlOficial: "http://planalto.gov.br" },
-  { id: "2", tipo: "sumula", diploma: "Súmula", numero: "Súmula 308", tribunal: "TST", textoTrecho: "Prescrição intercorrente", vigente: true, urlOficial: "http://tst.jus.br" },
-  { id: "3", tipo: "artigo_lei", diploma: "CC", numero: "art. 938", tribunal: null, textoTrecho: "Habitante de prédio", vigente: false, urlOficial: "http://planalto.gov.br" },
+  { id: "1", tipo: "artigo_lei", diploma: "CC", numero: "art. 927", tribunal: null, textoTrecho: "Aquele que por ato ilícito causar dano a outrem fica obrigado a repará-lo.", vigente: true, urlOficial: "https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm", revisadoPor: "human:lawyer-1" },
+  { id: "2", tipo: "sumula", diploma: "Súmula", numero: "Súmula 308", tribunal: "TST", textoTrecho: "Fonte sintética para teste de verificação humana de súmula de tribunal.", vigente: true, urlOficial: "https://www.tst.jus.br/", revisadoPor: "human:lawyer-1" },
+  { id: "3", tipo: "artigo_lei", diploma: "CC", numero: "art. 938", tribunal: null, textoTrecho: "Fonte sintética desatualizada para teste de vigência e bloqueio.", vigente: false, urlOficial: "https://www.planalto.gov.br/", revisadoPor: "human:lawyer-1" },
 ];
 
 // Text with real and fake citations
@@ -161,4 +161,4 @@ console.log(`\n=== RESULTADO ===`);
 console.log(`✓ ${passed} aprovados`);
 console.log(`✗ ${failed} reprovados`);
 console.log(failed === 0 ? "\n🎉 TODOS OS TESTES PASSARAM" : "\n⚠ ALGUNS TESTES FALHARAM");
-process.exit(failed > 0 ? 1 : 0);
+if (failed > 0) throw new Error(`${failed} gates failed`);

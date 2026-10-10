@@ -22,14 +22,14 @@ export const PROVIDERS: Record<string, ProviderSpec> = {
   "zai": {
     name: "zai",
     external: true,      // z-ai-web-dev-sdk é externo (API cloud)
-    enabled: true,        // habilitado por padrão
+    enabled: process.env.JURIDIA_EXTERNAL_AI_ENABLED === "true", // explicit operator opt-in
     supportsJsonSchema: true,
     supportsTools: false,
   },
   "ollama": {
     name: "ollama",
     external: false,      // local (se disponível)
-    enabled: false,       // não configurado neste ambiente
+    enabled: process.env.JURIDIA_LOCAL_AI_ENABLED === "true" && process.env.JURIDIA_AI_ENABLED !== "false",
     supportsJsonSchema: true,
     supportsTools: false,
   },
@@ -57,10 +57,10 @@ export const PROVIDERS: Record<string, ProviderSpec> = {
 };
 
 /** Kill-switch global de IA. Se false, NENHUM provider é elegível. */
-export const AI_ENABLED = true;
+export const AI_ENABLED = process.env.JURIDIA_AI_ENABLED !== "false";
 
 /** Kill-switch de providers externos. Se false, só providers locais são elegíveis. */
-export const AI_EXTERNAL_PROVIDERS_ALLOWED = true;
+export const AI_EXTERNAL_PROVIDERS_ALLOWED = process.env.JURIDIA_EXTERNAL_AI_ENABLED === "true" && process.env.JURIDIA_CONFIDENTIAL_DATA_EXPORT_APPROVED === "true";
 
 /**
  * Verifica se um provider é elegível considerando kill-switches.
@@ -207,6 +207,37 @@ export function validateResponse(text: string): ValidationResult {
     }
   }
 
+  // Unverified jurisdiction-specific assertions must not pass as validated law.
+  if (/\b(?:REsp|AgInt|AgRg|AREsp|RE|HC|ADI|ADC|ADO)\s*\d[\d.\/-]{2,}/i.test(text)) {
+    violations.push({
+      rule: "PRECEDENTE_REQUER_CITATION_GATE",
+      severity: "error",
+      detail: "Referência a julgamento exige confirmação de fonte e aderência humana.",
+    });
+  }
+  if (/\b(?:art\.|artigo)\s*\d+\s+d[ao]\s+(?:Lei|CPC|CPP|CDC|CLT|CC|CF)/i.test(text)) {
+    violations.push({
+      rule: "NORMA_REQUER_CITATION_GATE",
+      severity: "error",
+      detail: "Artigo citado precisa de verificação contra o texto oficial vigente.",
+    });
+  }
+  if (/\b\d{1,3}(?:[.,]\d+)?\s*%\s*(?:de\s+)?(?:chance|probabilidade|êxito|sucesso|vitória)/i.test(text)) {
+    violations.push({
+      rule: "PROBABILIDADE_SEM_JURIMETRIA_VALIDADA",
+      severity: "error",
+      detail: "Percentual de sucesso não pode ser apresentado como previsão validada.",
+    });
+  }
+
+  if (/\bLei\s+(?:n[ºo.]?\s*)?\d[\d./-]{1,}/i.test(text)) {
+    violations.push({
+      rule: "LEI_REQUER_FONTE_OFICIAL",
+      severity: "error",
+      detail: "Lei mencionada deve ser conferida em fonte oficial e quanto à vigência.",
+    });
+  }
+
   // Regra 2: Vedação de aconselhamento sem ressalva
   if (lower.includes("você deve") && !lower.includes("revisão") && !lower.includes("advogado")) {
     violations.push({
@@ -257,7 +288,7 @@ export function validateResponse(text: string): ValidationResult {
     if (match) {
       violations.push({
         rule: "PRAZO_CALCULADO_AUTOMATICAMENTE",
-        severity: "warning",
+        severity: "error",
         detail: "Prazo processual calculado pela IA — confira calendário, feriados e rito aplicável",
         excerpt: match[0],
       });
@@ -284,4 +315,19 @@ export function ensureDraftMarker(text: string): string {
     return text;
   }
   return text + "\n\n---\n⚠ **RASCUNHO GERADO POR IA** — Revisão por advogado é OBRIGATÓRIA antes de qualquer uso ou protocolo. Não constitui aconselhamento jurídico.";
+}
+
+/** Detects instruction attempts embedded in external case documents.
+ * This is a conservative deterministic preflight, not semantic protection.
+ * Suspected documents require manual review before any external model call.
+ */
+export function detectInstructionInjection(input: string): boolean {
+  const value = input.slice(0, 450_000);
+  return [
+    /\b(?:ignore|disregard)\s+(?:all\s+|the\s+)?(?:previous|prior|earlier)\s+instructions\b/i,
+    /\b(?:ignore|desconsidere)\s+(?:todas?\s+)?(?:as\s+)?(?:instru[cç][oõ]es|regras)\s+(?:anteriores|do\s+sistema)\b/i,
+    /\b(?:system|developer)\s+(?:prompt|message)\s*:/i,
+    /<\s*(?:system|developer|assistant)\s*>/i,
+    /\b(?:revele|mostre|imprima)\s+(?:seu\s+)?(?:prompt|instru[cç][oõ]es\s+internas|chave\s+de\s+api)\b/i,
+  ].some(pattern => pattern.test(value));
 }

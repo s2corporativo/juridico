@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+
+function officialHttpsUrl(value: string | null | undefined): boolean {
+  try {
+    const u = new URL(value ?? "");
+    return u.protocol === "https:" && !u.username && !u.password &&
+      (u.hostname.endsWith(".jus.br") || u.hostname.endsWith(".gov.br"));
+  } catch { return false; }
+}
+
+function shaText(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
+}
+
 
 // GET: lista fontes jurídicas curadas (com filtros opcionais)
 export async function GET(req: NextRequest) {
@@ -21,7 +35,7 @@ export async function GET(req: NextRequest) {
   const sources = await db.legalSource.findMany({
     where,
     orderBy: [{ diploma: "asc" }, { numero: "asc" }],
-    take: 500,
+    take: 1000, // show the entire current curated corpus (717), including pending review
   });
 
   return NextResponse.json({
@@ -83,7 +97,9 @@ export async function POST(req: NextRequest) {
         vigente: body.vigente ?? true,
         urlOficial: body.urlOficial || null,
         dataConsulta: body.urlOficial ? new Date() : null,
-        revisadoPor: body.revisadoPor || "curador",
+        // Creating a record is ingestion, NOT an editorial human approval.
+        revisadoPor: null,
+        hashConteudo: shaText(body.textoTrecho || ""),
       },
     });
 
@@ -125,7 +141,7 @@ export async function PATCH(req: NextRequest) {
     textoTrecho?: string;
     vigente?: boolean;
     urlOficial?: string;
-    revisadoPor?: string;
+    approve?: boolean;
   } = {};
   try {
     body = await req.json();
@@ -141,17 +157,35 @@ export async function PATCH(req: NextRequest) {
     textoTrecho?: string;
     vigente?: boolean;
     urlOficial?: string;
-    revisadoPor?: string;
+    revisadoPor?: string | null;
+    hashConteudo?: string;
     dataConsulta?: Date;
   } = {};
 
-  if (body.textoTrecho !== undefined) data.textoTrecho = body.textoTrecho;
+  const existing = await db.legalSource.findUnique({ where: { id: body.id } });
+  if (!existing) return NextResponse.json({ error: "source_not_found" }, { status: 404 });
+  if (body.textoTrecho !== undefined) {
+    data.textoTrecho = body.textoTrecho;
+    data.hashConteudo = shaText(body.textoTrecho);
+    data.revisadoPor = null; // a changed text invalidates any previous review
+  }
   if (body.vigente !== undefined) data.vigente = body.vigente;
   if (body.urlOficial !== undefined) {
     data.urlOficial = body.urlOficial;
     data.dataConsulta = new Date();
+    data.revisadoPor = null;
   }
-  if (body.revisadoPor !== undefined) data.revisadoPor = body.revisadoPor;
+  // Editorial approval is an explicit admin action, not a client-provided label.
+  if (body.approve === true) {
+    const excerpt = body.textoTrecho ?? existing.textoTrecho;
+    const url = body.urlOficial ?? existing.urlOficial;
+    if (!officialHttpsUrl(url) || excerpt.trim().length < 25 || body.vigente === false || !existing.vigente) {
+      return NextResponse.json({ error: "official_source_and_valid_text_required" }, { status: 422 });
+    }
+    data.hashConteudo = shaText(excerpt);
+    data.revisadoPor = `human:${__auth.user.uid}`;
+    data.dataConsulta = new Date();
+  }
 
   const updated = await db.legalSource.update({
     where: { id: body.id },
@@ -162,7 +196,7 @@ export async function PATCH(req: NextRequest) {
     action: "update_legal_source",
     resource: "legal_source",
     resourceId: body.id,
-    metadata: { diploma: updated.diploma, numero: updated.numero, vigente: updated.vigente },
+    metadata: { diploma: updated.diploma, numero: updated.numero, vigente: updated.vigente, editorialApproval: body.approve === true, actor: __auth.user.uid },
   });
 
   return NextResponse.json({ ok: true });

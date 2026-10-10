@@ -12,29 +12,34 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const [users, docs, skills, templates, searches] = await Promise.all([
     db.user.count(),
-    db.document.count(),
+    db.document.count({ where: authUser.role === "admin" ? {} : { userId: authUser.uid } }),
     db.skill.count(),
     db.template.count(),
     db.jurisprudenceSearch.count(),
   ]);
 
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
+  const viewer = await db.user.findUnique({
+    where: { id: authUser.uid },
+    select: { plan: true, minutasUsed: true, minutasLimit: true },
+  });
 
   return NextResponse.json({
-    totalUsers: 92034 + users, // estatística de marketing + demo
-    totalDocuments: 35291483 + docs,
-    publicInstitutions: 153,
-    statesServed: 27, // 26 + DF
-    lawOffices: 5217,
+    // Verified operational counts only; never merge fabricated marketing metrics.
+    totalUsers: authUser.role === "admin" ? users : 1,
+    totalDocuments: docs,
+    publicInstitutions: 0, // not tracked in this database
+    statesServed: 0,
+    lawOffices: 0,
     skills,
     templates,
     searches,
-    demo: demoUser
+    demo: null,
+    viewer: viewer
       ? {
-          plan: demoUser.plan,
-          minutasUsed: demoUser.minutasUsed,
-          minutasLimit: demoUser.minutasLimit,
-          remaining: Math.max(0, demoUser.minutasLimit - demoUser.minutasUsed),
+          plan: viewer.plan,
+          minutasUsed: viewer.minutasUsed,
+          minutasLimit: viewer.minutasLimit,
+          remaining: Math.max(0, viewer.minutasLimit - viewer.minutasUsed),
         }
       : null,
   });

@@ -67,7 +67,7 @@ async function main() {
       const html = await res.text();
       // Extrai texto básico (remove tags HTML)
       const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 2000);
-      const hash = createHash("sha256").update(text.slice(0, 500)).digest("hex");
+      const hash = createHash("sha256").update(text.slice(0, 1000)).digest("hex");
 
       const existing = await db.legalSource.findFirst({ where: { diploma: "CPC", numero: "Lei 13.105/2015" } });
       if (!existing) {
@@ -82,10 +82,10 @@ async function main() {
             urlOficial: planalto.url,
             hashConteudo: hash,
             dataConsulta: new Date(),
-            revisadoPor: "ingestor-automatico",
+            revisadoPor: null, // ingestion never constitutes human editorial approval
           },
         });
-        console.log("  ✓ Lei 13.105/2015 (CPC) ingerida do Planalto");
+        console.log("  ✓ CPC ingerido COMO PENDENTE de conferência jurídica humana");
       } else {
         console.log("  ⏭ CPC já existe na base");
       }

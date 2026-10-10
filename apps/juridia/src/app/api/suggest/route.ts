@@ -1,3 +1,4 @@
+import { createGovernedZai } from "@/lib/external-ai-boundary";
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { requireAuth } from "@/lib/auth";
@@ -60,7 +61,7 @@ ${instruction}
 Gere apenas o trecho solicitado, em português jurídico brasileiro, pronto para ser inserido no documento. Não use marcadores [TIPO_0001] — escreva o texto completo com dados genéricos onde necessário (____ para campos a preencher).`;
 
   try {
-    const zai = await ZAI.create();
+    const zai = await createGovernedZai();
     const completion = await zai.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },

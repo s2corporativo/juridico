@@ -225,7 +225,7 @@ export function Editor() {
       return;
     }
     const html = contentToHtml(content);
-    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${title}</title>
+    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(title)}</title>
     <style>
       @page { margin: 2.5cm; }
       body { font-family: Georgia, 'Times New Roman', serif; font-size: 12pt; line-height: 1.75; color: #1a1a1a; }
@@ -239,7 +239,7 @@ export function Editor() {
       .footer { margin-top: 24pt; border-top: 1px solid #ccc; padding-top: 8pt; text-align: center; font-size: 9pt; color: #666; }
       @media print { .no-print { display: none; } }
     </style></head><body>
-    <div class="header"><h1>${title}</h1></div>
+    <div class="header"><h1>${esc(title)}</h1></div>
     ${html}
     <div class="footer">Gerado por JuridIA — Inteligência Artificial para o Direito Brasileiro · ${new Date().toLocaleDateString("pt-BR")}</div>
     <div class="no-print" style="text-align:center;padding:16pt;">

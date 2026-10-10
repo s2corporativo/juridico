@@ -1,3 +1,4 @@
+import { createGovernedZai } from "./external-ai-boundary";
 // minuta_run.ts — Orquestração do pipeline de minutas (multi-etapas).
 //
 // É a ÚNICA implementação do fluxo de geração: tanto a rota JSON clássica
@@ -13,7 +14,8 @@ import { createHash } from "node:crypto";
 import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
 import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
-import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
+import { validateResponse, ensureDraftMarker, detectInstructionInjection } from "@/lib/ai_governance";
+import { verifyCitations } from "@/lib/citation_gate";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
 import { ragSearch } from "@/lib/rag_lite";
@@ -223,6 +225,10 @@ export async function runMinutaPipeline(
 
   // 2) Inteiro teor + contexto do Cérebro (pseudonimizado junto — tarja-1)
   const factsBlock = buildFactsBlock(body.fields);
+  if (detectInstructionInjection(factsBlock) ||
+      detectInstructionInjection(body.brainContext ?? "")) {
+    throw new PipelineError("Documento com instruções suspeitas requer revisão manual", 422);
+  }
   const rawContextForModel = body.brainContext?.trim()
     ? `${factsBlock}\n\n[Contexto do Cérebro Jurídico]\n${body.brainContext.trim()}`
     : factsBlock;
@@ -294,6 +300,8 @@ export async function runMinutaPipeline(
     )
     .digest("hex")
     .slice(0, 32);
+  const modelProvider = process.env.JURIDIA_LOCAL_AI_ENABLED === "true" ? "ollama_local" : "zai";
+  const modelName = modelProvider === "ollama_local" ? (process.env.JURIDIA_LOCAL_AI_MODEL || "qwen3:4b-instruct") : "juridia-default";
   const run = await db.agentRun.create({
     data: {
       agentSlug: "legal_draft",
@@ -303,7 +311,8 @@ export async function runMinutaPipeline(
       userId: authUser.uid,
       tokensBudget: 30000,
       providerSnapshot: JSON.stringify({
-        provider: "zai",
+        provider: modelProvider,
+        model: modelName,
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
       }),
     },
@@ -333,8 +342,8 @@ export async function runMinutaPipeline(
         inputHash: null,
         outputHash: hashOf(JSON.stringify(output)),
         output: JSON.stringify(output).slice(0, 4000),
-        provider: "zai",
-        model: "juridia-default",
+        provider: modelProvider,
+        model: modelName,
         tokensIn,
         tokensOut,
         durationMs,
@@ -342,9 +351,10 @@ export async function runMinutaPipeline(
     });
   }
 
+
   let zai: ZaiClient | null = null;
   try {
-    zai = await ZAI.create();
+    zai = await createGovernedZai();
   } catch {
     zai = null;
   }
@@ -456,6 +466,14 @@ export async function runMinutaPipeline(
     }
   }
 
+  // A successful HTTP response is not evidence that a document is complete.
+  // Small/local models can end at max_tokens in the middle of a petition.
+  const minDraftChars = ["peticao", "recurso", "defesa", "sentenca"].includes(tpl.category)
+    ? 850 : 260;
+  if (generated.trim() && generated.trim().length < minDraftChars) {
+    degraded = true;
+  }
+
   if (!generated) {
     // Fallback AGORA SINALIZADO (antes era 200 silencioso)
     degraded = true;
@@ -541,6 +559,23 @@ export async function runMinutaPipeline(
 
   const finalContent = ensureDraftMarker(sanitizedContent);
   const validation = validateResponse(finalContent);
+  // Same citation gate for both JSON and SSE routes, before marking the document generated.
+  // A citation ID found in the text does not establish the precedent's factual adherence.
+  const reviewedSources = await db.legalSource.findMany({
+    where: {
+      vigente: true,
+      revisadoPor: { startsWith: "human:" },
+      urlOficial: { not: null },
+    },
+  });
+  const citationCheck = verifyCitations(finalContent, reviewedSources);
+  if (citationCheck.bloquear) {
+    validation.violations.push({
+      rule: "CITACOES_SEM_COMPROVACAO",
+      severity: "error",
+      detail: `${citationCheck.suspeitas + citationCheck.identificadas + citationCheck.genericas} referência(s) não comprovada(s). Revisar os textos oficiais antes de utilizar a minuta.`,
+    });
+  }
   if (invented.length) {
     validation.violations.push({
       rule: "MARCADOR_INVENTADO",
@@ -554,6 +589,13 @@ export async function runMinutaPipeline(
       severity: "warning",
       detail: `Trechos citam rótulos de campo como se fossem dados (ex.: "${labelLeaks[0]}"). Substitua o rótulo pelo valor correto antes de protocolar.`,
       excerpt: labelLeaks[0],
+    });
+  }
+  if (degraded) {
+    validation.violations.push({
+      rule: "GERACAO_INCOMPLETA_OU_SEM_MODELO",
+      severity: "error",
+      detail: "A geração está incompleta ou o modelo está indisponível. Não é uma peça jurídica final; exige complementação e revisão por advogado.",
     });
   }
   validation.valid = validation.violations.filter((v) => v.severity === "error").length === 0;
@@ -573,26 +615,30 @@ export async function runMinutaPipeline(
       markers: "[]", // intencional: o mapa de PII não é persistido (tarja-1)
       generatedContent: finalContent,
       skillSlugs: JSON.stringify(skills.map((s) => s.slug)),
-      status: degraded ? "draft" : "generated",
+      status: "draft", // even a valid model draft requires a lawyer to approve it
       batchId: body.batchId || null,
     },
   });
 
-  // Cota do usuário autenticado (antes nunca era checada)
-  await db.user.update({
-    where: { id: authUser.uid },
-    data: { minutasUsed: { increment: 1 } },
-  });
+  // A geração degradada ou juridicamente reprovada não é uma minuta cobrável.
+  const chargeable = !degraded && validation.valid && tokensTotal > 0;
+  if (chargeable) {
+    await db.user.update({
+      where: { id: authUser.uid },
+      data: { minutasUsed: { increment: 1 } },
+    });
+  }
 
   // 8) Agente fechado + auditoria + ledger
   await db.agentRun.update({
     where: { id: run.id },
     data: {
-      status: degraded ? "failed" : "completed",
+      status: degraded || !validation.valid ? "failed" : "completed",
       tokensIn: 0,
       tokensOut: tokensTotal,
       providerSnapshot: JSON.stringify({
-        provider: "zai",
+        provider: modelProvider,
+        model: modelName,
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
         stages: stages.map((s) => ({ stage: s.stage, ok: s.ok, tokens: s.tokens })),
       }),
@@ -612,6 +658,8 @@ export async function runMinutaPipeline(
       markersCount: pseudonymization.total,
       validationViolations: validation.violations.length,
       validationErrors: validation.violations.filter((v) => v.severity === "error").length,
+      requiresHumanReview: true,
+      modelProvider,
       tokensUsed: tokensTotal,
       anonymized: true,
       degraded,
@@ -621,14 +669,16 @@ export async function runMinutaPipeline(
     },
     userId: authUser.uid,
   });
-  await logUsageEntry({
-    type: "debit",
-    operation: "minuta",
-    amount: -1,
-    reason: `Geração de ${tpl.name}`,
-    metadata: { documentId: doc.id, templateSlug: tpl.slug, tokensUsed: tokensTotal },
-    userId: authUser.uid,
-  });
+  if (chargeable) {
+    await logUsageEntry({
+      type: "debit",
+      operation: "minuta",
+      amount: -1,
+      reason: `Geração de ${tpl.name}`,
+      metadata: { documentId: doc.id, templateSlug: tpl.slug, tokensUsed: tokensTotal },
+      userId: authUser.uid,
+    });
+  }
 
   const documentDTO: DocumentDTO = {
     id: doc.id,
@@ -656,7 +706,7 @@ export async function runMinutaPipeline(
     references,
     pipeline: {
       stages,
-      degraded,
+      degraded: degraded || !validation.valid,
       skillsAutoRouted: skills.filter((s) => s.origin === "auto").map((s) => s.slug),
       reviewCorrections,
     },

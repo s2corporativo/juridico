@@ -15,7 +15,7 @@ test("hybrid search uses local embeddings and preserves BM25 on provider failure
     db.exec("CREATE TABLE KnowledgeChunk(id TEXT PRIMARY KEY,documentId TEXT,contexto TEXT,texto TEXT,embedding TEXT,embeddingModel TEXT)");
     const vec = Array(768).fill(0);vec[0]=1;
     db.query("INSERT INTO LegalSource VALUES(?,?,?,?,?,?,?,?,?)")
-      .run("s1","CDC","18","responsabilidade solidaria consumidor","https://www.planalto.gov.br",1,"advogado",JSON.stringify(vec),"nomic-embed-text:latest");
+      .run("s1","CDC","18","responsabilidade solidaria consumidor","https://www.planalto.gov.br",1,"human:lawyer-1",JSON.stringify(vec),"nomic-embed-text:latest");
     ensureKnowledgeFts(db);
     const fetchImpl=(async () => new Response(JSON.stringify({embeddings:[vec]}))) as unknown as typeof fetch;
     const semantic=await hybridKnowledgeSearch(db,"responsabilidade consumidor",{enabled:true,fetchImpl});

@@ -1,16 +1,19 @@
+import { createGovernedZai } from "@/lib/external-ai-boundary";
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
 import { requireAuth } from "@/lib/auth";
+import { pseudonymize } from "@/lib/pseudonymizer";
+import { detectInstructionInjection } from "@/lib/ai_governance";
 import {
   decisionToBrainItem,
   extractSearchTerms,
   fetchAtlasJurimetry,
   isAtlasConfigured,
   searchAtlasCompendium,
-  webResultToBrainItem,
+
   type AtlasJurimetry,
   type BrainJurisprudenceItem,
 } from "@/lib/atlas_client";
@@ -90,8 +93,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let body: { facts?: string; title?: string; caseId?: string } = {};
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
-  const facts = (body.facts || "").trim();
+  const rawFacts = (body.facts || "").trim();
+  if (detectInstructionInjection(rawFacts)) {
+    return NextResponse.json({ error: "instructions_in_case_document_require_manual_review" }, { status: 422 });
+  }
+  // Only pseudonymized context is ever presented to an external model.
+  // Preserve original client facts locally for the authenticated case dossier.
+  const safeCase = pseudonymize(rawFacts);
+  const facts = safeCase.text;
   const title = body.title?.trim() || `Análise — ${new Date().toLocaleDateString("pt-BR")}`;
+
+  if (body.caseId) {
+    const ownedCase = await db.case.findUnique({
+      where: { id: body.caseId },
+      select: { client: { select: { userId: true } } },
+    });
+    if (!ownedCase) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+    if (authUser.role !== "admin" && ownedCase.client.userId !== authUser.uid) {
+      return NextResponse.json({ error: "case_access_denied" }, { status: 403 });
+    }
+  }
 
   if (facts.length < 30) {
     return NextResponse.json({ error: "Descreva os fatos do caso (mínimo 30 caracteres)" }, { status: 400 });
@@ -100,7 +121,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const steps: BrainStep[] = STEPS.map((s) => ({ ...s, status: "pending" as const }));
   const r: Partial<BrainResult> = { steps };
   let tokens = 0;
-  const zai = await ZAI.create();
+  let zai: Awaited<ReturnType<typeof createGovernedZai>>;
+  try {
+    zai = await createGovernedZai();
+  } catch {
+    return NextResponse.json({
+      error: "external_case_ai_disabled",
+      message: "Análise por IA externa desativada. Utilize pesquisa local até autorização operacional.",
+    }, { status: 503 });
+  }
 
   const tok = (c: unknown) => tokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
 
@@ -171,9 +200,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       textoTrecho: res.source.textoTrecho,
       vigente: res.source.vigente,
       urlOficial: res.source.urlOficial,
-      applicability: `RAG score: ${res.score.toFixed(3)} — ${res.source.diploma} ${res.source.numero} ${res.source.tribunal || ""}`,
+      applicability: `Fonte para revisão jurídica — ${res.source.diploma} ${res.source.numero} ${res.source.tribunal || ""}`,
       state: "direito_positivo" as const,
-      confidence: Math.min(1, res.score + 0.3), // ajusta confiança com base no score
+      confidence: 0, // retrieval rank is not a legal confidence estimate
     }));
     steps[3].status = "done"; steps[3].result = r.applicableLaw.length;
   } catch (e) { steps[3].status = "error"; steps[3].error = e instanceof Error ? e.message : "Erro"; r.applicableLaw = []; }
@@ -209,10 +238,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     if (needsWebFallback) {
-      r.atlas.fallback = true;
-      const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${facts.slice(0, 100)}`;
-      const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
-      r.jurisprudence = Array.isArray(raw) ? raw.slice(0, 8).map(webResultToBrainItem) : [];
+      // Never send facts, unique case context or extracted client claims to public search.
+      // An unavailable verified source is not a license to invent jurisprudence.
+      r.atlas.fallback = false;
+      r.atlas.status = "unavailable";
+      r.atlas.error = "NO_VERIFIED_JURISPRUDENCE_PROVIDER";
+      r.jurisprudence = [];
     }
     steps[4].status = "done"; steps[4].result = r.jurisprudence?.length ?? 0;
   } catch (e) { steps[4].status = "error"; steps[4].error = e instanceof Error ? e.message : "Erro"; r.jurisprudence = r.jurisprudence || []; }
@@ -267,8 +298,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     tok(c); steps[7].status = "done"; steps[7].result = r.strategy;
   } catch (e) { steps[7].status = "error"; steps[7].error = e instanceof Error ? e.message : "Erro"; r.strategy = { proceduralPath: "", immediateActions: [], documentsToCollect: [], risks: [], recommendation: "Análise indisponível" }; }
 
-  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { title, totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length } });
-  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: `Análise cerebral: ${title}`, metadata: { totalTokens: tokens, caseId: body.caseId } });
+  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length } , userId: authUser.uid });
+  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: "Análise cerebral (contexto confidencial omitido)", metadata: { totalTokens: tokens, caseId: body.caseId }, userId: authUser.uid });
 
   // ── Persistir análise (memória jurídica por processo) ──────────────────
   if (body.caseId) {
@@ -277,7 +308,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         data: {
           caseId: body.caseId,
           title,
-          factsInput: facts,
+          factsInput: rawFacts,
           result: JSON.stringify({ ...r, steps, totalTokens: tokens }),
           ramoJuridico: r.ramoJuridico || null,
           hypothesis: r.viability?.hypothesis || null,
@@ -298,7 +329,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const caseId = url.searchParams.get("caseId") || "default-case";
+  const caseId = url.searchParams.get("caseId");
+  if (!caseId) return NextResponse.json({ error: "caseId_required" }, { status: 400 });
+  const linkedCase = await db.case.findUnique({
+    where: { id: caseId },
+    select: { client: { select: { userId: true } } },
+  });
+  if (!linkedCase) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  if (authUser.role !== "admin" && linkedCase.client.userId !== authUser.uid) {
+    return NextResponse.json({ error: "case_access_denied" }, { status: 403 });
+  }
 
   const analyses = await db.brainAnalysis.findMany({
     where: { caseId },

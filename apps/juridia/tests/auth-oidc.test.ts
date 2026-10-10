@@ -118,5 +118,5 @@ function assert(condition: boolean, name: string, detail?: string) {
 console.log("\n=== RESULTADO ===");
 console.log(`✓ ${passed} aprovados`);
 console.log(`✗ ${failed} reprovados`);
-if (failed > 0) process.exit(1);
+if (failed > 0) throw new Error(`${failed} OIDC checks failed`);
 console.log("\n🎉 TODOS OS TESTES PASSARAM");

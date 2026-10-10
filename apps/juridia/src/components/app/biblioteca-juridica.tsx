@@ -36,6 +36,9 @@ interface LegalSource {
   tribunal: string | null;
   textoTrecho: string;
   vigente: boolean;
+  urlOficial?: string | null;
+  revisadoPor?: string | null;
+  dataConsulta?: string | null;
 }
 
 interface JurisprudenceResult {
@@ -54,6 +57,11 @@ export function BibliotecaJuridica() {
   const [searchJurisprudence, setSearchJurisprudence] = useState("");
   const [jurisprudenceResults, setJurisprudenceResults] = useState<JurisprudenceResult[]>([]);
   const [jurisprudenceLoading, setJurisprudenceLoading] = useState(false);
+
+  const sourceCheckIsStale = (source: LegalSource) => {
+    const checkedAt = Date.parse(source.dataConsulta ?? "");
+    return !Number.isFinite(checkedAt) || Date.now() - checkedAt > 30 * 86400_000;
+  };
 
   async function load() {
     setLoading(true);
@@ -74,6 +82,29 @@ export function BibliotecaJuridica() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function approveLegalSource(source: LegalSource) {
+    if (!source.urlOficial?.startsWith("https://")) {
+      toast({ title: "Fonte sem URL oficial HTTPS", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm("Você verificou pessoalmente o texto, vigência, URL oficial e aplicabilidade dessa fonte? Esta ação será registrada em seu usuário.")) return;
+    try {
+      const result = await fetch("/api/legal-sources", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: source.id, approve: true }),
+      });
+      if (!result.ok) {
+        toast({ title: "Aprovação não autorizada ou fonte inválida", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Revisão registrada com sucesso" });
+      await load();
+    } catch {
+      toast({ title: "Não foi possível registrar a revisão", variant: "destructive" });
+    }
+  }
 
   async function searchJurisprudenceFn() {
     if (searchJurisprudence.trim().length < 3) {
@@ -231,11 +262,27 @@ export function BibliotecaJuridica() {
                                 {s.vigente ? "Vigente" : "Revogado"}
                               </Badge>
                               <Badge variant="secondary" className="text-[9px]">{s.tipo}</Badge>
+                              <Badge variant={s.revisadoPor?.startsWith("human:") ? "default" : "outline"} className="text-[9px]">
+                                {s.revisadoPor?.startsWith("human:") ? "Revisão humana" : "Aguardando revisão"}
+                              </Badge>
+                              {sourceCheckIsStale(s) && (
+                                <Badge variant="outline" className="text-[9px]">Fonte sem checagem recente</Badge>
+                              )}
                             </div>
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0">
                           <p className="text-xs text-muted-foreground line-clamp-3">{s.textoTrecho}</p>
+                          {s.urlOficial && (
+                            <a className="text-xs underline text-primary" href={s.urlOficial} target="_blank" rel="noopener noreferrer">
+                              Conferir publicação oficial
+                            </a>
+                          )}
+                          {!s.revisadoPor?.startsWith("human:") && (
+                            <Button variant="outline" size="sm" className="mt-2" onClick={() => void approveLegalSource(s)}>
+                              Confirmar revisão humana (admin)
+                            </Button>
+                          )}
                           <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
                             <code className="font-mono">{s.numero}</code>
                             {s.tribunal && <Badge variant="outline" className="text-[9px]">{s.tribunal}</Badge>}

@@ -17,7 +17,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const status = url.searchParams.get("status");
   const area = url.searchParams.get("area");
 
-  const where: { clientId?: string; status?: string; area?: string } = {};
+  const where: {
+    clientId?: string; status?: string; area?: string;
+    client?: { is: { userId: string } };
+  } = {};
+  if (authUser.role !== "admin") where.client = { is: { userId: authUser.uid } };
   if (clientId) where.clientId = clientId;
   if (status) where.status = status;
   if (area) where.area = area;
@@ -81,6 +85,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (!body.clientId) return NextResponse.json({ error: "clientId obrigatório" }, { status: 400 });
   if (!body.title?.trim()) return NextResponse.json({ error: "Título do caso obrigatório" }, { status: 400 });
+  const permittedClient = await db.client.findFirst({
+    where: {
+      id: body.clientId,
+      ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+    },
+    select: { id: true },
+  });
+  if (!permittedClient) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
 
   const newCase = await db.case.create({
     data: {
@@ -156,7 +168,17 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (body.resultado !== undefined) data.resultado = body.resultado;
   if (body.processosVinculados !== undefined) data.processosVinculados = JSON.stringify(body.processosVinculados);
 
-  const updated = await db.case.update({ where: { id: body.id }, data });
+  const scope = {
+    id: body.id,
+    ...(authUser.role === "admin" ? {} : { client: { is: { userId: authUser.uid } } }),
+  };
+  const changed = await db.case.updateMany({ where: scope, data });
+  if (changed.count !== 1) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  const updated = await db.case.findFirst({
+    where: scope,
+    select: { title: true, status: true, resultado: true },
+  });
+  if (!updated) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: body.status === "encerrado" ? "close_case" : "update_case",
@@ -179,8 +201,14 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const c = await db.case.findUnique({ where: { id }, select: { title: true } });
-  await db.case.delete({ where: { id } });
+  const scope = {
+    id,
+    ...(authUser.role === "admin" ? {} : { client: { is: { userId: authUser.uid } } }),
+  };
+  const c = await db.case.findFirst({ where: scope, select: { title: true } });
+  if (!c) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  const changed = await db.case.deleteMany({ where: scope });
+  if (changed.count !== 1) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "delete_case",

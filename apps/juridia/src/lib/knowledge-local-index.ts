@@ -3,7 +3,8 @@
  * This module does not create a second knowledge corpus and never touches Atlas DB.
  * Initialization is additive; original tables remain untouched.
  */
-import { Database } from "bun:sqlite";
+import type { Database } from "bun:sqlite";
+import { createRequire } from "node:module";
 import { statSync } from "node:fs";
 
 export type LocalHit = {
@@ -25,9 +26,36 @@ export function openKnowledgeDb(dbPath: string, readonly = false): Database {
   // Bun 1.3 rejects readonly:false + create:false (SQLITE_MISUSE).
   // Preflight prevents accidental creation before opening read/write.
   if (!statSync(dbPath).isFile()) throw new Error("JURIDIA_SQLITE_FILE_REQUIRED");
-  const db = readonly
-    ? new Database(dbPath, { readonly: true, create: false })
-    : new Database(dbPath);
+  // Next.js standalone commonly runs under Node, while CI runs under Bun.
+  // Both runtimes use the *same* SQLite file and FTS5 indexes.
+  const runtimeRequire = createRequire(import.meta.url);
+  let db: Database;
+  if (process.versions.bun) {
+    const BunSqlite = runtimeRequire("bun:sqlite") as typeof import("bun:sqlite");
+    db = readonly
+      ? new BunSqlite.Database(dbPath, { readonly: true, create: false })
+      : new BunSqlite.Database(dbPath);
+  } else {
+    const nodeSqlite = runtimeRequire("node:sqlite") as typeof import("node:sqlite");
+    const native = new nodeSqlite.DatabaseSync(dbPath, { readOnly: readonly });
+    // Minimal compatibility layer: no secondary storage, no native dependency.
+    db = {
+      exec: (statement: string) => native.exec(statement),
+      query: (statement: string) => {
+        const stmt = native.prepare(statement);
+        return {
+          get: (...args: unknown[]) => stmt.get(...args as []),
+          all: (...args: unknown[]) => stmt.all(...args as []),
+          run: (...args: unknown[]) => stmt.run(...args as []),
+        };
+      },
+      prepare: (statement: string) => {
+        const stmt = native.prepare(statement);
+        return { run: (...args: unknown[]) => stmt.run(...args as []) };
+      },
+      close: () => native.close(),
+    } as unknown as Database;
+  }
   db.exec("PRAGMA busy_timeout=4000");
   db.exec("PRAGMA foreign_keys=ON");
   return db;
@@ -87,14 +115,35 @@ export function ensureKnowledgeFts(db: Database): { indexed: number; rebuilt: bo
 }
 
 /** Strict literal tokenization: no arbitrary FTS5 operators, no SQL interpolation. */
+/** Strict tokenized FTS5 query. Two independent terms must agree when available.
+ * Avoid returning generic chunks solely because of common legal vocabulary.
+ */
 export function safeFtsQuery(query: string): string {
+  const stop = new Set([
+    "direito","direitos","caso","processo","pessoa","parte","partes","assunto",
+    "inexiste","informacao","informacoes","sobre","para","como","qual",
+    "quais","entre","quando","onde","fatos","alegacao","pedido",
+    "artigo","artigos","codigo","legal","juridico","juridica",
+  ]);
   const tokens = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .match(/[\p{L}\p{N}]{3,32}/gu) ?? [];
-  const unique = Array.from(new Set(tokens)).slice(0, 10);
-  return unique.map(term => '"' + term + '"*').join(" OR ");
+  const terms = Array.from(new Set(tokens.filter(t => !stop.has(t)))).slice(0, 6);
+  if (terms.length < 1) return "";
+  const q = terms.map(term => '"' + term + '"*');
+  if (q.length === 1) return q[0];
+  const combinations: string[] = [];
+  for (let i = 0; i < q.length; i++) {
+    for (let j = i + 1; j < q.length; j++) combinations.push("(" + q[i] + " AND " + q[j] + ")");
+  }
+  return combinations.join(" OR ");
 }
 
-export function searchKnowledgeBm25(db: Database, query: string, topK = 8): LocalHit[] {
+export function searchKnowledgeBm25(
+  db: Database,
+  query: string,
+  topK = 8,
+  sourceKind?: "legal_source" | "knowledge_chunk",
+): LocalHit[] {
   assertKnowledgeTables(db);
   const match = safeFtsQuery(query.slice(0, 500));
   if (!match) return [];
@@ -112,13 +161,13 @@ export function searchKnowledgeBm25(db: Database, query: string, topK = 8): Loca
     "LEFT JOIN LegalSource ls ON f.entityKind='legal_source' AND ls.id=f.entityId " +
     "LEFT JOIN KnowledgeChunk kc ON f.entityKind='knowledge_chunk' AND kc.id=f.entityId " +
     "LEFT JOIN KnowledgeDocument d ON kc.documentId=d.id " +
-    "WHERE " + FTS + " MATCH ? AND " +
+    "WHERE " + FTS + " MATCH ? AND (? IS NULL OR f.entityKind = ?) AND " +
     "((f.entityKind='legal_source' AND ls.vigente=1) OR " +
     "(f.entityKind='knowledge_chunk' AND d.status='ATIVO' AND d.vigente=1 AND d.dadosFicticios=0)) " +
     "ORDER BY score ASC LIMIT ?";
-  return (db.query(sql).all(match, limit) as Row[]).map(r => ({
+  return (db.query(sql).all(match, sourceKind ?? null, sourceKind ?? null, limit) as Row[]).map(r => ({
     entityKind: r.entityKind, id: r.entityId, title: r.title,
     snippet: r.snippet, documentId: r.docId, url: r.url, bm25: -r.score,
-    citable: r.entityKind === "legal_source" && Boolean(r.revisadoPor) && Boolean(r.url),
+    citable: r.entityKind === "legal_source" && /^human:[A-Za-z0-9_-]+$/.test(r.revisadoPor ?? "") && /^https:\/\//.test(r.url ?? ""),
   }));
 }

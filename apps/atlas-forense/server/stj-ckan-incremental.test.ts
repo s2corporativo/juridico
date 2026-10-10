@@ -83,7 +83,10 @@ describe("STJ CKAN incremental metadata foundation", () => {
       { success: true, result: { count: 2, results: [source] } },
       { success: true, result: { count: 3, results: [source] } },
     ]);
-    await expect(discoverStjCkanResources({ pageSize: 1, fetchImpl: racing })).rejects.toThrow("STJ_CKAN_PAGINATION_RACE");
+    const partial = await discoverStjCkanResources({ pageSize: 1, fetchImpl: racing });
+    expect(partial.paginationRace).toBe(true);
+    expect(partial.pagesScanned).toBe(1);
+    expect(partial.resources.length).toBeGreaterThan(0);
   });
 
 });

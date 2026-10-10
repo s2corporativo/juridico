@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/fontes/ibge — busca índices IPCA/INPC do SIDRA IBGE
 // Uso: cálculo de correção monetária (dupla checagem dos índices)
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth.response;
   const url = new URL(req.url);
   const tabela = url.searchParams.get("tabela") || "1737"; // 1737 = IPCA mensal
   const periodo = url.searchParams.get("periodo") || "last%203"; // últimos 3 meses (formato IBGE)
+  if (!["1737", "1886"].includes(tabela) ||
+      !/^(?:last(?:%20|\s)?[1-9]\d?|\d{4})$/.test(periodo)) {
+    return NextResponse.json({ error: "indice_ou_periodo_invalido" }, { status: 400 });
+  }
 
   try {
     const ibgeUrl = `https://apisidra.ibge.gov.br/values/t/${tabela}/n1/all/p/${periodo}`;
@@ -40,7 +47,6 @@ export async function GET(req: NextRequest) {
       series,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Erro ao acessar IBGE";
-    return NextResponse.json({ error: msg, fonte: "IBGE/SIDRA" }, { status: 500 });
+    return NextResponse.json({ error: "ibge_unavailable", fonte: "IBGE/SIDRA" }, { status: 502 });
   }
 }
