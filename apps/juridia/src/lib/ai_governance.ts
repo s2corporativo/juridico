@@ -29,7 +29,7 @@ export const PROVIDERS: Record<string, ProviderSpec> = {
   "ollama": {
     name: "ollama",
     external: false,      // local (se disponível)
-    enabled: false,       // não configurado neste ambiente
+    enabled: process.env.JURIDIA_LOCAL_AI_ENABLED === "true" && process.env.JURIDIA_AI_ENABLED !== "false",
     supportsJsonSchema: true,
     supportsTools: false,
   },
