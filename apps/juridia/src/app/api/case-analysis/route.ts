@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { pseudonymize } from "@/lib/pseudonymizer";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -74,7 +75,7 @@ Regras:
 - nextSteps deve sugerir ações concretas (juntar documento, avaliar tese, verificar jurisprudência, etc.).
 - Resposta em português brasileiro.`;
 
-  const userPrompt = `## Fatos do caso\n${facts}`;
+  const userPrompt = `## Fatos do caso\n${pseudonymize(facts).text}`;
 
   let result: CaseAnalysisResult = { ...EMPTY };
 
@@ -118,12 +119,11 @@ Regras:
   }
 
   // Persiste a análise
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-  const userId = demoUser?.id;
+
   try {
     const saved = await db.caseAnalysis.create({
       data: {
-        userId,
+        userId: authUser.uid,
         title,
         factsInput: facts,
         parties: JSON.stringify(result.parties),
@@ -149,6 +149,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const items = await db.caseAnalysis.findMany({
+    where: authUser.role === "admin" ? {} : { userId: authUser.uid },
     orderBy: { createdAt: "desc" },
     take: 20,
   });
