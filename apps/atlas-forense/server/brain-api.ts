@@ -25,6 +25,7 @@ import { auditEvents } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { authenticateBrainToken, createRateLimiter } from "./brain-api-auth";
 import { editorialMetadataHash } from "./editorial-pipeline";
+import { readApprovedKnowledgeSnapshot, readKnowledgeHealth } from "./knowledge-snapshot";
 import {
   enqueueEditorialCandidates,
   finishEditorialRun,
@@ -165,8 +166,62 @@ export async function handleThesisSubmission(req: Request, res: Response) {
   }
 }
 
+/** Only approved, metadata-only records. Version is a complete snapshot digest, not a file hash. */
+export async function handleKnowledgeSnapshot(req: Request, res: Response) {
+  if (!guard(req, res)) return;
+  const pageSize = queryInt(req, "pageSize", 50, 1, 100);
+  const page = queryInt(req, "page", 0, 0, 1_000);
+  const version = queryString(req, "version", 100);
+  if (page > 0 && !version) {
+    res.status(400).json({ ok: false, error: "snapshot_version_required" });
+    return;
+  }
+  try {
+    const snap = await readApprovedKnowledgeSnapshot();
+    if (version && version !== snap.snapshotVersion) {
+      res.status(409).json({ ok: false, error: "snapshot_changed" });
+      return;
+    }
+    res.json({
+      ok: true, contractVersion: 1, snapshotVersion: snap.snapshotVersion,
+      total: snap.items.length, page, pageSize,
+      items: snap.items.slice(page * pageSize, (page + 1) * pageSize),
+      complete: (page + 1) * pageSize >= snap.items.length,
+      methodology: "Somente metadados oficiais aprovados. Registros não são precedentes nem texto integral.",
+    });
+  } catch {
+    res.status(503).json({ ok: false, error: "knowledge_snapshot_unavailable" });
+  }
+}
+
+export async function handleKnowledgeItem(req: Request, res: Response) {
+  if (!guard(req, res)) return;
+  const id = req.params.id;
+  if (!/^\\d{1,12}$/.test(id)) {
+    res.status(400).json({ ok: false, error: "invalid_item_id" });
+    return;
+  }
+  try {
+    const snap = await readApprovedKnowledgeSnapshot();
+    const item = snap.items.find(x => x.atlasItemId === id);
+    if (!item) { res.status(404).json({ ok: false, error: "knowledge_item_not_found" }); return; }
+    res.json({ ok: true, contractVersion: 1, snapshotVersion: snap.snapshotVersion, item });
+  } catch {
+    res.status(503).json({ ok: false, error: "knowledge_snapshot_unavailable" });
+  }
+}
+
+export async function handleKnowledgeHealth(req: Request, res: Response) {
+  if (!guard(req, res)) return;
+  try { res.json(await readKnowledgeHealth()); }
+  catch { res.status(503).json({ ok: false, error: "knowledge_health_unavailable" }); }
+}
+
 export function registerBrainApiRoutes(app: Express) {
   app.get(`${BRAIN_API_PREFIX}/compendium/search`, handleCompendiumSearch);
   app.get(`${BRAIN_API_PREFIX}/jurimetry`, handleJurimetry);
   app.post(`${BRAIN_API_PREFIX}/theses`, handleThesisSubmission);
+  app.get(`${BRAIN_API_PREFIX}/knowledge/snapshot`, handleKnowledgeSnapshot);
+  app.get(`${BRAIN_API_PREFIX}/knowledge/items/:id`, handleKnowledgeItem);
+  app.get(`${BRAIN_API_PREFIX}/knowledge/health`, handleKnowledgeHealth);
 }
