@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { hasCaseAccess } from "@/lib/case-access";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const caseId = url.searchParams.get("caseId") || "default-case";
+  const caseId = url.searchParams.get("caseId") ?? "";
+  if (!(await hasCaseAccess(caseId, authUser.uid, authUser.role))) {
+    return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  }
 
   const [nodes, edges] = await Promise.all([
     db.graphNode.findMany({
@@ -98,7 +102,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "fromNodeId e toNodeId não podem ser iguais" }, { status: 422 });
   }
 
-  const caseId = body.caseId || "default-case";
+  const caseId = body.caseId ?? "";
+  if (!(await hasCaseAccess(caseId, authUser.uid, authUser.role))) {
+    return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  }
 
   // Valida que ambos os nós pertencem ao mesmo caso (Princípio: bloquear vínculos cruzados)
   const [fromNode, toNode] = await Promise.all([
