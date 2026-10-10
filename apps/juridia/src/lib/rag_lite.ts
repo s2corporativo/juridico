@@ -8,6 +8,7 @@
 // 4. Retorna top-k mais similares
 
 import { db } from "@/lib/db";
+import { isReviewedCurrentLegalSource } from "@/lib/legal-source-trust";
 
 // ── TF-IDF ───────────────────────────────────────────────────────────────────
 
@@ -44,7 +45,11 @@ let docCountCache = 0;
 
 async function ensureIdfCache() {
   if (idfCache) return;
-  const sources = await db.legalSource.findMany({ where: { vigente: true, revisadoPor: { startsWith: "human:" }, urlOficial: { not: null } }, select: { textoTrecho: true } });
+  const candidates = await db.legalSource.findMany({
+    where: { vigente: true, revisadoPor: { startsWith: "human:" }, urlOficial: { not: null } },
+    select: { textoTrecho: true, vigente: true, revisadoPor: true, urlOficial: true, hashConteudo: true, dataConsulta: true },
+  });
+  const sources = candidates.filter(isReviewedCurrentLegalSource);
   const N = sources.length || 1;
   const df = new Map<string, number>(); // document frequency
 
@@ -142,9 +147,10 @@ export async function ragSearch(query: string, topK = 5): Promise<RagResult[]> {
           select: {
             id: true, diploma: true, numero: true, tribunal: true,
             textoTrecho: true, urlOficial: true, vigente: true,
+            revisadoPor: true, hashConteudo: true, dataConsulta: true,
           },
         });
-        const byId = new Map(sources.map(source => [source.id, source]));
+        const byId = new Map(sources.filter(isReviewedCurrentLegalSource).map(source => [source.id, source]));
         return ids.map((id, rank): RagResult | null => {
           const source = byId.get(id);
           if (!source) return null;
@@ -173,11 +179,12 @@ async function ragSearchTfidf(query: string, topK = 5): Promise<RagResult[]> {
     select: {
       id: true, diploma: true, numero: true, tribunal: true,
       textoTrecho: true, urlOficial: true, vigente: true,
+      revisadoPor: true, hashConteudo: true, dataConsulta: true,
     },
   });
 
   const results: RagResult[] = [];
-  for (const s of sources) {
+  for (const s of sources.filter(isReviewedCurrentLegalSource)) {
     const docTokens = tokenize(s.textoTrecho);
     const docVec = tfidfVector(docTokens, idfCache!);
     const score = cosineSimilarity(queryVec, docVec);
