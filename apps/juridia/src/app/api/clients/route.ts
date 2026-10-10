@@ -183,8 +183,16 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const client = await db.client.findUnique({ where: { id }, select: { name: true } });
-  await db.client.delete({ where: { id } });
+  const scope = {
+    id,
+    ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+  };
+  const client = await db.client.findFirst({ where: scope, select: { name: true } });
+  if (!client) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
+  const changed = await db.client.deleteMany({ where: scope });
+  if (changed.count !== 1) {
+    return NextResponse.json({ error: "client_not_found" }, { status: 404 });
+  }
 
   await logAuditEvent({
     action: "delete_client",
