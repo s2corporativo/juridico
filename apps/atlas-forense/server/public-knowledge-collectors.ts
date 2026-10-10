@@ -77,7 +77,7 @@ export async function collectStjResourceCandidates(options: {
   // Do not claim comprehensive coverage if the bounded discovery stops early.
   return {
     candidates, discoveredResources: manifest.resources.length,
-    truncated: manifest.pagesScanned === maxPages && manifest.reportedCount > maxPages * 50,
+    truncated: manifest.paginationRace || (manifest.pagesScanned === maxPages && manifest.reportedCount > maxPages * 50),
   };
 }
 
