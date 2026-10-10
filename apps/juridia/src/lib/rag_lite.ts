@@ -122,11 +122,16 @@ export async function ragSearch(query: string, topK = 5): Promise<RagResult[]> {
   const dbPath = process.env.JURIDIA_KNOWLEDGE_DB_PATH;
   if (dbPath) {
     try {
-      const { openKnowledgeDb, searchKnowledgeBm25 } = await import("@/lib/knowledge-local-index");
+      const { openKnowledgeDb } = await import("@/lib/knowledge-local-index");
+      const { hybridKnowledgeSearch } = await import("@/lib/knowledge-hybrid-search");
       const local = openKnowledgeDb(dbPath, true);
       let ids: string[] = [];
       try {
-        ids = searchKnowledgeBm25(local, query, Math.min(50, Math.max(topK * 3, 10)))
+        const result = await hybridKnowledgeSearch(local, query, {
+          topK: Math.min(30, Math.max(topK * 3, 10)),
+          enabled: process.env.JURIDIA_USE_LOCAL_EMBEDDINGS === "true",
+        });
+        ids = result.hits
           .filter(hit => hit.entityKind === "legal_source" && hit.citable)
           .map(hit => hit.id);
       } finally { local.close(); }
