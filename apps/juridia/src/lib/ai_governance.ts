@@ -22,7 +22,7 @@ export const PROVIDERS: Record<string, ProviderSpec> = {
   "zai": {
     name: "zai",
     external: true,      // z-ai-web-dev-sdk é externo (API cloud)
-    enabled: true,        // habilitado por padrão
+    enabled: process.env.JURIDIA_EXTERNAL_AI_ENABLED === "true", // explicit operator opt-in
     supportsJsonSchema: true,
     supportsTools: false,
   },
@@ -57,10 +57,10 @@ export const PROVIDERS: Record<string, ProviderSpec> = {
 };
 
 /** Kill-switch global de IA. Se false, NENHUM provider é elegível. */
-export const AI_ENABLED = true;
+export const AI_ENABLED = process.env.JURIDIA_AI_ENABLED !== "false";
 
 /** Kill-switch de providers externos. Se false, só providers locais são elegíveis. */
-export const AI_EXTERNAL_PROVIDERS_ALLOWED = true;
+export const AI_EXTERNAL_PROVIDERS_ALLOWED = process.env.JURIDIA_EXTERNAL_AI_ENABLED === "true" && process.env.JURIDIA_CONFIDENTIAL_DATA_EXPORT_APPROVED === "true";
 
 /**
  * Verifica se um provider é elegível considerando kill-switches.
@@ -205,6 +205,29 @@ export function validateResponse(text: string): ValidationResult {
         excerpt: match[0],
       });
     }
+  }
+
+  // Unverified jurisdiction-specific assertions must not pass as validated law.
+  if (/\b(?:REsp|AgInt|AgRg|AREsp|RE|HC|ADI|ADC|ADO)\s*\d[\d.\/-]{2,}/i.test(text)) {
+    violations.push({
+      rule: "PRECEDENTE_REQUER_CITATION_GATE",
+      severity: "error",
+      detail: "Referência a julgamento exige confirmação de fonte e aderência humana.",
+    });
+  }
+  if (/\b(?:art\.|artigo)\s*\d+\s+d[ao]\s+(?:Lei|CPC|CPP|CDC|CLT|CC|CF)/i.test(text)) {
+    violations.push({
+      rule: "NORMA_REQUER_CITATION_GATE",
+      severity: "error",
+      detail: "Artigo citado precisa de verificação contra o texto oficial vigente.",
+    });
+  }
+  if (/\b\d{1,3}(?:[.,]\d+)?\s*%\s*(?:de\s+)?(?:chance|probabilidade|êxito|sucesso|vitória)/i.test(text)) {
+    violations.push({
+      rule: "PROBABILIDADE_SEM_JURIMETRIA_VALIDADA",
+      severity: "error",
+      detail: "Percentual de sucesso não pode ser apresentado como previsão validada.",
+    });
   }
 
   // Regra 2: Vedação de aconselhamento sem ressalva
