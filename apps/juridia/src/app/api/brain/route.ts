@@ -6,6 +6,7 @@ import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
 import { requireAuth } from "@/lib/auth";
 import { pseudonymize } from "@/lib/pseudonymizer";
+import { detectInstructionInjection } from "@/lib/ai_governance";
 import {
   decisionToBrainItem,
   extractSearchTerms,
@@ -93,6 +94,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   const rawFacts = (body.facts || "").trim();
+  if (detectInstructionInjection(rawFacts)) {
+    return NextResponse.json({ error: "instructions_in_case_document_require_manual_review" }, { status: 422 });
+  }
   // Only pseudonymized context is ever presented to an external model.
   // Preserve original client facts locally for the authenticated case dossier.
   const safeCase = pseudonymize(rawFacts);
