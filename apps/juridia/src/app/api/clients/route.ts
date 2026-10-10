@@ -20,32 +20,45 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     },
   });
 
-  // Conta documentos por cliente (via cases)
-  const clientsWithStats = await Promise.all(
-    clients.map(async (c) => {
-      const cases = await db.case.findMany({
-        where: { clientId: c.id },
-        select: { id: true },
-      });
-      const caseIds = cases.map((cs) => cs.id);
-      const docCount = await db.document.count({
-        where: { caseId: { in: caseIds }, ...(authUser.role === 'admin' ? {} : { userId: authUser.uid }) },
-      });
-      return {
-        id: c.id,
-        name: c.name,
-        email: c.email,
-        phone: c.phone,
-        document: c.document,
-        notes: c.notes,
-        color: c.color,
-        casesCount: c._count.cases,
-        documentsCount: docCount,
-        createdAt: c.createdAt.toISOString(),
-        updatedAt: c.updatedAt.toISOString(),
-      };
-    })
-  );
+  // Two batched queries avoid one case lookup + document count per client.
+  const clientIds = clients.map(client => client.id);
+  const caseLinks = clientIds.length
+    ? await db.case.findMany({
+        where: { clientId: { in: clientIds } },
+        select: { id: true, clientId: true },
+      })
+    : [];
+  const caseToClient = new Map(caseLinks.map(link => [link.id, link.clientId]));
+  const grouped = caseLinks.length
+    ? await db.document.groupBy({
+        by: ["caseId"],
+        where: {
+          caseId: { in: caseLinks.map(link => link.id) },
+          ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+        },
+        _count: { _all: true },
+      })
+    : [];
+  const documentCounts = new Map<string, number>();
+  for (const group of grouped) {
+    const clientId = caseToClient.get(group.caseId ?? "");
+    if (clientId) {
+      documentCounts.set(clientId, (documentCounts.get(clientId) ?? 0) + group._count._all);
+    }
+  }
+  const clientsWithStats = clients.map(client => ({
+    id: client.id,
+    name: client.name,
+    email: client.email,
+    phone: client.phone,
+    document: client.document,
+    notes: client.notes,
+    color: client.color,
+    casesCount: client._count.cases,
+    documentsCount: documentCounts.get(client.id) ?? 0,
+    createdAt: client.createdAt.toISOString(),
+    updatedAt: client.updatedAt.toISOString(),
+  }));
 
   return NextResponse.json({ clients: clientsWithStats });
 }
