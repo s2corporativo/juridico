@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   const sources = await db.legalSource.findMany({
     where,
     orderBy: [{ diploma: "asc" }, { numero: "asc" }],
-    take: 500,
+    take: 1000, // show the entire current curated corpus (717), including pending review
   });
 
   return NextResponse.json({
