@@ -33,7 +33,11 @@ export function createLocalChatAdapter(fetchImpl: typeof fetch = fetch) {
   assertLocalAiEnabled();
   const model = localModelName();
   const encoder = new TextEncoder();
-  const tokenLimit = (requested?: number) => Math.min(Math.max(requested ?? 600, 64), 1800);
+  const ceilingRaw = Number(process.env.JURIDIA_LOCAL_AI_MAX_TOKENS || "1800");
+  const ceiling = Number.isSafeInteger(ceilingRaw) && ceilingRaw >= 128 && ceilingRaw <= 1800
+    ? ceilingRaw : 1800;
+  const tokenLimit = (requested?: number) =>
+    Math.min(Math.max(requested ?? 600, 64), ceiling);
   const prepare = (input: ChatInput) => {
     if (!Array.isArray(input.messages) || input.messages.length < 1 ||
         input.messages.some(m => !["system", "user", "assistant"].includes(m.role) ||
