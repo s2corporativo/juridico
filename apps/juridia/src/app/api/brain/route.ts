@@ -294,8 +294,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     tok(c); steps[7].status = "done"; steps[7].result = r.strategy;
   } catch (e) { steps[7].status = "error"; steps[7].error = e instanceof Error ? e.message : "Erro"; r.strategy = { proceduralPath: "", immediateActions: [], documentsToCollect: [], risks: [], recommendation: "Análise indisponível" }; }
 
-  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length } });
-  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: "Análise cerebral (contexto confidencial omitido)", metadata: { totalTokens: tokens, caseId: body.caseId } });
+  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length } , userId: authUser.uid });
+  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: "Análise cerebral (contexto confidencial omitido)", metadata: { totalTokens: tokens, caseId: body.caseId }, userId: authUser.uid });
 
   // ── Persistir análise (memória jurídica por processo) ──────────────────
   if (body.caseId) {
