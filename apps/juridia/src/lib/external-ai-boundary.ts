@@ -4,6 +4,7 @@
  * A conscious infrastructure opt-in is still NOT consent to leak unredacted data.
  */
 import ZAI from "z-ai-web-dev-sdk";
+import { createLocalChatAdapter, assertLocalAiEnabled } from "./local-chat-provider";
 import { isProviderEligible, getSanitizationMode, SanitizationMode } from "./ai_governance";
 
 export function assertExternalAiAllowed(taskType = "analise_caso"): void {
@@ -19,6 +20,12 @@ export function assertExternalAiAllowed(taskType = "analise_caso"): void {
 }
 
 export async function createGovernedZai(taskType = "analise_caso") {
+  if (process.env.JURIDIA_LOCAL_AI_ENABLED === "true") {
+    assertLocalAiEnabled();
+    // Existing orchestration uses a small SDK-compatible surface; local adapter
+    // cannot search the web or silently fall back to a remote provider.
+    return createLocalChatAdapter() as unknown as Awaited<ReturnType<typeof ZAI.create>>;
+  }
   assertExternalAiAllowed(taskType);
   return ZAI.create();
 }
