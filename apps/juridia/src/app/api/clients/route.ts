@@ -13,6 +13,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const clients = await db.client.findMany({
+    where: authUser.role === "admin" ? {} : { userId: authUser.uid },
     orderBy: { updatedAt: "desc" },
     include: {
       _count: { select: { cases: true } },
