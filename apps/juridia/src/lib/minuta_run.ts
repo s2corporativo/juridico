@@ -15,6 +15,7 @@ import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
 import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
+import { verifyCitations } from "@/lib/citation_gate";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
 import { ragSearch } from "@/lib/rag_lite";
@@ -542,6 +543,23 @@ export async function runMinutaPipeline(
 
   const finalContent = ensureDraftMarker(sanitizedContent);
   const validation = validateResponse(finalContent);
+  // Same citation gate for both JSON and SSE routes, before marking the document generated.
+  // A citation ID found in the text does not establish the precedent's factual adherence.
+  const reviewedSources = await db.legalSource.findMany({
+    where: {
+      vigente: true,
+      revisadoPor: { startsWith: "human:" },
+      urlOficial: { not: null },
+    },
+  });
+  const citationCheck = verifyCitations(finalContent, reviewedSources);
+  if (citationCheck.bloquear) {
+    validation.violations.push({
+      rule: "CITACOES_SEM_COMPROVACAO",
+      severity: "error",
+      detail: `${citationCheck.suspeitas + citationCheck.identificadas + citationCheck.genericas} referência(s) não comprovada(s). Revisar os textos oficiais antes de utilizar a minuta.`,
+    });
+  }
   if (invented.length) {
     validation.violations.push({
       rule: "MARCADOR_INVENTADO",
