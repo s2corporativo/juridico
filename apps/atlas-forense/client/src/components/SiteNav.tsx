@@ -5,6 +5,7 @@ import {
   CalendarDays, BookOpenCheck, Database, Activity,
   Landmark, FileSignature, type LucideIcon,
 } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
 export interface SiteNavItem {
