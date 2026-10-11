@@ -2,31 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Sparkles,
-  Send,
-  Copy,
-  Play,
-  LayoutDashboard,
-  Briefcase,
-  Users,
-  FolderOpen,
-  CalendarClock,
-  Gavel,
-  Wallet,
-  Calculator,
-  Brain,
-  Network,
-  GitBranch,
-  Wand2,
-  FileText,
-  ClipboardCheck,
-  BarChart3,
-  Search,
-  Shield,
-  Loader2,
-  CheckCircle2,
-} from "lucide-react";
+import { Sparkles, Send, Copy, Play, Brain, FileText, Search, BookOpen, Loader2, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,11 +12,7 @@ import { useAppStore } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
 
 // ── Tipos ───────────────────────────────────────────────────────────────────
-type IntentTab =
-  | "assistente" | "dashboard" | "casos" | "clients" | "documents" | "prazos"
-  | "audiencias" | "financeiro" | "produtividade" | "calculadora" | "cerebro"
-  | "intelligence" | "pipeline" | "generator" | "editor" | "homologacao"
-  | "visuallaw" | "datajud" | "grafo" | "settings";
+type IntentTab = "assistente" | "pesquisa" | "analise" | "minutas" | "biblioteca";
 
 interface IntentDef {
   tab: IntentTab;
@@ -50,33 +22,23 @@ interface IntentDef {
 }
 
 const INTENTS: IntentDef[] = [
-  { tab: "dashboard", label: "Dashboard / Início", icon: LayoutDashboard, keywords: ["dashboard", "início", "inicio", "home", "resumo", "visão geral", "painel"] },
-  { tab: "casos", label: "Casos / Processos", icon: Briefcase, keywords: ["caso", "processo", "ação", "acao", "petição", "peticao", "vara", "comarca", "audiência", "audiencia", "distribuição", "distribuicao"] },
-  { tab: "clients", label: "Clientes", icon: Users, keywords: ["cliente", "clientes", "pessoa", "contato", "cpf", "cnpj", "qualificação", "qualificacao"] },
-  { tab: "documents", label: "Documentos", icon: FolderOpen, keywords: ["documento", "documentos", "minuta", "minutas", "salvas", "salvo", "arquivo", "arquivos"] },
-  { tab: "prazos", label: "Prazos processuais", icon: CalendarClock, keywords: ["prazo", "prazos", "vencimento", "contagem", "úteis", "uteis", "corridos", "intimação", "intimacao", "contestação", "contestacao", "recurso"] },
-  { tab: "audiencias", label: "Audiências", icon: Gavel, keywords: ["audiência", "audiencia", "conciliação", "conciliacao", "instrução", "instrucao", "julgamento", "oitiva", "designação", "designacao"] },
-  { tab: "financeiro", label: "Financeiro", icon: Wallet, keywords: ["financeiro", "honorário", "honorario", "conta", "pagamento", "receber", "recebido", "previsto", "faturamento", "caixa", "fluxo"] },
-  { tab: "produtividade", label: "Produtividade", icon: BarChart3, keywords: ["produtividade", "ranking", "desempenho", "métricas", "metricas", "relatório", "relatorio", "kpi", "advogado", "oab"] },
-  { tab: "calculadora", label: "Calculadora jurídica", icon: Calculator, keywords: ["calcular", "cálculo", "calculo", "juros", "correção", "correcao", "prescrição", "prescricao", "ipca", "inpc", "atualização", "atualizacao"] },
-  { tab: "cerebro", label: "Cérebro jurídico", icon: Brain, keywords: ["cérebro", "cerebro", "análise", "analise", "viabilidade", "tese", "hipótese", "hipotese", "estratégia", "estrategia", "fatos"] },
-  { tab: "intelligence", label: "Inteligência / Grafo", icon: Network, keywords: ["inteligência", "inteligencia", "grafo", "nó", "no", "aresta", "afirmação", "afirmacao", "evidência", "evidencia", "snapshot"] },
-  { tab: "pipeline", label: "Pipeline LexValida", icon: GitBranch, keywords: ["pipeline", "lexvalida", "roteiro", "planejamento", "etapas", "8 etapas"] },
-  { tab: "generator", label: "Gerar minuta", icon: Wand2, keywords: ["gerar", "minuta", "peça", "peca", "petição", "peticao", "sentença", "sentenca", "contrato", "despacho", "modelo"] },
-  { tab: "editor", label: "Editor", icon: FileText, keywords: ["editor", "editar", "revisar", "texto", "rascunho", "timbrado", "rodapé", "rodape"] },
-  { tab: "homologacao", label: "Homologação", icon: ClipboardCheck, keywords: ["homologação", "homologacao", "validação", "validacao", "end-to-end", "10 casos", "auditoria"] },
-  { tab: "visuallaw", label: "Visual Law", icon: BarChart3, keywords: ["visual", "visualização", "visualizacao", "timeline", "linha do tempo", "quadro-resumo", "infográfico", "infografico"] },
-  { tab: "datajud", label: "DataJud", icon: Search, keywords: ["datajud", "cnj", "processo", "consulta", "tribunal", "movimentação", "movimentacao", "andamento"] },
-  { tab: "grafo", label: "Grafo do sistema", icon: Network, keywords: ["grafo do sistema", "topologia", "hubs", "força dirigida", "force-directed"] },
-  { tab: "settings", label: "Configurações", icon: Shield, keywords: ["configuração", "configuracao", "perfil", "preferências", "preferencias", "governança", "governanca", "audit"] },
+  { tab: "pesquisa", label: "Pesquisa Jurídica", icon: Search, keywords:
+    ["jurisprudência", "jurisprudencia", "acórdão", "acordao", "súmula", "sumula", "stj", "stf", "tribunal", "legislação", "lei", "pesquisar", "precedente", "fonte"] },
+  { tab: "analise", label: "Análise Jurídica", icon: Brain, keywords:
+    ["análise", "analise", "fatos", "provas", "documento", "caso", "tese", "argumentação", "estratégia", "viabilidade", "lacunas", "comparar", "analisar"] },
+  { tab: "minutas", label: "Minutas IA", icon: FileText, keywords:
+    ["minuta", "redigir", "gerar", "petição", "peticao", "contestação", "contestacao", "recurso", "manifestação", "manifestacao", "parecer", "editar", "revisar", "peça", "peca"] },
+  { tab: "biblioteca", label: "Biblioteca de minutas", icon: BookOpen, keywords:
+    ["biblioteca", "histórico", "historico", "salvas", "rascunho", "modelo", "minhas minutas", "versão", "versao"] },
+  { tab: "assistente", label: "Assistente Jurídico", icon: Sparkles, keywords:
+    ["ajuda", "assistente", "início", "inicio", "orientação", "orientacao"] },
 ];
 
 const EXAMPLE_CHIPS = [
-  "Quero cadastrar um novo cliente",
-  "Quanto tempo falta para o prazo de contestação?",
-  "Calcule juros e correção de R$ 10.000",
-  "Gere uma petição inicial de indenização",
-  "Mostre a produtividade do escritório",
+  "Pesquisar jurisprudência do STJ sobre responsabilidade civil",
+  "Analisar os fatos e as provas de um caso",
+  "Propor uma minuta de contestação fundamentada",
+  "Revisar uma minuta já salva",
 ];
 
 interface ScoredIntent {
@@ -116,7 +78,7 @@ function classifyIntent(input: string): ClassificationResult {
   const top = candidates[0];
 
   // fallback: se nada foi casado, sugere "dashboard"
-  const topIntent = top?.def ?? INTENTS.find((i) => i.tab === "dashboard")!;
+  const topIntent = top?.def ?? INTENTS.find((i) => i.tab === "assistente")!;
   const confidence = top ? Math.min(99, Math.round(top.score * 100 + 25)) : 15;
 
   // entidades simples
@@ -155,7 +117,7 @@ export function Assistente() {
       return;
     }
     setLoading(true);
-    // Simula latência leve para feedback visual
+    // Feedback breve de classificação, sem consulta jurídica
     setTimeout(() => {
       setResult(classifyIntent(input));
       setLoading(false);
@@ -187,8 +149,8 @@ export function Assistente() {
             <Sparkles className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Assistente de intenção</h1>
-            <p className="text-sm text-muted-foreground">Classificador conversacional — descreva o que você quer fazer e o sistema sugere a aba certa.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Assistente de navegação jurídica</h1>
+            <p className="text-sm text-muted-foreground">Descreva sua atividade de pesquisa, análise ou redação; o sistema indica a área adequada. Não é uma opinião jurídica.</p>
           </div>
         </div>
       </motion.div>
@@ -206,7 +168,7 @@ export function Assistente() {
               rows={5}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ex: Gostaria de calcular juros e correção de R$ 10.000 desde janeiro de 2022"
+              placeholder="Ex.: Pesquisar decisões do STJ e propor uma minuta"
               className="resize-none"
             />
             <div className="flex flex-wrap gap-2">
@@ -255,7 +217,7 @@ export function Assistente() {
                   {/* Confiança */}
                   <div>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Confiança da intenção principal</span>
+                      <span className="text-muted-foreground">Correspondência de termos na solicitação</span>
                       <span className="font-semibold text-primary">{result.confidence}%</span>
                     </div>
                     <Progress value={result.confidence} className="h-2" />
@@ -331,7 +293,7 @@ export function Assistente() {
 
                   <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs text-emerald-700 dark:text-emerald-400">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Classificação determinística (heurística por keywords). Confirme antes de executar.</span>
+                    <span>Classificação de navegação por palavras-chave. A análise jurídica ocorre na área indicada e exige revisão profissional.</span>
                   </div>
                 </motion.div>
               ) : (
