@@ -229,7 +229,14 @@ export async function PATCH(req: NextRequest) {
           diploma: updated.diploma, numero: updated.numero,
           vigente: updated.vigente, editorialApproval: body.approve === true,
           reviewVersion: updated.updatedAt.toISOString(), contentHash: updated.hashConteudo,
-          consultedOfficialPublication: body.approve === true,
+          attestations: body.approve === true ? {
+            officialPublicationOpened: body.review?.viewedOfficialPublication === true,
+            fullExcerptCompared: body.review?.comparedFullExcerpt === true,
+            legalValidityChecked: body.review?.checkedValidityAsOfToday === true,
+            applicabilityChecked: body.review?.checkedApplicability === true,
+            expectedSourceVersion: body.review?.expectedUpdatedAt,
+            expectedSnapshotHash: body.review?.expectedContentHash,
+          } : null,
         }),
       } });
     });
