@@ -111,7 +111,7 @@ export function calculateCorrection(
   };
 }
 
-// ── Cálculo de Juros de Mora ──────────────────────────────────────────────
+// ── Simulação de juros com taxa informada ──────────────────────────────
 
 export interface InterestResult {
   valorJuros: number;
@@ -120,37 +120,40 @@ export interface InterestResult {
   meses: number;
   memoriaCalculo: string;
   base: string;
+  observacoes: string[];
 }
 
 /**
- * Calcula juros de mora.
- * - CC art. 406: 1% ao mês (civil)
- * - Súmula 482 STJ: 0,5% ao mês (antes da Lei 12.506/2011)
- * - CLT (após 30/06/2009): 1% ao mês (Súmula 381 TST revogada, agora 1%)
+ * Mathematical simulation ONLY, not automatic application of CC art. 406,
+ * CLT or historic STJ precedent. Since Lei 14.905/2024 the legal interest
+ * methodology is month-dependent (CMN/BCB) and cannot be hardcoded at 1%.
+ * Reference: https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/l14905.htm
  */
 export function calculateInterest(
   valorPrincipal: number,
   meses: number,
-  taxaMensal: number = 0.01, // 1% ao mês (padrão CC art. 406)
-  base: "cc_art_406" | "stj_482" | "clt" = "cc_art_406"
+  taxaMensal: number,
+  base: "informada_pelo_usuario" = "informada_pelo_usuario",
 ): InterestResult {
-  // Juros simples (não compostos, salvo previsão contratual)
+  if (base !== "informada_pelo_usuario" ||
+      !Number.isFinite(valorPrincipal) || valorPrincipal <= 0 || valorPrincipal > 1_000_000_000 ||
+      !Number.isFinite(meses) || meses <= 0 || meses > 600 ||
+      !Number.isFinite(taxaMensal) || taxaMensal < 0 || taxaMensal > 1) {
+    throw new Error("INTEREST_PARAMETERS_REQUIRE_EXPLICIT_RATE");
+  }
   const valorJuros = valorPrincipal * taxaMensal * meses;
-  const valorTotal = valorPrincipal + valorJuros;
-
-  const baseLabels: Record<string, string> = {
-    cc_art_406: "CC art. 406 (1% ao mês)",
-    stj_482: "Súmula 482 STJ (0,5% ao mês — anterior à Lei 12.506/2011)",
-    clt: "CLT — Justiça do Trabalho (1% ao mês)",
-  };
-
   return {
     valorJuros,
-    valorTotal,
+    valorTotal: valorPrincipal + valorJuros,
     taxaMensal,
     meses,
     memoriaCalculo: `${valorPrincipal.toFixed(2)} × ${taxaMensal} × ${meses} meses = ${valorJuros.toFixed(2)} (juros simples)`,
-    base: baseLabels[base] || base,
+    base: "Taxa mensal fornecida pelo usuário — simulação matemática",
+    observacoes: [
+      "Não é cálculo automático de taxa legal ou de crédito trabalhista.",
+      "Conferir o índice, o período e os marcos legais aplicáveis.",
+      "CC art. 406 após Lei 14.905/2024: consultar a Taxa Legal divulgada pelo Banco Central; não presumir 1% ao mês.",
+    ],
   };
 }
 
