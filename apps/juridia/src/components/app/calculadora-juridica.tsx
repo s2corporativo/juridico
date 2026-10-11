@@ -310,11 +310,11 @@ export function CalculadoraJuridica() {
                   <Select value={prescForm.area} onValueChange={(v) => setPrescForm(s => ({ ...s, area: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="civil">Civil (10 anos)</SelectItem>
-                      <SelectItem value="consumer">Consumidor (5 anos)</SelectItem>
-                      <SelectItem value="trabalhista">Trabalhista (5+2 anos)</SelectItem>
-                      <SelectItem value="tributario">Tributário (5 anos)</SelectItem>
-                      <SelectItem value="penal">Penal (varia)</SelectItem>
+                      <SelectItem value="civil">Civil (triagem; confirmar prazo)</SelectItem>
+                      <SelectItem value="consumer">Consumidor (triagem; confirmar pretensão)</SelectItem>
+                      <SelectItem value="trabalhista">Trabalhista (triagem; verificar marcos)</SelectItem>
+                      <SelectItem value="tributario">Tributário (triagem; verificar instituto)</SelectItem>
+                      <SelectItem value="penal">Penal (triagem; consultar CP e pena)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -540,21 +540,16 @@ function ResultRenderer({ result }: { result: ResultState }) {
     );
   }
   if (result.tool === "prescricao") {
-    const prescrito = Boolean(p.prescrito);
     return (
       <>
-        <div className={`rounded-lg border p-4 ${prescrito ? "border-rose-500/50 bg-rose-500/5" : "border-emerald-500/50 bg-emerald-500/5"}`}>
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
           <div className="flex items-center gap-2">
-            {prescrito ? <AlertTriangle className="h-5 w-5 text-rose-600" /> : <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
-            <span className={`text-sm font-bold ${prescrito ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400"}`}>
-              {prescrito ? "PRESCRITO" : "Não prescrito"}
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
+              Prescrição não determinada — revisão jurídica obrigatória
             </span>
           </div>
           <div className="mt-2 text-xs text-muted-foreground">{String(p.baseNormativa)}</div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <KPI label="Prazo prescricional" value={`${String(p.prazoPrescricional)} anos`} />
-          <KPI label="Dias restantes" value={p.diasRestantes != null ? String(p.diasRestantes) : "—"} />
         </div>
         <ObservacoesList obs={result.observacoes} />
       </>
