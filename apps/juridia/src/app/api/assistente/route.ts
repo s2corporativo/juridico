@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody, truncateForDisplay } from "@/lib/api-helpers";
-import { classificar, listarIntencoes } from "@/lib/assistente";
+import { classificar } from "@/lib/assistente";
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+
+const MODULES = {
+  assistente: "Entrada de pesquisa, análise e produção jurídica",
+  pesquisa: "Consulta de legislação, jurisprudência, súmulas e fontes",
+  analise: "Análise de fatos, teses, lacunas e evidências",
+  minutas: "Proposta de minutas, revisão e edição",
+  biblioteca: "Rascunhos e modelos de redação",
+} as const;
+const ROUTE_INTENTS: Record<string, keyof typeof MODULES> = {
+  ajuda: "assistente", briefing: "assistente",
+  pesquisa: "pesquisa", lei: "pesquisa", sumula: "pesquisa",
+  verificar: "pesquisa", legislativo: "pesquisa", jurimetria: "pesquisa",
+  redigir: "minutas",
+  processo: "analise", contradicoes: "analise", intimacao: "analise",
+  prazo: "analise", prescricao: "analise", intercorrente: "analise",
+  valor_causa: "analise", licitacao: "analise",
+};
+
 
 // GET /api/assistente — lista intenções cadastradas
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -14,8 +32,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   return NextResponse.json({
-    intencoes: listarIntencoes(),
-    total: Object.keys(listarIntencoes()).length,
+    intencoes: Object.fromEntries(Object.entries(MODULES).map(([key, descricao]) => [key, { descricao }])),
+    total: Object.keys(MODULES).length,
   });
 }
 
@@ -32,7 +50,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { texto } = parsed.body;
   if (!texto?.trim()) return NextResponse.json({ error: "texto obrigatório" }, { status: 400 });
 
-  const result = classificar(texto);
+  const classified = classificar(texto);
+  const intent = classified.intencao ? (ROUTE_INTENTS[classified.intencao] ?? "assistente") : "assistente";
+  const result = {
+    ...classified,
+    intencao: intent,
+    candidatas: Array.from(new Set(classified.candidatas.map(item =>
+      ROUTE_INTENTS[item] ?? "assistente"))),
+  };
 
   await logAuditEvent({
     action: "assistente_classify",
