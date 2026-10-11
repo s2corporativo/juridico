@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { accessibleCaseIds } from "@/lib/case-access";
 
 export const dynamic = "force-dynamic";
 
@@ -13,19 +14,25 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const dias = Math.min(parseInt(url.searchParams.get("dias") || "7", 10), 30);
+  const rawDays = Number(url.searchParams.get("dias") ?? "7");
+  if (!Number.isSafeInteger(rawDays) || rawDays < 1 || rawDays > 30) {
+    return NextResponse.json({ error: "invalid_days_window" }, { status: 400 });
+  }
+  const dias = rawDays;
+  const allowed = await accessibleCaseIds(authUser.uid, authUser.role);
+  const caseScope = allowed === null ? {} : { caseId: { in: allowed } };
   const agora = new Date();
   agora.setHours(0, 0, 0, 0);
   const limite = new Date(agora.getTime() + dias * 86400000);
 
   const [prazos, audiencias] = await Promise.all([
     db.caseDeadline.findMany({
-      where: { vencimento: { gte: agora, lte: limite } },
+      where: { ...caseScope, vencimento: { gte: agora, lte: limite } },
       orderBy: { vencimento: "asc" },
       take: 200,
     }),
     db.caseHearing.findMany({
-      where: { data: { gte: agora, lte: limite } },
+      where: { ...caseScope, data: { gte: agora, lte: limite } },
       orderBy: { data: "asc" },
       take: 200,
     }),
@@ -37,7 +44,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     ...audiencias.map((a) => a.caseId),
   ].filter((id) => id !== "default-case"));
   const cases = caseIds.size > 0
-    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) } }, select: { id: true, title: true, number: true, responsavel: true } })
+    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) }, ...(authUser.role === "admin" ? {} : { client: { is: { userId: authUser.uid } } }) }, select: { id: true, title: true, number: true, responsavel: true } })
     : [];
   const caseMap = new Map<string, { id: string; title: string; number: string | null; responsavel: string | null }>(cases.map((c) => [c.id, c] as const));
 
@@ -77,6 +84,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   await logAuditEvent({
     action: "proximos_query",
+    userId: authUser.uid,
     resource: "case",
     metadata: { dias, total: agenda.length, prazos: prazos.length, audiencias: audiencias.length },
   });
