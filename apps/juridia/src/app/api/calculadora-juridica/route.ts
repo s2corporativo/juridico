@@ -27,7 +27,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const marcoInicialRaw = body.marcoInicial as string;
       const prazoDias = Number(body.prazoDias);
       const tipoContagem = (body.tipoContagem as "uteis" | "corridos") || "uteis";
-      if (!marcoInicialRaw || !prazoDias) {
+      if (!marcoInicialRaw || !Number.isSafeInteger(prazoDias) || prazoDias < 1 ||
+          !["uteis", "corridos"].includes(tipoContagem)) {
         return NextResponse.json({ error: "marcoInicial e prazoDias obrigatórios" }, { status: 400 });
       }
       if (prazoDias > MAX_PRAZO_DIAS) {
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const result = calculateDeadline(marcoInicial, prazoDias, tipoContagem);
       await logAuditEvent({
         action: "calc_juridica",
+        userId: authUser.uid,
         resource: "case",
         metadata: { tipo: "prazo", prazoDias, tipoContagem, vencimento: result.vencimento.toISOString() },
       });
@@ -55,6 +57,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const result = calculateCorrection(valorOriginal, fatorAcumulado, indice);
       await logAuditEvent({
         action: "calc_juridica",
+        userId: authUser.uid,
         resource: "case",
         metadata: { tipo: "correcao", valorOriginal, fatorAcumulado, indice },
       });
@@ -63,14 +66,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     case "juros": {
       const valorPrincipal = Number(body.valorPrincipal);
       const meses = Number(body.meses);
-      const taxaMensal = Number(body.taxaMensal) || 0.01;
-      const base = (body.base as "cc_art_406" | "stj_482" | "clt") || "cc_art_406";
-      if (!valorPrincipal || !meses) {
+      const taxaMensal = Number(body.taxaMensal);
+      const base = body.base;
+      if (body.taxaMensal === undefined || body.taxaMensal === null || body.taxaMensal === "" ||
+          base !== "informada_pelo_usuario" ||
+          !Number.isFinite(taxaMensal) || taxaMensal < 0 || taxaMensal > 1) {
+        return NextResponse.json({ error: "taxa_mensal_explicita_obrigatoria_sem_presuncao_legal" }, { status: 422 });
+      }
+      if (!Number.isFinite(valorPrincipal) || valorPrincipal <= 0 || valorPrincipal > 1_000_000_000 ||
+          !Number.isFinite(meses) || meses <= 0 || meses > 600) {
         return NextResponse.json({ error: "valorPrincipal e meses obrigatórios" }, { status: 400 });
       }
-      const result = calculateInterest(valorPrincipal, meses, taxaMensal, base);
+      const result = calculateInterest(valorPrincipal, meses, taxaMensal, "informada_pelo_usuario");
       await logAuditEvent({
         action: "calc_juridica",
+        userId: authUser.uid,
         resource: "case",
         metadata: { tipo: "juros", valorPrincipal, meses, taxaMensal, base },
       });
@@ -91,6 +101,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const result = checkPrescription(dataFato, dataajuizamento, area);
       await logAuditEvent({
         action: "calc_juridica",
+        userId: authUser.uid,
         resource: "case",
         metadata: { tipo: "prescricao", area, prescrito: result.prescrito, diasRestantes: result.diasRestantes },
       });
