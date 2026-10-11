@@ -1,23 +1,9 @@
 // SiteNav.tsx — Navegação global do Atlas Forense.
 // Antes: várias seções (/estrutura, /nacional, /controle, /escritorio/*) só eram
 // acessíveis digitando URL. Este componente unifica a navegação em todos os shells.
-import { Link, useLocation } from "wouter";
 import {
-  LayoutDashboard,
-  BookOpenCheck,
-  MapPinned,
-  Globe2,
-  Users,
-  Inbox,
-  Gavel,
-  GraduationCap,
-  Boxes,
-  Database,
-  ClipboardCheck,
-  FileSearch,
-  Landmark,
-  FileSignature,
-  type LucideIcon,
+  CalendarDays, BookOpenCheck, Database, Activity,
+  Landmark, FileSignature, type LucideIcon,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -32,37 +18,20 @@ export interface SiteNavGroup {
   items: SiteNavItem[];
 }
 
+/** Atlas: only discovery, organized research and daily legal updates. */
 export const SITE_NAV_GROUPS: SiteNavGroup[] = [
   {
-    title: "Análise",
+    title: "Atlas Jurídico",
     items: [
-      { href: "/", label: "Painel JEC", icon: LayoutDashboard },
-      { href: "/compendio", label: "Compêndio", icon: BookOpenCheck },
-      { href: "/rmbh", label: "Cobertura RMBH", icon: MapPinned },
-      { href: "/nacional", label: "Censo nacional", icon: Globe2 },
-    ],
-  },
-  {
-    title: "Escritório",
-    items: [
-      { href: "/escritorio/clientes", label: "Clientes", icon: Users },
-      { href: "/escritorio/comunicacoes", label: "Comunicações", icon: Inbox },
-      { href: "/escritorio/jurisprudencia", label: "Jurisprudência", icon: Gavel },
-      { href: "/escritorio/treinamento", label: "Treinamento", icon: GraduationCap },
-    ],
-  },
-  {
-    title: "Sistema",
-    items: [
-      { href: "/estrutura", label: "Estrutura", icon: Boxes },
-      { href: "/fontes", label: "Fontes públicas", icon: Database },
-      { href: "/controle", label: "Controle editorial", icon: ClipboardCheck },
-      { href: "/controle/fila-editorial", label: "Fila editorial", icon: FileSearch },
+      { href: "/", label: "Atualizações diárias", icon: CalendarDays },
+      { href: "/compendio", label: "Acervo jurídico", icon: BookOpenCheck },
+      { href: "/fontes", label: "Pesquisa de fontes", icon: Database },
+      { href: "/controle", label: "Monitoramento", icon: Activity },
     ],
   },
 ];
 
-export function SiteNav({ heading = "Atlas completo" }: { heading?: string }) {
+export function SiteNav({ heading = "Atlas · Atualização jurídica" }: { heading?: string }) {
   const [location] = useLocation();
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
@@ -99,7 +68,7 @@ export function SiteNav({ heading = "Atlas completo" }: { heading?: string }) {
           <a
             href={ejcUrl}
             className="site-nav-link"
-            title="Abrir o Escritório Jurídico Consciente (JuridIA) — geração de minutas com IA"
+            title="Abrir JuridIA para pesquisa e proposta de minutas"
           >
             <FileSignature size={15} aria-hidden="true" />
             <span>Minutas · JuridIA</span>
