@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { calculateInterest, calculateDeadline } from "../src/lib/legal_calculator";
+import { calculateInterest, calculateDeadline, checkPrescription } from "../src/lib/legal_calculator";
 
 test("civil and employment default interest rates cannot be silently inferred", () => {
   expect(() => calculateInterest(1000, 12, undefined as unknown as number)).toThrow("INTEREST_PARAMETERS_REQUIRE_EXPLICIT_RATE");
@@ -27,4 +27,16 @@ test("deadline estimate explicitly warns that judicial holidays and suspensions 
   const result = calculateDeadline(new Date("2026-10-10T12:00:00Z"), 5, "uteis");
   expect(result.observacoes.some(x => x.includes("feriados locais"))).toBe(true);
   expect(result.observacoes.some(x => x.includes("confira manualmente"))).toBe(true);
+});
+
+test("prescription cannot be declared from two dates and a branch name", () => {
+  for (const branch of ["civil", "consumer", "trabalhista", "tributario", "penal", "desconhecida"]) {
+    const result = checkPrescription(
+      new Date("2001-01-01T12:00:00Z"), new Date("2026-10-10T12:00:00Z"), branch,
+    );
+    expect(result.prescrito).toBeNull();
+    expect(result.prazoPrescricional).toBeNull();
+    expect(result.diasRestantes).toBeNull();
+    expect(result.observacoes.some(x => x.includes("Não há conclusão"))).toBe(true);
+  }
 });
