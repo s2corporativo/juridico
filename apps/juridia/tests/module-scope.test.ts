@@ -2,7 +2,7 @@ import { test, expect } from "bun:test";
 import { resolveAppTab, resolveAppDestination } from "../src/lib/store";
 
 test("five legal AI modules are the only valid visible destinations", () => {
-  const current = ["assistente", "pesquisa", "analise", "minutas", "biblioteca"];
+  const current = ["assistente", "pesquisa", "analise", "minutas", "biblioteca"] as const;
   for (const item of current) expect(resolveAppTab(item)).toBe(item);
   expect(new Set(current.map(resolveAppTab)).size).toBe(5);
 });
