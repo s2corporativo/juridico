@@ -19,48 +19,57 @@ export interface LawyerProfile {
   address: string;
 }
 
-export type AppTab =
-  | "assistente"
-  | "dashboard"
-  | "biblioteca"
-  | "calculadora"
-  | "cerebro"
-  | "intelligence"
-  | "pipeline"
-  | "generator"
-  | "editor"
-  | "homologacao"
-  | "visuallaw"
-  | "datajud"
-  | "grafo"
-  | "settings";
+export type AppTab = "assistente" | "pesquisa" | "analise" | "minutas" | "biblioteca";
+export type ModuleView =
+  | "assistente" | "pesquisa" | "cerebro" | "intelligence" | "pipeline"
+  | "generator" | "editor" | "visuallaw" | "biblioteca";
 
-// Ids legados usados por componentes (header, paleta, dashboard) que foram
-// consolidados em tabs renderizáveis — evita navegar para uma tab sem view.
-const APP_TAB_ALIASES: Record<string, AppTab> = {
-  documents: "editor",
-  clients: "dashboard",
-  jurisprudence: "biblioteca",
-  "case-analysis": "assistente",
-  batch: "generator",
-  audit: "settings",
+const APP_TABS: readonly AppTab[] = ["assistente", "pesquisa", "analise", "minutas", "biblioteca"];
+const MODULE_VIEWS: Record<AppTab, ModuleView> = {
+  assistente: "assistente", pesquisa: "pesquisa",
+  analise: "cerebro", minutas: "generator", biblioteca: "biblioteca",
 };
-
-export function resolveAppTab(t: string): AppTab {
-  if (t in APP_TAB_ALIASES) return APP_TAB_ALIASES[t];
-  return (APP_TABS as readonly string[]).includes(t) ? (t as AppTab) : "dashboard";
+/** Redirect legacy actions into the five research/drafting areas. */
+const APP_TAB_ALIASES: Record<string, [AppTab, ModuleView]> = {
+  dashboard: ["assistente","assistente"],
+  clients: ["assistente","assistente"],
+  casos: ["analise","cerebro"],
+  cases: ["analise","cerebro"],
+  documents: ["biblioteca","biblioteca"],
+  jurisprudence: ["pesquisa","pesquisa"],
+  datajud: ["pesquisa","pesquisa"],
+  "case-analysis": ["analise","cerebro"],
+  cerebro: ["analise","cerebro"],
+  intelligence: ["analise","intelligence"],
+  pipeline: ["analise","pipeline"],
+  grafo: ["analise","intelligence"],
+  generator: ["minutas","generator"],
+  batch: ["minutas","generator"],
+  editor: ["minutas","editor"],
+  visuallaw: ["minutas","visuallaw"],
+  calculadora: ["analise","cerebro"],
+  financeiro: ["assistente","assistente"],
+  produtividade: ["assistente","assistente"],
+  prazos: ["assistente","assistente"],
+  audiencias: ["assistente","assistente"],
+  homologacao: ["analise","cerebro"],
+  settings: ["assistente","assistente"],
+  audit: ["assistente","assistente"],
+};
+export function resolveAppTab(value: string): AppTab {
+  return resolveAppDestination(value)[0];
 }
-
-const APP_TABS: AppTab[] = [
-  "assistente", "dashboard", "biblioteca", "calculadora", "cerebro",
-  "intelligence", "pipeline", "generator", "editor", "homologacao",
-  "visuallaw", "datajud", "grafo", "settings",
-];
+export function resolveAppDestination(value: string): [AppTab, ModuleView] {
+  if ((APP_TABS as readonly string[]).includes(value))
+    return [value as AppTab, MODULE_VIEWS[value as AppTab]];
+  return APP_TAB_ALIASES[value] ?? ["assistente", "assistente"];
+}
 
 interface AppState {
   view: View;
   setView: (v: View) => void;
   appTab: AppTab;
+  moduleView: ModuleView;
   setAppTab: (t: string) => void;
   currentDocId: string | null;
   setCurrentDocId: (id: string | null) => void;
@@ -101,8 +110,12 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       view: "app",
       setView: (view) => set({ view }),
-      appTab: "dashboard",
-      setAppTab: (appTab) => set({ appTab: resolveAppTab(appTab) }),
+      appTab: "assistente",
+      moduleView: "assistente",
+      setAppTab: (value) => set(() => {
+        const [appTab, moduleView] = resolveAppDestination(value);
+        return { appTab, moduleView };
+      }),
       currentDocId: null,
       setCurrentDocId: (currentDocId) => set({ currentDocId }),
       currentCaseId: null,
@@ -142,18 +155,23 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "juridia-store",
-      version: 1,
+      version: 2,
       migrate: (persisted: unknown) => {
         const old = (persisted ?? {}) as Partial<AppState>;
         // Clear only legacy fixture identity; retain legitimate user preferences.
         const user = old.user?.email === "demo@juridia.com.br" ? null : old.user;
         const profile = old.profile?.email === "demo@juridia.com.br"
           ? DEFAULT_PROFILE : old.profile;
-        return { ...old, user: user ?? null, profile: profile ?? DEFAULT_PROFILE } as AppState;
+        const [appTab, moduleView] = resolveAppDestination(String(old.appTab ?? "assistente"));
+        return {
+          ...old, appTab, moduleView,
+          user: user ?? null, profile: profile ?? DEFAULT_PROFILE,
+        } as AppState;
       },
       partialize: (s) => ({
         view: s.view,
         appTab: s.appTab,
+        moduleView: s.moduleView,
         user: s.user,
         selectedSkillSlugs: s.selectedSkillSlugs,
         profile: s.profile,
