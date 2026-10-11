@@ -232,6 +232,40 @@ export async function getPublicEditorialUpdates() {
   return getEditorialUpdateQueue({ status: "approved" });
 }
 
+/** Read-only status of the daily legal update pipeline; admin-only via RPC. */
+export async function getDailyEditorialHealth() {
+  const db = await getDb();
+  if (!db) throw new Error("EDITORIAL_DATABASE_UNAVAILABLE");
+  const [dailyRuns, counts] = await Promise.all([
+    db.select({
+      runKey: editorialUpdateRuns.runKey, status: editorialUpdateRuns.status,
+      sourceCount: editorialUpdateRuns.sourceCount,
+      discoveredCount: editorialUpdateRuns.discoveredCount,
+      queuedCount: editorialUpdateRuns.queuedCount, failedCount: editorialUpdateRuns.failedCount,
+      startedAt: editorialUpdateRuns.startedAt, finishedAt: editorialUpdateRuns.finishedAt,
+    }).from(editorialUpdateRuns)
+      .where(like(editorialUpdateRuns.runKey, "editorial-daily-%"))
+      .orderBy(desc(editorialUpdateRuns.startedAt)).limit(7),
+    db.select({
+      status: editorialUpdates.status, count: sql<number>`count(*)`,
+    }).from(editorialUpdates).groupBy(editorialUpdates.status),
+  ]);
+  const latest = dailyRuns[0] ?? null;
+  const brazilDay = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+  return {
+    checkedForDate: brazilDay,
+    lastDailyRun: latest,
+    history: dailyRuns,
+    queue: Object.fromEntries(counts.map(row => [row.status, Number(row.count)])),
+    // No cron/SLA claim without a real successful scheduled daily run.
+    dailyRunObservedToday: dailyRuns.some(run => run.runKey === "editorial-daily-" + brazilDay),
+    note: "Metadados coletados não são precedentes confirmados; a revisão editorial é obrigatória.",
+  };
+}
+
+
 export async function decideEditorialUpdate(id: number, decision: "approved" | "rejected" | "superseded", reviewNote: string, reviewedByUserId: number) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
