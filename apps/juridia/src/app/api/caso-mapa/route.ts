@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { extrairEntidades } from "@/lib/assistente";
 import { requireAuth } from "@/lib/auth";
+import { hasCaseAccess } from "@/lib/case-access";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const caseId = url.searchParams.get("caseId");
   if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
 
+  if (!(await hasCaseAccess(caseId, authUser.uid, authUser.role))) {
+    return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  }
   const c = await db.case.findUnique({
     where: { id: caseId },
     include: {
@@ -124,6 +128,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   await logAuditEvent({
     action: "caso_mapa_query",
+    userId: authUser.uid,
     resource: "case",
     resourceId: c.id,
     metadata: {
