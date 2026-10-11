@@ -83,7 +83,7 @@ export function CalculadoraJuridica() {
   // ── formulários por ferramenta ──────────────────────────────────────────────
   const [prazoForm, setPrazoForm] = useState({ marcoInicial: "", prazoDias: "15", tipoContagem: "uteis" });
   const [correcaoForm, setCorrecaoForm] = useState({ valorOriginal: "", fatorAcumulado: "1.5", indice: "IPCA" });
-  const [jurosForm, setJurosForm] = useState({ valorPrincipal: "", meses: "12", taxaMensal: "0.01", base: "cc_art_406" });
+  const [jurosForm, setJurosForm] = useState({ valorPrincipal: "", meses: "12", taxaMensal: "", base: "informada_pelo_usuario" });
   const [prescForm, setPrescForm] = useState({ dataFato: "", dataAjuizamento: "", area: "civil" });
   const [valorCausaForm, setValorCausaForm] = useState({ valor: "", pedidos: "", area: "civil" });
   const [triagemForm, setTriagemForm] = useState({ fatos: "", area: "civil", valorCausa: "", provas: "" });
@@ -120,6 +120,7 @@ export function CalculadoraJuridica() {
         const v = Number(jurosForm.valorPrincipal);
         const m = Number(jurosForm.meses);
         if (!v || !m) throw new Error("Valor principal e meses obrigatórios");
+        if (!jurosForm.taxaMensal.trim()) throw new Error("Informe manualmente a taxa mensal. O sistema não presume taxa legal.");
         const res = await fetch("/api/superior/calculate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -127,7 +128,7 @@ export function CalculadoraJuridica() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Erro");
-        setResult({ tool: "juros", payload: data });
+        setResult({ tool: "juros", payload: data, observacoes: data.observacoes });
       } else if (activeTool === "prescricao") {
         if (!prescForm.dataFato || !prescForm.dataAjuizamento) throw new Error("Datas obrigatórias");
         const res = await fetch("/api/superior/calculate", {
@@ -277,22 +278,19 @@ export function CalculadoraJuridica() {
                     <Input type="number" value={jurosForm.meses} onChange={(e) => setJurosForm(s => ({ ...s, meses: e.target.value }))} placeholder="12" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Taxa mensal (decimal)</Label>
-                    <Input type="number" step="0.001" value={jurosForm.taxaMensal} onChange={(e) => setJurosForm(s => ({ ...s, taxaMensal: e.target.value }))} placeholder="0.01 = 1%" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Base normativa</Label>
-                    <Select value={jurosForm.base} onValueChange={(v) => setJurosForm(s => ({ ...s, base: v }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cc_art_406">CC art. 406 (1% a.m.)</SelectItem>
-                        <SelectItem value="stj_482">STJ Súmula 482 (0,5% a.m.)</SelectItem>
-                        <SelectItem value="clt">CLT (1% a.m.)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Taxa mensal informada manualmente (decimal)</Label>
+                  <Input type="number" min="0" max="1" step="0.001" value={jurosForm.taxaMensal}
+                    onChange={(e) => setJurosForm(s => ({ ...s, taxaMensal: e.target.value }))}
+                    placeholder="Ex.: 0.01 = 1%, apenas quando comprovado" />
+                  <p className="text-xs text-muted-foreground">
+                    Simulação matemática, não cálculo automático de juros legais. Após a Lei 14.905/2024,
+                    a taxa legal do Código Civil varia por período.
+                    {" "}<a href="https://www.bcb.gov.br/detalhenoticia/20356/noticia"
+                      target="_blank" rel="noopener noreferrer" className="underline">
+                      Consultar divulgação do Banco Central
+                    </a>.
+                  </p>
                 </div>
               </TabsContent>
 
