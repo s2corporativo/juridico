@@ -4,6 +4,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody } from "@/lib/api-helpers";
 import { extrairEntidades } from "@/lib/assistente";
 import { requireAuth } from "@/lib/auth";
+import { accessibleCaseIds, hasCaseAccess } from "@/lib/case-access";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const oabEstado = url.searchParams.get("oabEstado")?.toUpperCase();
   const oabNumero = url.searchParams.get("oabNumero");
 
-  const where: { action: string } = { action: "intimacao_djen" };
+  const where = {
+    action: { in: ["intimacao_djen", "intimacao_manual_pendente"] },
+    ...(authUser.role === "admin" ? {} : { userId: authUser.uid }),
+  };
   const rows = await db.auditEvent.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -32,6 +36,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return { id: r.id, ...meta, criadoEm: r.createdAt.toISOString() };
   });
 
+  if (authUser.role !== "admin") {
+    const allowed = new Set((await accessibleCaseIds(authUser.uid, authUser.role)) ?? []);
+    // Never reveal unlinked, historical imported or foreign-case notices.
+    intimo = intimo.filter(item => typeof item.caseId === "string" && allowed.has(item.caseId));
+  }
   if (oabEstado && oabNumero) {
     intimo = intimo.filter((i) => {
       if (!i.oab) return false;
@@ -43,6 +52,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   await logAuditEvent({
     action: "intimacao_list",
+    userId: authUser.uid,
     resource: "intimacao",
     metadata: { filtrouOab: Boolean(oabEstado && oabNumero), total: intimo.length },
   });
@@ -61,6 +71,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const { conteudo, caseId } = parsed.body;
+  if (caseId && !(await hasCaseAccess(caseId, authUser.uid, authUser.role))) {
+    return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  }
   if (!conteudo?.trim()) return NextResponse.json({ error: "conteudo obrigatório" }, { status: 400 });
   if (conteudo.length > 100_000) {
     return NextResponse.json({ error: "conteudo muito longo (máx 100000 chars)" }, { status: 400 });
@@ -86,22 +99,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // tentativa de vencimento: usa data mais próxima do conteúdo + prazo (heurística)
     vencimento: null as string | null,
   };
-  // Tenta calcular vencimento heurístico: se há data + dias
-  if (ent.datas.length > 0 && prazoDias) {
-    try {
-      const base = new Date(ent.datas[0]);
-      if (!isNaN(base.getTime())) {
-        base.setDate(base.getDate() + prazoDias);
-        meta.vencimento = base.toISOString();
-      }
-    } catch {
-      // ignore
-    }
-  }
+  // A pasted notice is not proof of official DJEN synchronization.
+  // Do not invent the start date, judicial calendar or due date here.
+  meta.vencimento = null;
 
   const event = await db.auditEvent.create({
     data: {
-      action: "intimacao_djen",
+      action: "intimacao_manual_pendente",
+      userId: authUser.uid,
       resource: "intimacao",
       resourceId: caseId || cnj || null,
       metadata: JSON.stringify(meta),
@@ -110,6 +115,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   await logAuditEvent({
     action: "intimacao_parse",
+    userId: authUser.uid,
     resource: "intimacao",
     resourceId: event.id,
     metadata: { oab, cnj, prazoDias, tipoContagem, vencimento: meta.vencimento },
@@ -119,6 +125,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     id: event.id,
     ...meta,
     criadoEm: event.createdAt.toISOString(),
+    origemVerificada: false,
+    prazoHomologado: false,
     // também retorna as entidades extraídas p/ UI
     entidades: {
       cnj: ent.cnj,
