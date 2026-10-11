@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth";
+import { accessibleCaseIds, hasCaseAccess } from "@/lib/case-access";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +20,29 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const to = url.searchParams.get("to");
   const status = url.searchParams.get("status");
 
-  const where: { caseId?: string; data?: { gte?: Date; lte?: Date }; status?: string } = {};
-  if (caseId) where.caseId = caseId;
+  const where: { caseId?: string | { in: string[] }; data?: { gte?: Date; lte?: Date }; status?: string } = {};
+  if (caseId) {
+    if (!(await hasCaseAccess(caseId, authUser.uid, authUser.role))) {
+      return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+    }
+    where.caseId = caseId;
+  } else {
+    const ids = await accessibleCaseIds(authUser.uid, authUser.role);
+    if (ids !== null) where.caseId = { in: ids };
+  }
   if (status) where.status = status;
   if (from || to) {
     where.data = {};
-    if (from) where.data.gte = new Date(from);
-    if (to) where.data.lte = new Date(to);
+    if (from) {
+      const parsed = new Date(from);
+      if (Number.isNaN(parsed.getTime())) return NextResponse.json({ error: "invalid_from" }, { status: 400 });
+      where.data.gte = parsed;
+    }
+    if (to) {
+      const parsed = new Date(to);
+      if (Number.isNaN(parsed.getTime())) return NextResponse.json({ error: "invalid_to" }, { status: 400 });
+      where.data.lte = parsed;
+    }
   }
 
   const audiencias = await db.caseHearing.findMany({
@@ -71,13 +88,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
   if (!data) return NextResponse.json({ error: "data obrigatória" }, { status: 400 });
 
-  const c = await db.case.findUnique({ where: { id: caseId }, select: { id: true } });
-  if (!c) return NextResponse.json({ error: "Caso não encontrado" }, { status: 404 });
+  if (!(await hasCaseAccess(caseId, authUser.uid, authUser.role))) {
+    return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  }
+  const parsedDate = new Date(data);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return NextResponse.json({ error: "invalid_hearing_date" }, { status: 400 });
+  }
 
   const aud = await db.caseHearing.create({
     data: {
       caseId,
-      data: new Date(data),
+      data: parsedDate,
       tipo: tipo || "outra",
       local: local || null,
       orgao: orgao || null,
@@ -87,6 +109,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   await logAuditEvent({
     action: "audiencia_create",
+    userId: authUser.uid,
     resource: "case_hearing",
     resourceId: aud.id,
     metadata: { caseId, data: aud.data.toISOString(), tipo: aud.tipo },
@@ -127,9 +150,18 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
 
   const existing = await db.caseHearing.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Audiência não encontrada" }, { status: 404 });
+  if (!(await hasCaseAccess(existing.caseId, authUser.uid, authUser.role))) {
+    return NextResponse.json({ error: "hearing_not_found" }, { status: 404 });
+  }
 
   const updateData: Record<string, unknown> = {};
-  if (data !== undefined) updateData.data = new Date(data);
+  if (data !== undefined) {
+    const parsedDate = new Date(data);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: "invalid_hearing_date" }, { status: 400 });
+    }
+    updateData.data = parsedDate;
+  }
   if (tipo !== undefined) updateData.tipo = tipo;
   if (local !== undefined) updateData.local = local || null;
   if (orgao !== undefined) updateData.orgao = orgao || null;
@@ -141,6 +173,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
 
   await logAuditEvent({
     action: "audiencia_update",
+    userId: authUser.uid,
     resource: "case_hearing",
     resourceId: id,
     metadata: { ...updateData, prevStatus: existing.status },
@@ -162,11 +195,15 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
 
   const existing = await db.caseHearing.findUnique({ where: { id }, select: { caseId: true } });
   if (!existing) return NextResponse.json({ error: "Audiência não encontrada" }, { status: 404 });
+  if (!(await hasCaseAccess(existing.caseId, authUser.uid, authUser.role))) {
+    return NextResponse.json({ error: "hearing_not_found" }, { status: 404 });
+  }
 
   await db.caseHearing.delete({ where: { id } });
 
   await logAuditEvent({
     action: "audiencia_delete",
+    userId: authUser.uid,
     resource: "case_hearing",
     resourceId: id,
     metadata: { caseId: existing.caseId },
