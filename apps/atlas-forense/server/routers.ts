@@ -1,6 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
-import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getThesisRelatedDocuments, getDecisionRelatedDocuments, getCompendiumFreshnessOverview, getCompendiumOverview, getCompendiumQualityOverview, getEditorialUpdateQueue, getPublicEditorialUpdates, decideEditorialUpdate, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, getRmbhCivilConsumerOverview, searchCompendium } from "./db";
+import { decideEvidenceReview, enqueueEvidenceReview, getCitationDossier, getThesisRelatedDocuments, getDecisionRelatedDocuments, getCompendiumFreshnessOverview, getCompendiumOverview, getCompendiumQualityOverview, getEditorialUpdateQueue, getPublicEditorialUpdates, getDailyEditorialHealth, decideEditorialUpdate, getEvidenceReviewQueue, getMetropolitanCoverageOverview, getNationalCensusOverview, getNationalCensusReadiness, getPublicDataSources, getRmbhCivilConsumerOverview, searchCompendium } from "./db";
 import { summarizePublicDecision } from "./compendium-ai-summary";
 import { comparePublicRelatedDecisions } from "./compendium-ai-compare";
 import { previewControlledIngestion } from "./compendium.ingestion";
@@ -57,6 +57,7 @@ export const appRouter = router({
   }),
   editorial: router({
     approved: publicProcedure.query(() => getPublicEditorialUpdates()),
+    health: adminProcedure.query(() => getDailyEditorialHealth()),
     queue: adminProcedure.input(z.object({ status: z.enum(["pending_review", "approved", "rejected", "superseded"]).optional(), kind: z.enum(["jurisprudence", "legislation", "official_update"]).optional() }).optional()).query(({ input }) => getEditorialUpdateQueue(input)),
     decide: adminProcedure.input(z.object({ id: z.number().int().positive(), decision: z.enum(["approved", "rejected", "superseded"]), reviewNote: z.string().trim().min(3).max(1_000) })).mutation(({ ctx, input }) => decideEditorialUpdate(input.id, input.decision, input.reviewNote, ctx.user.id)),
   }),
