@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { accessibleCaseIds } from "@/lib/case-access";
 
 export const dynamic = "force-dynamic";
 
@@ -13,14 +14,20 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const url = new URL(req.url);
-  const dias = Math.min(parseInt(url.searchParams.get("dias") || "3", 10), 30);
+  const rawDays = Number(url.searchParams.get("dias") ?? "3");
+  if (!Number.isSafeInteger(rawDays) || rawDays < 1 || rawDays > 30) {
+    return NextResponse.json({ error: "invalid_days_window" }, { status: 400 });
+  }
+  const dias = rawDays;
+  const allowed = await accessibleCaseIds(authUser.uid, authUser.role);
+  const scoped = allowed === null ? {} : { caseId: { in: allowed } };
   const agora = new Date();
   const limite = new Date(agora.getTime() + dias * 86400000);
 
   // Prazos vencendo
   const prazos = await db.caseDeadline.findMany({
     where: {
-      vencimento: { lte: limite },
+      ...scoped, vencimento: { lte: limite },
     },
     orderBy: { vencimento: "asc" },
     take: 100,
@@ -29,7 +36,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // Audiências próximas
   const audiencias = await db.caseHearing.findMany({
     where: {
-      data: { gte: agora, lte: limite },
+      ...scoped, data: { gte: agora, lte: limite },
       status: "agendada",
     },
     orderBy: { data: "asc" },
@@ -45,7 +52,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     take: 200,
   });
 
+  const allowedSet = allowed === null ? null : new Set(allowed);
   const honorariosAlertas = honorarios
+    .filter(h => {
+      // Legacy honorarium audit entries may be unlinked to a case; show
+      // those only to administrators, never to another lawyer by accident.
+      if (allowedSet === null) return true;
+      try {
+        const raw = JSON.parse(h.metadata);
+        return typeof raw.caseId === "string" && allowedSet.has(raw.caseId);
+      } catch { return false; }
+    })
     .map((h) => {
       let meta: { descricao?: string; valor?: number; vencimento?: string; status?: string; caseId?: string } = {};
       try { meta = JSON.parse(h.metadata) as typeof meta; } catch { /* ignore */ }
@@ -64,7 +81,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     ...honorariosAlertas.map((h) => h.caseId).filter(Boolean) as string[],
   ]);
   const cases = caseIds.size > 0
-    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) } }, select: { id: true, title: true, number: true } })
+    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) }, ...(authUser.role === "admin" ? {} : { client: { is: { userId: authUser.uid } } }) }, select: { id: true, title: true, number: true } })
     : [];
   const caseMap = new Map<string, { id: string; title: string; number: string | null }>(cases.map((c) => [c.id, c] as const));
 
@@ -118,6 +135,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   await logAuditEvent({
     action: "alertas_query",
+    userId: authUser.uid,
     resource: "case",
     metadata: { dias, total: alertas.length, prazos: prazos.length, audiencias: audiencias.length, honorarios: honorariosAlertas.length },
   });
