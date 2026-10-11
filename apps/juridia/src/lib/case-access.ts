@@ -19,3 +19,13 @@ export async function hasCaseAccess(
   });
   return Boolean(item);
 }
+
+/** Safe case-ID scope for legacy models that store only caseId, with no FK. */
+export async function accessibleCaseIds(userId: string, role: string): Promise<string[] | null> {
+  if (role === "admin") return null; // administrator may access the full institution
+  const cases = await db.case.findMany({
+    where: { client: { is: { userId } } },
+    select: { id: true },
+  });
+  return cases.map(item => item.id);
+}
