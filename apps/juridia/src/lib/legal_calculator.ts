@@ -157,83 +157,45 @@ export function calculateInterest(
   };
 }
 
-// ── Verificação de Prescrição ──────────────────────────────────────────────
+// ── Triagem de prescrição — nunca uma declaração automática ──────────
 
 export interface PrescriptionResult {
-  prescrito: boolean;
-  prazoPrescricional: number; // anos
+  prescrito: null;
+  prazoPrescricional: null;
   baseNormativa: string;
-  diasRestantes: number | null;
+  diasRestantes: null;
   observacoes: string[];
 }
 
 /**
- * Verifica prescrição de forma determinística.
- * Base: CC art. 205 (10 anos), CC art. 206 (5 anos), CBC art. 206 §3º (3 anos),
- * CLT art. 11 (5 anos + 2 anos após extinção), CTN art. 173 (5 anos).
+ * A start date and a branch label are never sufficient to determine
+ * prescription/decadence. The prior implementation wrongly invented 12 years
+ * as an "average" criminal limit and incorrectly marked cases PRESCRITO.
+ *
+ * Requires legal classification, act/claim, accrual dates, interruptions,
+ * suspensions, applicable transition rules, employment termination, etc.
+ * Return an explicit non-conclusion until reviewed by a lawyer.
  */
 export function checkPrescription(
   dataFato: Date,
-  dataajuizamento: Date,
-  area: string = "civil"
+  dataAjuizamento: Date,
+  area: string = "civil",
 ): PrescriptionResult {
-  const observacoes: string[] = [];
-  let prazoAnos = 10;
-  let baseNormativa = "CC art. 205 (10 anos — regra geral)";
-
-  // Prazo por área
-  switch (area.toLowerCase()) {
-    case "civil":
-      prazoAnos = 10;
-      baseNormativa = "CC art. 205 (10 anos — regra geral)";
-      break;
-    case "consumer":
-      prazoAnos = 5;
-      baseNormativa = "CDC art. 27 (5 anos — pretensão à reparação por fato do produto/serviço)";
-      break;
-    case "trabalhista":
-      prazoAnos = 5;
-      baseNormativa = "CLT art. 11 (5 anos após extinção do contrato + 2 anos para ajuizar)";
-      observacoes.push("CLT: 5 anos de crédito + 2 anos para ajuizar após extinção");
-      break;
-    case "tributario":
-      prazoAnos = 5;
-      baseNormativa = "CTN art. 173 (5 anos — pretensão para constituir crédito tributário)";
-      break;
-    case "penal":
-      prazoAnos = 12; // média — depende do tipo penal (CP art. 109)
-      baseNormativa = "CP art. 109 — prazo varia conforme a pena máxima (mínimo 3, máximo 20 anos)";
-      observacoes.push("Penal: verifique a pena do crime específico (CP art. 109)");
-      break;
-    default:
-      prazoAnos = 10;
-      baseNormativa = "CC art. 205 (10 anos — regra geral)";
+  if (Number.isNaN(dataFato.getTime()) || Number.isNaN(dataAjuizamento.getTime())) {
+    throw new Error("INVALID_PRESCRIPTION_DATES");
   }
-
-  const limitePrescricao = new Date(dataFato);
-  limitePrescricao.setFullYear(limitePrescricao.getFullYear() + prazoAnos);
-
-  const prescrito = dataajuizamento > limitePrescricao;
-  const diasRestantes = Math.round(
-    (limitePrescricao.getTime() - dataajuizamento.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  observacoes.push(`Data do fato: ${dataFato.toLocaleDateString("pt-BR")}`);
-  observacoes.push(`Data do ajuizamento: ${dataajuizamento.toLocaleDateString("pt-BR")}`);
-  observacoes.push(`Limite prescricional: ${limitePrescricao.toLocaleDateString("pt-BR")} (${prazoAnos} anos)`);
-  if (prescrito) {
-    observacoes.push("⚠ PRESCRITO — ajuizamento após o prazo prescricional");
-  } else {
-    observacoes.push(`Dias restantes até prescrição: ${diasRestantes}`);
-  }
-  observacoes.push("⚠ Verifique marcos interruptivos (art. 202 CC) — pode haver interrupção");
-  observacoes.push("⚠ A IA nunca confirma prazo — confira manualmente");
-
   return {
-    prescrito,
-    prazoPrescricional: prazoAnos,
-    baseNormativa,
-    diasRestantes: prescrito ? null : diasRestantes,
-    observacoes,
+    prescrito: null,
+    prazoPrescricional: null,
+    baseNormativa: "Enquadramento e prazo prescricional exigem análise jurídica individual.",
+    diasRestantes: null,
+    observacoes: [
+      `Área informada: ${area.slice(0, 60)}. Não é classificação jurídica validada.`,
+      `Data indicada para o fato: ${dataFato.toLocaleDateString("pt-BR")}.`,
+      `Data indicada para o ajuizamento: ${dataAjuizamento.toLocaleDateString("pt-BR")}.`,
+      "A triagem não identifica automaticamente o termo inicial, a natureza da pretensão, interrupção, suspensão, decadência ou regras de transição.",
+      "Não há conclusão de prescrição nem cálculo confiável de dias restantes com estes dados.",
+      "Advogado deve verificar os fatos, a legislação e a jurisprudência vigente antes de registrar um prazo.",
+    ],
   };
 }
