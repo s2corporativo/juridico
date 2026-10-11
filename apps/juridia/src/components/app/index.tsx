@@ -1,119 +1,105 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  Brain,
-  Wand2,
-  FileText,
-  LayoutDashboard,
-  Settings as SettingsIcon,
-  Network,
-  Calculator,
-  BarChart3,
-  GitBranch,
-  ClipboardCheck,
-  Search,
-  Sparkles,
-  Shield,
-  BookOpen,
-} from "lucide-react";
+import { BookOpen, Brain, FileText, Library, Search, Sparkles } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAppStore } from "@/lib/store";
-import { Generator } from "./generator";
-import { Editor } from "./editor";
-import { Dashboard } from "./dashboard";
-import { Settings } from "./settings";
+import { useAppStore, type AppTab } from "@/lib/store";
+import { Assistente } from "./assistente";
+import { BibliotecaJuridica } from "./biblioteca-juridica";
 import { Cerebro } from "./cerebro";
 import { Inteligencia } from "./inteligencia";
-import { Assistente } from "./assistente";
-import { CalculadoraJuridica } from "./calculadora-juridica";
 import { Pipeline } from "./pipeline";
-import { Homologacao } from "./homologacao";
+import { Generator } from "./generator";
+import { Editor } from "./editor";
 import { VisualLaw } from "./visual-law";
-import { DataJudBusca } from "./datajud-busca";
-import { GrafoSistema } from "./grafo-sistema";
-import { BibliotecaJuridica } from "./biblioteca-juridica";
+import { BibliotecaMinutas } from "./biblioteca-minutas";
 
-// ── Zona ÚNICA: Cérebro Jurídico (foco em conhecimento, sem ERP) ────────────
-// Antes: ERP (10 tabs) + IA (10 tabs) = 20 tabs (com componentes operacionais)
-// Agora: Apenas a zona cognitiva. Operacional (clientes/casos/documentos/prazos/
-// audiências/financeiro/produtividade) foi removido para focar no conhecimento.
-// APIs continuam disponíveis para a IA usar internamente.
-const TABS = [
-  { id: "assistente" as const, label: "Assistente", icon: Sparkles, key: "s" },
-  { id: "dashboard" as const, label: "Início", icon: LayoutDashboard, key: "1" },
-  { id: "biblioteca" as const, label: "Biblioteca", icon: BookOpen, key: "b" },
-  { id: "cerebro" as const, label: "1. Cérebro", icon: Brain, key: "e" },
-  { id: "intelligence" as const, label: "2. Inteligência", icon: Network, key: "i" },
-  { id: "pipeline" as const, label: "3. Pipeline", icon: GitBranch, key: "p" },
-  { id: "generator" as const, label: "5. Produção", icon: Wand2, key: "g" },
-  { id: "editor" as const, label: "Editor", icon: FileText, key: "m" },
-  { id: "homologacao" as const, label: "Homologação", icon: ClipboardCheck, key: "h" },
-  { id: "calculadora" as const, label: "Análise Jurídica", icon: Calculator, key: "l" },
-  { id: "visuallaw" as const, label: "Visual Law", icon: BarChart3, key: "v" },
-  { id: "datajud" as const, label: "DataJud", icon: Search, key: "j" },
-  { id: "grafo" as const, label: "Grafo", icon: Network, key: "n" },
-  { id: "settings" as const, label: "6. Governança", icon: Shield, key: "," },
+/** The only five user-facing JuridIA modules: no ERP or accounting. */
+export const JURIDIA_MODULES: { id: AppTab; label: string; key: string; icon: typeof Brain }[] = [
+  { id: "assistente", label: "Assistente Jurídico", key: "1", icon: Sparkles },
+  { id: "pesquisa", label: "Pesquisa Jurídica", key: "2", icon: Search },
+  { id: "analise", label: "Análise Jurídica", key: "3", icon: Brain },
+  { id: "minutas", label: "Minutas IA", key: "4", icon: FileText },
+  { id: "biblioteca", label: "Biblioteca", key: "5", icon: Library },
 ];
 
-const ALL_TABS = TABS;
+const SUBMODULES = {
+  analise: [
+    { id: "cerebro", label: "Analisar fatos e provas" },
+    { id: "intelligence", label: "Fundamentação e evidências" },
+    { id: "pipeline", label: "Etapas da análise" },
+  ],
+  minutas: [
+    { id: "generator", label: "Propor minuta" },
+    { id: "editor", label: "Revisar e editar" },
+    { id: "visuallaw", label: "Apresentação do documento" },
+  ],
+} as const;
 
 export function AppShell() {
-  const { appTab, setAppTab } = useAppStore();
+  const { appTab, moduleView, setAppTab } = useAppStore();
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable || target?.tagName === "SELECT") return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const key = e.key.toLowerCase();
-      const tab = ALL_TABS.find((t) => t.key === key);
-      if (tab) { e.preventDefault(); setAppTab(tab.id); }
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName) ||
+          target?.isContentEditable || event.metaKey || event.ctrlKey || event.altKey) return;
+      const tab = JURIDIA_MODULES.find(item => item.key === event.key);
+      if (tab) { event.preventDefault(); setAppTab(tab.id); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [setAppTab]);
 
+  const subTabs = appTab === "analise" ? SUBMODULES.analise :
+    appTab === "minutas" ? SUBMODULES.minutas : [];
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-secondary/20">
-      <div className="sticky top-16 z-40 border-b border-border bg-background/80 glass">
+      <header className="sticky top-16 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="container-juridia">
-          <Tabs value={appTab} onValueChange={(v) => setAppTab(v as typeof appTab)}>
+          <div className="flex flex-wrap items-center justify-between gap-2 px-2 pt-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-primary">JuridIA · Pesquisa e produção jurídica assistida</span>
+            <span>Fontes conferíveis · Minutas sujeitas à revisão do advogado</span>
+          </div>
+          <Tabs value={appTab} onValueChange={setAppTab}>
             <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-0 bg-transparent p-2 scrollbar-juridia">
-              {/* ZONA ÚNICA — Cérebro Jurídico */}
-              <div className="flex items-center gap-2 pr-2">
-                <Brain className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Cérebro Jurídico</span>
-              </div>
-              {TABS.map((t) => (
-                <TabsTrigger key={t.id} value={t.id} className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary" title={`Atalho: ${t.key.toUpperCase()}`}>
-                  <t.icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t.label}</span>
-                  <kbd className="hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[9px] text-muted-foreground lg:inline-block">{t.key}</kbd>
+              {JURIDIA_MODULES.map(tab => (
+                <TabsTrigger key={tab.id} value={tab.id}
+                  className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                  title={`Atalho: ${tab.key}`}>
+                  <tab.icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
           </Tabs>
         </div>
-      </div>
-
-      <div>
-        {/* Cérebro Jurídico — zona única (sem ERP) */}
+      </header>
+      {subTabs.length > 0 && (
+        <nav className="container-juridia flex flex-wrap gap-2 border-b border-border/60 p-3"
+          aria-label={appTab === "analise" ? "Etapas da análise" : "Etapas da minuta"}>
+          {subTabs.map(view => (
+            <button type="button" key={view.id}
+              aria-current={moduleView === view.id ? "page" : undefined}
+              className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${moduleView === view.id
+                ? "bg-primary text-primary-foreground"
+                : "border border-border text-muted-foreground hover:bg-muted"}`}
+              onClick={() => setAppTab(view.id)}>{view.label}</button>
+          ))}
+        </nav>
+      )}
+      <main>
         {appTab === "assistente" && <Assistente />}
-        {appTab === "dashboard" && <Dashboard />}
-        {appTab === "biblioteca" && <BibliotecaJuridica />}
-        {appTab === "cerebro" && <Cerebro />}
-        {appTab === "intelligence" && <Inteligencia />}
-        {appTab === "pipeline" && <Pipeline />}
-        {appTab === "generator" && <Generator />}
-        {appTab === "editor" && <Editor />}
-        {appTab === "homologacao" && <Homologacao />}
-        {appTab === "calculadora" && <CalculadoraJuridica />}
-        {appTab === "visuallaw" && <VisualLaw />}
-        {appTab === "datajud" && <DataJudBusca />}
-        {appTab === "grafo" && <GrafoSistema />}
-        {appTab === "settings" && <Settings />}
-      </div>
+        {appTab === "pesquisa" && <BibliotecaJuridica />}
+        {appTab === "analise" && moduleView === "cerebro" && <Cerebro />}
+        {appTab === "analise" && moduleView === "intelligence" && <Inteligencia />}
+        {appTab === "analise" && moduleView === "pipeline" && <Pipeline />}
+        {appTab === "minutas" && moduleView === "generator" && <Generator />}
+        {appTab === "minutas" && moduleView === "editor" && <Editor />}
+        {appTab === "minutas" && moduleView === "visuallaw" && <VisualLaw />}
+        {appTab === "biblioteca" && <BibliotecaMinutas />}
+      </main>
     </div>
   );
 }
