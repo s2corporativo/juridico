@@ -1,0 +1,15 @@
+# Woodpecker CI 3.18 — JuridIA (no production secrets; no deploy).
+when:
+  - event: [push, pull_request]
+steps:
+  - name: juridia-types-lint-tests-build
+    image: node:22-bookworm
+    commands:
+      - npm install -g bun@1.3.4
+      - cd apps/juridia
+      - bun install --frozen-lockfile --ignore-scripts --backend=copyfile
+      - bun x prisma generate
+      - bun x tsc --noEmit
+      - bun run lint
+      - bun test tests/
+      - NEXT_TELEMETRY_DISABLED=1 bun run build
