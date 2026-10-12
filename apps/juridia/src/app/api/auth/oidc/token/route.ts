@@ -10,11 +10,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
+import { consumeOidcCodeOnce } from "@/lib/oidc-code-redemption";
 import { logAuditEvent } from "@/lib/audit";
 import {
   getIssuerConfig,
   isRegisteredRedirectUri,
   issueIdToken,
+  isValidPkceVerifier,
   s256Challenge,
 } from "@/lib/oidc";
 
@@ -69,17 +71,27 @@ export async function POST(req: NextRequest) {
   if (!record || record.used) {
     return NextResponse.json({ error: "invalid_grant", error_description: "code_unknown_or_reused" }, { status: 400 });
   }
-  // Single-use: marca como usado ANTES de validar o restante (impede replay).
-  await db.oidcAuthCode.update({ where: { code }, data: { used: true } });
-
   if (record.expiresAt.getTime() < Date.now()) {
     return NextResponse.json({ error: "invalid_grant", error_description: "code_expired" }, { status: 400 });
   }
   if (record.clientId !== clientId || record.redirectUri !== redirectUri) {
     return NextResponse.json({ error: "invalid_grant", error_description: "binding_mismatch" }, { status: 400 });
   }
-  if (record.codeChallengeMethod !== "S256" || !record.codeChallenge || s256Challenge(codeVerifier) !== record.codeChallenge) {
+  if (record.codeChallengeMethod !== "S256" || !record.codeChallenge || !isValidPkceVerifier(codeVerifier)) {
     return NextResponse.json({ error: "invalid_grant", error_description: "pkce_mismatch" }, { status: 400 });
+  }
+  const providedChallenge = s256Challenge(codeVerifier);
+  if (providedChallenge !== record.codeChallenge) {
+    return NextResponse.json({ error: "invalid_grant", error_description: "pkce_mismatch" }, { status: 400 });
+  }
+
+  // UPDATE condicional atômico: vence apenas um resgate, mesmo sob concorrência.
+  // O filtro também impede consumo após expiração ou com bindings divergentes.
+  const consumed = await consumeOidcCodeOnce(db.oidcAuthCode, {
+    code, clientId, redirectUri, codeChallenge: providedChallenge, now: new Date(),
+  });
+  if (!consumed) {
+    return NextResponse.json({ error: "invalid_grant", error_description: "code_unknown_or_reused" }, { status: 400 });
   }
 
   const user = await db.user.findUnique({ where: { email: record.sub } });
