@@ -1,0 +1,67 @@
+name: Atlas e JuridIA — qualidade e segurança
+
+on:
+  pull_request:
+    branches: [atlas-forense]
+  push:
+    branches: [atlas-forense]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legal-ai-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  juridia:
+    name: JuridIA — tipos, lint, testes e build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/juridia
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.4"
+      - name: Instalar dependências reproduzíveis
+        run: bun install --frozen-lockfile --ignore-scripts --backend=copyfile
+      - name: Gerar Prisma Client sem banco real
+        run: bun x prisma generate
+      - name: Validar TypeScript
+        run: bun x tsc --noEmit
+      - name: ESLint
+        run: bun run lint
+      - name: Testes de regressão e segurança
+        run: bun test tests/
+      - name: Build de produção sem segredos
+        run: NEXT_TELEMETRY_DISABLED=1 bun run build
+
+  atlas:
+    name: Atlas Forense — tipos, testes e build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/atlas-forense
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.4.1"
+      - name: Instalar dependências reproduzíveis
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Validar TypeScript
+        run: pnpm exec tsc --noEmit
+      - name: Testes de regressão e segurança
+        run: pnpm test
+      - name: Build de produção
+        run: pnpm build
