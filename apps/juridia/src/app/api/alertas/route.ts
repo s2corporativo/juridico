@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { ownedCaseIds } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +18,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const agora = new Date();
   const limite = new Date(agora.getTime() + dias * 86400000);
 
+  const caseIdsAllowed = await ownedCaseIds(authUser.uid);
+
   // Prazos vencendo
   const prazos = await db.caseDeadline.findMany({
     where: {
+      caseId: { in: caseIdsAllowed },
       vencimento: { lte: limite },
     },
     orderBy: { vencimento: "asc" },
@@ -29,6 +33,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // Audiências próximas
   const audiencias = await db.caseHearing.findMany({
     where: {
+      caseId: { in: caseIdsAllowed },
       data: { gte: agora, lte: limite },
       status: "agendada",
     },
@@ -40,6 +45,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const honorarios = await db.auditEvent.findMany({
     where: {
       OR: [{ action: "honorario_create" }, { action: "honorario_update" }],
+      userId: authUser.uid,
     },
     orderBy: { createdAt: "desc" },
     take: 200,
@@ -54,7 +60,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     .filter((hh) => {
       if (!hh.vencimento) return false;
       const v = new Date(hh.vencimento);
-      return v >= agora && v <= limite && hh.status !== "pago";
+      return v >= agora && v <= limite && hh.status !== "pago" && Boolean(hh.caseId && caseIdsAllowed.includes(hh.caseId));
     });
 
   // Caso título lookup
@@ -64,7 +70,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     ...honorariosAlertas.map((h) => h.caseId).filter(Boolean) as string[],
   ]);
   const cases = caseIds.size > 0
-    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) } }, select: { id: true, title: true, number: true } })
+    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) }, client: { is: { userId: authUser.uid } } }, select: { id: true, title: true, number: true } })
     : [];
   const caseMap = new Map<string, { id: string; title: string; number: string | null }>(cases.map((c) => [c.id, c] as const));
 
