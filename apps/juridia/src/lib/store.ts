@@ -87,14 +87,15 @@ interface AppState {
   toggleDefaultSkill: (slug: string) => void;
 }
 
+// Sem dados de OAB/identidade inventados em peças, assinaturas ou procurações.
 const DEFAULT_PROFILE: LawyerProfile = {
-  name: "Advogado Demo",
-  oab: "123456",
-  oabUf: "SP",
-  office: "Escritório JuridIA Advocacia",
-  email: "demo@juridia.com.br",
-  phone: "(11) 99999-0000",
-  address: "Av. Paulista, 1000 — São Paulo/SP",
+  name: "",
+  oab: "",
+  oabUf: "",
+  office: "",
+  email: "",
+  phone: "",
+  address: "",
 };
 
 export const useAppStore = create<AppState>()(
