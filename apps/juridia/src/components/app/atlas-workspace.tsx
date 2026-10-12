@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BookOpen, ExternalLink, RefreshCw, ShieldCheck, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type SourceItem = {
@@ -16,6 +17,19 @@ type SourceItem = {
   documentStatus: "discovery_only";
   citableAsPrecedent: false;
   text: null;
+};
+type AtlasDecision = {
+  externalId: string;
+  tribunal: string;
+  theme: string | null;
+  summary: string | null;
+  decisionDate: string | null;
+  sourceStatus: string;
+  officialUrl: string | null;
+  citationId: string;
+};
+type CompendiumResults = {
+  ok: true; items: AtlasDecision[]; termsUsed: string[]; failedTerms: number;
 };
 type Snapshot = {
   ok: true;
@@ -54,6 +68,10 @@ export function AtlasWorkspace() {
   const [health, setHealth] = useState<Health | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [topic, setTopic] = useState("");
+  const [decisions, setDecisions] = useState<CompendiumResults | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -79,6 +97,25 @@ export function AtlasWorkspace() {
       setError(reason instanceof Error ? reason.message : "Erro na conexão.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function searchCompendium() {
+    if (topic.trim().length < 6) {
+      setSearchError("Informe um tema jurídico com pelo menos seis caracteres.");
+      return;
+    }
+    setSearching(true);
+    try {
+      const query = new URLSearchParams({ view: "compendium", q: topic.trim() });
+      const response = await fetchData<CompendiumResults>(`/api/atlas/knowledge?${query}`);
+      setDecisions(response);
+      setSearchError(null);
+    } catch (reason) {
+      setDecisions(null);
+      setSearchError(reason instanceof Error ? reason.message : "Consulta indisponível.");
+    } finally {
+      setSearching(false);
     }
   }
 
@@ -129,6 +166,50 @@ export function AtlasWorkspace() {
       </div>
 
       {error && <p role="alert" className="rounded-md border p-3 text-sm text-destructive">{error}</p>}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Pesquisa no Compêndio Atlas</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Pesquise somente temas jurídicos gerais, sem nomes de partes,
+            número de processo, documentos pessoais ou fatos sigilosos.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <form onSubmit={(event) => { event.preventDefault(); void searchCompendium(); }} className="flex flex-col gap-2 sm:flex-row">
+            <Input aria-label="Tema jurídico" value={topic} onChange={(event) => setTopic(event.target.value)}
+                   placeholder="Ex.: responsabilidade ambiental" maxLength={120} />
+            <Button type="submit" disabled={searching}>Pesquisar</Button>
+          </form>
+          {searchError && <p role="alert" className="text-sm text-destructive">{searchError}</p>}
+          {decisions && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Termos consultados: {decisions.termsUsed.join(", ")}.
+                {decisions.failedTerms > 0 ? " Algumas consultas ficaram indisponíveis." : ""}
+              </p>
+              {decisions.items.length === 0 && <p className="text-sm text-muted-foreground">Nenhum resultado disponível.</p>}
+              {decisions.items.map((decision) => (
+                <article key={decision.externalId} className="rounded-lg border p-3">
+                  <p className="text-sm font-medium">{decision.theme || "Julgado catalogado"} · {decision.tribunal}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {decision.decisionDate || "Data não informada"} · Fonte: {decision.sourceStatus}
+                  </p>
+                  {decision.summary && <p className="mt-2 text-sm text-muted-foreground">{decision.summary}</p>}
+                  {decision.officialUrl?.startsWith("https://") &&
+                    <a href={decision.officialUrl} target="_blank" rel="noopener noreferrer"
+                       className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                      Conferir documento oficial <ExternalLink className="h-3 w-3" />
+                    </a>}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Uso em minuta condicionado à verificação da fonte, da aderência e do Citation Gate.
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
