@@ -1,0 +1,13 @@
+# Woodpecker CI 3.18 — Atlas Forense (no production secrets; no deploy).
+when:
+  - event: [push, pull_request]
+steps:
+  - name: atlas-types-tests-build
+    image: node:22-bookworm
+    commands:
+      - npm install -g pnpm@10.4.1
+      - cd apps/atlas-forense
+      - pnpm install --frozen-lockfile --ignore-scripts
+      - pnpm exec tsc --noEmit
+      - pnpm test
+      - pnpm build
