@@ -1,3 +1,4 @@
+/// <reference types="bun-types" />
 import { describe, expect, it } from "bun:test";
 import { consumeOidcCodeOnce, type OidcCodeClaim, type OidcCodeStore } from "../src/lib/oidc-code-redemption";
 
