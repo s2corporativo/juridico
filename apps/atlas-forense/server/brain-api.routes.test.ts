@@ -28,12 +28,22 @@ const auth = { Authorization: `Bearer ${TOKEN}` };
 
 describe("brain API HTTP guards (no database required)", () => {
   it("rejects every route without a valid bearer token", async () => {
-    for (const [method, path] of [["GET", "/compendium/search"], ["GET", "/jurimetry"], ["POST", "/theses"]] as const) {
+    for (const [method, path] of [["GET", "/compendium/search"], ["GET", "/jurimetry"], ["POST", "/theses"], ["GET", "/knowledge/snapshot"], ["GET", "/knowledge/items/1"], ["GET", "/knowledge/health"]] as const) {
       const missing = await fetch(base + path, { method, headers: { "Content-Type": "application/json" }, body: method === "POST" ? "{}" : undefined });
       expect(missing.status, `${method} ${path} sem token`).toBe(401);
       const wrong = await fetch(base + path, { method, headers: { Authorization: "Bearer " + "x".repeat(48), "Content-Type": "application/json" }, body: method === "POST" ? "{}" : undefined });
       expect(wrong.status, `${method} ${path} token errado`).toBe(401);
     }
+  });
+
+  it("rejects malformed knowledge pagination and IDs before touching the database", async () => {
+    const missingVersion = await fetch(`${base}/knowledge/snapshot?page=1`, { headers: auth });
+    expect(missingVersion.status).toBe(400);
+    expect(await missingVersion.json()).toMatchObject({ error: "snapshot_version_required" });
+
+    const invalidId = await fetch(`${base}/knowledge/items/not-a-number`, { headers: auth });
+    expect(invalidId.status).toBe(400);
+    expect(await invalidId.json()).toMatchObject({ error: "invalid_item_id" });
   });
 
   it("validates jurimetry filters before touching the database", async () => {
