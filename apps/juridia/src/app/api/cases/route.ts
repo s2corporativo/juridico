@@ -17,7 +17,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const status = url.searchParams.get("status");
   const area = url.searchParams.get("area");
 
-  const where: { clientId?: string; status?: string; area?: string } = {};
+  const where: import("@prisma/client").Prisma.CaseWhereInput = {
+    client: { is: { userId: authUser.uid } },
+  };
   if (clientId) where.clientId = clientId;
   if (status) where.status = status;
   if (area) where.area = area;
@@ -81,6 +83,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (!body.clientId) return NextResponse.json({ error: "clientId obrigatório" }, { status: 400 });
   if (!body.title?.trim()) return NextResponse.json({ error: "Título do caso obrigatório" }, { status: 400 });
+  const ownClient = await db.client.findFirst({
+    where: { id: body.clientId, userId: authUser.uid },
+    select: { id: true },
+  });
+  if (!ownClient) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
 
   const newCase = await db.case.create({
     data: {
@@ -156,13 +163,22 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (body.resultado !== undefined) data.resultado = body.resultado;
   if (body.processosVinculados !== undefined) data.processosVinculados = JSON.stringify(body.processosVinculados);
 
-  const updated = await db.case.update({ where: { id: body.id }, data });
+  const existing = await db.case.findFirst({
+    where: { id: body.id, client: { is: { userId: authUser.uid } } },
+    select: { title: true, status: true, resultado: true },
+  });
+  if (!existing) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  const updated = await db.case.updateMany({
+    where: { id: body.id, client: { is: { userId: authUser.uid } } },
+    data,
+  });
+  if (updated.count !== 1) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: body.status === "encerrado" ? "close_case" : "update_case",
     resource: "case",
     resourceId: body.id,
-    metadata: { title: updated.title, status: updated.status, resultado: updated.resultado },
+    metadata: { title: data.title ?? existing.title, status: data.status ?? existing.status, resultado: data.resultado ?? existing.resultado },
   });
 
   return NextResponse.json({ ok: true });
@@ -179,8 +195,15 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const c = await db.case.findUnique({ where: { id }, select: { title: true } });
-  await db.case.delete({ where: { id } });
+  const c = await db.case.findFirst({
+    where: { id, client: { is: { userId: authUser.uid } } },
+    select: { title: true },
+  });
+  if (!c) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  const deleted = await db.case.deleteMany({
+    where: { id, client: { is: { userId: authUser.uid } } },
+  });
+  if (deleted.count !== 1) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "delete_case",

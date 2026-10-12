@@ -13,6 +13,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const docs = await db.document.findMany({
+    where: { userId: authUser.uid },
     orderBy: { updatedAt: "desc" },
     take: 100,
   });
@@ -42,8 +43,13 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const doc = await db.document.findUnique({ where: { id }, select: { title: true, templateName: true } });
-  await db.document.delete({ where: { id } });
+  const doc = await db.document.findFirst({
+    where: { id, userId: authUser.uid },
+    select: { title: true, templateName: true },
+  });
+  if (!doc) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
+  const deleted = await db.document.deleteMany({ where: { id, userId: authUser.uid } });
+  if (deleted.count !== 1) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "delete_document",
@@ -66,24 +72,30 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   const data: { generatedContent?: string; title?: string } = {};
   if (typeof body.content === "string") data.generatedContent = body.content;
   if (typeof body.title === "string") data.title = body.title;
-  const updated = await db.document.update({
-    where: { id: body.id },
+  const updated = await db.document.updateMany({
+    where: { id: body.id, userId: authUser.uid },
     data,
   });
+  if (updated.count !== 1) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
+  const owned = await db.document.findFirst({
+    where: { id: body.id, userId: authUser.uid },
+    select: { id: true, title: true },
+  });
+  if (!owned) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "edit_document",
     resource: "document",
     resourceId: body.id,
     metadata: {
-      title: updated.title,
+      title: owned.title,
       changedContent: typeof body.content === "string",
       changedTitle: typeof body.title === "string",
       contentLength: body.content?.length || 0,
     },
   });
 
-  return NextResponse.json({ ok: true, document: { id: updated.id, title: updated.title } });
+  return NextResponse.json({ ok: true, document: { id: owned.id, title: owned.title } });
 }
 
 function safeParseArr(raw: string | null): string[] {
