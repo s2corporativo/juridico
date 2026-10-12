@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       lastRunCounts: { discovered: number; queued: number; failed: number } | null;
     }>("/knowledge/health");
     if (!response.ok) return NextResponse.json({ ok: false, status: "unavailable", error: response.error }, { status: 503 });
-    return NextResponse.json({ ok: true, source: "atlas_forense", ...response.data }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ...response.data, source: "atlas_forense" }, { headers: { "Cache-Control": "no-store" } });
   }
 
   if (view !== "snapshot") {
