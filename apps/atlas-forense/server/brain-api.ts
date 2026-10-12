@@ -197,7 +197,7 @@ export async function handleKnowledgeSnapshot(req: Request, res: Response) {
 export async function handleKnowledgeItem(req: Request, res: Response) {
   if (!guard(req, res)) return;
   const id = req.params.id;
-  if (!/^\\d{1,12}$/.test(id)) {
+  if (!/^\d{1,12}$/.test(id)) {
     res.status(400).json({ ok: false, error: "invalid_item_id" });
     return;
   }
