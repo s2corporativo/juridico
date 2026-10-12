@@ -94,31 +94,27 @@ const NODE_TYPE_CONFIG: Record<string, { label: string; icon: React.ComponentTyp
 
 export function Inteligencia() {
   const { brainContext, setBrainContext } = useAppStore();
-  const [facts, setFacts] = useState("");
+  // O texto recebido do Cérebro é o valor inicial; edições locais prevalecem.
+  const [factsInput, setFactsInput] = useState<string | null>(null);
+  const facts = factsInput ?? brainContext ?? "";
+  const setFacts = setFactsInput;
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<MapResult | null>(null);
   const [stored, setStored] = useState<StoredData | null>(null);
   const [activeTab, setActiveTab] = useState<"resumo" | "fatos" | "grafo" | "afirmacoes">("resumo");
 
-  // Carrega dados persistidos ao montar
-  useEffect(() => {
-    loadStored();
-  }, []);
-
-  // Usa brainContext se vier do Cérebro
-  useEffect(() => {
-    if (brainContext && !facts) {
-      setFacts(brainContext);
-    }
-  }, [brainContext, facts]);
-
   const loadStored = useCallback(async () => {
     try {
       const res = await fetch("/api/intelligence/map");
+      if (!res.ok) throw new Error("Falha ao carregar dados");
       const data = await res.json();
       setStored(data);
     } catch { /* ignore */ }
   }, []);
+
+  useEffect(() => {
+    void loadStored();
+  }, [loadStored]);
 
   async function mapCase() {
     if (facts.trim().length < 30) {
