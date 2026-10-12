@@ -45,11 +45,7 @@ export async function logUsageEntry(params: {
   try {
     // Crédito/débito requer proprietário explícito. Não usar saldo global ou demo.
     if (!params.userId) return;
-    let userId = params.userId;
-    if (!userId) {
-      const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-      userId = demoUser?.id;
-    }
+    const userId = params.userId;
 
     // Pega o saldo mais recente
     const last = await db.usageLedger.findFirst({
