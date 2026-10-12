@@ -51,6 +51,14 @@ O portal visível do JuridIA passa a usar a marca **Atlas Forense — JuridIA in
 - Responde `Cache-Control: no-store`; mensagens explícitas de indisponibilidade.
 - Lista fontes oficiais com indicação expressa de que são apenas catálogos de descoberta.
 
+### Autenticação e pesquisa unificadas
+
+- O portal inicia com **`GET /api/auth/me` obrigatório** antes de renderizar as áreas jurídicas; o antigo usuário fictício não é mais considerado sessão.
+- O diálogo de login utiliza **`POST /api/auth/login`** do JuridIA. Ao concluir, revalida a sessão na API. O Atlas não recebe credenciais do advogado, só o bearer de serviço guardado no backend.
+- O menu da plataforma foi simplificado para **Início · Atlas Forense · Pesquisa · Análise · Minutas IA · Editor · Governança**.
+- Na seção Atlas, uma busca temática ao Compêndio utiliza `/api/atlas/knowledge?view=compendium&q=...`, extraindo apenas termos gerais. O usuário é advertido a não enviar fatos do processo, nomes de partes ou documentos pessoais.
+- Mesmo para fontes do Compêndio, a apresentação informa que conferência de inteiro teor e gate de citação continuam obrigatórios antes de usar em minuta.
+
 ## 3. Agendamento proposto — ainda NÃO ativado
 
 `apps/juridia/scripts/sync-atlas-knowledge.ts` + `deploy/atlas-juridia-knowledge-sync.{service,timer}`.
