@@ -16,11 +16,11 @@ import { useAppStore } from "@/lib/store";
 const NAV = [
   { label: "Início", tab: "dashboard" as const },
   { label: "Atlas Forense", tab: "atlas" as const },
-  { label: "Cérebro", tab: "cerebro" as const },
-  { label: "Gerar minuta", tab: "generator" as const },
+  { label: "Pesquisa", tab: "biblioteca" as const },
+  { label: "Análise", tab: "cerebro" as const },
+  { label: "Minutas IA", tab: "generator" as const },
   { label: "Editor", tab: "editor" as const },
-  { label: "Minutas", tab: "documents" as const },
-  { label: "Clientes", tab: "clients" as const },
+  { label: "Governança", tab: "settings" as const },
 ];
 
 export function SiteHeader() {
