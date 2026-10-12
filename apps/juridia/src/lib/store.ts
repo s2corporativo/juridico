@@ -22,6 +22,7 @@ export interface LawyerProfile {
 export type AppTab =
   | "assistente"
   | "dashboard"
+  | "atlas"
   | "biblioteca"
   | "calculadora"
   | "cerebro"
@@ -52,7 +53,7 @@ export function resolveAppTab(t: string): AppTab {
 }
 
 const APP_TABS: AppTab[] = [
-  "assistente", "dashboard", "biblioteca", "calculadora", "cerebro",
+  "assistente", "dashboard", "atlas", "biblioteca", "calculadora", "cerebro",
   "intelligence", "pipeline", "generator", "editor", "homologacao",
   "visuallaw", "datajud", "grafo", "settings",
 ];
