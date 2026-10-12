@@ -15,6 +15,7 @@ import { useAppStore } from "@/lib/store";
 
 const NAV = [
   { label: "Início", tab: "dashboard" as const },
+  { label: "Atlas Forense", tab: "atlas" as const },
   { label: "Cérebro", tab: "cerebro" as const },
   { label: "Gerar minuta", tab: "generator" as const },
   { label: "Editor", tab: "editor" as const },
@@ -41,9 +42,9 @@ export function SiteHeader() {
             <Scale className="h-5 w-5" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="text-lg font-bold tracking-tight">JuridIA</span>
+            <span className="text-lg font-bold tracking-tight">Atlas Forense</span>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Escritório
+              JuridIA integrado
             </span>
           </div>
         </button>
