@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { ownedCaseIds } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const dias = Math.min(parseInt(url.searchParams.get("dias") || "30", 10), 365);
   const desde = new Date(Date.now() - dias * 86400000);
 
+  const caseIdsAllowed = await ownedCaseIds(authUser.uid);
+
   // 1. Casos por responsável (advogado)
   const cases = await db.case.findMany({
-    where: { updatedAt: { gte: desde } },
+    where: { id: { in: caseIdsAllowed }, updatedAt: { gte: desde } },
     select: { id: true, responsavel: true, status: true, prioridade: true, area: true, valor: true },
   });
 
@@ -48,7 +51,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   // 3. Movimentações no período (proxy de produtividade = andamentos)
   const movimentos = await db.caseMovement.findMany({
-    where: { data: { gte: desde } },
+    where: { caseId: { in: caseIdsAllowed }, data: { gte: desde } },
     select: { id: true, tipo: true, caseId: true, criadoPor: true },
   });
   const porTipoMov = new Map<string, number>();
@@ -61,7 +64,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   // 4. Documentos gerados no período
   const documentos = await db.document.findMany({
-    where: { createdAt: { gte: desde } },
+    where: { userId: authUser.uid, createdAt: { gte: desde } },
     select: { id: true, templateSlug: true, status: true },
   });
   const porTemplate = new Map<string, number>();
