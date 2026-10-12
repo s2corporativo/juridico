@@ -66,7 +66,8 @@ export function Editor() {
   }
   const [versions, setVersions] = useState<Version[]>([]);
   const [showVersions, setShowVersions] = useState(false);
-  const [dirty, setDirty] = useState(false);
+  const [persisted, setPersisted] = useState({ title: "", content: "" });
+  const dirty = Boolean(doc && (title !== persisted.title || content !== persisted.content));
 
   // Atalhos de teclado no editor
   useEffect(() => {
@@ -88,15 +89,6 @@ export function Editor() {
     return () => window.removeEventListener("keydown", handler);
   }, [doc, title, content]);
 
-  // Detectar mudanças (dirty state)
-  useEffect(() => {
-    if (doc && content !== doc.generatedContent) {
-      setDirty(true);
-    } else {
-      setDirty(false);
-    }
-  }, [content, doc]);
-
   // Auto-versionar a cada 2 min se houver mudanças
   useEffect(() => {
     if (!doc || !dirty) return;
@@ -110,7 +102,7 @@ export function Editor() {
           charCount: content.length,
         };
         setVersions((prev) => [v, ...prev].slice(0, 10));
-        setDirty(false);
+        // O snapshot local não significa que o texto foi salvo no servidor.
       }
     }, 120000); // 2 min
     return () => clearInterval(interval);
@@ -141,6 +133,7 @@ export function Editor() {
         setDoc(found);
         setTitle(found.title);
         setContent(found.generatedContent);
+        setPersisted({ title: found.title, content: found.generatedContent });
       }
     } catch {
       // ignore
@@ -153,11 +146,14 @@ export function Editor() {
     if (!doc) return;
     setSaving(true);
     try {
-      await fetch("/api/documents", {
+      const response = await fetch("/api/documents", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: doc.id, content, title }),
       });
+      if (!response.ok) throw new Error("Persistência recusada pelo servidor");
+      setPersisted({ title, content });
+      setDoc((previous) => previous ? { ...previous, title, generatedContent: content } : null);
       toast({ title: "Documento salvo", description: title });
     } catch {
       toast({ title: "Erro ao salvar", variant: "destructive" });
@@ -313,7 +309,7 @@ export function Editor() {
     if (!suggestion) return;
     setContent((c) => c + "\n\n" + suggestion);
     setSuggestion(null);
-    setDirty(true);
+
     toast({ title: "Sugestão aceita", description: "Adicionada ao documento" });
   }
 
@@ -748,7 +744,7 @@ export function Editor() {
               templateName={doc?.templateName || "minuta"}
               onApply={(newContent) => {
                 setContent(newContent);
-                setDirty(true);
+            
                 toast({ title: "Modo Molde aplicado", description: "Alterações aceitas incorporadas ao documento" });
               }}
             />
