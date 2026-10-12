@@ -1,3 +1,4 @@
+/// <reference types="bun-types" />
 /**
  * Atlas -> JuridIA: atomic, full, version-verified DISCOVERY snapshot.
  * The cache is NOT legal jurisprudence. It cannot feed the Citation Gate.
