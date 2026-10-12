@@ -2,6 +2,7 @@
 // Define cookie de sessão HttpOnly assinado (HMAC-SHA256).
 // Fail-closed: sem JURIDIA_SESSION_SECRET em produção, retorna 503.
 import { NextRequest, NextResponse } from "next/server";
+import { isIP } from "node:net";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import {
@@ -34,7 +35,9 @@ export async function POST(req: NextRequest) {
   if (!isSessionAvailable()) {
     return NextResponse.json({ error: "sso_login_disabled", reason: "missing_session_secret" }, { status: 503 });
   }
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  // Nginx deve SOBRESCREVER X-Real-IP; o primeiro X-Forwarded-For é falsificável.
+  const candidateIp = req.headers.get("x-real-ip")?.trim() ?? "";
+  const ip = isIP(candidateIp) ? candidateIp : "unknown";
   if (rateLimited(ip)) {
     return NextResponse.json({ error: "too_many_attempts" }, { status: 429 });
   }
