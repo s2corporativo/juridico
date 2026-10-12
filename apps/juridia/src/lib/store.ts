@@ -124,7 +124,7 @@ export const useAppStore = create<AppState>()(
       clearSkills: () => set({ selectedSkillSlugs: [] }),
       authOpen: false,
       setAuthOpen: (authOpen) => set({ authOpen }),
-      user: { email: "demo@juridia.com.br", name: "Advogado Demo" },
+      user: null,
       setUser: (user) => set({ user }),
       // Perfil e estilo
       profile: DEFAULT_PROFILE,
