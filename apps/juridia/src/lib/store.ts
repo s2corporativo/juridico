@@ -146,7 +146,6 @@ export const useAppStore = create<AppState>()(
       partialize: (s) => ({
         view: s.view,
         appTab: s.appTab,
-        user: s.user,
         selectedSkillSlugs: s.selectedSkillSlugs,
         profile: s.profile,
         writingStyle: s.writingStyle,
