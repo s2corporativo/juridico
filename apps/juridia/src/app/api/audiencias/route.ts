@@ -167,7 +167,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const existing = await db.caseHearing.findUnique({ where: { id }, select: { caseId: true } });
-  if (!existing) return NextResponse.json({ error: "Audiência não encontrada" }, { status: 404 });
+  if (!existing || !await ownsCase(authUser.uid, existing.caseId)) return NextResponse.json({ error: "Audiência não encontrada" }, { status: 404 });
 
   await db.caseHearing.delete({ where: { id, caseId: existing.caseId } });
 
