@@ -11,6 +11,7 @@
 // IMPORTANTE: tudo determinístico, sem custo de IA.
 
 import type { NextRequest } from "next/server";
+import { isIP } from "node:net";
 
 // ── Constantes de limite ─────────────────────────────────────────────────
 
@@ -143,9 +144,8 @@ export function jsonResponse(payload: unknown, status = 200): Response {
 // ── Helper: extrair IP do cliente ───────────────────────────────────────
 
 export function clientIp(req: NextRequest): string | null {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    null
-  );
+  // Só aceitar endereço inserido pelo reverse proxy sob nosso controle.
+  // X-Forwarded-For é controlável pelo cliente e não pode determinar rate limiting.
+  const proxyIp = req.headers.get("x-real-ip")?.trim() ?? "";
+  return isIP(proxyIp) ? proxyIp : null;
 }
