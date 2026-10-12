@@ -45,6 +45,20 @@ interface JurisprudenceResult {
   host_name?: string;
 }
 
+async function fetchBiblioteca(): Promise<{ skills: Skill[]; sources: LegalSource[] }> {
+  const [skillsRes, sourcesRes] = await Promise.all([
+    fetch("/api/skills"),
+    fetch("/api/legal-sources"),
+  ]);
+  if (!skillsRes.ok || !sourcesRes.ok) throw new Error("Biblioteca indisponível");
+  const skillsData = await skillsRes.json();
+  const sourcesData = await sourcesRes.json();
+  return {
+    skills: Array.isArray(skillsData.skills) ? skillsData.skills : [],
+    sources: Array.isArray(sourcesData.sources) ? sourcesData.sources : Array.isArray(sourcesData) ? sourcesData : [],
+  };
+}
+
 export function BibliotecaJuridica() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [sources, setSources] = useState<LegalSource[]>([]);
@@ -58,14 +72,9 @@ export function BibliotecaJuridica() {
   async function load() {
     setLoading(true);
     try {
-      const [skillsRes, sourcesRes] = await Promise.all([
-        fetch("/api/skills"),
-        fetch("/api/legal-sources"),
-      ]);
-      const skillsData = await skillsRes.json();
-      const sourcesData = await sourcesRes.json();
-      setSkills(skillsData.skills || []);
-      setSources(sourcesData.sources || sourcesData || []);
+      const data = await fetchBiblioteca();
+      setSkills(data.skills);
+      setSources(data.sources);
     } catch {
       toast({ title: "Erro ao carregar biblioteca", variant: "destructive" });
     } finally {
@@ -73,7 +82,19 @@ export function BibliotecaJuridica() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    let active = true;
+    void fetchBiblioteca().then((data) => {
+      if (!active) return;
+      setSkills(data.skills);
+      setSources(data.sources);
+    }).catch(() => {
+      if (active) toast({ title: "Erro ao carregar biblioteca", variant: "destructive" });
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   async function searchJurisprudenceFn() {
     if (searchJurisprudence.trim().length < 3) {
