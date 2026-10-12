@@ -71,3 +71,12 @@
 - O script de sincronização diária depende de atestação recente de backup, mas não há implantação homologada do emissor dessa atestação nem dos timers.
 
 **Controle de publicação:** não promover deploy até CI remoto, autorização por recurso das rotas satélites, revisão das fontes, provisão de chaves, teste de restauração e plano de reversão. Manter DPT e Atlas legado ativos enquanto o novo produto não estiver homologado.
+
+
+### Resultado real do primeiro GitHub Actions (bloqueio)
+
+- Workflow `Atlas e JuridIA — qualidade e segurança` foi adicionado à `main` pelo PR #23.
+- Execução do commit do PR `6a30edba27628fa2ac44d209fa2ba94f1eb04727`: run **38302329096**, `conclusion=failure` nos dois jobs Atlas e JuridIA.
+- A API forneceu **steps ausentes** e `logs_url=null`; tentativa de obter os logs retornou 404. Não é possível determinar por essa evidência se foi falha de runner/permissão/billing ou do projeto. **Não afirmar CI verde.**
+- Os testes e builds locais com dependências reproduzíveis foram aprovados, mas não substituem aprovação de runner remoto. Conferir a página do run no GitHub, configurações de Actions, permissão de runners e políticas/billing antes de retomar publicação.
+- Nenhum deploy foi disparado ou autorizado pelo workflow.
