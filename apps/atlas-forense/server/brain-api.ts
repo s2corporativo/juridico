@@ -1,4 +1,4 @@
-import { readApprovedKnowledgeSnapshot, readKnowledgeHealth } from "./knowledge-snapshot";
+import { readApprovedKnowledgeSnapshot, readKnowledgeHealth, readLegacyKnowledgeReviewHealth } from "./knowledge-snapshot";
 /**
  * API interna Atlas ⇄ Cérebro Jurídico (JuridIA/EJC).
  *
@@ -217,6 +217,13 @@ export async function handleKnowledgeHealth(req: Request, res: Response) {
   catch { res.status(503).json({ ok: false, error: "knowledge_health_unavailable" }); }
 }
 
+/** Private operational counts; no source bodies or unapproved citations. */
+export async function handleLegacyReviewHealth(req: Request, res: Response) {
+  if (!guard(req, res)) return;
+  try { res.json(await readLegacyKnowledgeReviewHealth()); }
+  catch { res.status(503).json({ ok: false, error: "legacy_review_health_unavailable" }); }
+}
+
 export function registerBrainApiRoutes(app: Express) {
   app.get(`${BRAIN_API_PREFIX}/compendium/search`, handleCompendiumSearch);
   app.get(`${BRAIN_API_PREFIX}/jurimetry`, handleJurimetry);
@@ -224,4 +231,5 @@ export function registerBrainApiRoutes(app: Express) {
   app.get(`${BRAIN_API_PREFIX}/knowledge/snapshot`, handleKnowledgeSnapshot);
   app.get(`${BRAIN_API_PREFIX}/knowledge/items/:id`, handleKnowledgeItem);
   app.get(`${BRAIN_API_PREFIX}/knowledge/health`, handleKnowledgeHealth);
+  app.get(`${BRAIN_API_PREFIX}/knowledge/legacy-health`, handleLegacyReviewHealth);
 }

@@ -494,3 +494,30 @@ export const officeJurisprudenciaSettings = mysqlTable("office_jurisprudencia_se
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+
+/**
+ * Acervo legado importado sob quarentena editorial.
+ * Não integra a API de precedentes nem o snapshot de fontes aprovadas.
+ * Aprovação exige revisão humana explícita, independente do status antigo.
+ */
+export const legacyKnowledgeReview = mysqlTable("legacy_knowledge_review", {
+  id: int("id").autoincrement().primaryKey(),
+  legacyId: varchar("legacyId", { length: 64 }).notNull().unique(),
+  docType: varchar("docType", { length: 64 }).notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  sourceUrl: varchar("sourceUrl", { length: 1024 }),
+  sourceLabel: varchar("sourceLabel", { length: 255 }),
+  documentText: text("documentText").notNull(),
+  sourceSha256: varchar("sourceSha256", { length: 64 }).notNull(),
+  legacyQuality: varchar("legacyQuality", { length: 8 }),
+  legacyStatus: varchar("legacyStatus", { length: 32 }).notNull(),
+  reviewStatus: mysqlEnum("reviewStatus", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewedBy: varchar("reviewedBy", { length: 191 }),
+  reviewedAt: timestamp("reviewedAt"),
+  importedAt: timestamp("importedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("legacy_knowledge_review_status_idx").on(table.reviewStatus),
+  index("legacy_knowledge_review_type_idx").on(table.docType),
+]);

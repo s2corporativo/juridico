@@ -41,6 +41,7 @@ type Snapshot = {
   complete: boolean;
   items: SourceItem[];
 };
+type LegacyReviewHealth = { ok: true; count: number; pending: number; approved: number; rejected: number };
 type Health = {
   ok: true;
   lastRunStatus: string;
@@ -55,17 +56,19 @@ async function fetchData<T>(path: string): Promise<T> {
 }
 
 async function loadOverview() {
-  const [snapshot, health] = await Promise.all([
+  const [snapshot, health, legacy] = await Promise.all([
     fetchData<Snapshot>("/api/atlas/knowledge?view=snapshot"),
     fetchData<Health>("/api/atlas/knowledge?view=health"),
+    fetchData<LegacyReviewHealth>("/api/atlas/knowledge?view=legacy-review-health"),
   ]);
-  if (!snapshot.ok || !health.ok) throw new Error("Resposta do Atlas inválida.");
-  return { snapshot, health };
+  if (!snapshot.ok || !health.ok || !legacy.ok) throw new Error("Resposta do Atlas inválida.");
+  return { snapshot, health, legacy };
 }
 
 export function AtlasWorkspace() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
+  const [legacy, setLegacy] = useState<LegacyReviewHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [topic, setTopic] = useState("");
@@ -75,10 +78,11 @@ export function AtlasWorkspace() {
 
   useEffect(() => {
     let active = true;
-    void loadOverview().then(({ snapshot, health }) => {
+    void loadOverview().then(({ snapshot, health, legacy }) => {
       if (!active) return;
       setSnapshot(snapshot);
       setHealth(health);
+      setLegacy(legacy);
       setError(null);
     }).catch((reason: unknown) => {
       if (active) setError(reason instanceof Error ? reason.message : "Não foi possível consultar o Atlas.");
@@ -92,6 +96,7 @@ export function AtlasWorkspace() {
       const result = await loadOverview();
       setSnapshot(result.snapshot);
       setHealth(result.health);
+      setLegacy(result.legacy);
       setError(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Erro na conexão.");
@@ -152,13 +157,17 @@ export function AtlasWorkspace() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card><CardHeader><CardTitle className="text-sm">Estado da conexão</CardTitle></CardHeader><CardContent className="flex items-center gap-2 text-sm">
           {error ? <WifiOff className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4 text-primary" />}
           {loading ? "Consultando…" : error ? "Não sincronizado" : snapshot ? "Conectado ao Atlas" : "Sem dados"}
         </CardContent></Card>
         <Card><CardHeader><CardTitle className="text-sm">Itens editoriais aprovados</CardTitle></CardHeader><CardContent className="text-2xl font-semibold">
           {snapshot?.total ?? "—"}
+        </CardContent></Card>
+        <Card><CardHeader><CardTitle className="text-sm">Legado aguardando revisão</CardTitle></CardHeader><CardContent className="text-2xl font-semibold">
+          {legacy?.pending ?? "—"}
+          <p className="mt-1 text-xs font-normal text-muted-foreground">Não citável enquanto pendente</p>
         </CardContent></Card>
         <Card><CardHeader><CardTitle className="text-sm">Última execução editorial</CardTitle></CardHeader><CardContent className="text-sm">
           {health?.lastRunFinishedAt ? new Date(health.lastRunFinishedAt).toLocaleString("pt-BR") : "Não comprovada"}
