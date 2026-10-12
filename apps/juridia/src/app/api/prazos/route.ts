@@ -209,7 +209,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const existing = await db.caseDeadline.findUnique({ where: { id }, select: { caseId: true, descricao: true } });
-  if (!existing) return NextResponse.json({ error: "Prazo não encontrado" }, { status: 404 });
+  if (!existing || !await ownsCase(authUser.uid, existing.caseId)) return NextResponse.json({ error: "Prazo não encontrado" }, { status: 404 });
 
   await db.caseDeadline.delete({ where: { id, caseId: existing.caseId } });
 
