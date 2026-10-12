@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const caseId = body.caseId || "default-case";
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
   const reviewer = "advogado";
 
   if (body.type === "assertion") {
