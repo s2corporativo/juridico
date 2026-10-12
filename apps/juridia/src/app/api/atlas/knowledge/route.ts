@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { atlasRequest, fetchAtlasKnowledgeSnapshot } from "@/lib/atlas_client";
+import { atlasRequest, extractSearchTerms, fetchAtlasKnowledgeSnapshot, searchAtlasCompendium } from "@/lib/atlas_client";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,6 +23,26 @@ export async function GET(req: NextRequest) {
     }>("/knowledge/health");
     if (!response.ok) return NextResponse.json({ ok: false, status: "unavailable", error: response.error }, { status: 503 });
     return NextResponse.json({ ...response.data, source: "atlas_forense" }, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  if (view === "compendium") {
+    const raw = req.nextUrl.searchParams.get("q") ?? "";
+    if (raw.length < 6 || raw.length > 120) {
+      return NextResponse.json({ ok: false, error: "invalid_topic" }, { status: 400 });
+    }
+    // A API editorial só recebe vocabulário jurídico genérico, nunca autos completos.
+    const terms = extractSearchTerms(raw, 3);
+    if (terms.length === 0) {
+      return NextResponse.json({ ok: false, error: "no_legal_terms" }, { status: 400 });
+    }
+    const outcome = await searchAtlasCompendium(terms, { perTerm: 5, limit: 12 });
+    if (!outcome.ok) {
+      return NextResponse.json({ ok: false, error: outcome.error }, { status: 503 });
+    }
+    return NextResponse.json(
+      { ok: true, source: "atlas_compendio", ...outcome.data },
+      { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } },
+    );
   }
 
   if (view !== "snapshot") {
