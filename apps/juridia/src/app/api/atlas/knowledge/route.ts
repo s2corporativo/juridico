@@ -25,6 +25,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ...response.data, source: "atlas_forense" }, { headers: { "Cache-Control": "no-store" } });
   }
 
+  if (view === "legacy-review-health") {
+    const response = await atlasRequest<{
+      ok: true; count: number; pending: number; approved: number; rejected: number;
+      note: string;
+    }>("/knowledge/legacy-health");
+    if (!response.ok) return NextResponse.json(
+      { ok: false, error: response.error }, { status: 503 },
+    );
+    return NextResponse.json(
+      { ...response.data, source: "atlas_forense" },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   if (view === "compendium") {
     const raw = req.nextUrl.searchParams.get("q") ?? "";
     if (raw.length < 6 || raw.length > 120) {
