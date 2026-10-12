@@ -98,6 +98,26 @@ const DEFAULT_PROFILE: LawyerProfile = {
   address: "",
 };
 
+/** Corrige somente os campos fictícios de versões antigas; preserva dados reais. */
+export function sanitizeLegacyProfile(value: unknown): LawyerProfile {
+  const input = value && typeof value === "object" ? value as Partial<LawyerProfile> : {};
+  const fake: LawyerProfile = {
+    name: "Advogado Demo",
+    oab: "123456",
+    oabUf: "SP",
+    office: "Escritório JuridIA Advocacia",
+    email: "demo@juridia.com.br",
+    phone: "(11) 99999-0000",
+    address: "Av. Paulista, 1000 — São Paulo/SP",
+  };
+  const clean = { ...DEFAULT_PROFILE };
+  for (const key of Object.keys(clean) as (keyof LawyerProfile)[]) {
+    const saved = input[key];
+    clean[key] = typeof saved === "string" && saved !== fake[key] ? saved : "";
+  }
+  return clean;
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -144,6 +164,13 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "juridia-store",
+      version: 1,
+      migrate: (persisted) => {
+        const prior = persisted && typeof persisted === "object"
+          ? persisted as Partial<AppState>
+          : {};
+        return { ...prior, profile: sanitizeLegacyProfile(prior.profile) };
+      },
       partialize: (s) => ({
         view: s.view,
         appTab: s.appTab,
