@@ -92,32 +92,33 @@ const NODE_TYPE_CONFIG: Record<string, { label: string; icon: React.ComponentTyp
   evidence: { label: "Evidência", icon: Shield },
 };
 
+async function fetchStoredData(): Promise<StoredData> {
+  const res = await fetch("/api/intelligence/map");
+  if (!res.ok) throw new Error("Falha ao carregar dados");
+  return res.json();
+}
+
 export function Inteligencia() {
   const { brainContext, setBrainContext } = useAppStore();
-  const [facts, setFacts] = useState("");
+  // O texto recebido do Cérebro é o valor inicial; edições locais prevalecem.
+  const [factsInput, setFactsInput] = useState<string | null>(null);
+  const facts = factsInput ?? brainContext ?? "";
+  const setFacts = setFactsInput;
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<MapResult | null>(null);
   const [stored, setStored] = useState<StoredData | null>(null);
   const [activeTab, setActiveTab] = useState<"resumo" | "fatos" | "grafo" | "afirmacoes">("resumo");
 
-  // Carrega dados persistidos ao montar
-  useEffect(() => {
-    loadStored();
+  const loadStored = useCallback(async () => {
+    try { setStored(await fetchStoredData()); } catch { /* ignore */ }
   }, []);
 
-  // Usa brainContext se vier do Cérebro
   useEffect(() => {
-    if (brainContext && !facts) {
-      setFacts(brainContext);
-    }
-  }, [brainContext, facts]);
-
-  const loadStored = useCallback(async () => {
-    try {
-      const res = await fetch("/api/intelligence/map");
-      const data = await res.json();
-      setStored(data);
-    } catch { /* ignore */ }
+    let active = true;
+    void fetchStoredData().then((data) => {
+      if (active) setStored(data);
+    }).catch(() => { /* serviço opcional indisponível */ });
+    return () => { active = false; };
   }, []);
 
   async function mapCase() {
