@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { ownedCaseIds } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +19,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   agora.setHours(0, 0, 0, 0);
   const limite = new Date(agora.getTime() + dias * 86400000);
 
+  const caseIdsAllowed = await ownedCaseIds(authUser.uid);
   const [prazos, audiencias] = await Promise.all([
     db.caseDeadline.findMany({
-      where: { vencimento: { gte: agora, lte: limite } },
+      where: { caseId: { in: caseIdsAllowed }, vencimento: { gte: agora, lte: limite } },
       orderBy: { vencimento: "asc" },
       take: 200,
     }),
     db.caseHearing.findMany({
-      where: { data: { gte: agora, lte: limite } },
+      where: { caseId: { in: caseIdsAllowed }, data: { gte: agora, lte: limite } },
       orderBy: { data: "asc" },
       take: 200,
     }),
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     ...audiencias.map((a) => a.caseId),
   ].filter((id) => id !== "default-case"));
   const cases = caseIds.size > 0
-    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) } }, select: { id: true, title: true, number: true, responsavel: true } })
+    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) }, client: { is: { userId: authUser.uid } } }, select: { id: true, title: true, number: true, responsavel: true } })
     : [];
   const caseMap = new Map<string, { id: string; title: string; number: string | null; responsavel: string | null }>(cases.map((c) => [c.id, c] as const));
 
