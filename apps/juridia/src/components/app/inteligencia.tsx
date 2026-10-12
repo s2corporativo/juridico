@@ -92,6 +92,12 @@ const NODE_TYPE_CONFIG: Record<string, { label: string; icon: React.ComponentTyp
   evidence: { label: "Evidência", icon: Shield },
 };
 
+async function fetchStoredData(): Promise<StoredData> {
+  const res = await fetch("/api/intelligence/map");
+  if (!res.ok) throw new Error("Falha ao carregar dados");
+  return res.json();
+}
+
 export function Inteligencia() {
   const { brainContext, setBrainContext } = useAppStore();
   // O texto recebido do Cérebro é o valor inicial; edições locais prevalecem.
@@ -104,17 +110,16 @@ export function Inteligencia() {
   const [activeTab, setActiveTab] = useState<"resumo" | "fatos" | "grafo" | "afirmacoes">("resumo");
 
   const loadStored = useCallback(async () => {
-    try {
-      const res = await fetch("/api/intelligence/map");
-      if (!res.ok) throw new Error("Falha ao carregar dados");
-      const data = await res.json();
-      setStored(data);
-    } catch { /* ignore */ }
+    try { setStored(await fetchStoredData()); } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
-    void loadStored();
-  }, [loadStored]);
+    let active = true;
+    void fetchStoredData().then((data) => {
+      if (active) setStored(data);
+    }).catch(() => { /* serviço opcional indisponível */ });
+    return () => { active = false; };
+  }, []);
 
   async function mapCase() {
     if (facts.trim().length < 30) {
