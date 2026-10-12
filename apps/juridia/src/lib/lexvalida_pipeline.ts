@@ -48,27 +48,6 @@ export interface PipelineResult {
   textoFinal: string;
 }
 
-const zai = await ZAI.create();
-let totalTokens = 0;
-
-function tok(c: unknown) {
-  totalTokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
-}
-
-async function llmCall(system: string, user: string, maxTokens = 1000): Promise<string> {
-  const c = await zai.chat.completions.create({
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    thinking: { type: "disabled" },
-    temperature: 0.2,
-    max_tokens: maxTokens,
-  });
-  tok(c);
-  return c.choices[0]?.message?.content || "";
-}
-
 function parseJSON(text: string): Record<string, unknown> | null {
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) return null;
@@ -83,6 +62,25 @@ export async function runPipeline(params: {
   skillsContent?: string;
 }): Promise<PipelineResult> {
   const { pedido, tipoPeca, autos, caseId, skillsContent = "" } = params;
+
+  // Inicialização por requisição: o SDK não pode exigir segredos durante
+  // o build/SSR do Next.js e tokens de um caso não podem vazar para outro.
+  const zai = await ZAI.create();
+  let totalTokens = 0;
+  async function llmCall(system: string, user: string, maxTokens = 1000): Promise<string> {
+    const c = await zai.chat.completions.create({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      thinking: { type: "disabled" },
+      temperature: 0.2,
+      max_tokens: maxTokens,
+    });
+    totalTokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
+    return c.choices[0]?.message?.content || "";
+  }
+
   const steps: PipelineStep[] = [];
   const result: Partial<PipelineResult> = { steps, secoesRedigidas: [], totalTokens: 0 };
 
