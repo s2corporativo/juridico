@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId");
   if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   const movimentos = await db.caseMovement.findMany({
     where: { caseId },
@@ -43,6 +45,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   if (!body.caseId || !body.descricao) return NextResponse.json({ error: "caseId e descricao obrigatórios" }, { status: 400 });
+  if (!await ownsCase(authUser.uid, body.caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   const mov = await db.caseMovement.create({
     data: {
@@ -66,6 +69,8 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-  await db.caseMovement.delete({ where: { id } });
+  const record = await db.caseMovement.findFirst({ where: { id }, select: { caseId: true } });
+  if (!record || !await ownsCase(authUser.uid, record.caseId)) return NextResponse.json({ error: "movement_not_found" }, { status: 404 });
+  await db.caseMovement.delete({ where: { id, caseId: record.caseId } });
   return NextResponse.json({ ok: true });
 }
