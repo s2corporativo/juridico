@@ -46,23 +46,31 @@ const NODE_LABELS: Record<string, string> = {
 export function GraphVisual({ caseId = "default-case" }: { caseId?: string }) {
   const [nodes, setNodes] = useState<GraphNodeData[]>([]);
   const [edges, setEdges] = useState<GraphEdgeData[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Derivado do ID realmente carregado: evita exibir nós do caso anterior.
+  const [loadedCaseId, setLoadedCaseId] = useState<string | null>(null);
+  const loading = loadedCaseId !== caseId;
   const [selected, setSelected] = useState<GraphNodeData | null>(null);
 
   useEffect(() => {
-    loadGraph();
+    let active = true;
+    async function loadGraph() {
+      try {
+        const res = await fetch(`/api/intelligence/graph?caseId=${encodeURIComponent(caseId)}`);
+        if (!res.ok) throw new Error("Falha ao carregar grafo");
+        const data = await res.json();
+        if (!active) return;
+        setNodes(data.nodes || []);
+        setEdges(data.edges || []);
+        setSelected(null);
+      } catch {
+        if (active) { setNodes([]); setEdges([]); setSelected(null); }
+      } finally {
+        if (active) setLoadedCaseId(caseId);
+      }
+    }
+    void loadGraph();
+    return () => { active = false; };
   }, [caseId]);
-
-  async function loadGraph() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/intelligence/graph?caseId=${caseId}`);
-      const data = await res.json();
-      setNodes(data.nodes || []);
-      setEdges(data.edges || []);
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
-  }
 
   if (loading) {
     return (
