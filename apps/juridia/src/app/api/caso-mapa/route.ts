@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { extrairEntidades } from "@/lib/assistente";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId");
   if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   const c = await db.case.findUnique({
     where: { id: caseId },
