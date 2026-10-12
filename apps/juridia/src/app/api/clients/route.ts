@@ -13,6 +13,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const clients = await db.client.findMany({
+    where: { userId: authUser.uid },
     orderBy: { updatedAt: "desc" },
     include: {
       _count: { select: { cases: true } },
@@ -74,11 +75,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 });
   }
 
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-
   const client = await db.client.create({
     data: {
-      userId: demoUser?.id,
+      userId: authUser.uid,
       name: body.name.trim(),
       email: body.email?.trim() || null,
       phone: body.phone?.trim() || null,
@@ -149,16 +148,23 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (body.notes !== undefined) data.notes = body.notes.trim() || null;
   if (body.color !== undefined) data.color = body.color;
 
-  const updated = await db.client.update({
-    where: { id: body.id },
+  // Filtro de proprietário na MESMA operação: IDs de terceiros retornam 404.
+  const existing = await db.client.findFirst({
+    where: { id: body.id, userId: authUser.uid },
+    select: { name: true },
+  });
+  if (!existing) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
+  const updated = await db.client.updateMany({
+    where: { id: body.id, userId: authUser.uid },
     data,
   });
+  if (updated.count !== 1) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "update_client",
     resource: "client",
     resourceId: body.id,
-    metadata: { name: updated.name },
+    metadata: { name: data.name ?? existing.name },
   });
 
   return NextResponse.json({ ok: true });
@@ -175,8 +181,13 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
-  const client = await db.client.findUnique({ where: { id }, select: { name: true } });
-  await db.client.delete({ where: { id } });
+  const client = await db.client.findFirst({
+    where: { id, userId: authUser.uid },
+    select: { name: true },
+  });
+  if (!client) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
+  const deleted = await db.client.deleteMany({ where: { id, userId: authUser.uid } });
+  if (deleted.count !== 1) return NextResponse.json({ error: "client_not_found" }, { status: 404 });
 
   await logAuditEvent({
     action: "delete_client",
