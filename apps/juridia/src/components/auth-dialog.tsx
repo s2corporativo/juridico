@@ -45,9 +45,11 @@ export function AuthDialog() {
         return;
       }
       setUser({ email: data.user.email, name: data.user.name ?? null, plan: data.user.plan ?? null });
+      // Uma única sessão real libera o portal JuridIA e o painel Atlas.
+      window.dispatchEvent(new Event("juridia:auth-changed"));
       setAuthOpen(false);
       setView("app");
-      toast({ title: "Bem-vindo(a) ao JuridIA!", description: `Sessão iniciada como ${data.user.email}` });
+      toast({ title: "Acesso à plataforma Atlas Forense autorizado!", description: `Sessão iniciada como ${data.user.email}` });
     } catch {
       setError("Falha de rede. Tente novamente.");
     } finally {
@@ -63,7 +65,7 @@ export function AuthDialog() {
             <Scale className="h-6 w-6" />
           </div>
           <DialogTitle className="text-center text-2xl">
-            Entrar no JuridIA
+            Entrar no Atlas Forense
           </DialogTitle>
           <DialogDescription className="text-center">
             Acesse com as credenciais do seu escritório.

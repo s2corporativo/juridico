@@ -22,6 +22,7 @@ export interface LawyerProfile {
 export type AppTab =
   | "assistente"
   | "dashboard"
+  | "atlas"
   | "biblioteca"
   | "calculadora"
   | "cerebro"
@@ -52,7 +53,7 @@ export function resolveAppTab(t: string): AppTab {
 }
 
 const APP_TABS: AppTab[] = [
-  "assistente", "dashboard", "biblioteca", "calculadora", "cerebro",
+  "assistente", "dashboard", "atlas", "biblioteca", "calculadora", "cerebro",
   "intelligence", "pipeline", "generator", "editor", "homologacao",
   "visuallaw", "datajud", "grafo", "settings",
 ];
@@ -123,7 +124,7 @@ export const useAppStore = create<AppState>()(
       clearSkills: () => set({ selectedSkillSlugs: [] }),
       authOpen: false,
       setAuthOpen: (authOpen) => set({ authOpen }),
-      user: { email: "demo@juridia.com.br", name: "Advogado Demo" },
+      user: null,
       setUser: (user) => set({ user }),
       // Perfil e estilo
       profile: DEFAULT_PROFILE,
@@ -145,7 +146,6 @@ export const useAppStore = create<AppState>()(
       partialize: (s) => ({
         view: s.view,
         appTab: s.appTab,
-        user: s.user,
         selectedSkillSlugs: s.selectedSkillSlugs,
         profile: s.profile,
         writingStyle: s.writingStyle,

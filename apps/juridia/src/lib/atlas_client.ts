@@ -111,6 +111,65 @@ export async function atlasRequest<T>(
   }
 }
 
+// ── Snapshot aprovado do Atlas (somente metadados, sem banco compartilhado) ───
+export interface AtlasKnowledgeMetadataItem {
+  atlasItemId: string;
+  sourceKey: "stj-dados-abertos" | "cnj-djen-daily";
+  sourceType: "official_update";
+  tribunal: "STJ" | "CNJ";
+  title: string;
+  officialUrl: string;
+  publishedAt: string | null;
+  provenanceHash: string;
+  editorialStatus: "approved";
+  documentStatus: "discovery_only";
+  citableAsPrecedent: false;
+  text: null;
+}
+
+export interface AtlasKnowledgeSnapshot {
+  ok: true;
+  contractVersion: 1;
+  snapshotVersion: string;
+  total: number;
+  page: number;
+  pageSize: number;
+  items: AtlasKnowledgeMetadataItem[];
+  complete: boolean;
+  methodology: string;
+}
+
+/** The caller must verify a stable snapshotVersion on every page and replace its
+ * own local cache atomically. This client never accesses the Atlas database.
+ */
+export async function fetchAtlasKnowledgeSnapshot(
+  page = 0,
+  version?: string,
+  deps: { config?: AtlasConfig | null; fetchImpl?: FetchLike } = {},
+): Promise<AtlasResult<AtlasKnowledgeSnapshot>> {
+  if (!Number.isSafeInteger(page) || page < 0 || page > 1000 || (page > 0 && !version)) {
+    return { ok: false, error: "invalid_snapshot_cursor" };
+  }
+  const result = await atlasRequest<AtlasKnowledgeSnapshot>("/knowledge/snapshot", {
+    query: { page, pageSize: 50, version },
+  }, deps);
+  if (!result.ok) return result;
+  const data = result.data;
+  if (!data || data.contractVersion !== 1 || !/^v1:[a-f0-9]{64}$/.test(data.snapshotVersion) ||
+      !Array.isArray(data.items) || !Number.isSafeInteger(data.total) || data.total < 0 ||
+      data.page !== page || !Number.isSafeInteger(data.pageSize) || data.pageSize < 1 || data.pageSize > 100 ||
+      (version && version !== data.snapshotVersion) ||
+      data.items.some(item =>
+        item.editorialStatus !== "approved" ||
+        item.documentStatus !== "discovery_only" ||
+        item.citableAsPrecedent !== false ||
+        item.text !== null ||
+        !/^[a-f0-9]{64}$/.test(item.provenanceHash))) {
+    return { ok: false, error: "invalid_atlas_knowledge_contract" };
+  }
+  return result;
+}
+
 // ── Termos de busca (somente vocabulário jurídico genérico) ──────────────────
 
 const STOP_WORDS = new Set([

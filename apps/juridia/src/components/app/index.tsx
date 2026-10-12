@@ -33,6 +33,7 @@ import { VisualLaw } from "./visual-law";
 import { DataJudBusca } from "./datajud-busca";
 import { GrafoSistema } from "./grafo-sistema";
 import { BibliotecaJuridica } from "./biblioteca-juridica";
+import { AtlasWorkspace } from "./atlas-workspace";
 
 // ── Zona ÚNICA: Cérebro Jurídico (foco em conhecimento, sem ERP) ────────────
 // Antes: ERP (10 tabs) + IA (10 tabs) = 20 tabs (com componentes operacionais)
@@ -42,6 +43,7 @@ import { BibliotecaJuridica } from "./biblioteca-juridica";
 const TABS = [
   { id: "assistente" as const, label: "Assistente", icon: Sparkles, key: "s" },
   { id: "dashboard" as const, label: "Início", icon: LayoutDashboard, key: "1" },
+  { id: "atlas" as const, label: "Atlas Forense", icon: BookOpen, key: "a" },
   { id: "biblioteca" as const, label: "Biblioteca", icon: BookOpen, key: "b" },
   { id: "cerebro" as const, label: "1. Cérebro", icon: Brain, key: "e" },
   { id: "intelligence" as const, label: "2. Inteligência", icon: Network, key: "i" },
@@ -102,6 +104,7 @@ export function AppShell() {
         {appTab === "assistente" && <Assistente />}
         {appTab === "dashboard" && <Dashboard />}
         {appTab === "biblioteca" && <BibliotecaJuridica />}
+        {appTab === "atlas" && <AtlasWorkspace />}
         {appTab === "cerebro" && <Cerebro />}
         {appTab === "intelligence" && <Inteligencia />}
         {appTab === "pipeline" && <Pipeline />}
