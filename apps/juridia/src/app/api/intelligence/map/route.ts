@@ -5,6 +5,7 @@ import { mapCaseDeterministic, validateMapperOutput, identifyIssues, type CaseMa
 import { canonicalHash } from "@/lib/evidence";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -21,6 +22,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const facts = (body.facts || "").trim();
   const caseId = body.caseId || "default-case";
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   if (facts.length < 30) {
     return NextResponse.json({ error: "Texto insuficiente (mín. 30 caracteres)" }, { status: 400 });
@@ -224,6 +226,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId") || "default-case";
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   const snapshots = await db.intelligenceSnapshot.findMany({
     where: { caseId },
