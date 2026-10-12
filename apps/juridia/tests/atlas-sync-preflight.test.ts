@@ -13,13 +13,13 @@ describe("Atlas→JuridIA: gates antes de abrir o banco", () => {
     writeFileSync(db, "");
     try {
       const env = {
-        NODE_ENV: "production",
+        NODE_ENV: "production" as const,
         ATLAS_API_URL: "http://127.0.0.1:3114",
         ATLAS_BRAIN_API_TOKEN: "x".repeat(40),
         JURIDIA_KNOWLEDGE_DB_PATH: db,
         JURIDIA_SYNC_VERIFIED_BACKUP: marker,
       };
-      expect(() => checkKnowledgeSyncPreflight({})).toThrow("ATLAS_API_NOT_CONFIGURED");
+      expect(() => checkKnowledgeSyncPreflight({ NODE_ENV: "production" })).toThrow("ATLAS_API_NOT_CONFIGURED");
       expect(() => checkKnowledgeSyncPreflight({ ...env, JURIDIA_KNOWLEDGE_DB_PATH: "relative.db" })).toThrow("JURIDIA_KNOWLEDGE_DB_PATH_MISSING");
       expect(() => checkKnowledgeSyncPreflight(env)).toThrow("JURIDIA_SYNC_VERIFIED_BACKUP_MISSING");
     } finally {
@@ -35,7 +35,7 @@ describe("Atlas→JuridIA: gates antes de abrir o banco", () => {
     writeFileSync(marker, "backup sintético - teste");
     const now = Date.now();
     const env = {
-      NODE_ENV: "production",
+      NODE_ENV: "production" as const,
       ATLAS_API_URL: "http://127.0.0.1:3114",
       ATLAS_BRAIN_API_TOKEN: "x".repeat(40),
       JURIDIA_KNOWLEDGE_DB_PATH: db,
