@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { caseId, format = "md" } = parsed.body;
   if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   const c = await db.case.findUnique({
     where: { id: caseId },
