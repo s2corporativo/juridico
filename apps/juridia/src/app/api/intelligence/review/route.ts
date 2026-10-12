@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +29,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const caseId = body.caseId || "default-case";
-  const reviewer = "advogado";
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  const reviewer = authUser.uid;
 
   if (body.type === "assertion") {
     const assertion = await db.legalAssertion.findUnique({ where: { id: body.id } });
-    if (!assertion) return NextResponse.json({ error: "Assertion não encontrada" }, { status: 404 });
+    if (!assertion || assertion.caseId !== caseId) return NextResponse.json({ error: "Assertion não encontrada" }, { status: 404 });
 
     // Princípio 11: assertion com support=absent não pode ser confirmada
     if (body.action === "confirm" && assertion.supportStatus === "absent") {
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const newReviewStatus = body.action === "confirm" ? "confirmed" : body.action === "correct" ? "corrected" : "rejected";
     const updated = await db.legalAssertion.update({
-      where: { id: body.id },
+      where: { id: body.id, caseId },
       data: {
         reviewStatus: newReviewStatus,
         reviewedBy: reviewer,
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (body.type === "node") {
     const node = await db.graphNode.findUnique({ where: { id: body.id } });
-    if (!node) return NextResponse.json({ error: "Node não encontrado" }, { status: 404 });
+    if (!node || node.caseId !== caseId) return NextResponse.json({ error: "Node não encontrado" }, { status: 404 });
 
     // Princípio 10: Confirmação exige evidência
     if (body.action === "confirm" && !node.sourceEvidenceId) {
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const newStatus = body.action === "confirm" ? "confirmed" : "rejected";
     const updated = await db.graphNode.update({
-      where: { id: body.id },
+      where: { id: body.id, caseId },
       data: {
         status: newStatus,
         reviewedBy: reviewer,

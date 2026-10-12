@@ -4,6 +4,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody, MAX_PRAZO_DIAS } from "@/lib/api-helpers";
 import { calculateDeadline } from "@/lib/legal_calculator";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase, ownedCaseIds } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +20,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
 
-  const where: { caseId?: string; vencimento?: { gte?: Date; lte?: Date } } = {};
-  if (caseId) where.caseId = caseId;
+  const where: { caseId?: string | { in: string[] }; vencimento?: { gte?: Date; lte?: Date } } = {};
+  if (caseId) {
+    if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+    where.caseId = caseId;
+  } else {
+    where.caseId = { in: await ownedCaseIds(authUser.uid) };
+  }
   if (from || to) {
     where.vencimento = {};
     if (from) where.vencimento.gte = new Date(from);
@@ -70,6 +76,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const { caseId, tipo, descricao, marcoInicial, prazoDias, tipoContagem, observacoes } = parsed.body;
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
   if (!descricao?.trim()) return NextResponse.json({ error: "descricao obrigatória" }, { status: 400 });
   if (!marcoInicial) return NextResponse.json({ error: "marcoInicial obrigatório" }, { status: 400 });
   const prazo = Number(prazoDias);
@@ -84,7 +91,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const deadline = await db.caseDeadline.create({
     data: {
-      caseId: caseId || "default-case",
+      caseId: caseId!,
       tipo: tipo || "outro",
       descricao: descricao.trim(),
       marcoInicial: marco,
@@ -145,7 +152,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const existing = await db.caseDeadline.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Prazo não encontrado" }, { status: 404 });
+  if (!existing || !await ownsCase(authUser.uid, existing.caseId)) return NextResponse.json({ error: "Prazo não encontrado" }, { status: 404 });
 
   const data: Record<string, unknown> = {};
   if (tipo !== undefined) data.tipo = tipo;
@@ -173,7 +180,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     data.vencimento = r.vencimento;
   }
 
-  const updated = await db.caseDeadline.update({ where: { id }, data });
+  const updated = await db.caseDeadline.update({ where: { id, caseId: existing.caseId }, data });
 
   await logAuditEvent({
     action: "prazo_update",
@@ -202,9 +209,9 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const existing = await db.caseDeadline.findUnique({ where: { id }, select: { caseId: true, descricao: true } });
-  if (!existing) return NextResponse.json({ error: "Prazo não encontrado" }, { status: 404 });
+  if (!existing || !await ownsCase(authUser.uid, existing.caseId)) return NextResponse.json({ error: "Prazo não encontrado" }, { status: 404 });
 
-  await db.caseDeadline.delete({ where: { id } });
+  await db.caseDeadline.delete({ where: { id, caseId: existing.caseId } });
 
   await logAuditEvent({
     action: "prazo_delete",

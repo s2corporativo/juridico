@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 import {
   decisionToBrainItem,
   extractSearchTerms,
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const steps: BrainStep[] = STEPS.map((s) => ({ ...s, status: "pending" as const }));
   const r: Partial<BrainResult> = { steps };
   let tokens = 0;
+  if (body.caseId && !await ownsCase(authUser.uid, body.caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
   const zai = await ZAI.create();
 
   const tok = (c: unknown) => tokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
@@ -300,6 +302,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId") || "default-case";
 
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
   const analyses = await db.brainAnalysis.findMany({
     where: { caseId },
     orderBy: { createdAt: "desc" },

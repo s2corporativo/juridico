@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase, ownedCaseIds } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +20,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const to = url.searchParams.get("to");
   const status = url.searchParams.get("status");
 
-  const where: { caseId?: string; data?: { gte?: Date; lte?: Date }; status?: string } = {};
-  if (caseId) where.caseId = caseId;
+  const where: { caseId?: string | { in: string[] }; data?: { gte?: Date; lte?: Date }; status?: string } = {};
+  if (caseId) {
+    if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+    where.caseId = caseId;
+  } else {
+    where.caseId = { in: await ownedCaseIds(authUser.uid) };
+  }
   if (status) where.status = status;
   if (from || to) {
     where.data = {};
@@ -71,7 +77,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
   if (!data) return NextResponse.json({ error: "data obrigatória" }, { status: 400 });
 
-  const c = await db.case.findUnique({ where: { id: caseId }, select: { id: true } });
+  const c = await ownsCase(authUser.uid, caseId);
   if (!c) return NextResponse.json({ error: "Caso não encontrado" }, { status: 404 });
 
   const aud = await db.caseHearing.create({
@@ -126,7 +132,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const existing = await db.caseHearing.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Audiência não encontrada" }, { status: 404 });
+  if (!existing || !await ownsCase(authUser.uid, existing.caseId)) return NextResponse.json({ error: "Audiência não encontrada" }, { status: 404 });
 
   const updateData: Record<string, unknown> = {};
   if (data !== undefined) updateData.data = new Date(data);
@@ -137,7 +143,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (resultado !== undefined) updateData.resultado = resultado;
   if (observacoes !== undefined) updateData.observacoes = observacoes || null;
 
-  await db.caseHearing.update({ where: { id }, data: updateData });
+  await db.caseHearing.update({ where: { id, caseId: existing.caseId }, data: updateData });
 
   await logAuditEvent({
     action: "audiencia_update",
@@ -161,9 +167,9 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
 
   const existing = await db.caseHearing.findUnique({ where: { id }, select: { caseId: true } });
-  if (!existing) return NextResponse.json({ error: "Audiência não encontrada" }, { status: 404 });
+  if (!existing || !await ownsCase(authUser.uid, existing.caseId)) return NextResponse.json({ error: "Audiência não encontrada" }, { status: 404 });
 
-  await db.caseHearing.delete({ where: { id } });
+  await db.caseHearing.delete({ where: { id, caseId: existing.caseId } });
 
   await logAuditEvent({
     action: "audiencia_delete",

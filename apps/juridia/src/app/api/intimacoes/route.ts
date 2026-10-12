@@ -4,6 +4,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { parseJsonBody } from "@/lib/api-helpers";
 import { extrairEntidades } from "@/lib/assistente";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const oabEstado = url.searchParams.get("oabEstado")?.toUpperCase();
   const oabNumero = url.searchParams.get("oabNumero");
 
-  const where: { action: string } = { action: "intimacao_djen" };
+  const where = { action: "intimacao_djen", userId: authUser.uid };
   const rows = await db.auditEvent.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { conteudo, caseId } = parsed.body;
   if (!conteudo?.trim()) return NextResponse.json({ error: "conteudo obrigatório" }, { status: 400 });
+  if (caseId && !await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
   if (conteudo.length > 100_000) {
     return NextResponse.json({ error: "conteudo muito longo (máx 100000 chars)" }, { status: 400 });
   }
@@ -101,6 +103,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const event = await db.auditEvent.create({
     data: {
+      userId: authUser.uid,
       action: "intimacao_djen",
       resource: "intimacao",
       resourceId: caseId || cnj || null,

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { ownedCaseIds } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/alertas — alertas urgentes (prazos/audiências/honorários ≤3 dias)
+// GET /api/alertas — alertas jurídicos de prazos e audiências próximos
 export async function GET(req: NextRequest): Promise<NextResponse> {
   // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
   const __auth = await requireAuth(req);
@@ -17,9 +18,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const agora = new Date();
   const limite = new Date(agora.getTime() + dias * 86400000);
 
+  const caseIdsAllowed = await ownedCaseIds(authUser.uid);
+
   // Prazos vencendo
   const prazos = await db.caseDeadline.findMany({
     where: {
+      caseId: { in: caseIdsAllowed },
       vencimento: { lte: limite },
     },
     orderBy: { vencimento: "asc" },
@@ -29,6 +33,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // Audiências próximas
   const audiencias = await db.caseHearing.findMany({
     where: {
+      caseId: { in: caseIdsAllowed },
       data: { gte: agora, lte: limite },
       status: "agendada",
     },
@@ -36,35 +41,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     take: 100,
   });
 
-  // Honorários (via AuditEvent action=honorario_*) — vencimento no metadata
-  const honorarios = await db.auditEvent.findMany({
-    where: {
-      OR: [{ action: "honorario_create" }, { action: "honorario_update" }],
-    },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
-
-  const honorariosAlertas = honorarios
-    .map((h) => {
-      let meta: { descricao?: string; valor?: number; vencimento?: string; status?: string; caseId?: string } = {};
-      try { meta = JSON.parse(h.metadata) as typeof meta; } catch { /* ignore */ }
-      return { id: h.id, ...meta, criadoEm: h.createdAt.toISOString() };
-    })
-    .filter((hh) => {
-      if (!hh.vencimento) return false;
-      const v = new Date(hh.vencimento);
-      return v >= agora && v <= limite && hh.status !== "pago";
-    });
-
   // Caso título lookup
   const caseIds = new Set<string>([
     ...prazos.map((p) => p.caseId),
     ...audiencias.map((a) => a.caseId),
-    ...honorariosAlertas.map((h) => h.caseId).filter(Boolean) as string[],
   ]);
   const cases = caseIds.size > 0
-    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) } }, select: { id: true, title: true, number: true } })
+    ? await db.case.findMany({ where: { id: { in: Array.from(caseIds) }, client: { is: { userId: authUser.uid } } }, select: { id: true, title: true, number: true } })
     : [];
   const caseMap = new Map<string, { id: string; title: string; number: string | null }>(cases.map((c) => [c.id, c] as const));
 
@@ -95,22 +78,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       local: a.local,
       orgao: a.orgao,
     })),
-    ...honorariosAlertas.map((h) => ({
-      tipo: "honorario",
-      id: h.id,
-      caseId: h.caseId || "",
-      caseTitle: "",
-      caseNumber: "",
-      descricao: h.descricao || "Honorário",
-      vencimento: h.vencimento,
-      prazoDias: null,
-      tipoContagem: null,
-      diasRestantes: h.vencimento ? Math.ceil((new Date(h.vencimento).getTime() - agora.getTime()) / 86400000) : null,
-      valor: h.valor,
-      status: h.status,
-    })),
   ].sort((a, b) => {
-    // vencimento é garantido pelo filtro de honorariosAlertas; `?? 0` cobre o tipo.
+    // Ordenação cronológica das atividades jurídicas; nenhum dado financeiro.
     const va = new Date(a.vencimento ?? 0).getTime();
     const vb = new Date(b.vencimento ?? 0).getTime();
     return va - vb;
@@ -119,7 +88,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   await logAuditEvent({
     action: "alertas_query",
     resource: "case",
-    metadata: { dias, total: alertas.length, prazos: prazos.length, audiencias: audiencias.length, honorarios: honorariosAlertas.length },
+    metadata: { dias, total: alertas.length, prazos: prazos.length, audiencias: audiencias.length },
   });
 
   return NextResponse.json({

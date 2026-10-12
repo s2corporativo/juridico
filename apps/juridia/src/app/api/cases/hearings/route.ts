@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url);
   const caseId = url.searchParams.get("caseId");
   if (!caseId) return NextResponse.json({ error: "caseId obrigatório" }, { status: 400 });
+  if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   const audiencias = await db.caseHearing.findMany({
     where: { caseId },
@@ -45,6 +47,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
   if (!body.caseId || !body.data) return NextResponse.json({ error: "caseId e data obrigatórios" }, { status: 400 });
+  if (!await ownsCase(authUser.uid, body.caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   const aud = await db.caseHearing.create({
     data: {
@@ -77,7 +80,9 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (body.resultado !== undefined) data.resultado = body.resultado;
   if (body.observacoes !== undefined) data.observacoes = body.observacoes;
 
-  await db.caseHearing.update({ where: { id: body.id }, data });
+  const record = await db.caseHearing.findFirst({ where: { id: body.id }, select: { caseId: true } });
+  if (!record || !await ownsCase(authUser.uid, record.caseId)) return NextResponse.json({ error: "hearing_not_found" }, { status: 404 });
+  await db.caseHearing.update({ where: { id: body.id, caseId: record.caseId }, data });
   return NextResponse.json({ ok: true });
 }
 
@@ -91,6 +96,8 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-  await db.caseHearing.delete({ where: { id } });
+  const record = await db.caseHearing.findFirst({ where: { id }, select: { caseId: true } });
+  if (!record || !await ownsCase(authUser.uid, record.caseId)) return NextResponse.json({ error: "hearing_not_found" }, { status: 404 });
+  await db.caseHearing.delete({ where: { id, caseId: record.caseId } });
   return NextResponse.json({ ok: true });
 }
