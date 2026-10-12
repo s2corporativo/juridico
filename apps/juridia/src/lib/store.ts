@@ -169,7 +169,19 @@ export const useAppStore = create<AppState>()(
         const prior = persisted && typeof persisted === "object"
           ? persisted as Partial<AppState>
           : {};
-        return { ...prior, profile: sanitizeLegacyProfile(prior.profile) };
+        const style = prior.writingStyle;
+        const writingStyle: WritingStyle = style === "formal" || style === "sintetico" ||
+          style === "academic" || style === "direto" ? style : "formal";
+        return {
+          view: prior.view === "landing" ? "landing" as const : "app" as const,
+          appTab: resolveAppTab(prior.appTab ?? "dashboard"),
+          selectedSkillSlugs: Array.isArray(prior.selectedSkillSlugs)
+            ? prior.selectedSkillSlugs.filter((x): x is string => typeof x === "string") : [],
+          profile: sanitizeLegacyProfile(prior.profile),
+          writingStyle,
+          defaultSkills: Array.isArray(prior.defaultSkills)
+            ? prior.defaultSkills.filter((x): x is string => typeof x === "string") : [],
+        };
       },
       partialize: (s) => ({
         view: s.view,
