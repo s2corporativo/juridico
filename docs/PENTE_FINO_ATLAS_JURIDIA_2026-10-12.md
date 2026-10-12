@@ -53,3 +53,21 @@
 - O código unificado (PRs #17–#19) está na branch principal; esta auditoria e as correções adicionais são a próxima camada de estabilização.
 
 **Critério de aceite:** sem acesso cruzado entre usuários; sem fonte editorial pendente citada como precedente; nenhum dado ou backup perdido; um único login funcional para Atlas + JuridIA; HTTPS e sincronização testados; DPT e Atlas antigo preservados até cutover.
+
+
+## Remediações adicionais concluídas — 12/10/2026
+
+**Integração na branch principal:**
+- PR #21 — cliente, caso e documento com controle por proprietário; `clientIp` não confia em `X-Forwarded-For` falsificável. E2E: duas contas, seis leituras próprias, sete mutações de outros usuários rejeitadas com 404; quatro testes específicos de IP aprovados.
+- PR #20 — remove a API financeira residual de 237 linhas; dados antigos e `AuditEvent` preservados. Build limpo, TS, lint e suíte JuridIA aprovados.
+- PR #22 — remove `scripts/clean-fictitious.ts`, que apagaria **todos** os documentos, casos, logs e quase todos os usuários, independentemente de serem dados reais. Não executou o script. Elimina atribuição a `demo@juridia.com.br` em análises e auditoria, usa usuário real nos dados/indicadores, remove números de marketing fictícios e perfis/OAB simulados; migração do perfil persistido limpa apenas valores conhecidos do demo. Testes de migração 3/3, TS, ESLint, suíte e build aprovados.
+- PR #23 — adiciona workflow GitHub Actions com jobs independentes para TypeScript, ESLint, testes e build de Atlas/JuridIA. **Validação de YAML local aprovada; primeiro resultado de CI remoto ainda não confirmado.**
+
+**Achados residuais críticos:**
+- `BrainAnalysis`, `CaseDeadline`, `GraphNode` e `IntelligenceSnapshot` ainda utilizam `caseId` sem uma vinculação de proprietário em seus modelos; o valor legado `default-case` é compartilhável. Necessária autorização por caso e segregação entre advogados antes de publicar.
+- `case-analysis` foi corrigida para titularidade via `userId`, mas rotas satélites `brain`, `intelligence/*`, `prazos`, `audiencias`, `visual-law` exigem auditoria dirigida.
+- Atlas Forense segue com **zero** metadados editoriais aprovados. Não afirmar que o RAG jurídico completo esteja atualizado/sincronizado apenas pela existência de 284 registros `pending`.
+- Os novos serviços (JuridIA 3005 e Atlas 3114) continuam sem publicação permanente. O domínio público permanece independente do release da VPS.
+- O script de sincronização diária depende de atestação recente de backup, mas não há implantação homologada do emissor dessa atestação nem dos timers.
+
+**Controle de publicação:** não promover deploy até CI remoto, autorização por recurso das rotas satélites, revisão das fontes, provisão de chaves, teste de restauração e plano de reversão. Manter DPT e Atlas legado ativos enquanto o novo produto não estiver homologado.
