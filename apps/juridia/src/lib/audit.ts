@@ -13,11 +13,8 @@ export async function logAuditEvent(params: {
   ip?: string | null;
 }): Promise<void> {
   try {
-    let userId = params.userId;
-    if (!userId) {
-      const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-      userId = demoUser?.id;
-    }
+    // Nunca atribuir operações reais ao usuário fictício.
+    const userId = params.userId ?? null;
     await db.auditEvent.create({
       data: {
         userId: userId || null,
@@ -46,11 +43,9 @@ export async function logUsageEntry(params: {
   userId?: string | null;
 }): Promise<void> {
   try {
-    let userId = params.userId;
-    if (!userId) {
-      const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-      userId = demoUser?.id;
-    }
+    // Crédito/débito requer proprietário explícito. Não usar saldo global ou demo.
+    if (!params.userId) return;
+    const userId = params.userId;
 
     // Pega o saldo mais recente
     const last = await db.usageLedger.findFirst({

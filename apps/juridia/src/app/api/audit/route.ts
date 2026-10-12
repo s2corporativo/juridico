@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { clientIp } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -61,16 +62,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "action obrigatório" }, { status: 400 });
   }
 
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-
   const event = await db.auditEvent.create({
     data: {
-      userId: demoUser?.id,
+      userId: authUser.uid,
       action: body.action,
       resource: body.resource || "unknown",
       resourceId: body.resourceId || null,
       metadata: JSON.stringify(body.metadata || {}),
-      ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
+      ip: clientIp(req),
     },
   });
 

@@ -87,15 +87,36 @@ interface AppState {
   toggleDefaultSkill: (slug: string) => void;
 }
 
+// Sem dados de OAB/identidade inventados em peças, assinaturas ou procurações.
 const DEFAULT_PROFILE: LawyerProfile = {
-  name: "Advogado Demo",
-  oab: "123456",
-  oabUf: "SP",
-  office: "Escritório JuridIA Advocacia",
-  email: "demo@juridia.com.br",
-  phone: "(11) 99999-0000",
-  address: "Av. Paulista, 1000 — São Paulo/SP",
+  name: "",
+  oab: "",
+  oabUf: "",
+  office: "",
+  email: "",
+  phone: "",
+  address: "",
 };
+
+/** Corrige somente os campos fictícios de versões antigas; preserva dados reais. */
+export function sanitizeLegacyProfile(value: unknown): LawyerProfile {
+  const input = value && typeof value === "object" ? value as Partial<LawyerProfile> : {};
+  const fake: LawyerProfile = {
+    name: "Advogado Demo",
+    oab: "123456",
+    oabUf: "SP",
+    office: "Escritório JuridIA Advocacia",
+    email: "demo@juridia.com.br",
+    phone: "(11) 99999-0000",
+    address: "Av. Paulista, 1000 — São Paulo/SP",
+  };
+  const clean = { ...DEFAULT_PROFILE };
+  for (const key of Object.keys(clean) as (keyof LawyerProfile)[]) {
+    const saved = input[key];
+    clean[key] = typeof saved === "string" && saved !== fake[key] ? saved : "";
+  }
+  return clean;
+}
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -143,6 +164,25 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "juridia-store",
+      version: 1,
+      migrate: (persisted) => {
+        const prior = persisted && typeof persisted === "object"
+          ? persisted as Partial<AppState>
+          : {};
+        const style = prior.writingStyle;
+        const writingStyle: WritingStyle = style === "formal" || style === "sintetico" ||
+          style === "academic" || style === "direto" ? style : "formal";
+        return {
+          view: prior.view === "landing" ? "landing" as const : "app" as const,
+          appTab: resolveAppTab(prior.appTab ?? "dashboard"),
+          selectedSkillSlugs: Array.isArray(prior.selectedSkillSlugs)
+            ? prior.selectedSkillSlugs.filter((x): x is string => typeof x === "string") : [],
+          profile: sanitizeLegacyProfile(prior.profile),
+          writingStyle,
+          defaultSkills: Array.isArray(prior.defaultSkills)
+            ? prior.defaultSkills.filter((x): x is string => typeof x === "string") : [],
+        };
+      },
       partialize: (s) => ({
         view: s.view,
         appTab: s.appTab,
