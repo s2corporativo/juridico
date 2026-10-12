@@ -8,7 +8,7 @@
  */
 import { createHash } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
-import { editorialUpdateRuns, editorialUpdates } from "../drizzle/schema";
+import { editorialUpdateRuns, editorialUpdates, legacyKnowledgeReview } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export type ApprovedKnowledgeItem = {
@@ -125,4 +125,18 @@ export async function readKnowledgeHealth() {
       discovered: run.discoveredCount, queued: run.queuedCount, failed: run.failedCount,
     } : null,
   };
+}
+
+
+/** Read-only statistics for the quarantined legacy import. Never expose its text. */
+export async function readLegacyKnowledgeReviewHealth() {
+  const db = await getDb();
+  if (!db) throw new Error("KNOWLEDGE_DB_UNAVAILABLE");
+  const rows = await db.select({ reviewStatus: legacyKnowledgeReview.reviewStatus })
+    .from(legacyKnowledgeReview).limit(5001);
+  if (rows.length > 5000) throw new Error("LEGACY_REVIEW_COUNT_LIMIT");
+  const counts = { pending: 0, approved: 0, rejected: 0 };
+  for (const row of rows) counts[row.reviewStatus]++;
+  return { ok: true, count: rows.length, ...counts,
+    note: "Importação legada sujeita a revisão humana. Apenas pendente: não pode fundamentar peça." };
 }
