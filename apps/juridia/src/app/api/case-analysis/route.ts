@@ -117,8 +117,7 @@ Regras:
   }
 
   // Persiste a análise
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-  const userId = demoUser?.id;
+  const userId = authUser.uid;
   try {
     const saved = await db.caseAnalysis.create({
       data: {
@@ -148,6 +147,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   const items = await db.caseAnalysis.findMany({
+    where: { userId: authUser.uid },
     orderBy: { createdAt: "desc" },
     take: 20,
   });
