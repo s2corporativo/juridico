@@ -10,32 +10,36 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!__auth.ok) return __auth.response;
   const authUser = __auth.user;
 
-  const [users, docs, skills, templates, searches] = await Promise.all([
+  const [users, docs, skills, templates, searches, lawyer] = await Promise.all([
     db.user.count(),
-    db.document.count(),
+    db.document.count({ where: { userId: authUser.uid } }),
     db.skill.count(),
     db.template.count(),
-    db.jurisprudenceSearch.count(),
+    db.jurisprudenceSearch.count({ where: { userId: authUser.uid } }),
+    db.user.findUnique({
+      where: { id: authUser.uid },
+      select: { plan: true, minutasUsed: true, minutasLimit: true },
+    }),
   ]);
 
-  const demoUser = await db.user.findUnique({ where: { email: "demo@juridia.com.br" } });
-
+  // Não inventar números de usuários, minutas ou instituições.
+  // Campos legados mantidos por compatibilidade; zero indica ausência
+  // de levantamento verificável (não extrapolar dados).
   return NextResponse.json({
-    totalUsers: 92034 + users, // estatística de marketing + demo
-    totalDocuments: 35291483 + docs,
-    publicInstitutions: 153,
-    statesServed: 27, // 26 + DF
-    lawOffices: 5217,
+    totalUsers: users,
+    totalDocuments: docs,
+    publicInstitutions: 0,
+    statesServed: 0,
+    lawOffices: 0,
     skills,
     templates,
     searches,
-    demo: demoUser
-      ? {
-          plan: demoUser.plan,
-          minutasUsed: demoUser.minutasUsed,
-          minutasLimit: demoUser.minutasLimit,
-          remaining: Math.max(0, demoUser.minutasLimit - demoUser.minutasUsed),
-        }
-      : null,
+    // Chave "demo" mantida para a UI existente, mas representa o usuário real.
+    demo: lawyer ? {
+      plan: lawyer.plan,
+      minutasUsed: lawyer.minutasUsed,
+      minutasLimit: lawyer.minutasLimit,
+      remaining: Math.max(0, lawyer.minutasLimit - lawyer.minutasUsed),
+    } : null,
   });
 }
