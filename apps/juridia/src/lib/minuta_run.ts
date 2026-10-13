@@ -17,6 +17,7 @@ import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
 import { ragSearch } from "@/lib/rag_lite";
+import { agentForStage, JURIDIA_AGENTS } from "@/lib/agent-registry";
 import {
   buildSystemPrompt,
   buildOutlineUserPrompt,
@@ -222,7 +223,13 @@ export async function runMinutaPipeline(
   emit({ type: "stage", stage: "prepare", status: "start" });
 
   // 2) Inteiro teor + contexto do Cérebro (pseudonimizado junto — tarja-1)
-  const factsBlock = buildFactsBlock(body.fields);
+  const caseFiles = body.caseId
+    ? await db.caseFile.findMany({ where: { caseId: body.caseId, userId: authUser.uid, status: "ready" }, orderBy: { createdAt: "asc" }, select: { id: true, originalName: true, extractedText: true } })
+    : [];
+  const filesBlock = caseFiles.length
+    ? `\n\n[Inteiro teor dos autos processados]\n${caseFiles.map((file) => `Arquivo: ${file.originalName}\n${file.extractedText.slice(0, 120000)}`).join("\n\n")}`
+    : "";
+  const factsBlock = `${buildFactsBlock(body.fields)}${filesBlock}`;
   const rawContextForModel = body.brainContext?.trim()
     ? `${factsBlock}\n\n[Contexto do Cérebro Jurídico]\n${body.brainContext.trim()}`
     : factsBlock;
@@ -305,6 +312,7 @@ export async function runMinutaPipeline(
       providerSnapshot: JSON.stringify({
         provider: "zai",
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
+        agents: JURIDIA_AGENTS.map(({ slug, mode, requiresHumanReview }) => ({ slug, mode, requiresHumanReview })),
       }),
     },
   });
@@ -328,7 +336,7 @@ export async function runMinutaPipeline(
         runId: run.id,
         stepNo,
         kind,
-        toolName,
+        toolName: `${agentForStage(toolName as "prepare" | "outline" | "draft" | "review" | "finalize").slug}:${toolName}`,
         status,
         inputHash: null,
         outputHash: hashOf(JSON.stringify(output)),
@@ -349,7 +357,13 @@ export async function runMinutaPipeline(
     zai = null;
   }
 
-  const styleText = styleDirective(body.writingStyle);
+  const approvedStyle = await db.styleProfile.findFirst({ where: { userId: authUser.uid, approved: true }, orderBy: { updatedAt: "desc" } });
+  let styleText = styleDirective(body.writingStyle);
+  if (approvedStyle) {
+    let examples: string[] = [];
+    try { examples = JSON.parse(approvedStyle.examples) as string[]; } catch { examples = []; }
+    styleText += `\n\nPERFIL PERSONALIZADO APROVADO: ${approvedStyle.name}\n${approvedStyle.description}\n${examples.slice(0, 3).map((example) => `Exemplo aprovado: ${example}`).join("\n")}`;
+  }
 
   // Proveniência: qual campo do formulário introduziu cada marcador — ajuda o
   // LLM a usar [NOME_1] como AUTOR e não como rótulo literal ("Nome Autor").
@@ -578,6 +592,28 @@ export async function runMinutaPipeline(
     },
   });
 
+  const skillVersions = await db.skillVersion.findMany({
+    where: { slug: { in: skills.map((s) => s.slug) }, status: "approved" },
+    orderBy: [{ slug: "asc" }, { version: "desc" }],
+  });
+  const latestBySlug = new Map<string, (typeof skillVersions)[number]>();
+  for (const skill of skillVersions) if (!latestBySlug.has(skill.slug)) latestBySlug.set(skill.slug, skill);
+  if (skills.length) {
+    await db.documentSkillUsage.createMany({
+      data: skills.map((skill) => {
+        const approved = latestBySlug.get(skill.slug);
+        const content = approved?.content || skill.content;
+        return {
+          documentId: doc.id,
+          skillSlug: skill.slug,
+          skillVersion: approved?.version || 1,
+          contentHash: createHash("sha256").update(content).digest("hex"),
+          contentSnapshot: content,
+        };
+      }),
+    });
+  }
+
   // Cota do usuário autenticado (antes nunca era checada)
   await db.user.update({
     where: { id: authUser.uid },
@@ -595,6 +631,7 @@ export async function runMinutaPipeline(
         provider: "zai",
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
         stages: stages.map((s) => ({ stage: s.stage, ok: s.ok, tokens: s.tokens })),
+        agents: JURIDIA_AGENTS.map(({ slug, mode, requiresHumanReview }) => ({ slug, mode, requiresHumanReview })),
       }),
     },
   });

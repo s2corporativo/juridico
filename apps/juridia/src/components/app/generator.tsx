@@ -47,6 +47,7 @@ import { useAppStore } from "@/lib/store";
 import type { TemplateDTO, SkillDTO, GenerateMinutaResponse } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
 import { BatchPanel } from "./batch-panel";
+import { CaseFilesPanel } from "./case-files-panel";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
@@ -203,6 +204,7 @@ export function Generator() {
         templateSlug: current.slug,
         fields,
         skillSlugs: selectedSkillSlugs,
+        caseId: "default-case",
         title: title || undefined,
         brainContext: brainContext || undefined,
         writingStyle: writingStyle || undefined,
@@ -295,6 +297,8 @@ export function Generator() {
           </Badge>
         )}
       </div>
+
+      <CaseFilesPanel />
 
       {/* Alternância de modo: individual × lote (molde) */}
       <div className="mb-5 flex gap-2">

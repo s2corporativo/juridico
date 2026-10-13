@@ -599,3 +599,131 @@ model JudgeSimulation {
 
   @@index([caseId])
 }
+
+// Camada documental da experiência MinutaIA; permanece no banco isolado da JuridIA.
+model CaseFile {
+  id            String   @id @default(cuid())
+  caseId        String   @default("default-case")
+  userId        String?
+  originalName  String
+  mimeType      String
+  sha256        String
+  sizeBytes     Int
+  pageCount     Int      @default(0)
+  status        String   @default("uploaded") // uploaded | processing | ready | failed
+  extractedText String   @default("")
+  error         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  pages         CaseFilePage[]
+  @@index([caseId])
+  @@index([userId])
+  @@unique([userId, sha256])
+}
+
+model CaseFilePage {
+  id        String   @id @default(cuid())
+  fileId    String
+  pageNo    Int
+  text      String   @default("")
+  sha256    String
+  evidence  String   @default("{}") // offsets, blocos e origem da extração
+  createdAt DateTime @default(now())
+  file      CaseFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  @@unique([fileId, pageNo])
+  @@index([fileId])
+}
+
+model DocumentVersion {
+  id           String   @id @default(cuid())
+  documentId   String
+  userId       String?
+  version      Int
+  title        String
+  content      String
+  source       String   @default("human") // human | ai | import | restore
+  changeNote   String?
+  createdAt    DateTime @default(now())
+  @@unique([documentId, version])
+  @@index([documentId, createdAt])
+}
+
+model DocumentComment {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String?
+  anchor     String
+  body       String
+  status     String   @default("open") // open | resolved
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([documentId, status])
+}
+
+model DocumentSuggestion {
+  id           String   @id @default(cuid())
+  documentId   String
+  userId       String?
+  operation    String   // insert | replace | delete
+  anchor       String
+  replacement  String
+  reason       String?
+  status       String   @default("pending") // pending | accepted | rejected
+  createdAt    DateTime @default(now())
+  decidedAt    DateTime?
+  @@index([documentId, status])
+}
+
+model StyleProfile {
+  id          String   @id @default(cuid())
+  userId      String?
+  name        String
+  description String   @default("")
+  examples    String   @default("[]")
+  approved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([userId, approved])
+}
+
+model DocumentSkillUsage {
+  id            String   @id @default(cuid())
+  documentId    String
+  skillSlug     String
+  skillVersion  Int
+  contentHash   String
+  contentSnapshot String
+  createdAt     DateTime @default(now())
+  @@index([documentId])
+  @@unique([documentId, skillSlug, skillVersion])
+}
+
+model BatchJob {
+  id            String   @id @default(cuid())
+  userId        String?
+  templateSlug  String
+  moldDocumentId String?
+  status        String   @default("queued") // queued | molding | running | paused | completed | failed
+  total         Int      @default(0)
+  completed     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  items         BatchItem[]
+  @@index([userId, status])
+}
+
+model BatchItem {
+  id          String   @id @default(cuid())
+  batchId     String
+  itemNo      Int
+  title       String?
+  fields      String   @default("{}")
+  status      String   @default("queued") // queued | running | completed | failed
+  documentId  String?
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  batch       BatchJob @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  @@unique([batchId, itemNo])
+  @@index([batchId, status])
+}

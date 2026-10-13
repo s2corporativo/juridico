@@ -172,37 +172,20 @@ export function Editor() {
     URL.revokeObjectURL(url);
   }
 
-  // Exporta um documento .doc (HTML com namespace Word, abre no Word/Google Docs)
-  function downloadDocx() {
-    const htmlBody = contentToHtml(content);
-    const fullHtml = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${esc(title)}</title>
-    <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
-    <style>
-      @page Section1 { size: 21cm 29.7cm; margin: 2.5cm 2.5cm 2.5cm 2.5cm; }
-      div.Section1 { page: Section1; }
-      body { font-family: 'Times New Roman', Georgia, serif; font-size: 12pt; line-height: 1.75; color: #1a1a1a; }
-      h1 { font-size: 16pt; text-transform: uppercase; margin: 0 0 12pt; text-align: center; }
-      h2 { font-size: 13pt; text-transform: uppercase; margin: 18pt 0 8pt; }
-      h3 { font-size: 12pt; margin: 14pt 0 6pt; }
-      p { margin: 0 0 8pt; text-align: justify; text-indent: 1.25cm; }
-      p:first-of-type { text-indent: 0; }
-      ul, ol { margin: 0 0 8pt 1.5cm; }
-      .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 8pt; margin-bottom: 16pt; }
-      .footer { margin-top: 24pt; border-top: 1px solid #ccc; padding-top: 8pt; text-align: center; font-size: 9pt; color: #666; }
-    </style></head><body><div class="Section1">
-    <div class="header"><h1>${esc(title)}</h1></div>
-    ${htmlBody}
-    <div class="footer">Gerado por JuridIA — Inteligência Artificial para o Direito Brasileiro · ${new Date().toLocaleDateString("pt-BR")}</div>
-    </div></body></html>`;
-    const blob = new Blob(["\ufeff", fullHtml], { type: "application/msword" });
+  async function downloadDocument(format: "docx" | "pdf") {
+    if (!doc) return;
+    const response = await fetch("/api/documents/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documentId: doc.id, format }) });
+    if (!response.ok) { toast({ title: "Falha na exportação", variant: "destructive" }); return; }
+    const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${title.replace(/[^\w\s-]/g, "")}.doc`;
+    a.download = `${title.replace(/[^\w\s-]/g, "")}.${format}`;
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: "Documento .doc exportado", description: "Abra no Word ou Google Docs." });
+    toast({ title: `${format.toUpperCase()} exportado`, description: "Layout A4 gerado pelo servidor." });
   }
+  function downloadDocx() { void downloadDocument("docx"); }
 
   function downloadTxt() {
     const blob = new Blob([content], { type: "text/plain" });
@@ -214,37 +197,7 @@ export function Editor() {
     URL.revokeObjectURL(url);
   }
 
-  function printPdf() {
-    const w = window.open("", "_blank", "width=800,height=900");
-    if (!w) {
-      toast({ title: "Popup bloqueado. Permita popups para exportar PDF.", variant: "destructive" });
-      return;
-    }
-    const html = contentToHtml(content);
-    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${title}</title>
-    <style>
-      @page { margin: 2.5cm; }
-      body { font-family: Georgia, 'Times New Roman', serif; font-size: 12pt; line-height: 1.75; color: #1a1a1a; }
-      h1 { font-size: 16pt; text-transform: uppercase; margin: 0 0 12pt; }
-      h2 { font-size: 13pt; text-transform: uppercase; margin: 18pt 0 8pt; }
-      h3 { font-size: 12pt; margin: 14pt 0 6pt; }
-      p { margin: 0 0 8pt; text-align: justify; }
-      ul, ol { margin: 0 0 8pt 1.5em; }
-      .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 8pt; margin-bottom: 16pt; }
-      .header h1 { margin: 0; }
-      .footer { margin-top: 24pt; border-top: 1px solid #ccc; padding-top: 8pt; text-align: center; font-size: 9pt; color: #666; }
-      @media print { .no-print { display: none; } }
-    </style></head><body>
-    <div class="header"><h1>${title}</h1></div>
-    ${html}
-    <div class="footer">Gerado por JuridIA — Inteligência Artificial para o Direito Brasileiro · ${new Date().toLocaleDateString("pt-BR")}</div>
-    <div class="no-print" style="text-align:center;padding:16pt;">
-      <button onclick="window.print()" style="padding:8pt 24pt;font-size:11pt;background:#1a4d3a;color:white;border:none;border-radius:4pt;cursor:pointer;">Imprimir / Salvar PDF</button>
-    </div>
-    </body></html>`);
-    w.document.close();
-    toast({ title: "PDF aberto em nova aba", description: "Use Ctrl+P / Cmd+P para salvar como PDF." });
-  }
+  function printPdf() { void downloadDocument("pdf"); }
 
   function contentToHtml(md: string): string {
     return md

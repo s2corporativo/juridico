@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BRAIN_JURIMETRY_LIMITS,
+  buildDamageCausalBreakdown,
   buildJurimetrySummary,
   buildThesisKey,
   detectPersonalData,
@@ -163,6 +164,18 @@ describe("descriptive jurimetry summary", () => {
     };
     walk(summary);
     expect(keys.join(" ")).not.toMatch(/exito|êxito|success|procedencia|ranking|win/i);
+  });
+
+
+  it("decomposes moral and material damages by generating cause", () => {
+    expect(buildDamageCausalBreakdown([
+      { label: "Indenização por dano moral por negativação indevida", amount: 7 },
+      { label: "Indenização por dano material por cobrança indevida", amount: 4 },
+      { label: "Indenização por dano moral por negativação indevida", amount: 3 },
+    ])).toEqual([
+      { damageType: "moral", cause: "negativação indevida", amount: 10 },
+      { damageType: "material", cause: "cobrança indevida", amount: 4 },
+    ]);
   });
 
   it("produces a prompt block that disclaims outcome inference", () => {
