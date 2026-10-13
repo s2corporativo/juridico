@@ -101,7 +101,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const steps: BrainStep[] = STEPS.map((s) => ({ ...s, status: "pending" as const }));
   const r: Partial<BrainResult> = { steps };
   let tokens = 0;
-  if (body.caseId && !await ownsCase(authUser.uid, body.caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  if (!body.caseId || !await ownsCase(authUser.uid, body.caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
   const zai = await ZAI.create();
 
   const tok = (c: unknown) => tokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
@@ -269,25 +269,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     tok(c); steps[7].status = "done"; steps[7].result = r.strategy;
   } catch (e) { steps[7].status = "error"; steps[7].error = e instanceof Error ? e.message : "Erro"; r.strategy = { proceduralPath: "", immediateActions: [], documentsToCollect: [], risks: [], recommendation: "Análise indisponível" }; }
 
-  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId || null, metadata: { title, totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length }, userId: authUser.uid });
-  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: `Análise cerebral: ${title}`, metadata: { totalTokens: tokens, caseId: body.caseId }, userId: authUser.uid });
-
-  // ── Persistir análise (memória jurídica por processo) ──────────────────
-  if (body.caseId) {
-    try {
-      await db.brainAnalysis.create({
-        data: {
-          caseId: body.caseId,
-          title,
-          factsInput: facts,
-          result: JSON.stringify({ ...r, steps, totalTokens: tokens }),
-          ramoJuridico: r.ramoJuridico || null,
-          hypothesis: r.viability?.hypothesis || null,
-          tokensUsed: tokens,
-        },
-      });
-    } catch { /* não bloquear o fluxo se falhar a persistência */ }
+  // Uma análise jurídica só é entregue como concluída após persistência confirmada.
+  // A autorização do caso foi validada antes de qualquer chamada à IA.
+  try {
+    await db.brainAnalysis.create({
+      data: {
+        caseId: body.caseId,
+        title,
+        factsInput: facts,
+        result: JSON.stringify({ ...r, steps, totalTokens: tokens }),
+        ramoJuridico: r.ramoJuridico || null,
+        hypothesis: r.viability?.hypothesis || null,
+        tokensUsed: tokens,
+      },
+    });
+  } catch {
+    return NextResponse.json({ error: "Não foi possível salvar a análise jurídica. Tente novamente." }, { status: 503 });
   }
+
+  await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId, metadata: { title, totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length }, userId: authUser.uid });
+  await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: `Análise cerebral: ${title}`, metadata: { totalTokens: tokens, caseId: body.caseId }, userId: authUser.uid });
 
   return NextResponse.json({ ...r, steps, totalTokens: tokens } as BrainResult);
 }
