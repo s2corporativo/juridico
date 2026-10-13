@@ -200,6 +200,35 @@ function top<T extends Amount>(rows: T[] | undefined, limit = TOP_N) {
   return [...(rows ?? [])].sort((a, b) => b.amount - a.amount).slice(0, limit);
 }
 
+function damageType(label: string): "moral" | "material" | null {
+  const value = label.toLowerCase();
+  if (value.includes("dano moral") || value.includes("danos morais")) return "moral";
+  if (value.includes("dano material") || value.includes("danos materiais")) return "material";
+  return null;
+}
+
+function damageCause(label: string): string {
+  const value = label.replace(/\s+/g, " ").trim();
+  const after = value.match(/(?:por|decorrente de|em razão de|relativo a)\s+(.+)$/i)?.[1];
+  return (after || value)
+    .replace(/^dano(?:s)?\s+(?:moral|morais|material|materiais)\s+(?:por|decorrente de|em razão de|relativo a)\s+/i, "")
+    .replace(/[.;:]+$/, "")
+    .trim();
+}
+
+export function buildDamageCausalBreakdown(categories: Array<{ label: string; amount: number }> = []) {
+  const grouped = new Map<string, { damageType: "moral" | "material"; cause: string; amount: number }>();
+  for (const category of categories) {
+    const type = damageType(category.label);
+    if (!type) continue;
+    const cause = damageCause(category.label);
+    const key = `${type}:${cause.toLowerCase()}`;
+    const current = grouped.get(key);
+    grouped.set(key, current ? { ...current, amount: current.amount + category.amount } : { damageType: type, cause, amount: category.amount });
+  }
+  return Array.from(grouped.values()).sort((a, b) => b.amount - a.amount).slice(0, TOP_N);
+}
+
 export type JurimetryInput = {
   civilConsumer?: {
     readiness: Record<string, unknown>;
@@ -234,9 +263,10 @@ export function buildJurimetrySummary(input: JurimetryInput) {
           topCategories: top(civil.categories),
           topMunicipalities: top(civil.municipalities),
           topJudgingBodies: top(civil.bodies),
+          damageCausalBreakdown: buildDamageCausalBreakdown(civil.categories),
           monthly: civil.monthly,
         }
-      : { available: false, readiness: {} as Record<string, unknown>, total: 0, topCategories: [], topMunicipalities: [], topJudgingBodies: [], monthly: [] },
+      : { available: false, readiness: {} as Record<string, unknown>, total: 0, topCategories: [], topMunicipalities: [], topJudgingBodies: [], damageCausalBreakdown: [], monthly: [] },
     nationalJec: national
       ? {
           available: nationalAvailable,
@@ -257,6 +287,7 @@ export function jurimetrySummaryToPrompt(summary: ReturnType<typeof buildJurimet
     lines.push(`RMBH cível/consumidor (JEC): ${civil.total} processos distribuídos no período coberto.`);
     if (civil.topCategories.length) lines.push(`Principais assuntos: ${civil.topCategories.slice(0, 5).map(c => `${c.label} (${c.amount})`).join("; ")}.`);
     if (civil.topMunicipalities.length) lines.push(`Principais municípios: ${civil.topMunicipalities.slice(0, 5).map(m => `${m.municipalityName} (${m.amount})`).join("; ")}.`);
+    if (civil.damageCausalBreakdown.length) lines.push(`Danos por causa/assunto gerador: ${civil.damageCausalBreakdown.slice(0, 5).map(c => `${c.damageType} — ${c.cause} (${c.amount})`).join("; ")}.`);
   }
   const national = summary.nationalJec;
   if (national.available) {

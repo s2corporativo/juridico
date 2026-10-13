@@ -126,7 +126,7 @@ export function BatchPanel({
 
   const [casesText, setCasesText] = useState("");
   const [phase, setPhase] = useState<"idle" | "mold" | "approving" | "batch">("idle");
-  const [batchId] = useState(() =>
+  const [batchId, setBatchId] = useState(() =>
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `batch-${Date.now()}`
@@ -160,17 +160,24 @@ export function BatchPanel({
     setBusy(true);
     setResults([]);
     try {
+      const batchResponse = await fetch("/api/batches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ templateSlug: template.slug, items: cases.map((item, index) => ({ itemNo: index + 1, title: item.title, fields: item.fields })) }) });
+      const batchData = await batchResponse.json();
+      if (!batchResponse.ok) throw new Error(batchData.error || "falha ao criar lote");
+      const persistedBatchId = batchData.batch.id as string;
+      setBatchId(persistedBatchId);
       const data = await callGenerate({
         templateSlug: template.slug,
         fields: cases[0].fields,
         skillSlugs,
+        caseId: "default-case",
         title: cases[0].title || undefined,
-        batchId,
+        batchId: persistedBatchId,
         brainContext: brainContext || undefined,
         writingStyle: writingStyle || undefined,
       });
       setMoldContent(data.document.generatedContent);
       setMoldTitle(data.document.title);
+      await fetch("/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId: persistedBatchId, itemNo: 1, status: "completed", documentId: data.document.id }) });
       setPhase("approving");
       setCurrentDocId(data.document.id);
       toast({
@@ -205,6 +212,7 @@ export function BatchPanel({
           templateSlug: template.slug,
           fields: c.fields,
           skillSlugs,
+          caseId: "default-case",
           title: c.title || undefined,
           batchId,
           moldContent,
@@ -220,12 +228,14 @@ export function BatchPanel({
           violations: data.validation?.violations?.length ?? 0,
           degraded: data.pipeline?.degraded,
         });
+        await fetch("/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId, itemNo: c.index + 1, status: "completed", documentId: data.document.id }) });
       } catch (e) {
         acc.push({
           label: c.title || `Caso ${c.index + 2}`,
           ok: false,
           error: e instanceof Error ? e.message : "falha",
         });
+        await fetch("/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId, itemNo: c.index + 1, status: "failed", error: e instanceof Error ? e.message : "falha" }) });
       }
       setResults([...acc]);
       setProgress({ current: i + 1, total: rest.length });

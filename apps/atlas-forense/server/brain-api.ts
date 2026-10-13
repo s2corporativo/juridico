@@ -120,6 +120,10 @@ export async function handleJurimetry(req: Request, res: Response) {
     filter: { from: from ?? null, to: to ?? null, municipalityIbgeCode: municipalityIbgeCode ?? null },
     limits: [...BRAIN_JURIMETRY_LIMITS],
     summary,
+    interpretation: {
+      damageCausalBreakdown: summary.rmbhCivilConsumer.damageCausalBreakdown,
+      note: "Agrupamento descritivo por tipo de dano e causa/assunto textual; não representa procedência, valor de condenação ou taxa de êxito.",
+    },
     promptBlock: jurimetrySummaryToPrompt(summary),
   });
 }

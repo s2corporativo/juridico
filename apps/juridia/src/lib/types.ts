@@ -58,6 +58,8 @@ export interface GenerateMinutaRequest {
   skillSlugs: string[];
   title?: string;
   batchId?: string;
+  /** Caso documental cujos autos devem orientar a minuta. */
+  caseId?: string;
   /**
    * Minuta-molde já aprovada pelo advogado (geração em lote).
    * Quando presente, o redator segue a estrutura/tom da molde, adaptando

@@ -66,23 +66,38 @@ export function Settings() {
   const { profile, setProfile, writingStyle, setWritingStyle, defaultSkills, toggleDefaultSkill } = useAppStore();
   const [skills, setSkills] = useState<SkillDTO[]>([]);
   const [saving, setSaving] = useState(false);
+  const [styleProfile, setStyleProfile] = useState({ id: "", name: "Meu estilo", description: "", example: "", approved: false });
 
   useEffect(() => {
     fetch("/api/skills")
       .then((r) => r.json())
       .then((d) => setSkills(d.skills || []))
       .catch(() => null);
+    fetch("/api/style-profiles")
+      .then((r) => r.json())
+      .then((d) => {
+        const current = d.profiles?.[0];
+        if (current) setStyleProfile({ id: current.id, name: current.name, description: current.description, example: JSON.parse(current.examples || "[]")[0] || "", approved: current.approved });
+      })
+      .catch(() => null);
   }, []);
 
-  function save() {
+  async function save() {
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/style-profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: styleProfile.id || undefined, name: styleProfile.name, description: styleProfile.description, examples: styleProfile.example ? [styleProfile.example] : [], approved: styleProfile.approved }) });
+      if (!res.ok) throw new Error("falha ao persistir perfil");
+      const data = await res.json();
+      setStyleProfile((current) => ({ ...current, id: data.profile?.id || current.id }));
       setSaving(false);
       toast({
         title: "Perfil salvo",
         description: `Estilo de redação: ${STYLES.find((s) => s.id === writingStyle)?.label}`,
       });
-    }, 600);
+    } catch {
+      setSaving(false);
+      toast({ title: "Falha ao salvar perfil", variant: "destructive" });
+    }
   }
 
   return (
@@ -243,6 +258,17 @@ export function Settings() {
                   </label>
                 ))}
               </RadioGroup>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Sparkles className="h-4 w-4 text-primary" />Perfil de estilo aprendido</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <Input value={styleProfile.name} onChange={(e) => setStyleProfile((p) => ({ ...p, name: e.target.value }))} placeholder="Nome do perfil" />
+              <Input value={styleProfile.description} onChange={(e) => setStyleProfile((p) => ({ ...p, description: e.target.value }))} placeholder="Descrição do padrão de redação" />
+              <textarea value={styleProfile.example} onChange={(e) => setStyleProfile((p) => ({ ...p, example: e.target.value }))} placeholder="Cole um trecho aprovado pelo advogado" className="min-h-28 w-full rounded-md border bg-background p-3 text-sm" />
+              <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={styleProfile.approved} onChange={(e) => setStyleProfile((p) => ({ ...p, approved: e.target.checked }))} /> Aprovar para uso nas próximas minutas</label>
+              <p className="text-xs text-muted-foreground">O perfil não substitui o estilo selecionado sem aprovação explícita.</p>
             </CardContent>
           </Card>
 

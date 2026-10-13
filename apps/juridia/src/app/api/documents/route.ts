@@ -83,6 +83,30 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   });
   if (!owned) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
 
+  const last = await db.documentVersion.findFirst({
+    where: { documentId: body.id },
+    orderBy: { version: "desc" },
+    select: { version: true },
+  });
+  const version = (last?.version ?? 0) + 1;
+  const snapshot = await db.document.findUnique({
+    where: { id: body.id },
+    select: { title: true, generatedContent: true },
+  });
+  if (snapshot) {
+    await db.documentVersion.create({
+      data: {
+        documentId: body.id,
+        userId: authUser.uid,
+        version,
+        title: snapshot.title,
+        content: snapshot.generatedContent,
+        source: "human",
+        changeNote: "Salvamento pelo editor",
+      },
+    });
+  }
+
   await logAuditEvent({
     action: "edit_document",
     resource: "document",
@@ -95,7 +119,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     },
   });
 
-  return NextResponse.json({ ok: true, document: { id: owned.id, title: owned.title } });
+  return NextResponse.json({ ok: true, document: { id: owned.id, title: owned.title, version } });
 }
 
 function safeParseArr(raw: string | null): string[] {
