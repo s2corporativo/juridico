@@ -6,7 +6,10 @@ import { requireAuth } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 const DATAJUD_API_BASE = "https://api-publica.datajud.cnj.jus.br";
-const DATAJAD_TOKEN = "c7o6ektnW6n4p3uI0r07bC8Y4h3t2m3";
+const DATAJUD_TOKEN = process.env.DATAJUD_TOKEN;
+if (!DATAJUD_TOKEN) {
+  throw new Error("DATAJUD_TOKEN não configurado. Defina a variável de ambiente DATAJUD_TOKEN.");
+}
 
 interface DatajudResultado {
   cnj: string;
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const resp = await fetch(`${DATAJUD_API_BASE}/${endpoint}/api/public/processos/numero/${cnjLimpo}`, {
       method: "GET",
       headers: {
-        "X-Request-DataJud": DATAJAD_TOKEN,
+        "X-Request-DataJud": DATAJUD_TOKEN,
         "Accept": "application/json",
       },
       signal: AbortSignal.timeout(15000),
@@ -109,7 +112,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const resp = await fetch(`${DATAJUD_API_BASE}/${endpoint}/api/public/processos/pesquisa`, {
         method: "POST",
         headers: {
-          "X-Request-DataJud": DATAJAD_TOKEN,
+          "X-Request-DataJud": DATAJUD_TOKEN,
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
@@ -141,7 +144,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const resp = await fetch(`${DATAJUD_API_BASE}/${endpoint}/api/public/processos/numero/${cnjLimpo}`, {
         method: "GET",
         headers: {
-          "X-Request-DataJud": DATAJAD_TOKEN,
+          "X-Request-DataJud": DATAJUD_TOKEN,
           Accept: "application/json",
         },
         signal: AbortSignal.timeout(15000),

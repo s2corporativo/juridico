@@ -33,9 +33,10 @@ import {
   XCircle,
   FileCheck2,
   PencilLine,
+  XCircle,
 } from "lucide-react";
 
-const MAX_BATCH_CASES = 10;
+const MAX_BATCH_CASES = 100;
 
 interface ParsedCase {
   index: number;
@@ -136,6 +137,7 @@ export function BatchPanel({
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<BatchResult[]>([]);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [paused, setPaused] = useState(false);
 
   const parsed = useMemo(() => parseBatchCases(casesText, template), [casesText, template]);
   const cases = parsed.cases.slice(0, MAX_BATCH_CASES);
@@ -202,10 +204,16 @@ export function BatchPanel({
       return;
     }
     setBusy(true);
+    setPaused(false);
     setPhase("batch");
     setProgress({ current: 0, total: rest.length });
     const acc: BatchResult[] = [];
     for (let i = 0; i < rest.length; i++) {
+      // Respeita pausa explícita entre itens
+      while (paused) {
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      if (!busy) break; // cancelado
       const c = rest[i];
       try {
         const data = await callGenerate({
@@ -248,6 +256,18 @@ export function BatchPanel({
     });
   }
 
+  function pauseBatch() {
+    setPaused(true);
+    toast({ title: "Lote pausado", description: "Pode retomar quando quiser." });
+    fetch("/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId, status: "paused" }) });
+  }
+
+  function resumeBatch() {
+    setPaused(false);
+    toast({ title: "Retomando lote…" });
+    fetch("/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId, status: "running" }) });
+  }
+
   const openDoc = (id?: string) => {
     if (!id) return;
     setCurrentDocId(id);
@@ -268,8 +288,7 @@ export function BatchPanel({
             Cole os casos em blocos separados por uma linha <code>---</code>. Cada linha é
             <code> campo: valor</code> (aceita o rótulo do template ou a chave). O primeiro bloco
             gera a <strong>minuta-molde</strong>, que você aprova antes do restante do lote.
-            Máximo de {MAX_BATCH_CASES} casos por lote.
-          </div>
+            Máximo de {MAX_BATCH_CASES} casos por lote.          </div>
           <Textarea
             rows={10}
             value={casesText}
@@ -353,6 +372,21 @@ export function BatchPanel({
           </CardHeader>
           <CardContent className="space-y-3">
             <Progress value={progress.total ? (progress.current / progress.total) * 100 : 0} />
+            <div className="flex items-center gap-2">
+              {busy && (
+                <Button size="sm" variant="outline" onClick={pauseBatch}>
+                  <XCircle className="mr-1 h-3 w-3" />
+                  Pausar
+                </Button>
+              )}
+              {paused && !busy && (
+                <Button size="sm" variant="default" onClick={resumeBatch}>
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  Retomar
+                </Button>
+              )}
+              {paused && <span className="text-xs text-amber-600 dark:text-amber-400">Pausado — clique em retomar para continuar.</span>}
+            </div>
             <ul className="space-y-1.5">
               {results.map((r, i) => (
                 <li key={i} className="flex items-center gap-2 text-xs">

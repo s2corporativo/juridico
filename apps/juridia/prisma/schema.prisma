@@ -718,7 +718,7 @@ model BatchItem {
   itemNo      Int
   title       String?
   fields      String   @default("{}")
-  status      String   @default("queued") // queued | running | completed | failed
+  status      String   @default("queued") // queued | running | paused | completed | failed
   documentId  String?
   error       String?
   createdAt   DateTime @default(now())
