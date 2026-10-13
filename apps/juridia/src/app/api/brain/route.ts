@@ -5,6 +5,7 @@ import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
 import { requireAuth } from "@/lib/auth";
 import { ownsCase } from "@/lib/owned-case";
+import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import {
   decisionToBrainItem,
   extractSearchTerms,
@@ -102,7 +103,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const r: Partial<BrainResult> = { steps };
   let tokens = 0;
   if (!body.caseId || !await ownsCase(authUser.uid, body.caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
-  const zai = await ZAI.create();
+  // Redigir identificadores no servidor ANTES de acionar o provedor externo.
+  // O mapa de substituições não é enviado nos prompts.
+  const pseudonymizedFacts = pseudonymize(facts);
+  const safeFacts = pseudonymizedFacts.text;
+  const zai = await ZAI.create().catch(() => null);
+  if (!zai) return NextResponse.json({ error: "Provedor de IA temporariamente indisponível." }, { status: 503 });
 
   const tok = (c: unknown) => tokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
 
@@ -112,7 +118,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const c = await zai.chat.completions.create({
       messages: [
         { role: "system", content: `Classifique o caso em UM destes 16 ramos. Responda APENAS com JSON: {"ramo":"...","confianca":0.0-1.0}. Ramos: civil, penal, trabalhista, tributario, consumer, family, previdenciario, empresarial, administrativo, bancario, ambiental, saude, imobiliario, internacional, digital_lgpd, transito` },
-        { role: "user", content: facts.slice(0, 500) },
+        { role: "user", content: safeFacts.slice(0, 500) },
       ],
       thinking: { type: "disabled" }, temperature: 0.2, max_tokens: 100,
     });
@@ -129,7 +135,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { role: "system", content: `Extraia informações estruturadas em JSON. Para CADA item, rotule o estado epistêmico: "fato_extraido" (literal do texto), "alegacao_cliente" (não confirmado), "inferencia_ia" (inferido). Responda APENAS com JSON, sem markdown. Use marcadores [NOME_0001] se houver dados sensíveis.
 
 {"parties":[{"role":"autor|réu|requerente|requerido|terceiro","name":"nome ou null","type":"pessoa física|pessoa jurídica|órgão público","state":"fato_extraido|alegacao_cliente|inferencia_ia"}],"timeline":[{"date":"data","event":"evento","state":"fato_extraido|alegacao_cliente|inferencia_ia"}],"requests":[{"text":"pedido","state":"alegacao_cliente|inferencia_ia"}],"values":[{"label":"rótulo","amount":"R$ X","state":"fato_extraido|alegacao_cliente|inferencia_ia"}]}` },
-        { role: "user", content: facts },
+        { role: "user", content: safeFacts },
       ],
       thinking: { type: "disabled" }, temperature: 0.3, max_tokens: 1000,
     });
@@ -150,7 +156,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const c = await zai.chat.completions.create({
       messages: [
         { role: "system", content: `Identifique as QUESTÕES JURÍDICAS do caso. Para cada, indique área, relevância (alta/média/baixa) e estado epistêmico ("fato_extraido" se surge dos fatos, "inferencia_ia" se é inferência jurídica, "alegacao_cliente" se é alegação). Responda APENAS com JSON: {"legalIssues":[{"question":"...","area":"civil|penal|trabalhista|tributario|consumer|family|previdenciario|empresarial|administrativo|bancario|ambiental|saude|imobiliario|internacional|digital_lgpd|transito","relevance":"alta|média|baixa","state":"fato_extraido|alegacao_cliente|inferencia_ia","note":"explicação curta"}]}` },
-        { role: "user", content: `Fatos:\n${facts}\n\nPartes:\n${JSON.stringify(r.parties)}\nPedidos:\n${JSON.stringify(r.requests)}` },
+        { role: "user", content: `Fatos:\n${safeFacts}\n\nPartes:\n${JSON.stringify(r.parties)}\nPedidos:\n${JSON.stringify(r.requests)}` },
       ],
       thinking: { type: "disabled" }, temperature: 0.4, max_tokens: 800,
     });
@@ -164,7 +170,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const issues = r.legalIssues || [];
     // Constroi query combinando fatos + questões jurídicas
-    const ragQuery = `${facts} ${issues.map((i) => i.question).join(" ")}`;
+    const ragQuery = `${safeFacts} ${issues.map((i) => i.question).join(" ")}`;
     // Busca semântica na base curada (TF-IDF cosine similarity)
     const ragResults = await ragSearch(ragQuery, 8);
     r.applicableLaw = ragResults.map((res) => ({
@@ -212,7 +218,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     if (needsWebFallback) {
       r.atlas.fallback = true;
-      const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${facts.slice(0, 100)}`;
+      const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${safeFacts.slice(0, 100)}`;
       const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
       r.jurisprudence = Array.isArray(raw) ? raw.slice(0, 8).map(webResultToBrainItem) : [];
     }
@@ -230,7 +236,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { role: "system", content: `Você é um advogado sênior emitindo um PARECER DE VIABILIDADE. NUNCA use percentual ou "chance de êxito" — isso é HIPÓTESE sem base estatística. A jurimetria fornecida é apenas DESCRITIVA (volume de distribuição): jamais a use para estimar êxito ou tendência decisória. Itens de jurisprudência com origem "web_nao_verificado" são hipóteses não verificadas; só trate como jurisprudência os itens "atlas_compendio". Para cada ponto forte/fraco, rotule o estado epistêmico. Responda APENAS com JSON:
 
 {"hypothesis":"favorável|incerto|desfavorável","hypothesisNote":"explicar que é hipótese sem base estatística, requer validação jurisprudencial","strengths":[{"claim":"ponto forte","state":"fato_extraido|alegacao_cliente|inferencia_ia|direito_positivo|jurisprudencia","source":"origem","confidence":0.0-1.0,"note":"explicação"}],"weaknesses":[{"claim":"ponto fraco","state":"fato_extraido|alegacao_cliente|inferencia_ia","source":"origem","confidence":0.0-1.0,"note":"explicação"}],"reasoning":"raciocínio conectando fatos, lei e jurisprudência","evidence":[{"claim":"afirmação consolidada","state":"fato_extraido|inferencia_ia|direito_positivo|jurisprudencia","source":"origem","confidence":0.0-1.0,"note":"nota"}]}` },
-        { role: "user", content: `## Fatos\n${facts}\n\n## Legislação\n${lawCtx}\n\n## Jurisprudência\n${jurCtx}\n\n## Jurimetria (Atlas, descritiva)\n${jurimetryCtx}\n\n## Pedidos\n${JSON.stringify(r.requests)}` },
+        { role: "user", content: `## Fatos\n${safeFacts}\n\n## Legislação\n${lawCtx}\n\n## Jurisprudência\n${jurCtx}\n\n## Jurimetria (Atlas, descritiva)\n${jurimetryCtx}\n\n## Pedidos\n${JSON.stringify(r.requests)}` },
       ],
       thinking: { type: "disabled" }, temperature: 0.4, max_tokens: 1500,
     });
@@ -245,7 +251,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const c = await zai.chat.completions.create({
       messages: [
         { role: "system", content: `Identifique LACUNAS factuais/probatórias e faça PERGUNTAS para o cliente. Cada lacuna deve ter estado epistêmico. Responda APENAS com JSON: {"gaps":[{"what":"informação faltante","why":"por que importa","question":"pergunta para o cliente","state":"fato_extraido|alegacao_cliente|inferencia_ia"}]}` },
-        { role: "user", content: `## Fatos\n${facts}\n\n## Questões\n${JSON.stringify(r.legalIssues)}\n\n## Análise\n${JSON.stringify(r.viability)}` },
+        { role: "user", content: `## Fatos\n${safeFacts}\n\n## Questões\n${JSON.stringify(r.legalIssues)}\n\n## Análise\n${JSON.stringify(r.viability)}` },
       ],
       thinking: { type: "disabled" }, temperature: 0.5, max_tokens: 800,
     });
@@ -260,7 +266,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const c = await zai.chat.completions.create({
       messages: [
         { role: "system", content: `Sugira estratégia processual. Todas as ações e riscos são HIPÓTESES — rotule cada uma. Responda APENAS com JSON: {"strategy":{"proceduralPath":"caminho","immediateActions":[{"claim":"ação","state":"hipotese","source":"recomendação IA","confidence":0.5,"note":"nota"}],"documentsToCollect":["doc 1"],"risks":[{"claim":"risco","state":"hipotese","source":"análise IA","confidence":0.5,"note":"nota"}],"recommendation":"recomendação conservadora final"}}` },
-        { role: "user", content: `## Fatos\n${facts}\n## Legislação\n${JSON.stringify(r.applicableLaw?.map((l) => l.diploma + " " + l.numero))}\n## Viabilidade\n${JSON.stringify(r.viability)}\n## Lacunas\n${JSON.stringify(r.gaps)}` },
+        { role: "user", content: `## Fatos\n${safeFacts}\n## Legislação\n${JSON.stringify(r.applicableLaw?.map((l) => l.diploma + " " + l.numero))}\n## Viabilidade\n${JSON.stringify(r.viability)}\n## Lacunas\n${JSON.stringify(r.gaps)}` },
       ],
       thinking: { type: "disabled" }, temperature: 0.5, max_tokens: 1000,
     });
@@ -268,6 +274,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (m) { const p = JSON.parse(m[0]); r.strategy = p.strategy; }
     tok(c); steps[7].status = "done"; steps[7].result = r.strategy;
   } catch (e) { steps[7].status = "error"; steps[7].error = e instanceof Error ? e.message : "Erro"; r.strategy = { proceduralPath: "", immediateActions: [], documentsToCollect: [], risks: [], recommendation: "Análise indisponível" }; }
+
+  // Etapas centrais não podem ser apresentadas como conclusão quando a IA falha.
+  const mandatorySteps = new Set(["classify", "extract", "issues", "viability", "strategy"]);
+  if (steps.some((s) => mandatorySteps.has(s.id) && s.status !== "done") || !r.ramoJuridico || !r.legalIssues || !r.viability || !r.strategy) {
+    return NextResponse.json({ error: "Análise incompleta; nenhum parecer foi salvo como concluído." }, { status: 503 });
+  }
+
+  // Restauração dos marcadores somente no servidor, após a última chamada à IA.
+  const completedResult = JSON.parse(
+    JSON.stringify({ ...r, steps, totalTokens: tokens }),
+    (_key, value) => typeof value === "string" ? rehydrate(value, pseudonymizedFacts.map) : value,
+  ) as BrainResult;
 
   // Uma análise jurídica só é entregue como concluída após persistência confirmada.
   // A autorização do caso foi validada antes de qualquer chamada à IA.
@@ -277,7 +295,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         caseId: body.caseId,
         title,
         factsInput: facts,
-        result: JSON.stringify({ ...r, steps, totalTokens: tokens }),
+        result: JSON.stringify(completedResult),
         ramoJuridico: r.ramoJuridico || null,
         hypothesis: r.viability?.hypothesis || null,
         tokensUsed: tokens,
@@ -290,7 +308,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   await logAuditEvent({ action: "brain_analysis", resource: "case", resourceId: body.caseId, metadata: { title, totalTokens: tokens, stepsCompleted: steps.filter((s) => s.status === "done").length }, userId: authUser.uid });
   await logUsageEntry({ type: "debit", operation: "brain_analysis", amount: -3, reason: `Análise cerebral: ${title}`, metadata: { totalTokens: tokens, caseId: body.caseId }, userId: authUser.uid });
 
-  return NextResponse.json({ ...r, steps, totalTokens: tokens } as BrainResult);
+  return NextResponse.json(completedResult);
 }
 
 // GET /api/brain — lista histórico de análises por caso
