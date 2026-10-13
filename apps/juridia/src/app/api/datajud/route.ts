@@ -6,7 +6,7 @@ import { requireAuth } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 const DATAJUD_API_BASE = "https://api-publica.datajud.cnj.jus.br";
-const DATAJAD_TOKEN = "c7o6ektnW6n4p3uI0r07bC8Y4h3t2m3";
+const DATAJAD_TOKEN = process.env.DATAJUD_TOKEN ?? "";
 
 interface DatajudResultado {
   cnj: string;
@@ -20,6 +20,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
   const __auth = await requireAuth(req);
   if (!__auth.ok) return __auth.response;
+  if (!DATAJAD_TOKEN) return NextResponse.json({ error: "Integração DataJud não configurada" }, { status: 503 });
   const authUser = __auth.user;
 
   const url = new URL(req.url);
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── Guard de autenticação (auditoria de rotas — ver docs/auditoria-rotas-juridia.md) ──
   const __auth = await requireAuth(req);
   if (!__auth.ok) return __auth.response;
+  if (!DATAJAD_TOKEN) return NextResponse.json({ error: "Integração DataJud não configurada" }, { status: 503 });
   const authUser = __auth.user;
 
   const parsed = await parseJsonBody<{ cnj?: string; query?: Record<string, unknown> }>(req);
