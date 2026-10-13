@@ -16,7 +16,7 @@ describe("Brain case privacy regression", () => {
 
   test("Brain route uses pseudonymized facts in prompts, preserving raw facts only locally", () => {
     expect(routeSource).toContain("const safeFacts = pseudonymizedFacts.text");
-    expect(routeSource).not.toMatch(/content:\\s*facts\\b/);
+    expect(routeSource).not.toMatch(/content:\s*facts\b/);
     expect(routeSource).not.toContain("${facts}");
     expect(routeSource).not.toContain("${facts.slice");
     expect(routeSource).toContain("factsInput: facts");
