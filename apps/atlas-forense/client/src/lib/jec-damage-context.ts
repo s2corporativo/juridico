@@ -45,7 +45,7 @@ export function summarizeDamageContexts(rows: TaggedProcess[]): DamageContext[] 
       damage,
       total: selected.length,
       semAssuntoContextual,
-      assuntosCorrelatos: [...contextCounts.entries()]
+      assuntosCorrelatos: Array.from(contextCounts.entries())
         .map(([assunto, processos]) => ({ assunto, processos }))
         .sort((a, b) => b.processos - a.processos || a.assunto.localeCompare(b.assunto, "pt-BR")),
     };
