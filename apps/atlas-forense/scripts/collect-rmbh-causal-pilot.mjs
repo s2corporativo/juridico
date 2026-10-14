@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import mysql from "mysql2/promise";
-import { buildCaseKey, buildCausalPilotQuery, DATAJUD_ACCESS_URL, DATAJUD_BASE_URL, DEFAULT_MAX_PAGES_PER_BATCH, DEFAULT_PAGE_SIZE, deriveAnnotations, extractSearchPage, hashRecord, JEC_CLASS_CODE, JEC_DEGREE, queryFingerprint } from "./causal-rmbh-pilot-runtime.mjs";
+import { buildCausalPilotQuery, DATAJUD_ACCESS_URL, DATAJUD_BASE_URL, DEFAULT_MAX_PAGES_PER_BATCH, DEFAULT_PAGE_SIZE, deriveAnnotations, extractSearchPage, JEC_CLASS_CODE, JEC_DEGREE, queryFingerprint, toPersistableCausalRecord } from "./causal-rmbh-pilot-runtime.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const scope = JSON.parse(await readFile(path.join(root, "data/rmbh-civil-consumer-scope.json"), "utf8"));
@@ -82,14 +82,13 @@ for (const batch of bodyBatches) {
 }
 const unique = [...new Map(records.map(record => [record.processNumber, record])).values()];
 const bodyByCode = new Map(scope.bodies.map(body => [String(body.judgingBodyCode), body]));
-const normalized = unique.map(record => ({ ...record, municipality: bodyByCode.get(String(record.bodyCode))?.municipality ?? null, municipalityIbgeCode: bodyByCode.get(String(record.bodyCode))?.municipalityIbgeCode ?? record.municipalityIbgeCode }));
+const normalized = unique.map(record => toPersistableCausalRecord({ ...record, municipality: bodyByCode.get(String(record.bodyCode))?.municipality ?? null, municipalityIbgeCode: bodyByCode.get(String(record.bodyCode))?.municipalityIbgeCode ?? record.municipalityIbgeCode }, alias, process.env.ATLAS_CAUSAL_CASE_KEY_SECRET));
 const manifest = { ...manifestBase, mode: "execute", state: "collected", counts: { ...counts, uniqueRecords: normalized.length }, collectedAt: new Date().toISOString(), persistence: persist ? "requested" : "not_requested" };
 await writeFile(path.join(outputDir, "manifesto_rmbh_causal_pilot.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 await writeFile(path.join(outputDir, "rmbh_causal_pilot_sanitized.json"), `${JSON.stringify(normalized, null, 2)}\n`);
 
 async function persistRecords() {
   const connection = await mysql.createConnection(process.env.ATLAS_CAUSAL_DATABASE_URL);
-  const caseSecret = process.env.ATLAS_CAUSAL_CASE_KEY_SECRET;
   try {
     await connection.beginTransaction();
     await connection.query("INSERT INTO causal_runs (runKey, sourceKey, tribunalAlias, scope, periodStart, periodEnd, methodologyVersion, status, coverageNote) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?) ON DUPLICATE KEY UPDATE status='running', coverageNote=VALUES(coverageNote), id=LAST_INSERT_ID(id)", [runKey, manifestBase.sourceKey, alias, manifestBase.scope, from, to, "causal-pilot-v1", "Coleta limitada por órgãos da RMBH, assuntos descendentes Cível/Consumidor, páginas limitadas e revisão pendente; não é censo nem mede êxito."]);
@@ -97,8 +96,8 @@ async function persistRecords() {
     const runId = runRows[0]?.id;
     if (!runId) throw new Error("Execução causal não foi criada.");
     for (const record of normalized) {
-      const recordHash = hashRecord(record);
-      const caseKey = buildCaseKey(alias, record.processNumber, caseSecret);
+      const recordHash = record.sourceHashSha256;
+      const caseKey = record.caseKey;
       await connection.query("INSERT INTO causal_cases (runId, caseKey, publicProcessKey, tribunal, justice, municipality, classCode, classLabel, filingDate, sourceHashSha256, privacyNote) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), sourceHashSha256=VALUES(sourceHashSha256), updatedAt=CURRENT_TIMESTAMP", [runId, caseKey, caseKey, record.tribunal, "Estadual", record.municipality, String(record.classCode), record.classLabel, record.filingDate ? new Date(record.filingDate) : null, recordHash, "Chave HMAC; sem número CNJ bruto, partes ou documento integral."]);
       const [caseRows] = await connection.query("SELECT id FROM causal_cases WHERE caseKey=? LIMIT 1", [caseKey]);
       const caseId = caseRows[0]?.id;
