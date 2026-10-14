@@ -70,7 +70,7 @@ entries=(
   "J|EJC_OIDC_CLIENT_ID|lit|atlas-forense"
   "J|EJC_OIDC_CLIENT_SECRET|gen|"
   "J|ATLAS_BRAIN_API_TOKEN|gen|"
-  "J|ATLAS_API_URL|lit|http://127.0.0.1:3010"
+  "J|ATLAS_API_URL|lit|http://127.0.0.1:3114"
   "J|EJC_OIDC_REDIRECT_URIS|lit|$ATLAS_PUBLIC_URL/api/ejc-sso/callback"
 )
 

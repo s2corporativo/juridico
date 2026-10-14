@@ -26,6 +26,9 @@ const PUBLIC = [
   { m: "GET", p: "/api/fontes/ibge", ok: [200] },
   { m: "GET", p: "/api/fontes/querido-diario", ok: [200] },
   { m: "GET", p: "/api/news", ok: [200] },
+  // Observabilidade (F1.4): liveness sempre 200; readiness 503 só quando dependência essencial fora.
+  { m: "GET", p: "/api/healthz", ok: [200] },
+  { m: "GET", p: "/api/readyz", ok: [200, 503] },
 ];
 
 const CONFIDENTIAL = [

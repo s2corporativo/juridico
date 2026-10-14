@@ -60,13 +60,14 @@ function mockFetch(handler: (url: URL, init: RequestInit) => { status?: number; 
 
 // ── Requisição ───────────────────────────────────────────────────────────────
 {
-  let seen: { url?: URL; auth?: string } = {};
-  const ok = mockFetch((url, init) => { seen = { url, auth: (init.headers as Record<string, string>).Authorization }; return { body: { ok: true } }; });
+  let seen: { url?: URL; auth?: string; rid?: string } = {};
+  const ok = mockFetch((url, init) => { seen = { url, auth: (init.headers as Record<string, string>).Authorization, rid: (init.headers as Record<string, string>)["X-Request-Id"] }; return { body: { ok: true } }; });
   const r = await atlasRequest("/jurimetry", { query: { from: "2026-01", to: undefined } }, { config, fetchImpl: ok });
   assert(r.ok, "requisição ok");
-  assert(seen.url?.pathname === "/api/internal/brain/jurimetry", "prefixo da API interna");
+  assert(seen.url?.pathname === "/api/v1/brain/jurimetry", "prefixo canônico da API Brain (v1)");
   assert(seen.url?.searchParams.get("from") === "2026-01" && !seen.url?.searchParams.has("to"), "query omite indefinidos");
   assert(seen.auth === `Bearer ${TOKEN}`, "envia bearer");
+  assert(!!seen.rid && seen.rid.startsWith("req_"), "envia X-Request-Id para correlação ponta a ponta");
 
   const unauth = await atlasRequest("/x", {}, { config, fetchImpl: mockFetch(() => ({ status: 401, body: { error: "unauthorized" } })) });
   assert(!unauth.ok && unauth.error === "unauthorized" && unauth.status === 401, "propaga erro HTTP");

@@ -15,12 +15,16 @@ describe("Brain case privacy regression", () => {
   });
 
   test("Brain route uses pseudonymized facts in prompts, preserving raw facts only locally", () => {
-    expect(routeSource).toContain("const safeFacts = pseudonymizedFacts.text");
+    // Fluxo simplificado (2026-10): a pseudonimização acontece em prepareBrainEjcContext
+    // (src/lib/brain-ejc.ts) e a rota só injeta context.safeText nos prompts.
+    expect(routeSource).toContain("const safeFacts = context.safeText");
+    expect(routeSource).toContain("prepareBrainEjcContext");
+    // Nenhum prompt pode receber o texto cru do caso:
     expect(routeSource).not.toMatch(/content:\s*facts\b/);
     expect(routeSource).not.toContain("${facts}");
     expect(routeSource).not.toContain("${facts.slice");
-    expect(routeSource).toContain("factsInput: facts");
-    expect(routeSource).toContain("rehydrate(value, pseudonymizedFacts.map)");
+    // Persistência também só recebe fatos pseudonimizados:
+    expect(routeSource).toContain("factsInput: safeFacts");
   });
 
   test("authorization is checked before any provider interaction", () => {
@@ -28,8 +32,10 @@ describe("Brain case privacy regression", () => {
       .toBeLessThan(routeSource.indexOf("ZAI.create()"));
   });
 
-  test("central analysis failures cannot return a success response", () => {
-    expect(routeSource).toContain("mandatorySteps");
-    expect(routeSource).toContain("Análise incompleta; nenhum parecer foi salvo como concluído.");
+  test("analysis is saved as draft pending human review, never as concluded", () => {
+    expect(routeSource).toContain('reviewStatus: "pending"');
+    expect(routeSource).toContain("isDraft: true");
+    // Etapa que falha recebe fallback explícito, nunca resultado inventado:
+    expect(routeSource).toContain("Análise indisponível");
   });
 });

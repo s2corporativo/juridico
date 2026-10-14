@@ -1,12 +1,22 @@
 // atlas_client.ts — Cliente da API interna do Atlas Forense (Compêndio + jurimetria + retorno de teses).
 //
-// Contrato: apps/atlas-forense/shared/brain-api.ts · rotas em /api/internal/brain/*.
+// Contrato: packages/shared/brain-api.ts (fonte única) · rotas em /api/v1/brain/* (F1.2).
+// O Atlas mantém alias legado /api/internal/brain com headers de deprecação — este
+// cliente já usa o prefixo canônico e gera X-Request-Id por chamada (F1.3), que o
+// Atlas reusa e ecoa, permitindo correlação ponta a ponta nos logs dos dois apps.
 // Governança (decisão do titular, 2026-10-10):
 //  - Atlas → Cérebro: somente metadados públicos do Compêndio e jurimetria DESCRITIVA.
 //  - Cérebro → Atlas: somente teses aprovadas por advogado, sem dado de caso/parte, com fonte oficial.
 //  - Nenhum fato do caso é enviado ao Atlas: as buscas usam apenas termos jurídicos genéricos
 //    (palavras minúsculas, sem dígitos, sem marcadores), nunca nomes, números ou valores.
 // Falha graciosa: nunca lança; o chamador recebe { ok:false } e segue em modo degradado sinalizado.
+
+import {
+  BRAIN_API_PREFIX,
+  generateRequestId,
+  validateKnowledgeSnapshot,
+  type BrainKnowledgeSnapshot,
+} from "../../../../packages/shared/brain-api";
 
 const ATLAS_TOKEN_MIN_LENGTH = 32;
 const DEFAULT_TIMEOUT_MS = 8_000;
@@ -16,7 +26,7 @@ export interface AtlasConfig {
   token: string;
 }
 
-export type AtlasResult<T> = { ok: true; data: T } | { ok: false; error: string; status?: number };
+export type AtlasResult<T> = { ok: true; data: T } | { ok: false; error: string; status?: number; requestId?: string | null };
 
 export interface AtlasDecision {
   externalId: string;
@@ -74,22 +84,25 @@ type FetchLike = typeof fetch;
 
 export async function atlasRequest<T>(
   path: string,
-  init: { method?: "GET" | "POST"; query?: Record<string, string | number | undefined>; body?: unknown; timeoutMs?: number } = {},
+  init: { method?: "GET" | "POST"; query?: Record<string, string | number | undefined>; body?: unknown; timeoutMs?: number; requestId?: string } = {},
   deps: { config?: AtlasConfig | null; fetchImpl?: FetchLike } = {},
 ): Promise<AtlasResult<T>> {
   const config = deps.config === undefined ? getAtlasConfig() : deps.config;
   if (!config) return { ok: false, error: "atlas_not_configured" };
   const fetchImpl = deps.fetchImpl ?? fetch;
-  const url = new URL(`/api/internal/brain${path}`, config.baseUrl);
+  const url = new URL(`${BRAIN_API_PREFIX}${path}`, config.baseUrl);
   for (const [key, value] of Object.entries(init.query ?? {})) {
     if (value !== undefined && value !== "") url.searchParams.set(key, String(value));
   }
+  // Correlação ponta a ponta (F1.3): cada chamada gera seu id; o Atlas reusa e ecoa.
+  const requestId = init.requestId ?? generateRequestId();
   try {
     const res = await fetchImpl(url, {
       method: init.method ?? "GET",
       headers: {
         Authorization: `Bearer ${config.token}`,
         Accept: "application/json",
+        "X-Request-Id": requestId,
         ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}),
       },
       body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
@@ -102,8 +115,8 @@ export async function atlasRequest<T>(
       payload = null;
     }
     if (!res.ok) {
-      const error = (payload as { error?: string } | null)?.error ?? `atlas_http_${res.status}`;
-      return { ok: false, error, status: res.status };
+      const body = payload as { error?: string; requestId?: string | null } | null;
+      return { ok: false, error: body?.error ?? `atlas_http_${res.status}`, status: res.status, requestId: body?.requestId ?? res.headers.get("x-request-id") };
     }
     return { ok: true, data: payload as T };
   } catch (e) {
@@ -111,33 +124,10 @@ export async function atlasRequest<T>(
   }
 }
 
-// ── Snapshot aprovado do Atlas (somente metadados, sem banco compartilhado) ───
-export interface AtlasKnowledgeMetadataItem {
-  atlasItemId: string;
-  sourceKey: "stj-dados-abertos" | "cnj-djen-daily";
-  sourceType: "official_update";
-  tribunal: "STJ" | "CNJ";
-  title: string;
-  officialUrl: string;
-  publishedAt: string | null;
-  provenanceHash: string;
-  editorialStatus: "approved";
-  documentStatus: "discovery_only";
-  citableAsPrecedent: false;
-  text: null;
-}
-
-export interface AtlasKnowledgeSnapshot {
-  ok: true;
-  contractVersion: 1;
-  snapshotVersion: string;
-  total: number;
-  page: number;
-  pageSize: number;
-  items: AtlasKnowledgeMetadataItem[];
-  complete: boolean;
-  methodology: string;
-}
+// ── Snapshot aprovado do Atlas (somente metadados, sem banco compartilhado) ──
+// Tipos e validação vêm do contrato compartilhado (packages/shared/brain-api.ts).
+export type AtlasKnowledgeMetadataItem = BrainKnowledgeSnapshot["items"][number];
+export type AtlasKnowledgeSnapshot = BrainKnowledgeSnapshot;
 
 /** The caller must verify a stable snapshotVersion on every page and replace its
  * own local cache atomically. This client never accesses the Atlas database.
@@ -154,17 +144,11 @@ export async function fetchAtlasKnowledgeSnapshot(
     query: { page, pageSize: 50, version },
   }, deps);
   if (!result.ok) return result;
-  const data = result.data;
-  if (!data || data.contractVersion !== 1 || !/^v1:[a-f0-9]{64}$/.test(data.snapshotVersion) ||
-      !Array.isArray(data.items) || !Number.isSafeInteger(data.total) || data.total < 0 ||
-      data.page !== page || !Number.isSafeInteger(data.pageSize) || data.pageSize < 1 || data.pageSize > 100 ||
-      (version && version !== data.snapshotVersion) ||
-      data.items.some(item =>
-        item.editorialStatus !== "approved" ||
-        item.documentStatus !== "discovery_only" ||
-        item.citableAsPrecedent !== false ||
-        item.text !== null ||
-        !/^[a-f0-9]{64}$/.test(item.provenanceHash))) {
+  // Validação centralizada no contrato compartilhado: item não aprovado, texto
+  // presente, marca de precedência ou hash inválido invalida a resposta inteira.
+  if (!validateKnowledgeSnapshot(result.data) ||
+      (version && version !== result.data.snapshotVersion) ||
+      result.data.page !== page) {
     return { ok: false, error: "invalid_atlas_knowledge_contract" };
   }
   return result;

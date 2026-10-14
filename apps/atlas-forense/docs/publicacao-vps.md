@@ -2,15 +2,15 @@
 
 ## Arquitetura aprovada
 
-O Atlas será instalado de modo isolado em `/opt/atlas-ejc/current`, executado pelo usuário de sistema `atlas`, com banco MariaDB `atlas_ejc` acessível somente em `127.0.0.1`. O Caddy receberá tráfego HTTPS em `atlas.depaulateixeira.adv.br` e encaminhará por rotas fixas: `/socket.io/*` ao serviço de notificação em `127.0.0.1:3003` e todas as demais rotas ao processo principal em `127.0.0.1:3010`. Nenhuma porta interna é escolhida dinamicamente pelo usuário (a arquitetura `?XTransformPort=XXXX` é proibida — ver `docs/notificacao-websocket.md`). As únicas portas públicas adicionais serão 80 e 443; o banco e as portas internas do aplicativo e do serviço de notificação não serão expostos.
+O Atlas será instalado de modo isolado em `/opt/atlas-ejc/current`, executado pelo usuário de sistema `atlas`, com banco MariaDB `atlas_ejc` acessível somente em `127.0.0.1`. O Caddy receberá tráfego HTTPS em `atlas.depaulateixeira.adv.br` e encaminhará por rotas fixas: `/socket.io/*` ao serviço de notificação em `127.0.0.1:3003` e todas as demais rotas ao processo principal em `127.0.0.1:3114` (porta reservada ao Atlas Forense; o fail-fast em produção impede a troca silenciosa de porta). Nenhuma porta interna é escolhida dinamicamente pelo usuário (a arquitetura `?XTransformPort=XXXX` é proibida — ver `docs/notificacao-websocket.md`). As únicas portas públicas adicionais serão 80 e 443; o banco e as portas internas do aplicativo e do serviço de notificação não serão expostos.
 
 | Camada | Recurso | Controle |
 |---|---|---|
 | Processo | `atlas-ejc.service` | Inicialização automática, reinício em falha e privilégios reduzidos. |
 | Banco | MariaDB local exclusivo | Usuário com acesso somente ao banco Atlas; bind local. |
-| HTTPS | Caddy + certificado automático | Host único; rotas fixas: `/socket.io/*` → `127.0.0.1:3003`; demais → `127.0.0.1:3010`. |
+| HTTPS | Caddy + certificado automático | Host único; rotas fixas: `/socket.io/*` → `127.0.0.1:3003`; demais → `127.0.0.1:3114`. |
 | Notificações | Serviço WebSocket em loopback | Autenticação por sessão, CORS por allowlist, `/emit` com segredo interno, rate limiting e logs (`docs/notificacao-websocket.md`). |
-| Saúde | `GET /healthz` | Retorna somente serviço e estado, sem versão, banco ou segredo. |
+| Saúde | `GET /healthz` (liveness) e `GET /readyz` (readiness) | `/healthz` retorna somente serviço e estado; `/readyz` verifica banco (bloqueante) e sinaliza degradação da API Brain — sem segredo nem dados. |
 | Reversão | Diretório de release anterior | Troca de symlink e reinício controlado do serviço. |
 
 ## Variáveis e limites

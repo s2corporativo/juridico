@@ -7,7 +7,8 @@ set -uo pipefail
 
 ATLAS_ENV="${ATLAS_ENV:-/etc/atlas-ejc/atlas.env}"
 JURIDIA_ENV="${JURIDIA_ENV:-/etc/juridia/juridia.env}"
-ATLAS_URL="${ATLAS_URL:-http://127.0.0.1:3010}"
+# Porta 3114: reservada ao Atlas Forense (fail-fast de porta em produção, F0.3).
+ATLAS_URL="${ATLAS_URL:-http://127.0.0.1:3114}"
 JURIDIA_URL="${JURIDIA_URL:-http://127.0.0.1:3005}"
 FAILS=0
 
@@ -29,16 +30,23 @@ J_URL="$(get_var "$JURIDIA_ENV" ATLAS_API_URL)"
 
 # 2. Saúde dos serviços
 [ "$(code "$ATLAS_URL/healthz")" = "200" ] && ok "Atlas /healthz 200" || fail "Atlas /healthz"
-c="$(code "$JURIDIA_URL/healthz")"; [ "$c" = "200" ] && ok "JuridIA /healthz 200" || fail "JuridIA /healthz ($c)"
+c="$(code "$ATLAS_URL/readyz")"; { [ "$c" = "200" ] || [ "$c" = "503" ]; } && ok "Atlas /readyz ($c)" || fail "Atlas /readyz deveria ser 200/503 (veio $c)"
+c="$(code "$JURIDIA_URL/api/healthz")"; [ "$c" = "200" ] && ok "JuridIA /api/healthz 200" || fail "JuridIA /api/healthz ($c)"
+c="$(code "$JURIDIA_URL/api/readyz")"; { [ "$c" = "200" ] || [ "$c" = "503" ]; } && ok "JuridIA /api/readyz ($c)" || fail "JuridIA /api/readyz deveria ser 200/503 (veio $c)"
 
-# 3. Guarda da API interna (sem token = 401; com token = 200)
+# 3. Guarda da API Brain (prefixo canônico v1 e alias legado; sem token = 401)
+c="$(code "$ATLAS_URL/api/v1/brain/jurimetry")"
+[ "$c" = "401" ] && ok "API v1/brain sem token: 401" || fail "API v1/brain sem token deveria ser 401 (veio $c)"
 c="$(code "$ATLAS_URL/api/internal/brain/jurimetry")"
-[ "$c" = "401" ] && ok "API interna sem token: 401" || fail "API interna sem token deveria ser 401 (veio $c)"
+[ "$c" = "401" ] && ok "Alias legado sem token: 401" || fail "Alias legado sem token deveria ser 401 (veio $c)"
 if [ "${#A_TOKEN}" -ge 32 ]; then
-  c="$(code -H "Authorization: Bearer $A_TOKEN" "$ATLAS_URL/api/internal/brain/compendium/search?q=consumidor")"
-  [ "$c" = "200" ] && ok "Compêndio com token: 200" || fail "Compêndio com token ($c)"
-  c="$(code -H "Authorization: Bearer $A_TOKEN" "$ATLAS_URL/api/internal/brain/jurimetry")"
-  [ "$c" = "200" ] && ok "Jurimetria com token: 200" || fail "Jurimetria com token ($c)"
+  c="$(code -H "Authorization: Bearer $A_TOKEN" "$ATLAS_URL/api/v1/brain/compendium/search?q=consumidor")"
+  [ "$c" = "200" ] && ok "Compêndio v1/brain com token: 200" || fail "Compêndio v1/brain com token ($c)"
+  c="$(code -H "Authorization: Bearer $A_TOKEN" "$ATLAS_URL/api/v1/brain/jurimetry")"
+  [ "$c" = "200" ] && ok "Jurimetria v1/brain com token: 200" || fail "Jurimetria v1/brain com token ($c)"
+  headers="$(curl -s -o /dev/null -m 15 -D - -H "Authorization: Bearer $A_TOKEN" "$ATLAS_URL/api/internal/brain/jurimetry" 2>/dev/null)"
+  echo "$headers" | grep -qi '^deprecation: true' && ok "Alias legado sinaliza Deprecation" || fail "Alias legado sem header Deprecation"
+  echo "$headers" | grep -qi "^sunset: " && ok "Alias legado anuncia Sunset" || fail "Alias legado sem header Sunset"
 fi
 
 # 4. Rotas do JuridIA protegidas

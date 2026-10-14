@@ -3,16 +3,27 @@ import { readApprovedKnowledgeSnapshot, readKnowledgeHealth, readLegacyKnowledge
  * API interna Atlas ⇄ Cérebro Jurídico (JuridIA/EJC).
  *
  * Rotas (todas exigem Authorization: Bearer <ATLAS_BRAIN_API_TOKEN>):
- *   GET  /api/internal/brain/compendium/search  → julgados citáveis do Compêndio (metadados públicos)
- *   GET  /api/internal/brain/jurimetry          → jurimetria DESCRITIVA com cobertura e limites
- *   POST /api/internal/brain/theses             → tese aprovada pelo advogado → Fila Editorial (pending_review)
+ *   GET  /api/v1/brain/compendium/search  → julgados citáveis do Compêndio (metadados públicos)
+ *   GET  /api/v1/brain/jurimetry          → jurimetria DESCRITIVA com cobertura e limites
+ *   POST /api/v1/brain/theses             → tese aprovada pelo advogado → Fila Editorial (pending_review)
+ *   GET  /api/v1/brain/knowledge/*        → snapshot aprovado paginado (contrato versionado)
  *
- * Governança: ver shared/brain-api.ts. Nenhum dado de caso/parte entra ou sai por aqui.
+ * Compatibilidade (F1.2): as mesmas rotas continuam atendendo no prefixo legado
+ * /api/internal/brain com headers Deprecation/Sunset até BRAIN_LEGACY_SUNSET.
+ *
+ * Observabilidade (F1.3): todo erro usa o envelope {ok:false, error, status,
+ * requestId} e o header X-Request-Id é ecoado (middleware global do servidor).
+ *
+ * Contrato: packages/shared/brain-api.ts (fonte única). Nenhum dado de caso/parte entra ou sai por aqui.
  */
 
-import type { Express, Request, Response } from "express";
+import type { Express, NextFunction, Request, RequestHandler, Response } from "express";
 import {
+  BRAIN_API_LEGACY_PREFIX,
   BRAIN_API_PREFIX,
+  BRAIN_LEGACY_SUNSET,
+  apiErrorBody,
+  normalizeRequestId,
   BRAIN_CITABLE_SOURCE_STATUSES,
   BRAIN_JURIMETRY_LIMITS,
   BRAIN_SEARCH_MAX_PAGE_SIZE,
@@ -51,14 +62,23 @@ function queryInt(req: Request, key: string, fallback: number, min: number, max:
   return Math.min(max, Math.max(min, parsed));
 }
 
+function requestIdOf(req: Request): string {
+  return normalizeRequestId((req as Request & { requestId?: string }).requestId);
+}
+
+/** Envelope de erro padrão (F1.3): {ok:false, error, status, requestId[, details]}. */
+function sendError(req: Request, res: Response, status: number, error: string, details?: string[]): void {
+  res.status(status).json(apiErrorBody(error, status, requestIdOf(req), details));
+}
+
 function guard(req: Request, res: Response): boolean {
   const auth = authenticateBrainToken(req.headers.authorization, ENV.brainApiToken);
   if (!auth.ok) {
-    res.status(auth.status).json({ ok: false, error: auth.error });
+    sendError(req, res, auth.status, auth.error);
     return false;
   }
   if (!limiter.take()) {
-    res.status(429).json({ ok: false, error: "rate_limited" });
+    sendError(req, res, 429, "rate_limited");
     return false;
   }
   return true;
@@ -91,7 +111,7 @@ export async function handleCompendiumSearch(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("[BrainAPI] compendium/search falhou:", error instanceof Error ? error.message : error);
-    res.status(502).json({ ok: false, error: "compendium_unavailable" });
+    sendError(req, res, 502, "compendium_unavailable");
   }
 }
 
@@ -101,7 +121,7 @@ export async function handleJurimetry(req: Request, res: Response) {
   const to = queryString(req, "to", 7);
   const municipalityIbgeCode = queryString(req, "municipalityIbgeCode", 7);
   if ((from && !MONTH_RE.test(from)) || (to && !MONTH_RE.test(to)) || (municipalityIbgeCode && !/^\d{7}$/.test(municipalityIbgeCode))) {
-    res.status(400).json({ ok: false, error: "invalid_filter" });
+    sendError(req, res, 400, "invalid_filter");
     return;
   }
   const [civil, national] = await Promise.allSettled([
@@ -132,7 +152,7 @@ export async function handleThesisSubmission(req: Request, res: Response) {
   if (!guard(req, res)) return;
   const validation = validateThesisSubmission((req.body ?? {}) as Record<string, unknown>);
   if (!validation.ok) {
-    res.status(422).json({ ok: false, error: "invalid_thesis", details: validation.errors });
+    sendError(req, res, 422, "invalid_thesis", validation.errors);
     return;
   }
   const thesis = validation.value;
@@ -166,7 +186,7 @@ export async function handleThesisSubmission(req: Request, res: Response) {
     res.status(queued ? 201 : 200).json({ ok: true, queued: queued > 0, duplicate: queued === 0, status: "pending_review", thesisKey: thesis.thesisKey });
   } catch (error) {
     console.error("[BrainAPI] theses falhou:", error instanceof Error ? error.message : error);
-    res.status(502).json({ ok: false, error: "editorial_queue_unavailable" });
+    sendError(req, res, 502, "editorial_queue_unavailable");
   }
 }
 
@@ -177,13 +197,13 @@ export async function handleKnowledgeSnapshot(req: Request, res: Response) {
   const page = queryInt(req, "page", 0, 0, 1_000);
   const version = queryString(req, "version", 100);
   if (page > 0 && !version) {
-    res.status(400).json({ ok: false, error: "snapshot_version_required" });
+    sendError(req, res, 400, "snapshot_version_required");
     return;
   }
   try {
     const snap = await readApprovedKnowledgeSnapshot();
     if (version && version !== snap.snapshotVersion) {
-      res.status(409).json({ ok: false, error: "snapshot_changed" });
+      sendError(req, res, 409, "snapshot_changed");
       return;
     }
     res.json({
@@ -194,7 +214,7 @@ export async function handleKnowledgeSnapshot(req: Request, res: Response) {
       methodology: "Somente metadados oficiais aprovados. Registros não são precedentes nem texto integral.",
     });
   } catch {
-    res.status(503).json({ ok: false, error: "knowledge_snapshot_unavailable" });
+    sendError(req, res, 503, "knowledge_snapshot_unavailable");
   }
 }
 
@@ -202,38 +222,62 @@ export async function handleKnowledgeItem(req: Request, res: Response) {
   if (!guard(req, res)) return;
   const id = req.params.id;
   if (!/^\d{1,12}$/.test(id)) {
-    res.status(400).json({ ok: false, error: "invalid_item_id" });
+    sendError(req, res, 400, "invalid_item_id");
     return;
   }
   try {
     const snap = await readApprovedKnowledgeSnapshot();
     const item = snap.items.find(x => x.atlasItemId === id);
-    if (!item) { res.status(404).json({ ok: false, error: "knowledge_item_not_found" }); return; }
+    if (!item) { sendError(req, res, 404, "knowledge_item_not_found"); return; }
     res.json({ ok: true, contractVersion: 1, snapshotVersion: snap.snapshotVersion, item });
   } catch {
-    res.status(503).json({ ok: false, error: "knowledge_snapshot_unavailable" });
+    sendError(req, res, 503, "knowledge_snapshot_unavailable");
   }
 }
 
 export async function handleKnowledgeHealth(req: Request, res: Response) {
   if (!guard(req, res)) return;
   try { res.json(await readKnowledgeHealth()); }
-  catch { res.status(503).json({ ok: false, error: "knowledge_health_unavailable" }); }
+  catch { sendError(req, res, 503, "knowledge_health_unavailable"); }
 }
 
 /** Private operational counts; no source bodies or unapproved citations. */
 export async function handleLegacyReviewHealth(req: Request, res: Response) {
   if (!guard(req, res)) return;
   try { res.json(await readLegacyKnowledgeReviewHealth()); }
-  catch { res.status(503).json({ ok: false, error: "legacy_review_health_unavailable" }); }
+  catch { sendError(req, res, 503, "legacy_review_health_unavailable"); }
+}
+
+/**
+ * Middleware de deprecação do prefixo legado (F1.2): sinaliza consumidores com
+ * Deprecation/Sunset/Link sem alterar corpo nem status — migração sem quebra.
+ */
+function withDeprecation(handler: (req: Request, res: Response) => void | Promise<void>): RequestHandler {
+  return (req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("Deprecation", "true");
+    res.setHeader("Sunset", BRAIN_LEGACY_SUNSET);
+    // req.path aqui é o caminho completo (ex.: /api/internal/brain/jurimetry);
+    // remove o prefixo legado para apontar a rota sucessora equivalente em v1.
+    const suffix = req.path.startsWith(BRAIN_API_LEGACY_PREFIX)
+      ? req.path.slice(BRAIN_API_LEGACY_PREFIX.length)
+      : req.path;
+    res.setHeader("Link", `<${BRAIN_API_PREFIX}${suffix}>; rel="successor-version"`);
+    Promise.resolve(handler(req, res)).catch(next);
+  };
 }
 
 export function registerBrainApiRoutes(app: Express) {
-  app.get(`${BRAIN_API_PREFIX}/compendium/search`, handleCompendiumSearch);
-  app.get(`${BRAIN_API_PREFIX}/jurimetry`, handleJurimetry);
-  app.post(`${BRAIN_API_PREFIX}/theses`, handleThesisSubmission);
-  app.get(`${BRAIN_API_PREFIX}/knowledge/snapshot`, handleKnowledgeSnapshot);
-  app.get(`${BRAIN_API_PREFIX}/knowledge/items/:id`, handleKnowledgeItem);
-  app.get(`${BRAIN_API_PREFIX}/knowledge/health`, handleKnowledgeHealth);
-  app.get(`${BRAIN_API_PREFIX}/knowledge/legacy-health`, handleLegacyReviewHealth);
+  const routes: Array<["get" | "post", string, (req: Request, res: Response) => void | Promise<void>]> = [
+    ["get", "/compendium/search", handleCompendiumSearch],
+    ["get", "/jurimetry", handleJurimetry],
+    ["post", "/theses", handleThesisSubmission],
+    ["get", "/knowledge/snapshot", handleKnowledgeSnapshot],
+    ["get", "/knowledge/items/:id", handleKnowledgeItem],
+    ["get", "/knowledge/health", handleKnowledgeHealth],
+    ["get", "/knowledge/legacy-health", handleLegacyReviewHealth],
+  ];
+  // Prefixo canônico: /api/v1/brain (F1.2)
+  for (const [method, path, handler] of routes) app[method](`${BRAIN_API_PREFIX}${path}`, handler);
+  // Alias legado com headers de deprecação — mantém consumidores antigos vivos até o sunset.
+  for (const [method, path, handler] of routes) app[method](`${BRAIN_API_LEGACY_PREFIX}${path}`, withDeprecation(handler));
 }
