@@ -16,12 +16,13 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return auth.response;
   const body = (await req.json().catch(() => null)) as { templateSlug?: string; batchId?: string; moldDocumentId?: string; items?: Array<{ itemNo: number; title?: string; fields: Record<string, string> }> } | null;
   if (!body?.templateSlug || !Array.isArray(body.items)) return NextResponse.json({ error: "templateSlug e items obrigatórios" }, { status: 400 });
+  const items = body.items;
   const data = {
     userId: auth.user.uid,
     templateSlug: body.templateSlug,
     moldDocumentId: body.moldDocumentId,
     total: body.items.length,
-    items: { create: body.items.map((item) => ({ itemNo: item.itemNo, title: item.title, fields: JSON.stringify(item.fields) })) },
+    items: { create: items.map((item) => ({ itemNo: item.itemNo, title: item.title, fields: JSON.stringify(item.fields) })) },
   };
   if (body.batchId) {
     // A alteração é condicionada ao proprietário no próprio comando de escrita.
@@ -34,11 +35,11 @@ export async function POST(req: NextRequest) {
     const batch = await db.batchJob.findFirst({ where: { id: body.batchId, userId: auth.user.uid } });
     return NextResponse.json({ batch });
   }
-  if (body.items.length < 1 || body.items.length > 10) {
+  if (items.length < 1 || items.length > 10) {
     return NextResponse.json({ error: "O lote deve conter de 1 a 10 casos" }, { status: 400 });
   }
-  if (new Set(body.items.map(item => item.itemNo)).size !== body.items.length ||
-      body.items.some(item => !Number.isInteger(item.itemNo) || item.itemNo < 1 || item.itemNo > body.items.length)) {
+  if (new Set(items.map(item => item.itemNo)).size !== items.length ||
+      items.some(item => !Number.isInteger(item.itemNo) || item.itemNo < 1 || item.itemNo > items.length)) {
     return NextResponse.json({ error: "Numeração dos itens inválida" }, { status: 400 });
   }
   const batch = await db.batchJob.create({ data });
