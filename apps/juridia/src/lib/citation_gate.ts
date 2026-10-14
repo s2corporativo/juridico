@@ -111,7 +111,7 @@ export function extractCitations(text: string): Omit<Citation, "status" | "sourc
 }
 
 /** Nunca declare fonte legal como verificada só por constar em uma tabela. */
-function isVerifiedOfficialSource(source: {
+export function isVerifiedOfficialSource(source: {
   vigente: boolean; textoTrecho: string; urlOficial: string | null;
   revisadoPor?: string | null; hashConteudo?: string | null;
   dataConsulta?: Date | string | null;
