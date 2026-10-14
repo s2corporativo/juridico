@@ -23,10 +23,26 @@ export async function POST(req: NextRequest) {
     total: body.items.length,
     items: { create: body.items.map((item) => ({ itemNo: item.itemNo, title: item.title, fields: JSON.stringify(item.fields) })) },
   };
-  const batch = body.batchId
-    ? await db.batchJob.update({ where: { id: body.batchId }, data: { moldDocumentId: body.moldDocumentId, total: body.items.length } })
-    : await db.batchJob.create({ data });
-  return NextResponse.json({ batch }, { status: body.batchId ? 200 : 201 });
+  if (body.batchId) {
+    // A alteração é condicionada ao proprietário no próprio comando de escrita.
+    // Não modificar o total sem sincronizar os BatchItem persistidos.
+    const changed = await db.batchJob.updateMany({
+      where: { id: body.batchId, userId: auth.user.uid },
+      data: { moldDocumentId: body.moldDocumentId },
+    });
+    if (changed.count === 0) return NextResponse.json({ error: "batch_not_found" }, { status: 404 });
+    const batch = await db.batchJob.findFirst({ where: { id: body.batchId, userId: auth.user.uid } });
+    return NextResponse.json({ batch });
+  }
+  if (body.items.length < 1 || body.items.length > 10) {
+    return NextResponse.json({ error: "O lote deve conter de 1 a 10 casos" }, { status: 400 });
+  }
+  if (new Set(body.items.map(item => item.itemNo)).size !== body.items.length ||
+      body.items.some(item => !Number.isInteger(item.itemNo) || item.itemNo < 1 || item.itemNo > body.items.length)) {
+    return NextResponse.json({ error: "Numeração dos itens inválida" }, { status: 400 });
+  }
+  const batch = await db.batchJob.create({ data });
+  return NextResponse.json({ batch }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
