@@ -15,6 +15,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { isCausalDatabaseConfigured } from "./causal-db";
 import { causalAnnotationInput, causalCaseInput, causalDocumentInput, causalEvidenceInput, causalOutcomeInput, causalRunInput } from "./causal-contract";
 import { createCausalAnnotation, createCausalCase, createCausalDocument, createCausalEvidence, createCausalOutcome, createCausalRun, getCausalCase } from "./causal-service";
+import { CAUSAL_DASHBOARD_CLAIM_TYPES, CAUSAL_DASHBOARD_REVIEW_STATUSES, getCausalDashboard } from "./causal-dashboard";
 import {
   createAttendance,
   createClient,
@@ -181,6 +182,10 @@ export const appRouter = router({
   }),
   causal: router({
     status: adminProcedure.query(() => ({ enabled: isCausalDatabaseConfigured(), databaseEnv: "ATLAS_CAUSAL_DATABASE_URL" })),
+    dashboard: adminProcedure.input(z.object({
+      claimType: z.enum(["all", ...CAUSAL_DASHBOARD_CLAIM_TYPES]).optional(),
+      reviewStatus: z.enum(["all", ...CAUSAL_DASHBOARD_REVIEW_STATUSES]).optional(),
+    }).optional()).query(({ input }) => getCausalDashboard({ claimType: input?.claimType === "all" ? undefined : input?.claimType, reviewStatus: input?.reviewStatus === "all" ? undefined : input?.reviewStatus })),
     createRun: adminProcedure.input(causalRunInput).mutation(({ input }) => createCausalRun(input)),
     createCase: adminProcedure.input(causalCaseInput).mutation(({ input }) => createCausalCase(input)),
     addDocument: adminProcedure.input(causalDocumentInput).mutation(({ input }) => createCausalDocument(input)),
