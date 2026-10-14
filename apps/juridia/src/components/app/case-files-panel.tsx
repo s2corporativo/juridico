@@ -5,16 +5,23 @@ import { FileUp, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { useAppStore } from "@/lib/store";
 
 export function CaseFilesPanel() {
+  const caseId = useAppStore((state) => state.currentCaseId);
   const [busy, setBusy] = useState(false);
   const [count, setCount] = useState(0);
   async function upload(file?: File) {
     if (!file) return;
+    if (!caseId) {
+      toast({ title: "Selecione um caso no Cérebro antes de anexar autos", variant: "destructive" });
+      return;
+    }
     setBusy(true);
     try {
       const form = new FormData();
       form.append("file", file);
+      form.append("caseId", caseId);
       const res = await fetch("/api/case-files", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "falha no processamento");
@@ -33,12 +40,13 @@ export function CaseFilesPanel() {
         <strong className="text-sm">Autos do trabalho</strong>
         <Badge variant="secondary">{count} arquivo(s)</Badge>
         <label className="ml-auto">
-          <input className="sr-only" type="file" accept=".pdf,.docx,.txt,.md,image/*" disabled={busy} onChange={(event) => upload(event.target.files?.[0])} />
+          <input className="sr-only" type="file" accept=".pdf,.docx,.txt,.md,image/*" disabled={busy || !caseId} onChange={(event) => upload(event.target.files?.[0])} />
           <Button asChild size="sm" disabled={busy}>
             <span>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}Adicionar autos</span>
           </Button>
         </label>
       </div>
+      {!caseId && <p className="mt-2 text-xs text-amber-700">Abra ou selecione um caso no Cérebro para vincular os documentos.</p>}
       <p className="mt-2 text-xs text-muted-foreground">PDF, DOCX, texto ou imagem. O arquivo é hashado, dividido em páginas e mantido separado do Atlas; imagem sem texto sinaliza OCR pendente.</p>
       {count > 0 && <div className="mt-2 flex items-center gap-1 text-xs text-primary"><CheckCircle2 className="h-3 w-3" /> Disponível para orientar a minuta após a análise.</div>}
     </div>
