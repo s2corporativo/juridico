@@ -11,7 +11,7 @@ BASE="/opt/atlas-juridico/staging/unified"
 ENV_FILE="$BASE/secrets/atlas-stage.env"
 SERVICE="atlas-forense-stage"
 PORT="3114"
-OUT="/var/lib/atlas-juridico/causal-pilot"
+OUT="/var/lib/atlas-juridico/causal-pilot/$(date -u +%Y%m%dT%H%M%SZ)-$(openssl rand -hex 4)"
 DROPIN_DIR="/etc/systemd/system/$SERVICE.service.d"
 DROPIN="$DROPIN_DIR/50-causal-release.conf"
 BACKUP_DIR="$BASE/rollback-causal"
@@ -41,7 +41,7 @@ trap cleanup EXIT
 [ -r "$ENV_FILE" ] || { echo "ERRO: ambiente de homologação ausente." >&2; exit 1; }
 [ "$(systemctl is-active "$SERVICE")" = active ] || { echo "ERRO: serviço de homologação não ativo." >&2; exit 1; }
 curl -fsS --max-time 10 "http://127.0.0.1:$PORT/healthz" >/dev/null || { echo "ERRO: homologação atual sem saúde." >&2; exit 1; }
-for cmd in git node pnpm systemctl sudo curl; do command -v "$cmd" >/dev/null || { echo "ERRO: $cmd não instalado." >&2; exit 1; }; done
+for cmd in git node pnpm systemctl sudo curl openssl; do command -v "$cmd" >/dev/null || { echo "ERRO: $cmd não instalado." >&2; exit 1; }; done
 
 # Ambiente root-owned e reservado à operação: nunca imprimir os valores.
 set -a
