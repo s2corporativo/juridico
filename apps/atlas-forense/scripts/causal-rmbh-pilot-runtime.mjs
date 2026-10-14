@@ -103,7 +103,13 @@ export function toPersistableCausalRecord(record, alias, secret) {
 
 export function queryFingerprint(query) { return createHash("sha256").update(JSON.stringify(query)).digest("hex"); }
 export function extractSearchPage(payload) {
-  const hits = Array.isArray(payload?.hits?.hits) ? payload.hits.hits : [];
+  if (!payload || typeof payload !== "object" ||
+      payload.timed_out === true ||
+      Number(payload?._shards?.failed ?? 0) > 0 ||
+      !Array.isArray(payload?.hits?.hits)) {
+    throw new Error("Resposta DataJud inválida, parcial ou com timeout: não computar como amostra vazia.");
+  }
+  const hits = payload.hits.hits;
   return {
     total: Number(payload?.hits?.total?.value ?? 0),
     totalRelation: payload?.hits?.total?.relation ?? "unknown",

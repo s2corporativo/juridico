@@ -70,7 +70,7 @@ for (const batch of bodyBatches) {
   for (let page = 0; page < maxPages; page += 1) {
     const payload = await requestPage(key, buildCausalPilotQuery({ bodyCodes: batch.map(body => body.judgingBodyCode), subjectCodes: subjectFilter.subjectCodes, from, to, pageSize, searchAfter }));
     const extracted = extractSearchPage(payload);
-    counts.pages += 1; counts.apiHits += extracted.records.length; counts.totalReported += extracted.total;
+    counts.pages += 1; counts.apiHits += extracted.records.length; if (page === 0) counts.totalReported += extracted.total;
     if (extracted.totalRelation !== "eq") counts.totalRelation = extracted.totalRelation;
     for (const record of extracted.records) {
       if (!batch.some(body => String(body.judgingBodyCode) === String(record.bodyCode))) { counts.rejected += 1; continue; }
@@ -83,9 +83,10 @@ for (const batch of bodyBatches) {
 const unique = [...new Map(records.map(record => [record.processNumber, record])).values()];
 const bodyByCode = new Map(scope.bodies.map(body => [String(body.judgingBodyCode), body]));
 const normalized = unique.map(record => toPersistableCausalRecord({ ...record, municipality: bodyByCode.get(String(record.bodyCode))?.municipality ?? null, municipalityIbgeCode: bodyByCode.get(String(record.bodyCode))?.municipalityIbgeCode ?? record.municipalityIbgeCode }, alias, process.env.ATLAS_CAUSAL_CASE_KEY_SECRET));
-const manifest = { ...manifestBase, mode: "execute", state: "collected", counts: { ...counts, uniqueRecords: normalized.length }, collectedAt: new Date().toISOString(), persistence: persist ? "requested" : "not_requested" };
+const manifest = { ...manifestBase, mode: "execute", state: normalized.length === 0 ? "empty" : "collected", counts: { ...counts, uniqueRecords: normalized.length }, collectedAt: new Date().toISOString(), persistence: persist ? "requested" : "not_requested" };
 await writeFile(path.join(outputDir, "manifesto_rmbh_causal_pilot.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 await writeFile(path.join(outputDir, "rmbh_causal_pilot_sanitized.json"), `${JSON.stringify(normalized, null, 2)}\n`);
+if (normalized.length === 0) throw new Error("DataJud retornou zero processos nos filtros selecionados: coleta inconclusiva; não aplicar migração, persistência ou publicação.");
 
 async function persistRecords() {
   const connection = await mysql.createConnection(process.env.ATLAS_CAUSAL_DATABASE_URL);
