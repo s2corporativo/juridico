@@ -112,7 +112,7 @@ export function extractSearchPage(payload) {
   };
 }
 
-const directPersonalData = /(\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}|\\b\\d{11}\\b|\\b\\d{20}\\b|\\b\\d{2}\\.?\\d{3}\\.?\\d{3}\\/?\\d{4}-?\\d{2}\\b|[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}|\\[\\s*(?:NOME|CPF|CNPJ|EMAIL|TELEFONE)_[^\\]]+\\])/i;
+const directPersonalData = /(\d{3}\.\d{3}\.\d{3}-\d{2}|\b\d{11}\b|\b\d{20}\b|\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\[\s*(?:NOME|CPF|CNPJ|EMAIL|TELEFONE)_[^\]]+\])/i;
 export function hasDirectPersonalData(value) { return directPersonalData.test(String(value ?? "")); }
 export function deriveAnnotations(record, evidenceRefId) {
   return record.subjects.filter(subject => !hasDirectPersonalData(subject.label)).map(subject => {
