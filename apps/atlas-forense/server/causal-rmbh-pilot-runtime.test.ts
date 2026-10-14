@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCaseKey, buildCausalPilotQuery, deriveAnnotations, extractSearchPage, hashRecord, sanitizeCausalHit } from "../scripts/causal-rmbh-pilot-runtime.mjs";
+import { buildCaseKey, buildCausalPilotQuery, deriveAnnotations, extractSearchPage, hashRecord, sanitizeCausalHit, toPersistableCausalRecord } from "../scripts/causal-rmbh-pilot-runtime.mjs";
 
 describe("coletor-piloto causal DataJud/RMBH", () => {
   it("monta consulta JEC restrita a TJMG, órgãos, assuntos e período", () => {
@@ -24,6 +24,28 @@ describe("coletor-piloto causal DataJud/RMBH", () => {
     expect(page.nextSearchAfter).toEqual(["2026-01-01"]);
     expect(buildCaseKey("tjmg", "00012347720158130026", "s".repeat(32))).toMatch(/^tjmg:[a-f0-9]{64}$/);
     expect(hashRecord(page.records[0])).toHaveLength(64);
+  });
+  it("não grava CNJ bruto, paginação nem campos inesperados no artefato do piloto", () => {
+    const rawNumber = "00012347720158130026";
+    const record = sanitizeCausalHit({
+      numeroProcesso: rawNumber,
+      tribunal: "TJMG",
+      classe: { codigo: 436, nome: "Procedimento do Juizado Especial Cível" },
+      orgaoJulgador: { codigo: 40011, nome: "JEC Betim" },
+      assuntos: [{ codigo: 1, nome: "Indenização por dano moral" }],
+      movimentos: [],
+    }, ["2026-01-01"]);
+    const output = toPersistableCausalRecord({ ...record, unexpected: "should-not-survive" }, "tjmg", "s".repeat(32));
+    expect(output.caseKey).toBe(buildCaseKey("tjmg", rawNumber, "s".repeat(32)));
+    expect(output).not.toHaveProperty("processNumber");
+    expect(output).not.toHaveProperty("sort");
+    expect(output).not.toHaveProperty("unexpected");
+    expect(JSON.stringify(output)).not.toContain(rawNumber);
+    expect(JSON.stringify(output)).not.toContain("should-not-survive");
+    expect(() => toPersistableCausalRecord({
+      ...record,
+      movements: [{ name: "Juntado CPF 123.456.789-01", date: null, code: 1 }],
+    }, "tjmg", "s".repeat(32))).toThrow(/não sanitizados/);
   });
   it("transforma assuntos em anotações pendentes sem afirmar resultado", () => {
     const annotations = deriveAnnotations({ subjects: [{ code: 1, label: "Dano moral" }, { code: 2, label: "Negativação indevida" }] }, 9);
