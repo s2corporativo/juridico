@@ -5,7 +5,7 @@
 set -Eeuo pipefail
 umask 077
 
-SHA="a492500d6ac5f16484825bce6bf540eb8717decb"
+SHA="fb2fb4dc5b9f1599df89856b37c5578d3972974e"
 REPO="https://github.com/s2corporativo/juridico.git"
 BASE="/opt/atlas-juridico/staging/unified"
 ENV_FILE="$BASE/secrets/atlas-stage.env"
