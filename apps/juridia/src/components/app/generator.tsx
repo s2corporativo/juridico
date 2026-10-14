@@ -73,6 +73,7 @@ export function Generator() {
     user,
     brainContext,
     setBrainContext,
+    currentCaseId,
     writingStyle,
   } = useAppStore();
 
@@ -204,7 +205,7 @@ export function Generator() {
         templateSlug: current.slug,
         fields,
         skillSlugs: selectedSkillSlugs,
-        caseId: "default-case",
+        caseId: currentCaseId || undefined,
         title: title || undefined,
         brainContext: brainContext || undefined,
         writingStyle: writingStyle || undefined,

@@ -1,0 +1,66 @@
+# Reunificação do Cérebro Jurídico com o Núcleo EJC — Plano de Implementação
+
+**Objetivo:** fazer `/api/brain` produzir e consumir um contexto de inteligência baseado em `EvidenceRef` e `IntelligenceSnapshot`, sem enviar fatos identificáveis ao provedor.
+
+**Arquitetura:** o endpoint continuará sendo o supervisor de alto nível, mas passará a preparar o caso a partir de `CaseFile`, criar/validar evidências autorizadas e persistir um snapshot append-only. O `case_mapper` determinístico será reutilizado como núcleo factual; a análise estratégica continuará no Cérebro, usando somente texto pseudonimizado e fontes permitidas.
+
+**Tecnologias:** Next.js App Router, TypeScript, Prisma/SQLite, ZAI, `pseudonymizer.ts`, `legal_brain.ts`, `evidence.ts`.
+
+**Especificação:** solicitação de reunificação do `/api/brain` com o Núcleo de Inteligência EJC.
+
+## Restrições globais
+
+- `caseId` deve ser real e pertencer ao usuário autenticado; `default-case` e `cerebro-session` não serão aceitos.
+- Nenhum nome, número de processo, documento pessoal, telefone, e-mail ou valor identificável será enviado ao provedor ou ao Atlas.
+- Toda saída começa como candidata/rascunho e exige revisão humana.
+- Jurimetria será exclusivamente descritiva; não haverá percentual ou previsão de êxito.
+- `EvidenceRef` será a fonte autorizada de fatos e terá hash de integridade.
+- `IntelligenceSnapshot` será append-only e terá status de rascunho até aprovação humana.
+- O Atlas receberá apenas termos jurídicos genéricos extraídos do conteúdo pseudonimizado.
+
+## Focos de revisão
+
+1. Requisição sem caso real: deve falhar antes de qualquer chamada ao modelo.
+2. Autos com PII: devem ser pseudonimizados antes de classificação, extração, RAG, Atlas ou fallback web.
+3. Afirmação sem `evidence_ref_id` válido: deve ser descartada ou causar degradação controlada, nunca ser confirmada.
+4. Snapshot anterior: nova análise deve criar nova versão sem sobrescrever a anterior.
+5. Falha do Atlas: o Cérebro deve seguir sinalizado como parcial/indisponível, sem transformar web aberta em fonte oficial.
+
+## Tarefas
+
+### Tarefa 1 — Preparação factual e evidências autorizadas
+
+**Arquivos:**
+- Modificar: `apps/juridia/src/app/api/brain/route.ts`
+- Reutilizar: `apps/juridia/src/lib/evidence.ts`, `apps/juridia/src/lib/pseudonymizer.ts`, `apps/juridia/src/lib/legal_brain.ts`
+
+**Resultado:** exigir `caseId`, carregar autos prontos do usuário, criar evidências por arquivo/página e montar o texto pseudonimizado para todas as chamadas externas.
+
+### Tarefa 2 — Supervisão por snapshot
+
+**Arquivos:**
+- Modificar: `apps/juridia/src/app/api/brain/route.ts`
+- Modificar: `apps/juridia/src/app/api/intelligence/map/route.ts` apenas se necessário para contrato comum
+
+**Resultado:** salvar um `IntelligenceSnapshot` append-only contendo fatos, eventos, assertions, lacunas, estratégia, fontes, evidências autorizadas e estado Atlas; associar a execução `AgentRun`.
+
+### Tarefa 3 — Integração da geração
+
+**Arquivos:**
+- Modificar: `apps/juridia/src/components/app/cerebro.tsx`
+- Modificar: `apps/juridia/src/components/app/generator.tsx`
+- Modificar: `apps/juridia/src/lib/types.ts` se necessário
+
+**Resultado:** usar o caso atual, abandonar IDs fictícios e transportar `snapshotId`/contexto somente após o usuário escolher o resultado para a minuta.
+
+### Tarefa 4 — Testes e gates
+
+**Arquivos:**
+- Criar/modificar testes existentes da JuridIA conforme a estrutura disponível.
+
+**Verificações:**
+- teste de tipo, lint, Prisma e build da JuridIA;
+- testes e check do Atlas;
+- inspeção de que `/api/brain` não contém envio de `facts` bruto ao provedor;
+- teste de que a versão do snapshot é incrementada;
+- `git diff --check`.
