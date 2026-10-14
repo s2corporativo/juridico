@@ -1,6 +1,6 @@
 # Atlas Causal — implantação controlada em homologação
 
-**Escopo:** servidor `ejc-vps`, repositório `s2corporativo/juridico`, commit **`a492500d6ac5f16484825bce6bf540eb8717decb`**, serviço de **homologação** `atlas-forense-stage` (porta local 3114). O Atlas legado (`atlas-juridico`, porta 3010) e JuridIA não serão alterados.
+**Escopo:** servidor `ejc-vps`, repositório `s2corporativo/juridico`, commit **`fb2fb4dc5b9f1599df89856b37c5578d3972974e`**, serviço de **homologação** `atlas-forense-stage` (porta local 3114). O Atlas legado (`atlas-juridico`, porta 3010) e JuridIA não serão alterados.
 
 ## Estado verificado em 14/10/2026
 
@@ -10,7 +10,7 @@
 - Arquivo `/opt/atlas-juridico/staging/unified/secrets/atlas-stage.env`: existe, root:root, modo 0600; contém configuração métrica, mas NÃO contém `ATLAS_CAUSAL_DATABASE_URL`, `ATLAS_CAUSAL_CASE_KEY_SECRET` ou `ATLAS_CAUSAL_PILOT_AUTHORIZATION`.
 - SentinelX: a política `file_ops` permite leitura em `/opt`, mas **não autoriza escrita** nos diretórios Atlas, em `/etc/systemd/system/atlas-forense-stage.service.d` nem em `/var/lib/atlas-juridico`. Não contornar por `sudo`, script, container, symlink ou outro intermediário; solicitar inclusão dos caminhos necessários ao operador.
 - Validação isolada: **50 arquivos/228 testes aprovados**, TypeScript, build e check Drizzle aprovados.
-- Execução real com DataJud (sem banco) em diretório temporário privado: **2 lotes consultados, zero casos retornados**. Testes diagnósticos subsequentes sofreram timeouts HTTP e resposta 429. **Nenhuma coleta persistente deve ser ativada antes de obter casos válidos e aprovar seu exame.**
+- Execução real anterior com DataJud (sem banco) em diretório temporário privado: **2 lotes consultados, zero casos retornados**. A PR #36 adicionou bloqueio explícito para amostras vazias, retorno com `timed_out`, shards com falha e payload incompleto; 50 arquivos e 229 testes passaram nessa atualização. Testes diagnósticos subsequentes sofreram timeouts HTTP e resposta 429. **Nenhuma coleta persistente deve ser ativada antes de obter casos válidos e aprovar seu exame.**
 - A execução experimental utilizou segredo HMAC efêmero somente em memória; diretório temporário eliminado. Isto **não** substitui segredo HMAC persistente de operação.
 
 ## Pré-requisitos bloqueantes
