@@ -5,6 +5,7 @@ import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { quoteHash, normalizeQuote } from "@/lib/evidence";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
 import { verifyCitations } from "@/lib/citation_gate";
+import { createHash } from "node:crypto";
 
 let passed = 0;
 let failed = 0;
@@ -106,10 +107,15 @@ assert(!already.includes("RASCUNHO GERADO POR IA** — Revisão por advogado"), 
 
 console.log("\n=== CITATION GATE ===");
 
+const confirmed = (textoTrecho: string, urlOficial: string) => ({
+  textoTrecho, urlOficial, revisadoPor: "human:fixture-qa",
+  dataConsulta: new Date(),
+  hashConteudo: createHash("sha256").update(textoTrecho, "utf8").digest("hex"),
+});
 const legalSources = [
-  { id: "1", tipo: "artigo_lei", diploma: "CC", numero: "art. 927", tribunal: null, textoTrecho: "Responsabilidade civil", vigente: true, urlOficial: "http://planalto.gov.br" },
-  { id: "2", tipo: "sumula", diploma: "Súmula", numero: "Súmula 308", tribunal: "TST", textoTrecho: "Prescrição intercorrente", vigente: true, urlOficial: "http://tst.jus.br" },
-  { id: "3", tipo: "artigo_lei", diploma: "CC", numero: "art. 938", tribunal: null, textoTrecho: "Habitante de prédio", vigente: false, urlOficial: "http://planalto.gov.br" },
+  { id: "1", tipo: "artigo_lei", diploma: "CC", numero: "art. 927", tribunal: null, vigente: true, ...confirmed("Responsabilidade civil", "https://www.planalto.gov.br/") },
+  { id: "2", tipo: "sumula", diploma: "Súmula", numero: "Súmula 308", tribunal: "TST", vigente: true, ...confirmed("Prescrição intercorrente", "https://www.tst.jus.br/") },
+  { id: "3", tipo: "artigo_lei", diploma: "CC", numero: "art. 938", tribunal: null, vigente: false, ...confirmed("Habitante de prédio", "https://www.planalto.gov.br/") },
 ];
 
 // Text with real and fake citations
@@ -120,6 +126,31 @@ assert(result.total === 3, `Detecta 3 citações (detectou ${result.total})`);
 assert(result.verificadas === 2, `Verifica 2 citações reais (art. 927 CC + Súmula 308 TST) (verificou ${result.verificadas})`);
 assert(result.suspeitas === 1, `Marca 1 citação suspeita (art. 999 CC não existe) (marcou ${result.suspeitas})`);
 assert(result.bloquear === true, "Fail-closed: bloqueia aprovação por causa da citação suspeita");
+
+
+// Fonte adulterada, sem curadoria real ou HTTP nunca é "verificada".
+const tampered = verifyCitations("Conforme o art. 927 do CC.", [
+  { ...legalSources[0], textoTrecho: "texto adulterado" },
+]);
+assert(tampered.verificadas === 0 && tampered.bloquear, "Hash divergente bloqueia citação");
+
+const noHuman = verifyCitations("Conforme o art. 927 do CC.", [
+  { ...legalSources[0], revisadoPor: "seed" },
+]);
+assert(noHuman.verificadas === 0 && noHuman.bloquear, "Revisão automática não é revisão humana");
+
+const httpSource = verifyCitations("Conforme o art. 927 do CC.", [
+  { ...legalSources[0], urlOficial: "http://www.planalto.gov.br/" },
+]);
+assert(httpSource.verificadas === 0 && httpSource.bloquear, "URL HTTP não confirma fonte");
+
+const stale = verifyCitations("Conforme o art. 927 do CC.", [
+  { ...legalSources[0], dataConsulta: new Date("2024-01-01") },
+]);
+assert(stale.verificadas === 0 && stale.bloquear, "Consulta antiga exige nova revisão");
+
+assert(verifyCitations("Conforme REsp 123.456.", []).bloquear, "Precedente sem fonte validada bloqueia");
+assert(verifyCitations("Documento sem referência jurídica.", []).bloquear, "Ausência de fontes não constitui verificação");
 
 // ── 5. OWNERSHIP / ISOLATION (logical test) ────────────────────────
 
