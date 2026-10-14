@@ -10,7 +10,11 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate"
+    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "db:causal:generate": "drizzle-kit generate --config drizzle-causal.config.ts",
+    "db:causal:migrate": "drizzle-kit migrate --config drizzle-causal.config.ts",
+    "collect:causal:rmbh": "node scripts/collect-rmbh-causal-pilot.mjs",
+    "analyze:causal:rmbh": "node scripts/analyze-rmbh-causal-pilot.mjs"
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.8",

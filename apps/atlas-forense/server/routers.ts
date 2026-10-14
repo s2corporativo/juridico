@@ -12,6 +12,9 @@ import { REVIEW_DECISIONS, REVIEW_PRIORITIES, REVIEW_STATUSES } from "./evidence
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { isCausalDatabaseConfigured } from "./causal-db";
+import { causalAnnotationInput, causalCaseInput, causalDocumentInput, causalEvidenceInput, causalOutcomeInput, causalRunInput } from "./causal-contract";
+import { createCausalAnnotation, createCausalCase, createCausalDocument, createCausalEvidence, createCausalOutcome, createCausalRun, getCausalCase } from "./causal-service";
 import {
   createAttendance,
   createClient,
@@ -175,6 +178,16 @@ export const appRouter = router({
   }),
   metropolitan: router({
     coverage: publicProcedure.query(() => getMetropolitanCoverageOverview()),
+  }),
+  causal: router({
+    status: adminProcedure.query(() => ({ enabled: isCausalDatabaseConfigured(), databaseEnv: "ATLAS_CAUSAL_DATABASE_URL" })),
+    createRun: adminProcedure.input(causalRunInput).mutation(({ input }) => createCausalRun(input)),
+    createCase: adminProcedure.input(causalCaseInput).mutation(({ input }) => createCausalCase(input)),
+    addDocument: adminProcedure.input(causalDocumentInput).mutation(({ input }) => createCausalDocument(input)),
+    addEvidence: adminProcedure.input(causalEvidenceInput).mutation(({ input }) => createCausalEvidence(input)),
+    annotate: adminProcedure.input(causalAnnotationInput).mutation(({ input }) => createCausalAnnotation(input)),
+    recordOutcome: adminProcedure.input(causalOutcomeInput).mutation(({ input }) => createCausalOutcome(input)),
+    getCase: adminProcedure.input(z.object({ caseId: z.number().int().positive() })).query(({ input }) => getCausalCase(input.caseId)),
   }),
   civilConsumer: router({
     overview: publicProcedure.input(z.object({
