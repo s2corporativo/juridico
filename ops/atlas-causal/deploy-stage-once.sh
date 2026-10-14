@@ -60,6 +60,8 @@ git clone --quiet --branch atlas-forense "$REPO" "$TMP/repo"
 git -C "$TMP/repo" cat-file -e "$SHA^{commit}"
 git -C "$TMP/repo" checkout --quiet --detach "$SHA"
 [ "$(git -C "$TMP/repo" rev-parse HEAD)" = "$SHA" ]
+# Permitir ao usuário do serviço atravessar o diretório temporário, sem listar seu conteúdo.
+chmod 0711 "$TMP"
 cd "$TMP/repo"
 pnpm install --frozen-lockfile
 pnpm --dir apps/atlas-forense check
