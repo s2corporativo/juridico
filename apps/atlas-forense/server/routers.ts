@@ -17,6 +17,15 @@ import { causalAnnotationInput, causalCaseInput, causalDocumentInput, causalEvid
 import { createCausalAnnotation, createCausalCase, createCausalDocument, createCausalEvidence, createCausalOutcome, createCausalRun, getCausalCase } from "./causal-service";
 import { CAUSAL_DASHBOARD_CLAIM_TYPES, CAUSAL_DASHBOARD_REVIEW_STATUSES, getCausalDashboard } from "./causal-dashboard";
 import {
+  extractCandidatesFromDocument,
+  getCausalDocumentText,
+  getProvenCauses,
+  getReviewQueue,
+  ingestInteiroTeor,
+  reviewAnnotation,
+} from "./causal-pilot-service";
+import { causalInteiroTeorInput, causalReviewDecisionInput } from "./causal-contract";
+import {
   createAttendance,
   createClient,
   createMatter,
@@ -193,6 +202,13 @@ export const appRouter = router({
     annotate: adminProcedure.input(causalAnnotationInput).mutation(({ input }) => createCausalAnnotation(input)),
     recordOutcome: adminProcedure.input(causalOutcomeInput).mutation(({ input }) => createCausalOutcome(input)),
     getCase: adminProcedure.input(z.object({ caseId: z.number().int().positive() })).query(({ input }) => getCausalCase(input.caseId)),
+    // ── Piloto inteiro teor: candidatos → causas comprovadas ──
+    ingestInteiroTeor: adminProcedure.input(causalInteiroTeorInput).mutation(({ input }) => ingestInteiroTeor(input)),
+    extractFromDocument: adminProcedure.input(z.object({ documentId: z.number().int().positive() })).mutation(({ input }) => extractCandidatesFromDocument(input)),
+    reviewAnnotation: adminProcedure.input(causalReviewDecisionInput).mutation(({ input }) => reviewAnnotation(input)),
+    reviewQueue: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(200).optional() }).optional()).query(({ input }) => getReviewQueue(input)),
+    provenCauses: adminProcedure.query(() => getProvenCauses()),
+    documentText: adminProcedure.input(z.object({ documentId: z.number().int().positive() })).query(({ input }) => getCausalDocumentText(input.documentId)),
   }),
   civilConsumer: router({
     overview: publicProcedure.input(z.object({

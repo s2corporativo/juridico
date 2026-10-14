@@ -99,6 +99,21 @@ Cada anotação e cada resultado referenciam uma evidência. O contrato exige:
 
 A classificação pode iniciar como `pending`. Aprovação, rejeição ou devolução devem ser acompanhadas de revisor e data. A extração automática não transforma, sozinha, um dado em fato jurídico reconhecido.
 
+## Piloto inteiro teor: candidatos → causas comprovadas
+
+O piloto fecha o elo que a coleta de metadados não fecha: **o que ensejou os pedidos de dano moral, dano material e obrigação de fazer/não fazer — a causa em si**.
+
+Fluxo em quatro passos, todos administrativos via tRPC (`causal.*`):
+
+1. **Ingestão** — `causal.ingestInteiroTeor`: registra o texto integral da sentença/acórdão em `causal_document_texts` (banco causal isolado, `mediumtext`). Exige a **URL oficial de proveniência** (HTTPS) e recusa **fail-closed** qualquer texto com marcador de dado pessoal (CPF, CNPJ, e-mail, telefone ou marcador de anonimização). Texto que já fundamentou anotação aprovada é imutável; versão nova exige documento novo.
+2. **Extração determinística** — `causal.extractFromDocument`: o extrator (`server/causal-extraction.ts`, versão `CAUSAL_DETECTOR_VERSION` rastreável) classifica famílias de fato gerador (transporte; crédito/cobrança; contratos abusivos; inadimplemento; serviços/saúde; trânsito; personalidade/dados; outros) e os pedidos detectados (dano moral, dano material, obrigação de fazer/não fazer). Cada candidato cria **evidência** com trecho limitado + offset do inteiro teor e **anotação** `pending` com `sourceKind=document`. A extração é idempotente: candidato idêntico não é duplicado.
+3. **Revisão humana** — `causal.reviewQueue` lista os pendentes; `causal.reviewAnnotation` aprova, rejeita ou devolve com revisor e nota obrigatórios (rejeição/devolução exigem nota fundamentada). Aprovar evidencia a cadeia: anotação aprovada → evidência aprovada → caso `reviewed`. Um caso pode acumular várias causas (menções não são mutuamente exclusivas).
+4. **Causas comprovadas** — `causal.provenCauses`: agregação de fatores geradores **aprovados** por família e tipo de pedido (casos distintos), distinguindo causa comprovada de candidato preliminar (`cnj_subject`/`movement` permanece pendente até revisão).
+
+O extrator é deliberadamente **determinístico** (listas de termos normalizadas, sem IA na linha de decisão do piloto). Ajustes de termos devem alterar `CAUSAL_DETECTOR_VERSION` para preservar a rastreabilidade das anotações já geradas.
+
+Migração do banco isolado inclui `causal_document_texts` e `familyKey` em `causal_annotations` (drizzle-causal `0001`). Aplicar com `pnpm db:causal:migrate` usando `ATLAS_CAUSAL_DATABASE_URL`.
+
 ## API administrativa
 
 Os procedimentos tRPC adicionados ao Atlas são:
@@ -111,7 +126,8 @@ Os procedimentos tRPC adicionados ao Atlas são:
 - `causal.annotate`;
 - `causal.recordOutcome`;
 - `causal.getCase`;
-- `causal.dashboard` — agregação administrativa de fatos geradores, pedidos, resultados, revisão e municípios.
+- `causal.dashboard` — agregação administrativa de fatos geradores, pedidos, resultados, revisão e municípios;
+- piloto inteiro teor: `causal.ingestInteiroTeor`, `causal.extractFromDocument`, `causal.reviewQueue`, `causal.reviewAnnotation`, `causal.provenCauses`, `causal.documentText`.
 
 Todos são administrativos. O módulo permanece desligado quando `ATLAS_CAUSAL_DATABASE_URL` não está configurada.
 

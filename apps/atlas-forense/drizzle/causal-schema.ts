@@ -1,4 +1,11 @@
-import { decimal, index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { customType, decimal, index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+
+// Inteiro teor excede o limite de 64 KiB do TEXT; MEDIUMTEXT comporta até 16 MiB.
+const mediumText = customType<{ data: string; driverData: string }>({
+  dataType() {
+    return "mediumtext";
+  },
+});
 
 export const causalRunStatus = ["planned", "running", "partial", "completed", "failed", "rejected"] as const;
 export const causalReviewStatus = ["pending", "approved", "rejected", "returned"] as const;
@@ -87,6 +94,8 @@ export const causalAnnotations = mysqlTable("causal_annotations", {
   id: int("id").autoincrement().primaryKey(),
   caseId: int("caseId").notNull(),
   evidenceRefId: int("evidenceRefId").notNull(),
+  // Família de fato gerador (taxonomia do piloto). Nulo para anotações antigas.
+  familyKey: varchar("familyKey", { length: 32 }),
   role: mysqlEnum("role", causalClaimRoles).notNull(),
   claimType: mysqlEnum("claimType", causalClaimTypes).notNull(),
   label: varchar("label", { length: 255 }).notNull(),
@@ -123,6 +132,25 @@ export const causalOutcomes = mysqlTable("causal_outcomes", {
   index("causal_outcomes_annotation_idx").on(table.annotationId),
   index("causal_outcomes_status_idx").on(table.reviewStatus),
 ]);
+
+export const causalDocumentTexts = mysqlTable("causal_document_texts", {
+  id: int("id").autoincrement().primaryKey(),
+  documentId: int("documentId").notNull(),
+  caseId: int("caseId").notNull(),
+  plainText: mediumText("plainText").notNull(),
+  charCount: int("charCount").notNull(),
+  contentHashSha256: varchar("contentHashSha256", { length: 64 }).notNull(),
+  extractionMethod: mysqlEnum("extractionMethod", ["manual_paste", "official_api", "ocr"]).default("manual_paste").notNull(),
+  privacyScanStatus: mysqlEnum("privacyScanStatus", ["clean", "flagged"]).default("clean").notNull(),
+  detectorVersion: varchar("detectorVersion", { length: 32 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("causal_document_texts_document_unique").on(table.documentId),
+  index("causal_document_texts_case_idx").on(table.caseId),
+]);
+
+export type CausalDocumentText = typeof causalDocumentTexts.$inferSelect;
 
 export type CausalRun = typeof causalRuns.$inferSelect;
 export type CausalCase = typeof causalCases.$inferSelect;

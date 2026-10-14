@@ -72,6 +72,23 @@ export const causalOutcomeInput = z.object({
   amountCents: z.number().int().nonnegative().max(2_147_483_647).nullable().optional(),
 });
 
+export const causalInteiroTeorInput = z.object({
+  caseId: z.number().int().positive(),
+  documentId: z.number().int().positive(),
+  plainText: z.string().min(50).max(1_000_000),
+  extractionMethod: z.enum(["manual_paste", "official_api", "ocr"]).default("manual_paste"),
+  // Proveniência obrigatória: URL oficial de consulta do inteiro teor (PJe/DataJud).
+  sourceUrl: officialUrl,
+  sourceLabel: safeText(255).min(2).optional(),
+});
+
+export const causalReviewDecisionInput = z.object({
+  annotationId: z.number().int().positive(),
+  decision: z.enum(["approved", "rejected", "returned"]),
+  reviewer: safeText(191).min(2),
+  note: safeText(2_000).optional(),
+});
+
 export function validateReviewedState(input: { reviewStatus: string; reviewedBy?: string | null; reviewedAt?: Date | null }) {
   if (input.reviewStatus === "pending") return { ok: true as const };
   if (!input.reviewedBy || !input.reviewedAt) {
