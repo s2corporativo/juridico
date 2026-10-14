@@ -19,6 +19,7 @@ const NationalCensusPage = lazy(() => import("@/pages/NationalCensusPage"));
 const CitationDossierPage = lazy(() => import("@/pages/CitationDossierPage"));
 const MetropolitanCoveragePage = lazy(() => import("@/pages/MetropolitanCoveragePage"));
 const CausalDashboardPage = lazy(() => import("@/pages/CausalDashboardPage"));
+const JuridiaWorkspacePage = lazy(() => import("@/pages/JuridiaWorkspacePage"));
 const OfficeClientesPage = lazy(() => import("@/pages/OfficeClientesPage"));
 const OfficeClienteDetalhePage = lazy(() => import("@/pages/OfficeClienteDetalhePage"));
 const OfficeComunicacoesPage = lazy(() => import("@/pages/OfficeComunicacoesPage"));
@@ -51,6 +52,7 @@ export default function App() {
               <Route path={routes.national} component={NationalCensusPage} />
               <Route path="/rmbh" component={MetropolitanCoveragePage} />
               <Route path="/causal" component={CausalDashboardPage} />
+              <Route path="/juridia" component={JuridiaWorkspacePage} />
               <Route path="/escritorio/clientes/:id" component={OfficeClienteDetalhePage} />
               <Route path="/escritorio/clientes" component={OfficeClientesPage} />
               <Route path="/escritorio/comunicacoes" component={OfficeComunicacoesPage} />

@@ -13,6 +13,22 @@ export interface EjcSsoRuntime {
 
 type EnvSource = Record<string, string | undefined>;
 
+/** URL da aplicação JuridIA, distinta do issuer técnico OIDC. */
+export function getJuridIAPublicUrl(env: EnvSource = process.env): string | null {
+  const raw = env.JURIDIA_PUBLIC_URL?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    const localHttp = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url.origin);
+    if (env.NODE_ENV === "production" && url.protocol !== "https:") return null;
+    if (url.protocol !== "https:" && !(localHttp && env.NODE_ENV !== "production")) return null;
+    if (url.username || url.password || url.search || url.hash) return null;
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Estado de ativação da ponte SSO com o EJC (JuridIA).
  *
@@ -67,6 +83,7 @@ export function getEjcSsoReadiness(env: EnvSource = process.env) {
   const missingConfiguration = EJC_SSO_REQUIRED_ENV.filter(key => !env[key]?.trim());
   const explicitlyEnabled = env.EJC_SSO_ENABLED?.trim() === "true";
   const issuer = env.EJC_OIDC_ISSUER?.trim() ?? "";
+  const juridiaUrl = getJuridIAPublicUrl(env);
   const isLocalHttp = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(issuer);
 
   let status: string;
@@ -87,6 +104,7 @@ export function getEjcSsoReadiness(env: EnvSource = process.env) {
     // URL pública do EJC (não é segredo) — usada pelo SiteNav como atalho
     // "Minutas · JuridIA" quando o runtime está enabled (fail-closed).
     issuer,
+    juridia: { configured: Boolean(juridiaUrl), url: juridiaUrl },
     protocol: "oidc_authorization_code" as const,
     callbackPath: "/api/ejc-sso/callback",
     requiredClaims: ["iss", "sub", "aud", "exp"] as const,
