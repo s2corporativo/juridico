@@ -110,13 +110,14 @@ Os procedimentos tRPC adicionados ao Atlas são:
 - `causal.addEvidence`;
 - `causal.annotate`;
 - `causal.recordOutcome`;
-- `causal.getCase`.
+- `causal.getCase`;
+- `causal.dashboard` — agregação administrativa de fatos geradores, pedidos, resultados, revisão e municípios.
 
 Todos são administrativos. O módulo permanece desligado quando `ATLAS_CAUSAL_DATABASE_URL` não está configurada.
 
 ## O que ainda não está incluído
 
-Ainda não estão incluídos download automático de sentença, OCR, classificação de documentos integrais, tela de ficha do caso, painel causal ou exportação para `IntelligenceSnapshot` do EJC. Esses itens dependem de definição de cobertura, disponibilidade legal/técnica da fonte e piloto revisado.
+Ainda não estão incluídos download automático de sentença, OCR, classificação de documentos integrais, tela de ficha individual ou exportação para `IntelligenceSnapshot` do EJC. O dashboard resumido disponível em `/causal` exibe apenas agregados sanitizados e não substitui a revisão do inteiro teor.
 
 ## Conformidade com fontes públicas e publicação
 

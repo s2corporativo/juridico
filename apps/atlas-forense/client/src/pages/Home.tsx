@@ -342,14 +342,11 @@ export default function Home() {
           <div className="source-stamp"><BookOpenCheck size={15} /> Fontes e dossiês</div>
         </div>
 
-        <nav className="section-nav" aria-label="Navegação do painel">
-          <a href="#visao"><span>01</span>Consulta jurídica</a>
-          <a href="#compendio"><span>02</span>Fichas do acervo</a>
-          <a href="#piloto-civel-consumidor"><span>03</span>Cível / Consumidor</a>
-          <a href="#causas"><span>04</span>Jurimetria JEC</a>
-          <a href="#unidades"><span>05</span>Órgãos e unidades</a>
-          <a href="#tempo"><span>06</span>Tempo observado</a>
-          <a href="#metodo"><span>07</span>Metodologia</a>
+        <nav className="section-nav" aria-label="Atalhos desta página">
+          <span className="section-nav-label">Atalhos desta página</span>
+          <a href="#visao"><span>01</span>Visão geral</a>
+          <a href="#causas"><span>02</span>Causas</a>
+          <a href="#metodo"><span>03</span>Metodologia</a>
         </nav>
 
         <SiteNav />

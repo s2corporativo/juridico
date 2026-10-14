@@ -14,9 +14,9 @@ import {
   Boxes,
   Database,
   ClipboardCheck,
-  FileSearch,
   Landmark,
   FileSignature,
+  GitBranch,
   type LucideIcon,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -34,16 +34,17 @@ export interface SiteNavGroup {
 
 export const SITE_NAV_GROUPS: SiteNavGroup[] = [
   {
-    title: "Análise",
+    title: "Consultar",
     items: [
       { href: "/", label: "Painel JEC", icon: LayoutDashboard },
+      { href: "/causal", label: "Atlas Causal", icon: GitBranch },
       { href: "/compendio", label: "Compêndio", icon: BookOpenCheck },
       { href: "/rmbh", label: "Cobertura RMBH", icon: MapPinned },
       { href: "/nacional", label: "Censo nacional", icon: Globe2 },
     ],
   },
   {
-    title: "Escritório",
+    title: "Operar",
     items: [
       { href: "/escritorio/clientes", label: "Clientes", icon: Users },
       { href: "/escritorio/comunicacoes", label: "Comunicações", icon: Inbox },
@@ -52,17 +53,16 @@ export const SITE_NAV_GROUPS: SiteNavGroup[] = [
     ],
   },
   {
-    title: "Sistema",
+    title: "Governar",
     items: [
       { href: "/estrutura", label: "Estrutura", icon: Boxes },
       { href: "/fontes", label: "Fontes públicas", icon: Database },
       { href: "/controle", label: "Controle editorial", icon: ClipboardCheck },
-      { href: "/controle/fila-editorial", label: "Fila editorial", icon: FileSearch },
     ],
   },
 ];
 
-export function SiteNav({ heading = "Atlas completo" }: { heading?: string }) {
+export function SiteNav({ heading = "Navegação principal" }: { heading?: string }) {
   const [location] = useLocation();
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
