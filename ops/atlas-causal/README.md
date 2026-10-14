@@ -52,3 +52,18 @@ O script `ops/atlas-causal/deploy-stage-once.sh` é uma execução única **excl
 ## Critérios de conclusão
 
 Relatório de lote real: `caseKey` HMAC estável, número CNJ bruto ausente dos JSON persistidos, ausência de CPF/CNPJ/nomes identificáveis nas evidências, quantidade de casos e órgãos, taxa de rejeição, limites e proveniência; nenhuma conclusão causal ou condenatória inferida só de movimentos. Banco isolado verificado com migrations, backup e restauração. Health check staging OK após reinício e teste de rollback. Conclusão do piloto **não** habilita automaticamente exposição pública ou o fluxo completo do JuridIA (OIDC em staging ainda indisponível).
+
+## Publicar o piloto inteiro teor no staging (branch nova via git pull)
+
+Para ativar o **piloto inteiro teor** (candidatos → causas comprovadas), usar o pacote
+`deploy-fase1` (mesmo fluxo da Fase 1, estendido com migrate do banco causal isolado):
+
+1. Pré-requisitos: banco `atlas_causal` vazio provisionado + segredos em `atlas-stage.env`
+   (`ATLAS_CAUSAL_DATABASE_URL`, `ATLAS_CAUSAL_CASE_KEY_SECRET`, `ATLAS_CAUSAL_PILOT_AUTHORIZATION=approved`).
+2. Na VPS, como root: `./publicar-causal-piloto-staging.sh --check-only` e depois `--via-git`.
+3. O script publica a branch `feat/causal-piloto-causas-comprovadas` (contém F0 + F1 +
+   candidatos JEC + piloto), aplica `drizzle-causal 0000→0001` e valida saúde/rollback.
+
+Detalhes passo a passo (incluindo o primeiro caso de teste: ingestão → extração →
+revisão → `causal.provenCauses`): `LEIA-ME-PUBLICAR-CAUSAL-PILOTO.md` do pacote.
+Fluxo do piloto: `docs/ATLAS_CAUSAL.md` → seção "Piloto inteiro teor".
