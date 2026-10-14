@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 // citation_gate.ts — Gate anti-alucinação de citações jurídicas (portado do EJC)
 // Extrai citações do texto, verifica existência contra base curada, fail-closed.
 
@@ -109,6 +110,27 @@ export function extractCitations(text: string): Omit<Citation, "status" | "sourc
   return found;
 }
 
+/** Nunca declare fonte legal como verificada só por constar em uma tabela. */
+function isVerifiedOfficialSource(source: {
+  vigente: boolean; textoTrecho: string; urlOficial: string | null;
+  revisadoPor?: string | null; hashConteudo?: string | null;
+  dataConsulta?: Date | string | null;
+}): boolean {
+  if (!source.vigente || !source.revisadoPor?.startsWith("human:")) return false;
+  const hash = createHash("sha256").update(source.textoTrecho, "utf8").digest("hex");
+  if (source.hashConteudo !== hash) return false;
+  const checked = source.dataConsulta instanceof Date
+    ? source.dataConsulta : new Date(source.dataConsulta ?? "");
+  if (!Number.isFinite(checked.getTime()) || checked.getTime() > Date.now() + 60_000 ||
+      Date.now() - checked.getTime() > 90 * 24 * 3600 * 1000) return false;
+  try {
+    const url = new URL(source.urlOficial ?? "");
+    const host = url.hostname.toLowerCase();
+    return url.protocol === "https:" && !url.username && !url.password && !url.port &&
+      !url.hash && (host.endsWith(".jus.br") || host.endsWith(".gov.br"));
+  } catch { return false; }
+}
+
 // ── Verificação contra base curada ──────────────────────────────────────────────
 
 // Verifica citações contra a base de fontes jurídicas (passada como parâmetro)
@@ -123,6 +145,9 @@ export function verifyCitations(
     textoTrecho: string;
     vigente: boolean;
     urlOficial: string | null;
+    revisadoPor?: string | null;
+    hashConteudo?: string | null;
+    dataConsulta?: Date | string | null;
   }[]
 ): VerifyResult {
   const extracted = extractCitations(text);
@@ -159,7 +184,7 @@ export function verifyCitations(
     });
 
     if (match) {
-      if (match.vigente) {
+      if (isVerifiedOfficialSource(match) && ext.type !== "jurisprudencia") {
         citations.push({
           ...ext,
           status: "verificada",
@@ -169,7 +194,7 @@ export function verifyCitations(
             vigente: match.vigente,
             urlOficial: match.urlOficial,
           },
-          reason: "Fonte encontrada na base curada e vigente",
+          reason: "Fonte oficial com hash íntegro, consulta recente e revisão humana registrada; verificar aplicação ao caso",
         });
       } else {
         citations.push({
@@ -181,11 +206,11 @@ export function verifyCitations(
             vigente: match.vigente,
             urlOficial: match.urlOficial,
           },
-          reason: "Fonte encontrada na base, MAS marcada como NÃO vigente — verificar revogação",
+          reason: "Fonte sem comprovação cumulativa de revisão humana, integridade, origem oficial ou consulta recente; exige conferência",
         });
       }
     } else if (ext.type === "jurisprudencia") {
-      // Jurisprudência não curada = identificada (não bloqueia, mas marca)
+      // Toda jurisprudência exige conferência humana da tese e do contexto do caso.
       citations.push({
         ...ext,
         status: "identificada",
@@ -218,7 +243,7 @@ export function verifyCitations(
     identificadas,
     suspeitas,
     genericas,
-    bloquear: suspeitas > 0, // fail-closed: bloqueia aprovação se houver suspeitas
+    bloquear: citations.length === 0 || suspeitas > 0 || identificadas > 0 || genericas > 0, // fail-closed: nenhuma citação não comprovada autoriza a aprovação
     citations,
   };
 }
