@@ -69,6 +69,38 @@ export function buildCaseKey(alias, processNumber, secret) {
   return `${alias}:${createHmac("sha256", secret).update(processNumber).digest("hex")}`;
 }
 export function hashRecord(record) { return createHash("sha256").update(JSON.stringify(record)).digest("hex"); }
+
+/**
+ * Transforma o registro transitório do DataJud em um artefato persistível.
+ * numeroProcesso só existe em memória, para deduplicação e HMAC; o valor
+ * NUNCA deve integrar JSON, logs, banco, evidências ou arquivo de análise.
+ * A allowlist evita persistir campos imprevistos do provedor.
+ */
+export function toPersistableCausalRecord(record, alias, secret) {
+  if (!record || typeof record.processNumber !== "string") throw new Error("Número transitório de processo ausente.");
+  const sanitized = {
+    caseKey: buildCaseKey(alias, record.processNumber, secret),
+    sourceHashSha256: hashRecord(record),
+    tribunal: record.tribunal,
+    degree: record.degree,
+    filingDate: record.filingDate,
+    updatedAt: record.updatedAt,
+    classCode: record.classCode,
+    classLabel: record.classLabel,
+    bodyCode: record.bodyCode,
+    bodyLabel: record.bodyLabel,
+    municipalityIbgeCode: record.municipalityIbgeCode,
+    municipality: record.municipality ?? null,
+    subjects: record.subjects,
+    movements: record.movements,
+  };
+  const serialized = JSON.stringify(sanitized);
+  if (serialized.includes(record.processNumber) || hasDirectPersonalData(serialized)) {
+    throw new Error("Metadados não sanitizados detectados; coleta bloqueada sem gravar arquivos.");
+  }
+  return sanitized;
+}
+
 export function queryFingerprint(query) { return createHash("sha256").update(JSON.stringify(query)).digest("hex"); }
 export function extractSearchPage(payload) {
   const hits = Array.isArray(payload?.hits?.hits) ? payload.hits.hits : [];
@@ -80,7 +112,7 @@ export function extractSearchPage(payload) {
   };
 }
 
-const directPersonalData = /(\d{3}\.\d{3}\.\d{3}-\d{2}|\b\d{11}\b|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\[\s*(?:NOME|CPF|EMAIL|TELEFONE)_[^\]]+\])/i;
+const directPersonalData = /(\d{3}\.\d{3}\.\d{3}-\d{2}|\b\d{11}\b|\b\d{20}\b|\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\[\s*(?:NOME|CPF|CNPJ|EMAIL|TELEFONE)_[^\]]+\])/i;
 export function hasDirectPersonalData(value) { return directPersonalData.test(String(value ?? "")); }
 export function deriveAnnotations(record, evidenceRefId) {
   return record.subjects.filter(subject => !hasDirectPersonalData(subject.label)).map(subject => {
