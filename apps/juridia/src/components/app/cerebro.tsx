@@ -133,8 +133,10 @@ const HYPOTHESIS_CONFIG = {
 } as const;
 
 export function Cerebro() {
-  const { setAppTab, setCurrentDocId, setBrainContext, currentCaseId } = useAppStore();
+  const { setAppTab, setCurrentDocId, setBrainContext, currentCaseId, setCurrentCaseId } = useAppStore();
   const [facts, setFacts] = useState("");
+  const [cases, setCases] = useState<{ id: string; title: string; clientName?: string }[]>([]);
+  const [caseId, setCaseId] = useState(currentCaseId || "");
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BrainResult | null>(null);
@@ -146,14 +148,35 @@ export function Cerebro() {
 
   const SAMPLE = `O cliente João da Silva foi inscrito indevidamente no SERASA em 15/01/2026 pelo Banco XYZ, após já ter quitado o débito de R$ 5.000,00 em 10/12/2025. O cliente possui comprovante de pagamento. Sofreu constrangimento ao tentar obter crédito. Pede indenização por danos morais no valor de R$ 50.000,00. Relação de consumo caracterizada.`;
 
-  // Carrega histórico de análises ao montar
+  // Lista somente os casos pertencentes ao advogado autenticado.
   useEffect(() => {
-    loadHistory();
+    let mounted = true;
+    fetch("/api/cases").then(async (res) => {
+      if (!res.ok) throw new Error("Falha ao listar casos");
+      const data = await res.json();
+      if (!mounted) return;
+      const allowed = (data.cases || []) as { id: string; title: string; clientName?: string }[];
+      setCases(allowed);
+      const chosen = allowed.some((entry) => entry.id === currentCaseId) ? currentCaseId! : (allowed[0]?.id || "");
+      setCaseId(chosen);
+    }).catch(() => { if (mounted) toast({ title: "Não foi possível carregar os casos", variant: "destructive" }); });
+    return () => { mounted = false; };
   }, [currentCaseId]);
 
-  async function loadHistory() {
+  useEffect(() => {
+    if (!caseId) return;
+    const controller = new AbortController();
+    fetch(`/api/brain?caseId=${encodeURIComponent(caseId)}`, { signal: controller.signal })
+      .then(async (res) => res.ok ? res.json() : { analyses: [] })
+      .then((data) => setHistory(data.analyses || []))
+      .catch(() => null);
+    return () => controller.abort();
+  }, [caseId]);
+
+  async function loadHistory(selectedCaseId: string) {
     try {
-      const res = await fetch(`/api/brain?caseId=${encodeURIComponent(currentCaseId || "")}`);
+      const res = await fetch(`/api/brain?caseId=${encodeURIComponent(selectedCaseId)}`);
+      if (!res.ok) return;
       const data = await res.json();
       setHistory(data.analyses || []);
     } catch { /* ignore */ }
@@ -165,8 +188,8 @@ export function Cerebro() {
       toast({ title: "Descreva os fatos (mín. 30 caracteres)", variant: "destructive" });
       return;
     }
-    if (!currentCaseId) {
-      toast({ title: "Selecione ou crie um caso antes de analisar", variant: "destructive" });
+    if (!caseId) {
+      toast({ title: "Selecione um caso antes de analisar", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -181,7 +204,7 @@ export function Cerebro() {
       const res = await fetch("/api/brain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facts, title: title || undefined, caseId: currentCaseId }),
+        body: JSON.stringify({ facts, title: title || undefined, caseId }),
       });
       const data = await res.json();
       clearInterval(stepInterval);
@@ -190,7 +213,7 @@ export function Cerebro() {
       } else {
         setResult(data);
         setCurrentStep(8);
-        await loadHistory(); // atualiza histórico
+        await loadHistory(caseId); // atualiza somente o histórico do caso autorizado
         toast({
           title: "Análise cerebral concluída",
           description: `${data.steps?.filter((s: BrainStep) => s.status === "done").length || 0}/8 etapas completas · análise persistida`,
@@ -205,23 +228,27 @@ export function Cerebro() {
   }
 
   async function handleUpload(file: File) {
-    if (!currentCaseId) {
-      toast({ title: "Selecione ou crie um caso antes de importar autos", variant: "destructive" });
+    if (!caseId) {
+      toast({ title: "Selecione um caso antes de importar documentos", variant: "destructive" });
       return;
     }
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("caseId", currentCaseId || "");
+      formData.append("caseId", caseId);
       const res = await fetch("/api/case-files", { method: "POST", body: formData });
       const data = await res.json();
-      if (data.error) {
-        toast({ title: data.error, variant: "destructive" });
+      if (!res.ok || data.error) {
+        toast({ title: data.error || "Falha na importação", variant: "destructive" });
       } else {
         const extracted = data.text || "";
         const existing = facts.trim();
         const combined = existing ? `${existing}\n\n--- Documento: ${data.fileName} (${data.textLength} chars, ${data.totalEvidence} evidências) ---\n${extracted}` : extracted;
+        if (combined.length > 50000) {
+          toast({ title: "Texto acumulado excede 50 mil caracteres. Analise os documentos em partes.", variant: "destructive" });
+          return;
+        }
         setFacts(combined);
         toast({
           title: `Documento importado: ${data.fileName}`,
@@ -268,6 +295,25 @@ export function Cerebro() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="brain-case" className="text-xs">Caso vinculado à análise e aos documentos</Label>
+              <select
+                id="brain-case"
+                value={caseId}
+                onChange={(event) => {
+                  setCaseId(event.target.value);
+                  setCurrentCaseId(event.target.value || null);
+                  setFacts("");
+                  setResult(null);
+                  setHistory([]);
+                }}
+                className="w-full rounded-md border border-input bg-background p-2 text-sm"
+              >
+                {!cases.length && <option value="">Nenhum caso cadastrado</option>}
+                {cases.map((item) => <option key={item.id} value={item.id}>{item.title}{item.clientName ? ` · ${item.clientName}` : ""}</option>)}
+              </select>
+              {!cases.length && <p className="text-xs text-muted-foreground">Cadastre ou abra um caso autorizado para importar arquivos e utilizar o Cérebro.</p>}
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs">Título (opcional)</Label>
               <Input
@@ -326,7 +372,7 @@ export function Cerebro() {
                 Limpar
               </Button>
             </div>
-            <Button onClick={analyze} disabled={loading || facts.trim().length < 30} className="w-full" size="lg">
+            <Button onClick={analyze} disabled={loading || uploading || !caseId || facts.trim().length < 30} className="w-full" size="lg">
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
