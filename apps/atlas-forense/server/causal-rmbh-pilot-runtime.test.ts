@@ -47,6 +47,12 @@ describe("coletor-piloto causal DataJud/RMBH", () => {
       movements: [{ name: "Juntado CPF 123.456.789-01", date: null, code: 1 }],
     }, "tjmg", "s".repeat(32))).toThrow(/não sanitizados/);
   });
+  it("rejeita respostas do DataJud incompletas sem fingir coleta vazia", () => {
+    expect(() => extractSearchPage({ hits: { total: { value: 0 } } })).toThrow(/inválida/);
+    expect(() => extractSearchPage({ timed_out: true, hits: { hits: [] } })).toThrow(/timeout/);
+    expect(() => extractSearchPage({ _shards: { failed: 1 }, hits: { hits: [] } })).toThrow(/parcial/);
+    expect(extractSearchPage({ timed_out: false, _shards: { failed: 0 }, hits: { total: { value: 0, relation: "eq" }, hits: [] } }).records).toEqual([]);
+  });
   it("transforma assuntos em anotações pendentes sem afirmar resultado", () => {
     const annotations = deriveAnnotations({ subjects: [{ code: 1, label: "Dano moral" }, { code: 2, label: "Negativação indevida" }] }, 9);
     expect(annotations).toEqual(expect.arrayContaining([
