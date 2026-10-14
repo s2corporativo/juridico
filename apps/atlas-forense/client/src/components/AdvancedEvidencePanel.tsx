@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpRight, BarChart3, FileText, Filter, Plus, Printer, X } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { jecDashboardData } from "@/data/jecDashboardData";
+import { contextualSubjects, summarizeDamageContexts } from "@/lib/jec-damage-context";
 
 type CityFilter = "Todos" | "Belo Horizonte" | "Betim";
 type YearFilter = "Todos" | "2025" | "2026";
@@ -36,6 +37,8 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
     (!selectedSubjects.length || selectedSubjects.some((subject) => item.assuntos.includes(subject))) &&
     (!selectedOrgaos.length || selectedOrgaos.includes(item.orgaoCodigo));
   const rows = useMemo(() => data.processRows.filter(includes), [city, year, startDate, endDate, selectedSubjects, selectedOrgaos]);
+
+  const damageContexts = useMemo(() => summarizeDamageContexts(rows), [rows]);
 
   const timeline = useMemo(() => months
     .filter((month) => (year === "Todos" || month.startsWith(year)) && month >= startDate.slice(0, 7) && month <= endDate.slice(0, 7))
@@ -81,8 +84,8 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
   const csvCell = (value: string | number | boolean | null) => `"${String(value ?? "").replaceAll('"', '""')}"`;
   const exportCsv = () => {
     const metadata = ["# Atlas Forense — recorte filtrado", `# Filtros: ${activeFilters.join(" | ")}`, `# Fonte: ${data.meta.fonte}`, `# Série mensal: ${data.meta.alertaTimeline}`];
-    const header = "municipio;ano;orgao_codigo;unidade;assuntos_cnj;data_ajuizamento;ultimo_movimento;data_ultimo_movimento;tempo_observado_dias;baixa_observada;fonte_status";
-    const lines = rows.map((row) => [row.municipio, row.ano, row.orgaoCodigo, row.unidade, row.assuntos.join(" | "), row.dataAjuizamento, row.ultimoMovimento, row.ultimoMovimentoData, row.tempoObservadoDias, row.temBaixaObservada, row.fonteStatus].map(csvCell).join(";"));
+    const header = "municipio;ano;orgao_codigo;unidade;assuntos_cnj;data_ajuizamento;ultimo_movimento;data_ultimo_movimento;tempo_observado_dias;baixa_observada;fonte_status;assuntos_correlatos_cnj";
+    const lines = rows.map((row) => [row.municipio, row.ano, row.orgaoCodigo, row.unidade, row.assuntos.join(" | "), row.dataAjuizamento, row.ultimoMovimento, row.ultimoMovimentoData, row.tempoObservadoDias, row.temBaixaObservada, row.fonteStatus, contextualSubjects(row.assuntos).join(" | ") || "Não identificado"].map(csvCell).join(";"));
     const blob = new Blob(["\ufeff" + [...metadata, header, ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -113,6 +116,28 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
         <label className="organ-picker"><span>Órgãos para comparar · até 3</span><div className="organ-add"><select value={orgaoDraft} onChange={(event) => setOrgaoDraft(event.target.value)}><option value="">Selecione um órgão</option>{orgaos.map((item) => <option key={item.codigo} value={item.codigo}>{item.codigo} — {item.unidade}</option>)}</select><button type="button" onClick={addOrgao} disabled={!orgaoDraft || selectedOrgaos.length >= 3}><Plus size={15} /> Adicionar</button></div><div className="organ-tags">{selectedOrgaos.length ? selectedOrgaos.map((code) => <button type="button" key={code} onClick={() => setSelectedOrgaos((current) => current.filter((item) => item !== code))}>{code}<X size={12} /></button>) : <span>Sem seleção: exibe os três órgãos com maior volume no recorte.</span>}</div></label>
         <div className="advanced-count"><b>{fmt.format(rows.length)}</b><span>processos no recorte detalhado</span></div>
       </div>
+
+      <section className="organ-comparison" aria-label="Assuntos relacionados aos pedidos de indenização">
+        <div className="comparison-heading">
+          <div><span className="eyebrow">JEC · DANOS MORAIS E MATERIAIS</span><h3>Contexto processual dos pedidos de indenização</h3></div>
+          <p>Assuntos CNJ associados aos mesmos processos. Não comprovam o fato gerador, o resultado da ação ou valores de condenação.</p>
+        </div>
+        <div className="advanced-grid">
+          {damageContexts.map((group) => (
+            <article className="advanced-note" key={group.damage}>
+              <h3>{group.damage}</h3>
+              <p><strong>{fmt.format(group.total)}</strong> registros com esse pedido no recorte filtrado.</p>
+              <p><strong>{fmt.format(group.semAssuntoContextual)}</strong> registros sem assunto contextual suficientemente específico.</p>
+              <ul className="mt-3 space-y-1 text-sm">
+                {group.assuntosCorrelatos.slice(0, 12).map((item) => (
+                  <li key={item.assunto} className="flex justify-between gap-3"><span>{item.assunto}</span><strong>{fmt.format(item.processos)}</strong></li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+        <p className="timeline-note">O fato efetivamente causador do dano, o teor das decisões e o valor concedido exigem consulta aos autos ou ao inteiro teor. Esses elementos não estão comprovados nesta base DataJud.</p>
+      </section>
 
       <div className="advanced-grid">
         <article className="timeline-card" data-evidence="FICHA 01A · CENSO MENSAL">
