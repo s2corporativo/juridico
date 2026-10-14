@@ -13,6 +13,22 @@
 - Execução real anterior com DataJud (sem banco) em diretório temporário privado: **2 lotes consultados, zero casos retornados**. A PR #36 adicionou bloqueio explícito para amostras vazias, retorno com `timed_out`, shards com falha e payload incompleto; 50 arquivos e 229 testes passaram nessa atualização. Testes diagnósticos subsequentes sofreram timeouts HTTP e resposta 429. **Nenhuma coleta persistente deve ser ativada antes de obter casos válidos e aprovar seu exame.**
 - A execução experimental utilizou segredo HMAC efêmero somente em memória; diretório temporário eliminado. Isto **não** substitui segredo HMAC persistente de operação.
 
+## Autorização inicial do SentinelX (somente operador da VPS)
+
+O agente em produção mantém \`/etc/sentinelx/config.yaml\` em **somente leitura** na sua política atual. O comando oficial \`sentinel_edit\` rejeita essa escrita até mesmo com \`sudo\`, de forma que **o próprio agente não pode executar o bootstrap**. O proprietário autorizou a alteração, mas a operação inicial precisa ser executada no console SSH/Contabo pelo administrador do servidor.
+
+Arquivo versionado e revisável: [\`bootstrap-sentinelx-access.py\`](./bootstrap-sentinelx-access.py). Ele adiciona somente quatro caminhos \`rw\` do Atlas, sem incluir segredos, preserva os demais campos YAML, guarda backup datado, altera atomicamente e **não reinicia** o agente automaticamente.
+
+No **console autorizado da VPS**, execute a partir de uma cópia verificada deste repositório, fixando o SHA do commit obtido na PR do bootstrap:
+
+\`\`\`bash
+# Substitua o caminho pela cópia do script obtida do repositório de confiança:
+sudo python3 ops/atlas-causal/bootstrap-sentinelx-access.py
+sudo systemctl restart sentinelx-cloud-core
+\`\`\`
+
+Depois que o agente reconectar, confirme via \`sentinel_capabilities\` a existência dos quatro caminhos com \`access: rw\`. Se houver erro de YAML, não reinicie: restaure \`/etc/sentinelx/config.yaml.bak-atlas-<timestamp>\`. Essa operação **não** provisiona o banco nem habilita coleta real; as demais verificações ainda são obrigatórias.
+
 ## Pré-requisitos bloqueantes
 
 1. Operador autoriza escrita, via política SentinelX, somente nos caminhos necessários à versão Atlas: `/opt/atlas-juridico/staging/unified/releases`, `/opt/atlas-juridico/staging/unified/rollback-causal`, `/etc/systemd/system/atlas-forense-stage.service.d`, `/var/lib/atlas-juridico/causal-pilot`; conceder acesso ao serviço `atlas-forense-stage`, não ao Atlas legado. Permissões específicas devem ser tão restritas quanto possível.
