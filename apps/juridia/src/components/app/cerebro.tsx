@@ -133,7 +133,7 @@ const HYPOTHESIS_CONFIG = {
 } as const;
 
 export function Cerebro() {
-  const { setAppTab, setCurrentDocId, setBrainContext } = useAppStore();
+  const { setAppTab, setCurrentDocId, setBrainContext, currentCaseId } = useAppStore();
   const [facts, setFacts] = useState("");
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
@@ -149,11 +149,11 @@ export function Cerebro() {
   // Carrega histórico de análises ao montar
   useEffect(() => {
     loadHistory();
-  }, []);
+  }, [currentCaseId]);
 
   async function loadHistory() {
     try {
-      const res = await fetch("/api/brain?caseId=cerebro-session");
+      const res = await fetch(`/api/brain?caseId=${encodeURIComponent(currentCaseId || "")}`);
       const data = await res.json();
       setHistory(data.analyses || []);
     } catch { /* ignore */ }
@@ -163,6 +163,10 @@ export function Cerebro() {
   async function analyze() {
     if (facts.trim().length < 30) {
       toast({ title: "Descreva os fatos (mín. 30 caracteres)", variant: "destructive" });
+      return;
+    }
+    if (!currentCaseId) {
+      toast({ title: "Selecione ou crie um caso antes de analisar", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -177,7 +181,7 @@ export function Cerebro() {
       const res = await fetch("/api/brain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facts, title: title || undefined, caseId: "cerebro-session" }),
+        body: JSON.stringify({ facts, title: title || undefined, caseId: currentCaseId }),
       });
       const data = await res.json();
       clearInterval(stepInterval);
@@ -201,12 +205,16 @@ export function Cerebro() {
   }
 
   async function handleUpload(file: File) {
+    if (!currentCaseId) {
+      toast({ title: "Selecione ou crie um caso antes de importar autos", variant: "destructive" });
+      return;
+    }
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("caseId", "cerebro-session");
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      formData.append("caseId", currentCaseId || "");
+      const res = await fetch("/api/case-files", { method: "POST", body: formData });
       const data = await res.json();
       if (data.error) {
         toast({ title: data.error, variant: "destructive" });

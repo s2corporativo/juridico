@@ -16,7 +16,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const authUser = __auth.user;
 
   let body: {
-    type?: "assertion" | "node";
+    type?: "assertion" | "node" | "snapshot";
     id?: string;
     action?: "confirm" | "correct" | "reject";
     caseId?: string;
@@ -31,6 +31,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const caseId = body.caseId || "default-case";
   if (!await ownsCase(authUser.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
   const reviewer = authUser.uid;
+
+  if (body.type === "snapshot") {
+    const snapshot = await db.intelligenceSnapshot.findUnique({ where: { id: body.id } });
+    if (!snapshot || snapshot.caseId !== caseId) return NextResponse.json({ error: "Snapshot não encontrado" }, { status: 404 });
+    const approved = body.action === "confirm";
+    const payload = JSON.parse(snapshot.payload) as Record<string, unknown>;
+    payload.reviewStatus = approved ? "approved" : "rejected";
+    const updated = await db.intelligenceSnapshot.update({
+      where: { id: body.id, caseId },
+      data: { isDraft: !approved, approvedBy: approved ? reviewer : null, approvedAt: approved ? new Date() : null, payload: JSON.stringify(payload) },
+    });
+    await logAuditEvent({ action: `review_snapshot_${body.action}`, resource: "intelligence_snapshot", resourceId: body.id, metadata: { caseId, version: updated.version, approved }, });
+    return NextResponse.json({ ok: true, snapshotId: updated.id, version: updated.version, isDraft: updated.isDraft });
+  }
 
   if (body.type === "assertion") {
     const assertion = await db.legalAssertion.findUnique({ where: { id: body.id } });
