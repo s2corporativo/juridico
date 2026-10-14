@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpRight, BarChart3, FileText, Filter, Plus, Printer, X } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { jecDashboardData } from "@/data/jecDashboardData";
+import { contextualSubjects, summarizeDamageContexts } from "@/lib/jec-damage-context";
 
 type CityFilter = "Todos" | "Belo Horizonte" | "Betim";
 type YearFilter = "Todos" | "2025" | "2026";
