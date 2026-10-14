@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const auth = await requireAuth(req);
   if (!auth.ok) return auth.response;
-  const caseId = new URL(req.url).searchParams.get("caseId");
+  const caseId = new URL(req.url).searchParams.get("caseId") || "";
   if (!await ownsCase(auth.user.uid, caseId)) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
   const files = await db.caseFile.findMany({ where: { userId: auth.user.uid, caseId }, orderBy: { createdAt: "desc" }, include: { pages: { orderBy: { pageNo: "asc" }, select: { id: true, pageNo: true, text: true, evidence: true, sha256: true } } } });
   return NextResponse.json({ files });
