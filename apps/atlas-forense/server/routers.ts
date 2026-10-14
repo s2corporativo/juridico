@@ -25,6 +25,7 @@ import {
   reviewAnnotation,
 } from "./causal-pilot-service";
 import { causalInteiroTeorInput, causalReviewDecisionInput } from "./causal-contract";
+import { askJuridia, getCausalJuridiaContext } from "./causal-juridia";
 import {
   createAttendance,
   createClient,
@@ -209,6 +210,12 @@ export const appRouter = router({
     reviewQueue: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(200).optional() }).optional()).query(({ input }) => getReviewQueue(input)),
     provenCauses: adminProcedure.query(() => getProvenCauses()),
     documentText: adminProcedure.input(z.object({ documentId: z.number().int().positive() })).query(({ input }) => getCausalDocumentText(input.documentId)),
+    // ── JuridIA dentro do Atlas, alimentada pelo banco causal do Atlas ──
+    juridiaContext: adminProcedure.query(() => getCausalJuridiaContext()),
+    juridiaAsk: adminProcedure.input(z.object({ question: z.string().trim().min(3).max(1_000) })).mutation(({ input, ctx }) => {
+      if (!ctx.user) throw new Error("autenticação obrigatória");
+      return askJuridia(input.question, ctx.user.id);
+    }),
   }),
   civilConsumer: router({
     overview: publicProcedure.input(z.object({

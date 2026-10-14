@@ -619,3 +619,67 @@ body { background:#f8fafb; color:var(--ink); }
 @media (max-width: 1100px) { .causal-metrics-grid { grid-template-columns:repeat(2,1fr); }.causal-grid, .causal-lower-grid { grid-template-columns:1fr; } }
 @media (max-width: 800px) { .causal-hero { display:block; padding:32px 25px; }.causal-hero-mark { display:none; }.causal-filter-ribbon .filter-intro { width:100%; }.causal-filter-ribbon p { max-width:none; }.causal-metrics-grid { grid-template-columns:1fr 1fr; }.causal-card { padding:17px; }.causal-limitations { grid-template-columns:1fr; }.causal-chart { overflow-x:auto; } }
 @media (max-width: 520px) { .causal-metrics-grid { grid-template-columns:1fr; }.causal-hero h1 { font-size:39px; }.causal-filter-ribbon label { width:100%; }.causal-filter-ribbon select { width:100%; }.causal-outcome-row { align-items:flex-start; }.causal-outcome-row b { font-size:18px; } }
+
+/* ── Atlas Causal — painel simplificado (funil · causas comprovadas · fila · JuridIA) ── */
+.cqx-wrap { display:grid; gap:14px; margin:20px 0 0; }
+.cqx-funil { display:flex; align-items:center; gap:16px; padding:18px 22px; background:#fffdf8; border:1px solid var(--line); box-shadow:0 10px 22px rgba(65,47,31,.05); }
+.cqx-funil > div:not(.cqx-seta) { flex:1; display:grid; gap:3px; }
+.cqx-funil span { color:#847466; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.cqx-funil strong { color:#214c49; font-family:'Fraunces',serif; font-size:34px; font-weight:600; line-height:1; }
+.cqx-funil small { color:#7b7166; font-size:11px; }
+.cqx-seta { color:#c99a6a; font-size:22px; font-weight:700; }
+.cqx-destaque strong { color:#a64f35; }
+.cqx-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:14px; align-items:start; }
+.cqx-card { padding:22px 24px; background:#fffdf8; border:1px solid var(--line); box-shadow:0 10px 22px rgba(65,47,31,.05); }
+.cqx-card h2 { margin:0; display:flex; align-items:center; gap:8px; color:#322820; font-family:'Fraunces',serif; font-size:22px; font-weight:600; }
+.cqx-sub { margin:5px 0 14px; color:#6b5c4e; font-size:12px; line-height:1.4; }
+.cqx-contador { margin-left:6px; padding:2px 9px; color:#fff; background:#a64f35; font-family:'Source Sans 3',sans-serif; font-size:13px; font-weight:700; }
+.cqx-vazio { margin:6px 0 0; color:#7b7166; font-size:13px; }
+.cqx-vazio.ok { color:#13514e; font-weight:700; }
+.cqx-causas { margin:0; padding:0; list-style:none; display:grid; gap:12px; }
+.cqx-causa-linha { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:5px; }
+.cqx-causa-linha span { color:#332a23; font-size:13.5px; font-weight:700; }
+.cqx-causa-linha b { color:#13514e; font-size:12px; font-weight:700; white-space:nowrap; }
+.cqx-barra { height:8px; background:#eee6da; }
+.cqx-barra i { display:block; height:100%; background:linear-gradient(90deg,#13514e,#1d6b64); }
+.cqx-pedidos { display:flex; flex-wrap:wrap; gap:7px; margin:16px 0 0; }
+.cqx-pedidos span { padding:6px 10px; border:1px solid #9bbab1; background:#eff6f2; color:#29514e; font-size:12px; font-weight:600; }
+.cqx-nota { margin:12px 0 0; color:#847466; font-size:11px; line-height:1.45; }
+.cqx-fila { margin:0; padding:0; list-style:none; display:grid; gap:13px; max-height:560px; overflow-y:auto; }
+.cqx-fila li { padding:13px 14px; border:1px solid #eee6da; background:#fffaf0; }
+.cqx-fila-topo { display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
+.cqx-fila-topo b { color:#332a23; font-size:13px; }
+.cqx-fila-topo span { color:#847466; font-size:11px; white-space:nowrap; }
+.cqx-fila-caso { margin:4px 0 7px; color:#a64f35; font-family:ui-monospace,monospace; font-size:11px; }
+.cqx-fila blockquote { margin:0 0 9px; padding:8px 10px; border-left:3px solid #c99a6a; background:#fffdf8; color:#5b5045; font-size:11.5px; line-height:1.45; }
+.cqx-fila-acoes { display:flex; gap:6px; }
+.cqx-btn { display:inline-flex; align-items:center; gap:5px; padding:7px 11px; font-size:12px; font-weight:700; border:1px solid; transition:transform .15s ease, background .15s ease; }
+.cqx-btn:active { transform:scale(.97); }
+.cqx-btn.ok { color:#fff; border-color:#13514e; background:#13514e; }
+.cqx-btn.ok:hover { background:#1d6b64; }
+.cqx-btn.no { color:#8d3d25; border-color:#d7a997; background:#fff; }
+.cqx-btn.no:hover { background:#f4e2d8; }
+.cqx-btn.back { color:#6e4623; border-color:#c99a6a; background:#fff7ec; }
+.cqx-btn.back:hover { background:#f1d5b5; }
+.cqx-juridia { border-top:3px solid #13514e; }
+.cqx-juridia-topo { display:flex; align-items:start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.cqx-alimentacao { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.cqx-alimentacao span { color:#7b7166; font-size:11px; }
+.cqx-alimentacao em { padding:4px 9px; border:1px solid #9bbab1; background:#eff6f2; color:#29514e; font-size:11px; font-weight:700; font-style:normal; }
+.cqx-sugestoes { display:flex; flex-wrap:wrap; gap:7px; margin:13px 0 0; }
+.cqx-sugestoes button { padding:7px 11px; color:#6e4623; border:1px dashed #c99a6a; background:#fffdf8; font-size:12px; font-weight:600; transition:background .15s ease; }
+.cqx-sugestoes button:hover { background:#fff7ec; }
+.cqx-resposta { margin:14px 0 0; padding:15px 17px; border:1px solid #9bbab1; border-left:4px solid #13514e; background:#f5faf7; }
+.cqx-resposta p { margin:0; color:#2c3733; font-size:13.5px; line-height:1.55; white-space:pre-wrap; }
+.cqx-resposta small { display:block; margin:9px 0 0; color:#7b7166; font-size:10.5px; }
+.cqx-resposta.erro { border-color:#d7a997; border-left-color:#a64f35; background:#fdf4ef; }
+.cqx-resposta.erro p { color:#7a3d27; }
+.cqx-envio { display:flex; gap:8px; margin:13px 0 0; }
+.cqx-envio input { flex:1; min-height:42px; padding:0 13px; border:1px solid var(--line); background:#fff; color:var(--ink); font:600 13.5px 'Source Sans 3',sans-serif; }
+.cqx-envio input:focus { outline:2px solid #13514e33; border-color:#13514e; }
+.cqx-envio button { display:inline-flex; align-items:center; gap:7px; padding:0 16px; color:#fff; border:0; background:#13514e; font-size:13px; font-weight:700; transition:background .15s ease; }
+.cqx-envio button:hover { background:#1d6b64; }
+.cqx-envio button:disabled { opacity:.55; cursor:not-allowed; }
+.cqx-rodape { display:flex; align-items:center; gap:7px; margin:2px 0 0; color:#7b7166; font-size:11px; }
+@media (max-width: 1100px) { .cqx-grid { grid-template-columns:1fr; } }
+@media (max-width: 800px) { .cqx-funil { flex-direction:column; align-items:stretch; text-align:left; } .cqx-seta { display:none; } .cqx-envio { flex-direction:column; } .cqx-envio button { min-height:42px; } }

@@ -67,3 +67,20 @@ Para ativar o **piloto inteiro teor** (candidatos → causas comprovadas), usar 
 Detalhes passo a passo (incluindo o primeiro caso de teste: ingestão → extração →
 revisão → `causal.provenCauses`): `LEIA-ME-PUBLICAR-CAUSAL-PILOTO.md` do pacote.
 Fluxo do piloto: `docs/ATLAS_CAUSAL.md` → seção "Piloto inteiro teor".
+
+## Publicar a branch nova e rodar o 1º caso piloto (git pull no staging)
+
+Script de um comando (executar NO CONSOLE da VPS, como root): [`publicar-piloto-e-primeiro-caso.sh`](./publicar-piloto-e-primeiro-caso.sh)
+
+```bash
+BRANCH=feat/causal-piloto-causas-comprovadas \
+  bash ops/atlas-causal/publicar-piloto-e-primeiro-caso.sh
+# verificação prévia sem alterar nada:
+DRY_RUN=1 BRANCH=feat/causal-piloto-causas-comprovadas bash ops/atlas-causal/publicar-piloto-e-primeiro-caso.sh
+```
+
+O script: resolve o SHA da branch no GitHub → cria release imutável por SHA (install + check + test + build + drizzle check) → aplica migração versionada do banco causal isolado → cutover do serviço com reversão automática → valida `healthz` e `readyz` → executa o 1º caso piloto idempotente (`scripts/piloto-primeiro-caso.ts`, salvando o log em `/var/lib/atlas-juridico/causal-pilot/`).
+
+Pré-requisitos (já cobertos pelo pacote `deploy-fase1` + bootstrap `bootstrap-sentinelx-access.py`): segredos causais presentes em `atlas-stage.env` (`ATLAS_CAUSAL_DATABASE_URL` apontando para banco `atlas_causal` vazio/novo, `ATLAS_CAUSAL_CASE_KEY_SECRET` ≥32 chars, `ATLAS_CAUSAL_PILOT_AUTHORIZATION=approved`) e serviço `atlas-forense-stage` ativo na 3114.
+
+Primeira execução validada no banco causal isolado de desenvolvimento: 8 casos reais da amostra (transporte, crédito, serviços/saúde, inadimplemento, contratos, trânsito), 30 candidatos, 30 aprovados em revisão, fila zerada, pedidos comprovados (dano moral 6, dano material 4, obrigação de fazer 3). Dashboard simplificado em `/causal` com funil, causas comprovadas, fila de revisão em 1 clique e JuridIA embutida alimentada pelo Atlas (`causal.juridiaContext`, `causal.juridiaAsk`).

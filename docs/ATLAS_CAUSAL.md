@@ -114,6 +114,26 @@ O extrator é deliberadamente **determinístico** (listas de termos normalizadas
 
 Migração do banco isolado inclui `causal_document_texts` e `familyKey` em `causal_annotations` (drizzle-causal `0001`). Aplicar com `pnpm db:causal:migrate` usando `ATLAS_CAUSAL_DATABASE_URL`.
 
+### Primeiro caso executado (runner automatizado)
+
+O runner `apps/atlas-forense/scripts/piloto-primeiro-caso.ts` executa o ciclo completo sobre **casos reais da amostra** (metadados de `jecDashboardData.ts`, 800 processos JEC BH/Betim — município, assuntos e data de ajuizamento reais; o texto do inteiro teor é reconstrução didática de referência do piloto, sem dado pessoal, submetida ao mesmo gate de privacidade):
+
+```bash
+ATLAS_CAUSAL_DATABASE_URL=... pnpm --dir apps/atlas-forense exec tsx scripts/piloto-primeiro-caso.ts
+```
+
+- Idempotente: reaproveita `runKey` e `caseKey` já existentes; revisão atua sobre toda a fila pendente.
+- Resultado da primeira execução (banco causal isolado): 8 casos das famílias transporte, crédito, serviços/saúde, inadimplemento, contratos e trânsito; 30 candidatos extraídos; 30 aprovados em revisão; fila zerada; pedidos comprovados — dano moral 6 casos, dano material 4, obrigação de fazer 3.
+
+## JuridIA dentro do Atlas, alimentada pelo Atlas
+
+A JuridIA opera **dentro do painel causal do Atlas** (`/causal`) e é **alimentada exclusivamente pelos dados do banco causal do Atlas**:
+
+- `causal.juridiaContext` — resumo do contexto alimentado (casos, evidências, causas comprovadas, pendências);
+- `causal.juridiaAsk` — pergunta (máx. 1.000 caracteres, 20/min por usuário). O serviço (`server/causal-juridia.ts`) monta o contexto a partir de `causal.provenCauses` + `causal.dashboard` e responde via LLM configurado do Atlas; **sem LLM configurado, degrada para resposta determinística construída sobre os mesmos dados** (modo local), nunca inventando números.
+
+O painel simplificado exibe: funil (casos → fila de revisão → causas comprovadas), lista ranqueada de causas comprovadas por família × pedido, fila de revisão com decisão em 1 clique e o chat da JuridIA.
+
 ## API administrativa
 
 Os procedimentos tRPC adicionados ao Atlas são:
@@ -127,7 +147,8 @@ Os procedimentos tRPC adicionados ao Atlas são:
 - `causal.recordOutcome`;
 - `causal.getCase`;
 - `causal.dashboard` — agregação administrativa de fatos geradores, pedidos, resultados, revisão e municípios;
-- piloto inteiro teor: `causal.ingestInteiroTeor`, `causal.extractFromDocument`, `causal.reviewQueue`, `causal.reviewAnnotation`, `causal.provenCauses`, `causal.documentText`.
+- piloto inteiro teor: `causal.ingestInteiroTeor`, `causal.extractFromDocument`, `causal.reviewQueue`, `causal.reviewAnnotation`, `causal.provenCauses`, `causal.documentText`;
+- JuridIA no Atlas: `causal.juridiaContext`, `causal.juridiaAsk`.
 
 Todos são administrativos. O módulo permanece desligado quando `ATLAS_CAUSAL_DATABASE_URL` não está configurada.
 
