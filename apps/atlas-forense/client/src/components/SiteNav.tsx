@@ -19,7 +19,6 @@ import {
   GitBranch,
   type LucideIcon,
 } from "lucide-react";
-import { trpc } from "@/lib/trpc";
 
 export interface SiteNavItem {
   href: string;
@@ -50,6 +49,7 @@ export const SITE_NAV_GROUPS: SiteNavGroup[] = [
       { href: "/escritorio/comunicacoes", label: "Comunicações", icon: Inbox },
       { href: "/escritorio/jurisprudencia", label: "Jurisprudência", icon: Gavel },
       { href: "/escritorio/treinamento", label: "Treinamento", icon: GraduationCap },
+      { href: "/juridia", label: "JuridIA", icon: FileSignature },
     ],
   },
   {
@@ -66,14 +66,6 @@ export function SiteNav({ heading = "Navegação principal" }: { heading?: strin
   const [location] = useLocation();
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
-
-  // Ponte JuridIA (EJC): o atalho só aparece quando o runtime SSO está ATIVO
-  // (fail-closed — idem integration.ejcStatus).
-  const ejc = trpc.integration.ejcStatus.useQuery(undefined, { staleTime: 60_000, retry: false });
-  const ejcUrl =
-    ejc.data?.sso?.status === "enabled" && ejc.data.sso.issuer
-      ? String(ejc.data.sso.issuer)
-      : null;
 
   return (
     <nav className="site-nav" aria-label="Navegação do Atlas Forense">
@@ -93,19 +85,6 @@ export function SiteNav({ heading = "Navegação principal" }: { heading?: strin
           ))}
         </div>
       ))}
-      {ejcUrl && (
-        <div className="site-nav-group">
-          <span className="site-nav-group-title">Produção</span>
-          <a
-            href={ejcUrl}
-            className="site-nav-link"
-            title="Abrir o Escritório Jurídico Consciente (JuridIA) — geração de minutas com IA"
-          >
-            <FileSignature size={15} aria-hidden="true" />
-            <span>Minutas · JuridIA</span>
-          </a>
-        </div>
-      )}
     </nav>
   );
 }

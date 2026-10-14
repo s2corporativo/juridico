@@ -63,6 +63,7 @@ EJC_OIDC_ISSUER=https://sso.<dominio-do-ejc>/api/auth/oidc   # HTTPS obrigatóri
 EJC_OIDC_CLIENT_ID=atlas-forense
 EJC_OIDC_CLIENT_SECRET=<segredo fornecido pelo EJC por canal seguro>
 # EJC_SSO_REDIRECT_URI=https://atlas.depaulateixeira.adv.br/api/ejc-sso/callback  # opcional; deriva do Host se ausente
+JURIDIA_PUBLIC_URL=https://juridia.<dominio-do-ejc>  # URL da aplicação; nunca usar o issuer OIDC aqui
 ```
 
 No **JuridIA** (ambiente protegido do app):
@@ -76,6 +77,8 @@ EJC_OIDC_REDIRECT_URIS=https://atlas.depaulateixeira.adv.br/api/ejc-sso/callback
 ```
 
 Depois: `systemctl restart atlas-ejc` (e o serviço do EJC), conferir `curl -fsS http://127.0.0.1:<porta>/healthz`, acessar `/api/ejc-sso/start`, concluir o login e **só então** promover o usuário real a admin. Reversão: remover/zerar `EJC_SSO_ENABLED` e reiniciar — o status volta a `configured_not_activated` sem tocar no resto.
+
+O menu **JuridIA** do Atlas abre a rota interna `/juridia`. Essa tela funciona como workspace de entrada e somente libera o botão para a aplicação quando `JURIDIA_PUBLIC_URL` é uma URL válida; o valor de `EJC_OIDC_ISSUER` permanece reservado à descoberta OIDC.
 
 ## 5. Fronteira de dados (inalterada)
 

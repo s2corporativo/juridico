@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { EJC_SSO_REQUIRED_ENV, getEjcSsoReadiness, getEjcSsoRuntime } from "./ejc-sso-config";
+import { EJC_SSO_REQUIRED_ENV, getEjcSsoReadiness, getEjcSsoRuntime, getJuridIAPublicUrl } from "./ejc-sso-config";
 
 const COMPLETE_HTTPS = {
   EJC_OIDC_ISSUER: "https://sso.exemplo.org/api/auth/oidc",
@@ -53,6 +53,18 @@ describe("EJC SSO readiness", () => {
 
   it("keeps the documented required env names", () => {
     expect(EJC_SSO_REQUIRED_ENV).toEqual(["EJC_OIDC_ISSUER", "EJC_OIDC_CLIENT_ID", "EJC_OIDC_CLIENT_SECRET"]);
+  });
+
+  it("exposes the configured JuridIA app URL separately from the OIDC issuer", () => {
+    const readiness = getEjcSsoReadiness({ ...COMPLETE_HTTPS, JURIDIA_PUBLIC_URL: "https://juridia.exemplo.org/" });
+    expect(readiness.juridia).toEqual({ configured: true, url: "https://juridia.exemplo.org" });
+    expect(readiness.issuer).toBe(COMPLETE_HTTPS.EJC_OIDC_ISSUER);
+  });
+
+  it("allows localhost only outside production and rejects credentials in the app URL", () => {
+    expect(getJuridIAPublicUrl({ NODE_ENV: "development", JURIDIA_PUBLIC_URL: "http://localhost:3005/" })).toBe("http://localhost:3005");
+    expect(getJuridIAPublicUrl({ NODE_ENV: "production", JURIDIA_PUBLIC_URL: "http://localhost:3005" })).toBeNull();
+    expect(getJuridIAPublicUrl({ NODE_ENV: "production", JURIDIA_PUBLIC_URL: "https://user:pass@juridia.exemplo.org" })).toBeNull();
   });
 });
 
