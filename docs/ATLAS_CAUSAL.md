@@ -118,6 +118,14 @@ Todos são administrativos. O módulo permanece desligado quando `ATLAS_CAUSAL_D
 
 Ainda não estão incluídos download automático de sentença, OCR, classificação de documentos integrais, tela de ficha do caso, painel causal ou exportação para `IntelligenceSnapshot` do EJC. Esses itens dependem de definição de cobertura, disponibilidade legal/técnica da fonte e piloto revisado.
 
+## Conformidade com fontes públicas e publicação
+
+**Bloqueio de exploração comercial:** a Portaria CNJ nº 374/2026 alterou o art. 4º da Portaria CNJ nº 160/2020: dados da API Pública DataJud são fornecidos exclusivamente para fins legais, não comerciais e autorizados, e é proibida a exploração comercial dos dados disponibilizados. Publicações, painéis, aplicativos e estudos derivados devem citar CNJ e DataJud como fontes. Referência oficial: https://atos.cnj.jus.br/atos/detalhar/3453 .
+
+Enquanto o enquadramento da finalidade e a base autorizativa não forem revisados juridicamente, **não ativar coleta ou visualização causal para produto comercial, clientes finais ou previsão de êxito**. A coleta técnica de homologação também exige revisão do escopo e do termo de uso; não se pressupõe autorização comercial pelo mero acesso à chave pública.
+
+**Falha fechada na amostragem:** retornos do DataJud com timeout, falha de shard ou estrutura incompleta são erros de coleta. O manifesto de zero casos é diagnóstico inconclusivo, não coleta bem-sucedida. Não migrar banco nem promover release em razão de resposta vazia. Respeitar 429 e limites técnicos, sem contornar rate limits.
+
 ## Regra de uso
 
 Os dados causais não devem ser apresentados como taxa de êxito, previsão de resultado ou ranking de magistrados. Antes de uso em peça, orientação a cliente, estratégia processual ou publicação, toda classificação deve passar por revisão profissional humana.
