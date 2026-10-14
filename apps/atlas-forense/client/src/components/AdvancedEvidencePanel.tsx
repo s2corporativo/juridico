@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpRight, BarChart3, FileText, Filter, Plus, Printer, X } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { jecDashboardData } from "@/data/jecDashboardData";
-import { contextualSubjects, summarizeDamageContexts } from "@/lib/jec-damage-context";
+import { contextualSubjects, summarizeFactGenerators, FACT_GENERATOR_NOTICE, CLAIM_SUBJECTS } from "@/lib/jec-damage-context";
 
 type CityFilter = "Todos" | "Belo Horizonte" | "Betim";
 type YearFilter = "Todos" | "2025" | "2026";
@@ -38,7 +38,23 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
     (!selectedOrgaos.length || selectedOrgaos.includes(item.orgaoCodigo));
   const rows = useMemo(() => data.processRows.filter(includes), [city, year, startDate, endDate, selectedSubjects, selectedOrgaos]);
 
-  const damageContexts = useMemo(() => summarizeDamageContexts(rows), [rows]);
+  const factGenerators = useMemo(() => summarizeFactGenerators(rows), [rows]);
+  const leadingFamilies = useMemo(() => {
+    const combined = new Map<string, number>();
+    for (const group of factGenerators.filter((item) => (CLAIM_SUBJECTS as readonly string[]).includes(item.claim) && item.claim !== "Obrigação de fazer / não fazer")) {
+      for (const family of group.familias) combined.set(family.familia, (combined.get(family.familia) || 0) + family.processos);
+    }
+    const totalSemIndicio = factGenerators
+      .filter((item) => item.claim !== "Obrigação de fazer / não fazer")
+      .reduce((sum, item) => sum + item.semIndicio, 0);
+    const totalPedidos = factGenerators
+      .filter((item) => item.claim !== "Obrigação de fazer / não fazer")
+      .reduce((sum, item) => sum + item.total, 0);
+    return {
+      top: Array.from(combined.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3),
+      pctSemIndicio: totalPedidos === 0 ? null : Math.round((totalSemIndicio / totalPedidos) * 1000) / 10,
+    };
+  }, [factGenerators]);
 
   const timeline = useMemo(() => months
     .filter((month) => (year === "Todos" || month.startsWith(year)) && month >= startDate.slice(0, 7) && month <= endDate.slice(0, 7))
@@ -117,26 +133,38 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
         <div className="advanced-count"><b>{fmt.format(rows.length)}</b><span>processos no recorte detalhado</span></div>
       </div>
 
-      <section className="organ-comparison" aria-label="Assuntos relacionados aos pedidos de indenização">
+      <section className="organ-comparison" aria-label="Fatos geradores candidatos dos pedidos indenizatórios">
         <div className="comparison-heading">
-          <div><span className="eyebrow">JEC · DANOS MORAIS E MATERIAIS</span><h3>Contexto processual dos pedidos de indenização</h3></div>
-          <p>Assuntos CNJ associados aos mesmos processos. Não comprovam o fato gerador, o resultado da ação ou valores de condenação.</p>
+          <div><span className="eyebrow">JEC · FATOS GERADORES CANDIDATOS</span><h3>O que ensejou os pedidos de indenização e obrigação de fazer</h3></div>
+          <p>Famílias candidatas inferidas dos assuntos CNJ presentes no mesmo processo (fonte cnj_subject, status pending_review). Não comprovam nexo causal, resultado da ação ou valores de condenação.</p>
         </div>
+        <p className="timeline-note" data-answer="resposta-direta">
+          No recorte filtrado de <strong>{fmt.format(rows.length)}</strong> processos: dano moral em <strong>{fmt.format(factGenerators[0]?.total ?? 0)}</strong> ({factGenerators[0]?.pctDaAmostra === null ? "—" : `${factGenerators[0]?.pctDaAmostra}%`}), dano material em <strong>{fmt.format(factGenerators[1]?.total ?? 0)}</strong> ({factGenerators[1]?.pctDaAmostra === null ? "—" : `${factGenerators[1]?.pctDaAmostra}%`}) e obrigação de fazer/não fazer em <strong>{fmt.format(factGenerators[2]?.total ?? 0)}</strong> ({factGenerators[2]?.pctDaAmostra === null ? "—" : `${factGenerators[2]?.pctDaAmostra}%`}).
+          {leadingFamilies.pctSemIndicio !== null && <> Em <strong>{leadingFamilies.pctSemIndicio}%</strong> dos pedidos de dano os assuntos CNJ não revelam o fato gerador — a causa em si exige inteiro teor (módulo Atlas Causal).</>}
+          {leadingFamilies.top.length > 0 && <> Entre os revelados, lideram: {leadingFamilies.top.map(([familia, processos]) => `${familia} (${fmt.format(processos)})`).join(" · ")}.</>}
+        </p>
         <div className="advanced-grid">
-          {damageContexts.map((group) => (
-            <article className="advanced-note" key={group.damage}>
-              <h3>{group.damage}</h3>
-              <p><strong>{fmt.format(group.total)}</strong> registros com esse pedido no recorte filtrado.</p>
-              <p><strong>{fmt.format(group.semAssuntoContextual)}</strong> registros sem assunto contextual suficientemente específico.</p>
-              <ul className="mt-3 space-y-1 text-sm">
-                {group.assuntosCorrelatos.slice(0, 12).map((item) => (
-                  <li key={item.assunto} className="flex justify-between gap-3"><span>{item.assunto}</span><strong>{fmt.format(item.processos)}</strong></li>
+          {factGenerators.map((group) => (
+            <article className="advanced-note" key={group.claim}>
+              <h3>{group.claim}</h3>
+              <p><strong>{fmt.format(group.total)}</strong> processos com esse pedido ({group.pctDaAmostra === null ? "—" : `${group.pctDaAmostra}%`} do recorte).</p>
+              <p><strong>{fmt.format(group.semIndicio)}</strong> sem indício do fato gerador nos assuntos CNJ — exigem inteiro teor para identificar a causa.</p>
+              <ul className="mt-3 space-y-3 text-sm">
+                {group.familias.slice(0, 6).map((family) => (
+                  <li key={family.familia}>
+                    <div className="flex justify-between gap-3"><span>{family.familia}</span><strong>{fmt.format(family.processos)}</strong></div>
+                    <div className="mt-1 h-1.5 w-full rounded-sm bg-[#efe9dd]"><div className="h-1.5 rounded-sm" style={{ width: `${Math.min(100, family.pctDosRegistros)}%`, backgroundColor: group.claim === "Indenização por dano moral" ? "#154b4a" : group.claim === "Indenização por dano material" ? "#b56f2c" : "#75a39b" }} /></div>
+                    <small className="text-xs opacity-70">{family.assuntos.slice(0, 3).map((item) => item.assunto).join(" · ")}{family.assuntos.length > 3 ? ` +${family.assuntos.length - 3}` : ""}</small>
+                  </li>
                 ))}
               </ul>
+              {group.coPedidos.length > 0 && (
+                <p className="mt-3 text-sm">Pedidos acumulados no mesmo processo: {group.coPedidos.map((item) => `${item.pedido} (${fmt.format(item.processos)})`).join(" · ")}.</p>
+              )}
             </article>
           ))}
         </div>
-        <p className="timeline-note">O fato efetivamente causador do dano, o teor das decisões e o valor concedido exigem consulta aos autos ou ao inteiro teor. Esses elementos não estão comprovados nesta base DataJud.</p>
+        <p className="timeline-note">{FACT_GENERATOR_NOTICE} O fato efetivamente causador, o teor das decisões e o valor concedido exigem consulta aos autos ou ao inteiro teor — esses elementos não estão comprovados nesta base DataJud.</p>
       </section>
 
       <div className="advanced-grid">
