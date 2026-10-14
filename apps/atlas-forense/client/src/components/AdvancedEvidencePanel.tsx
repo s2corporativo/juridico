@@ -117,6 +117,28 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
         <div className="advanced-count"><b>{fmt.format(rows.length)}</b><span>processos no recorte detalhado</span></div>
       </div>
 
+      <section className="organ-comparison" aria-label="Assuntos relacionados aos pedidos de indenização">
+        <div className="comparison-heading">
+          <div><span className="eyebrow">JEC · DANOS MORAIS E MATERIAIS</span><h3>Contexto processual dos pedidos de indenização</h3></div>
+          <p>Assuntos CNJ associados aos mesmos processos. Não comprovam o fato gerador, o resultado da ação ou valores de condenação.</p>
+        </div>
+        <div className="advanced-grid">
+          {damageContexts.map((group) => (
+            <article className="advanced-note" key={group.damage}>
+              <h3>{group.damage}</h3>
+              <p><strong>{fmt.format(group.total)}</strong> registros com esse pedido no recorte filtrado.</p>
+              <p><strong>{fmt.format(group.semAssuntoContextual)}</strong> registros sem assunto contextual suficientemente específico.</p>
+              <ul className="mt-3 space-y-1 text-sm">
+                {group.assuntosCorrelatos.slice(0, 12).map((item) => (
+                  <li key={item.assunto} className="flex justify-between gap-3"><span>{item.assunto}</span><strong>{fmt.format(item.processos)}</strong></li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+        <p className="timeline-note">O fato efetivamente causador do dano, o teor das decisões e o valor concedido exigem consulta aos autos ou ao inteiro teor. Esses elementos não estão comprovados nesta base DataJud.</p>
+      </section>
+
       <div className="advanced-grid">
         <article className="timeline-card" data-evidence="FICHA 01A · CENSO MENSAL">
           <div className="timeline-title"><ArrowUpRight size={17} /><div><span>EVOLUÇÃO MENSAL</span><h3>Distribuições e baixas do coorte</h3></div></div>
