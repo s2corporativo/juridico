@@ -32,14 +32,43 @@ export const ejcAuthBridge = {
   provider: "juridia-oidc",
   protocol: "oidc_authorization_code" as const,
   // EJC (JuridIA) is now the active OIDC identity provider.
-  issuerUrl: "http://localhost:3000/api/auth/oidc" as const, // JuridIA issues
+  // Endpoints are NEVER hard-coded in this package (task F0.4 of the
+  // professionalization plan): a literal host/port silently binds the contract
+  // to whatever service happens to occupy that port (the previous
+  // "http://localhost:3000" literals collided with the DPT ERP port). The
+  // issuer is environment-specific and must be resolved at runtime via
+  // getEjcAuthBridgeEndpoints() below. Atlas reads it from EJC_OIDC_ISSUER.
+  issuerUrlEnv: "EJC_OIDC_ISSUER" as const,
   callbackPath: "/api/ejc-sso/callback",
-  tokenEndpoint: "http://localhost:3000/api/auth/oidc/token",
-  jwksEndpoint: "http://localhost:3000/api/auth/oidc/jwks",
   claims: ["iss", "sub", "aud", "exp", "role", "auth_time", "persona"] as const,
   activationRule:
     "OIDC bridge active. EJC (JuridIA) issues JWT, Atlas validates via JWKS.",
 } as const;
+
+export interface EjcAuthBridgeEndpoints {
+  issuerUrl: string;
+  discoveryUrl: string;
+  tokenEndpoint: string;
+  jwksEndpoint: string;
+}
+
+/**
+ * Resolves the OIDC endpoints from the environment — no host literals live in
+ * this package. Returns null when the issuer is absent/empty: callers must
+ * fail closed (503) exactly like the runtime bridges do.
+ */
+export function getEjcAuthBridgeEndpoints(
+  env?: { EJC_OIDC_ISSUER?: string },
+): EjcAuthBridgeEndpoints | null {
+  const issuer = (env?.EJC_OIDC_ISSUER ?? "").trim().replace(/\/$/, "");
+  if (!issuer) return null;
+  return {
+    issuerUrl: issuer,
+    discoveryUrl: `${issuer}/.well-known/openid-configuration`,
+    tokenEndpoint: `${issuer}/token`,
+    jwksEndpoint: `${issuer}/jwks`,
+  };
+}
 
 export function getEjcIntegrationStatus() {
   return {

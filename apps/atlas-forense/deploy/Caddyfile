@@ -4,5 +4,10 @@ atlas.depaulateixeira.adv.br {
   # escolhida dinamicamente pelo usuário. Única rota com destino próprio.
   reverse_proxy /socket.io/* 127.0.0.1:3003
   # Aplicação principal (todas as demais rotas).
-  reverse_proxy 127.0.0.1:3010
+  # Porta 3114 é a reservada ao Atlas Forense em
+  # docs/ARQUITETURA_ATLAS_JURIDIA_UNIFICADA_2026-10-12.md.
+  # A porta 3010 permanece ocupada pelo Atlas legado até o cutover homologado
+  # (gate G0 do plano de execução): esta alteração só deve ser ativada com
+  # backup recente, restauração testada e serviço Atlas Forense em 3114.
+  reverse_proxy 127.0.0.1:3114
 }

@@ -1,23 +1,18 @@
+# Proxy reverso local da JuridIA (EJC) — destino fixo, somente loopback upstream.
+#
+# O padrão anterior (?XTransformPort=NNNN) foi REMOVIDO no trabalho de
+# profissionalização (tarefa F0.2 do plano de execução): encaminhar para a porta
+# escolhida por parâmetro de consulta permitia varrimento interno de portas
+# (SSRF) a partir da borda — exatamente o padrão documentado como proibido em
+# apps/atlas-forense/server/_core/index.ts.
+#
+# Destino fixo: a porta 3005 é a reservada ao portal unificado JuridIA em
+# docs/ARQUITETURA_ATLAS_JURIDIA_UNIFICADA_2026-10-12.md (o 3000 é do DPT ERP).
 :81 {
-	@transform_port_query {
-		query XTransformPort=*
-	}
-
-	handle @transform_port_query {
-		reverse_proxy localhost:{query.XTransformPort} {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
-
-	handle {
-		reverse_proxy localhost:3000 {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
+        reverse_proxy 127.0.0.1:3005 {
+                header_up Host {host}
+                header_up X-Forwarded-For {remote_host}
+                header_up X-Forwarded-Proto {scheme}
+                header_up X-Real-IP {remote_host}
+        }
 }

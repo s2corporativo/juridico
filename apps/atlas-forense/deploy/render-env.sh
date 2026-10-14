@@ -47,7 +47,9 @@ is_strong() { # >=32 chars
 # Para 'ext', --check reporta ausente/ok e --render NÃO inventa valor.
 entries=(
   "A|NODE_ENV|lit|production"
-  "A|PORT|lit|3010"
+  # Porta 3114: reservada ao Atlas Forense (doc ARQUITETURA_ATLAS_JURIDIA_UNIFICADA),
+  # coerente com deploy/Caddyfile e com o fail-fast de porta em produção (F0.3/F0.5).
+  "A|PORT|lit|3114"
   "A|DATABASE_URL|ext|mysql://atlas_app:SENHA@127.0.0.1:3306/atlas_ejc"
   "A|JWT_SECRET|gen|"
   "A|SESSION_SECRET|gen|"

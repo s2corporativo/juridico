@@ -124,10 +124,26 @@ async function startServer() {
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
 
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  // Fail-fast em produção (plano de profissionalização, tarefa F0.3): a porta é
+  // contrato com o proxy reverso — o Caddy aponta para uma porta fixa. Buscar
+  // automaticamente a próxima porta livre esconderia um desvio silencioso: o
+  // serviço subia em outra porta, sem erro aparente, e o proxy passaria a
+  // apontar para lugar nenhum. Em desenvolvimento mantém-se a busca por
+  // conveniência local.
+  let port: number;
+  if (process.env.NODE_ENV === "production") {
+    if (!(await isPortAvailable(preferredPort))) {
+      throw new Error(
+        `[Startup] Porta ${preferredPort} indisponível em produção — fail-fast (sem busca automática de porta). Verifique colisão com outro serviço ou ajuste PORT no arquivo de ambiente.`
+      );
+    }
+    port = preferredPort;
+  } else {
+    port = await findAvailablePort(preferredPort);
+    if (port !== preferredPort) {
+      console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    }
   }
 
   server.listen(getServerListenOptions(port, process.env.HOST), () => {
@@ -137,4 +153,10 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+startServer().catch((error) => {
+  console.error(error);
+  // Fail-fast: falha de inicialização (inclusive porta indisponível em
+  // produção) encerra o processo com código de erro — o systemd deve registrar
+  // a falha em vez de deixar o serviço aparentemente ativo.
+  process.exit(1);
+});
