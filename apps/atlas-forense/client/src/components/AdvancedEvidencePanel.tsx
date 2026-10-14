@@ -38,6 +38,8 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
     (!selectedOrgaos.length || selectedOrgaos.includes(item.orgaoCodigo));
   const rows = useMemo(() => data.processRows.filter(includes), [city, year, startDate, endDate, selectedSubjects, selectedOrgaos]);
 
+  const damageContexts = useMemo(() => summarizeDamageContexts(rows), [rows]);
+
   const timeline = useMemo(() => months
     .filter((month) => (year === "Todos" || month.startsWith(year)) && month >= startDate.slice(0, 7) && month <= endDate.slice(0, 7))
     .map((month) => {
@@ -82,8 +84,8 @@ export function AdvancedEvidencePanel({ city, year, startDate, endDate }: { city
   const csvCell = (value: string | number | boolean | null) => `"${String(value ?? "").replaceAll('"', '""')}"`;
   const exportCsv = () => {
     const metadata = ["# Atlas Forense — recorte filtrado", `# Filtros: ${activeFilters.join(" | ")}`, `# Fonte: ${data.meta.fonte}`, `# Série mensal: ${data.meta.alertaTimeline}`];
-    const header = "municipio;ano;orgao_codigo;unidade;assuntos_cnj;data_ajuizamento;ultimo_movimento;data_ultimo_movimento;tempo_observado_dias;baixa_observada;fonte_status";
-    const lines = rows.map((row) => [row.municipio, row.ano, row.orgaoCodigo, row.unidade, row.assuntos.join(" | "), row.dataAjuizamento, row.ultimoMovimento, row.ultimoMovimentoData, row.tempoObservadoDias, row.temBaixaObservada, row.fonteStatus].map(csvCell).join(";"));
+    const header = "municipio;ano;orgao_codigo;unidade;assuntos_cnj;data_ajuizamento;ultimo_movimento;data_ultimo_movimento;tempo_observado_dias;baixa_observada;fonte_status;assuntos_correlatos_cnj";
+    const lines = rows.map((row) => [row.municipio, row.ano, row.orgaoCodigo, row.unidade, row.assuntos.join(" | "), row.dataAjuizamento, row.ultimoMovimento, row.ultimoMovimentoData, row.tempoObservadoDias, row.temBaixaObservada, row.fonteStatus, contextualSubjects(row.assuntos).join(" | ") || "Não identificado"].map(csvCell).join(";"));
     const blob = new Blob(["\ufeff" + [...metadata, header, ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
