@@ -277,9 +277,9 @@ export function Cerebro() {
             <Brain className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Cérebro</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Cérebro EJC</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              IA de entendimento profundo de casos jurídicos — raciocina em 7 etapas
+              Inteligência de casos integrada ao Atlas — evidências, análise e revisão humana
             </p>
           </div>
         </div>

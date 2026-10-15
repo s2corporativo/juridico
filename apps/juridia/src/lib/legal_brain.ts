@@ -259,7 +259,7 @@ export async function mapCaseDeterministic(
       retrievalMethod: "deterministic",
       documentId: "pasted-text",
       pageNumber: 1,
-      metadata: { original: cpf }, // mantém no metadata, não no quote
+      metadata: { identifierType: "cpf_cnpj", detected: true }, // não duplicar identificação pessoal no metadata
     });
     evidence.push(cpfEvidence);
     facts.push({

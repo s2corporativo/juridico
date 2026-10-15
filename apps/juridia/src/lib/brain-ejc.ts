@@ -8,7 +8,6 @@ export type BrainEvidence = Pick<EvidenceRefRecord, "id" | "caseId" | "documentI
 };
 
 export interface BrainEjcContext {
-  rawText: string;
   safeText: string;
   pseudonymization: PseudonymizeResult;
   deterministic: CaseMapperOutput;
@@ -51,7 +50,6 @@ export async function prepareBrainEjcContext(userId: string, caseId: string, typ
   }
   const allEvidence = [...mapped.evidence, ...pageEvidence];
   return {
-    rawText,
     safeText: pseudonymization.text,
     pseudonymization,
     deterministic: mapped.output,

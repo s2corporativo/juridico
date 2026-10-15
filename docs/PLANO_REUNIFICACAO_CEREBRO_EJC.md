@@ -64,3 +64,24 @@
 - inspeção de que `/api/brain` não contém envio de `facts` bruto ao provedor;
 - teste de que a versão do snapshot é incrementada;
 - `git diff --check`.
+
+## Consolidação técnica da integração na JuridIA — 15/10/2026
+
+O Cérebro EJC **não foi descartado**. Seu núcleo TypeScript vive em
+`apps/juridia/src/lib/brain-ejc.ts`, `legal_brain.ts`, `evidence.ts`,
+`pseudonymizer.ts` e `src/app/api/brain/route.ts`.
+A UI `src/components/app/cerebro.tsx` apresenta o Cérebro EJC.
+Os antigos quatro fragmentos Python FastAPI, removidos no PR #49, não compõem
+o runtime da JuridIA e seguem recuperáveis no histórico.
+
+O novo portão `brain-ejc-evidence-gate.ts` exige estrutura JSON reconhecida,
+elimina referências inexistentes/outro caso e **não transforma dados sem
+EvidenceRef autorizado em fatos comprovados**. Falhas do modelo/provedor
+impedem gravação de um parecer como concluído, preservando a extração
+determinística realizada localmente. Metadados redundantes com CPF/CNPJ
+originais deixaram de ser gravados em novas evidências.
+
+**Gates antes de produção:** teste autenticado com usuários distintos e
+documentos sintéticos; comprovação de que prompts ao provedor são
+pseudonimizados; revisão humana de fontes Atlas; backups restauráveis;
+migrações comprovadamente não destrutivas; rollback e verificação de HTTPS.
