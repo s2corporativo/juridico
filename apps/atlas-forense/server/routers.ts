@@ -214,7 +214,8 @@ export const appRouter = router({
     juridiaContext: adminProcedure.query(() => getCausalJuridiaContext()),
     juridiaAsk: adminProcedure.input(z.object({ question: z.string().trim().min(3).max(1_000) })).mutation(({ input, ctx }) => {
       if (!ctx.user) throw new Error("autenticação obrigatória");
-      return askJuridia(input.question, ctx.user.id);
+      // askJuridia valida via causaliaQuestionInput ({question}) — passar o objeto, não a string.
+      return askJuridia(input, ctx.user.id);
     }),
   }),
   civilConsumer: router({

@@ -45,6 +45,20 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // Blindagem (mesma do serviço de notificações): cliente mal-comportado que
+  // aborta conexão durante handshake de WebSocket ou requisição HTTP emite
+  // ECONNRESET em socket cru — sem handler isso derruba TODO o processo.
+  server.on("clientError", (err, socket) => {
+    console.warn(`[Atlas] client:error codigo=${(err as NodeJS.ErrnoException)?.code ?? "desconhecido"}`);
+    if (socket.writable) socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
+  });
+  server.on("connection", socket => {
+    socket.on("error", (err: NodeJS.ErrnoException) => {
+      console.warn(`[Atlas] socket:error codigo=${err?.code ?? "desconhecido"}`);
+    });
+  });
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

@@ -106,4 +106,30 @@ describe("Extração de candidatos causais do inteiro teor", () => {
     expect(causalFamilyLabel("transito")).toContain("trânsito");
     expect(causalFamilyLabel("inexistente")).toContain("Outros");
   });
+
+  it("não extrai candidato de fato gerador a partir do cabeçalho de metadados do PJe", () => {
+    // Falso positivo real observado no piloto PJe: "ASSUNTO: [Inadimplemento]"
+    // no cabeçalho do documento gerava candidato de dano_moral sem narrativa causal.
+    const inteiroTeorHomologacao = `PODER JUDICIÁRIO DO ESTADO DE MINAS GERAIS
+
+Comarca de Três Corações / Unidade Jurisdicional da Comarca de Três Corações
+
+PROCESSO Nº: 0913965-29.2009.8.13.0693
+CLASSE: [CÍVEL] PROCEDIMENTO DO JUIZADO ESPECIAL CÍVEL (436)
+ASSUNTO: [Inadimplemento]
+AUTOR: (nome suprimido)
+RÉU: BANCO SANTANDER (BRASIL) S.A.
+
+SENTENÇA
+
+Vistos, etc. Trata-se de ação manejada pela parte autora em face do banco réu.
+As partes noticiaram a celebração de acordo, conforme petições protocoladas nos autos.
+Diante do exposto, HOMOLOGO O ACORDO, JULGANDO EXTINTO O FEITO com resolução do mérito.
+P.R.I. Arquivando-se, oportunamente.`;
+    const result = extractCausalCandidates(inteiroTeorHomologacao);
+    const fatos = result.candidates.filter(c => c.role === "fato_gerador");
+    expect(fatos).toHaveLength(0);
+    // Descartes por cabeçalho devem ser registrados para auditoria do detector.
+    expect(result.candidatesDropped).toBeGreaterThan(0);
+  });
 });

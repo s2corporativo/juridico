@@ -84,3 +84,27 @@ O script: resolve o SHA da branch no GitHub → cria release imutável por SHA (
 Pré-requisitos (já cobertos pelo pacote `deploy-fase1` + bootstrap `bootstrap-sentinelx-access.py`): segredos causais presentes em `atlas-stage.env` (`ATLAS_CAUSAL_DATABASE_URL` apontando para banco `atlas_causal` vazio/novo, `ATLAS_CAUSAL_CASE_KEY_SECRET` ≥32 chars, `ATLAS_CAUSAL_PILOT_AUTHORIZATION=approved`) e serviço `atlas-forense-stage` ativo na 3114.
 
 Primeira execução validada no banco causal isolado de desenvolvimento: 8 casos reais da amostra (transporte, crédito, serviços/saúde, inadimplemento, contratos, trânsito), 30 candidatos, 30 aprovados em revisão, fila zerada, pedidos comprovados (dano moral 6, dano material 4, obrigação de fazer 3). Dashboard simplificado em `/causal` com funil, causas comprovadas, fila de revisão em 1 clique e JuridIA embutida alimentada pelo Atlas (`causal.juridiaContext`, `causal.juridiaAsk`).
+
+## Ingerir inteiro teor REAL do PJe (consulta pública)
+
+Ferramenta versionada: [`apps/atlas-forense/scripts/piloto-ingestir-pje-real.ts`](../../apps/atlas-forense/scripts/piloto-ingestir-pje-real.ts).
+
+1. No PJe TJMG (consulta pública), obtenha a sentença e o metadado público do processo
+   (classe, assunto, comarca, data de distribuição) e a URL oficial do documento
+   (`documentoSemLoginHTML.seam?...` — HTTPS).
+2. **No ambiente do operador**, remova todo dado pessoal (partes, CPF/CNPJ, juiz,
+   advogados, IDs de peças) do texto e grave `entrada.json` (formato documentado no
+   cabeçalho do script).
+3. Execute (VPS, como `sentinelx`, com o ambiente causal carregado):
+   `pnpm --dir <release>/apps/atlas-forense exec tsx scripts/piloto-ingestir-pje-real.ts entrada.json`
+4. O script revalida o gate de privacidade **fail-closed** (recusa qualquer texto com
+   CPF/CNPJ/e-mail/telefone/marcador), pseudonimiza o `caseKey` (SHA-256 do número do
+   processo; o número permanece apenas na URL oficial de proveniência), ingere, extrai
+   e envia candidatos à fila de revisão humana.
+
+Achados do piloto (15/10/2026): homologações de acordo **não** geram candidatos de
+narrativa causal (comportamento correto — o sistema não fabrica causa); o detector
+passou a descartar matches no cabeçalho de metadados (bloco CLASSE/ASSUNTO), falso
+positivo real corrigido na versão `2026-10-15.2`. Sentenças de mérito exigem busca
+alvo (ex.: DataJud no staging, com `DATAJUD_API_KEY`) ou curadoria manual pelo
+operador a partir da consulta pública.

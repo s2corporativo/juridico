@@ -13,7 +13,7 @@
 set -Eeuo pipefail
 umask 077
 
-BRANCH="${BRANCH:-feat/causal-piloto-causas-comprovadas}"
+BRANCH="${BRANCH:-f2/atlas-causal-ativado}"
 REPO="https://github.com/s2corporativo/juridico.git"
 BASE="/opt/atlas-juridico/staging/unified"
 ENV_FILE="$BASE/secrets/atlas-stage.env"
@@ -91,8 +91,12 @@ log "cutover concluído e /readyz saudável"
 
 # 4) 1º caso piloto: ingestão → extração → revisão → causas comprovadas
 log "executando o 1º caso piloto (idempotente)…"
-sudo -u sentinelx --preserve-env=ATLAS_CAUSAL_DATABASE_URL,ATLAS_CAUSAL_CASE_KEY_SECRET,ATLAS_CAUSAL_PILOT_AUTHORIZATION \
-  pnpm --dir "$RELEASE/apps/atlas-forense" exec tsx scripts/piloto-primeiro-caso.ts | tee /var/lib/atlas-juridico/causal-pilot/primeiro-caso-$(date -u +%Y%m%dT%H%M%SZ).log
+PILOT_OUT="/var/lib/atlas-juridico/causal-pilot/primeiro-caso-$(date -u +%Y%m%dT%H%M%SZ)"
+install -d -m 0700 -o sentinelx -g sentinelx "/var/lib/atlas-juridico/causal-pilot" "$PILOT_OUT"
+sudo -u sentinelx --preserve-env=ATLAS_CAUSAL_DATABASE_URL,ATLAS_CAUSAL_CASE_KEY_SECRET,ATLAS_CAUSAL_PILOT_AUTHORIZATION,ATLAS_CAUSAL_PILOT_OUTPUT_DIR \
+  ATLAS_CAUSAL_PILOT_OUTPUT_DIR="$PILOT_OUT" \
+  pnpm --dir "$RELEASE/apps/atlas-forense" exec tsx scripts/piloto-primeiro-caso.ts 2>&1 | tee "$PILOT_OUT/execucao.log"
 
 log "SUCESSO: branch $BRANCH publicada e 1º caso piloto fechado"
-log "paineis: http://127.0.0.1:$PORT/causal (banco isolado; não público)"
+log "painéis: http://127.0.0.1:$PORT/causal (banco isolado; não público)"
+log "resultado do 1º caso: $PILOT_OUT/piloto-resultado.json"

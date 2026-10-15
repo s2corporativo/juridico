@@ -323,6 +323,20 @@ export async function startNotificationService(
 
   const httpServer = createServer(app);
 
+  // Blindagem: cliente mal-comportado (abort no handshake, ECONNRESET em socket
+  // cru) nunca deve derrubar o processo com um 'error' não tratado.
+  httpServer.on("clientError", (err, socket) => {
+    logger.warn(
+      `[Realtime] client:error codigo=${(err as NodeJS.ErrnoException)?.code ?? "desconhecido"}`
+    );
+    if (socket.writable) socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
+  });
+  httpServer.on("connection", socket => {
+    socket.on("error", (err: NodeJS.ErrnoException) => {
+      logger.warn(`[Realtime] socket:error codigo=${err?.code ?? "desconhecido"}`);
+    });
+  });
+
   const io = new SocketIOServer(httpServer, {
     path: "/socket.io/",
     serveClient: false,

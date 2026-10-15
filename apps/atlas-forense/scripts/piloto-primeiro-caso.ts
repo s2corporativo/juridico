@@ -11,6 +11,7 @@
  * — passam pelo mesmo gate de privacidade do serviço.
  */
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { createCausalRun, createCausalCase, createCausalDocument } from "../server/causal-service";
 import { getCausalDb } from "../server/causal-db";
@@ -282,14 +283,19 @@ async function main() {
     primeiraCausaComprovada: causas.causasComprovadas[0] ?? null,
   };
 
-  mkdirSync("/home/z/my-project/causal-local", { recursive: true });
-  writeFileSync("/home/z/my-project/causal-local/piloto-resultado.json", JSON.stringify(resultado, null, 2), "utf8");
+  // Diretório de saída configurável: na VPS usar ATLAS_CAUSAL_PILOT_OUTPUT_DIR
+  // (ex.: /var/lib/atlas-juridico/causal-pilot); localmente cai no cwd.
+  const outputDir = process.env.ATLAS_CAUSAL_PILOT_OUTPUT_DIR
+    ? resolve(process.env.ATLAS_CAUSAL_PILOT_OUTPUT_DIR)
+    : process.cwd();
+  mkdirSync(outputDir, { recursive: true });
+  writeFileSync(`${outputDir}/piloto-resultado.json`, JSON.stringify(resultado, null, 2), "utf8");
 
   console.log("\n===== RESULTADO DO PILOTO =====");
   console.log(JSON.stringify(causas, null, 2));
   console.log("\nPrimeira causa comprovada:", JSON.stringify(causas.causasComprovadas[0] ?? null, null, 2));
   console.log("Fila final de revisão:", filaFinal.length);
-  console.log("Resultado completo salvo em /home/z/my-project/causal-local/piloto-resultado.json");
+  console.log(`Resultado completo salvo em ${outputDir}/piloto-resultado.json`);
 }
 
 main()

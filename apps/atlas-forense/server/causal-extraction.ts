@@ -8,10 +8,10 @@ import { normalizeCausalLabel } from "./causal-contract";
  * - Nada aqui comprova nexo causal, fato ocorrido ou procedência.
  * - A "causa comprovada" só existe após revisão humana com evidência aprovada.
  *
- * Versão do detector: alterar sempre que as listas de termos mudarem, para
- * rastreabilidade das anotações produzidas.
+ * Versão do detector: alterar sempre que as listas de termos ou regras mudarem,
+ * para rastreabilidade das anotações produzidas.
  */
-export const CAUSAL_DETECTOR_VERSION = "2026-10-15.1";
+export const CAUSAL_DETECTOR_VERSION = "2026-10-15.2";
 
 /** Taxonomia de famílias de fato gerador — mesma do cliente (jec-damage-context.ts). */
 export const CAUSAL_FAMILIES = {
@@ -139,6 +139,28 @@ const EXCERPT_BEFORE = 160;
 const EXCERPT_AFTER = 240;
 export const MAX_EXCERPT_CHARS = 600;
 
+/**
+ * Marcadores do cabeçalho de metadados (boilerplate PJe/CNJ): um termo casado
+ * nessas janelas é METADADO do processo (classe/assunto), não narrativa causal
+ * do inteiro teor — deve ser descartado (falso positivo observado no piloto
+ * PJe real: "ASSUNTO: [Inadimplemento]" no topo do documento).
+ */
+const HEADER_MARKERS = [
+  "processo nº:",
+  "processo n°:",
+  "processo no:",
+  "processo numero",
+  "numeracao unica",
+  "classe judicial",
+  "classe: ",
+  "assunto: ",
+  "valor da causa",
+];
+
+function isHeaderWindow(searchableWindow: string): boolean {
+  return HEADER_MARKERS.some(marker => searchableWindow.includes(marker));
+}
+
 export type CausalTextCandidate = {
   role: "fato_gerador" | "pedido";
   claimType: CausalClaimType;
@@ -209,9 +231,15 @@ export function extractCausalCandidates(text: string): CausalExtractionResult {
   // Confiança por janela: sinais de pedido dentro da janela do fato gerador elevam a confiança.
   const factCandidates: CausalTextCandidate[] = [];
   const dedup = new Map<string, CausalTextCandidate>();
+  let candidatesDropped = 0;
   for (const hit of hits) {
     const windowStart = Math.max(0, hit.start - EXCERPT_BEFORE);
     const windowEnd = Math.min(haystack.length, hit.end + EXCERPT_AFTER);
+    // Guard de cabeçalho: janela com marcador de metadados não é narrativa causal.
+    if (isHeaderWindow(haystack.slice(windowStart, windowEnd))) {
+      candidatesDropped += 1;
+      continue;
+    }
     const claimsInWindow = claimSignals.filter(signal => signal.start < windowEnd && signal.end > windowStart);
     const matchedTerms = new Set<string>([hit.term]);
     const label = hit.pattern.canonical;
@@ -264,10 +292,13 @@ export function extractCausalCandidates(text: string): CausalExtractionResult {
   }
 
   const candidates = [...factGeneratorCandidates, ...pedidoCandidates.slice(0, MAX_PEDIDO_CANDIDATES)];
+  const droppedByHeader = candidatesDropped;
+  const droppedByLimit = Math.max(0, factCandidates.length - factGeneratorCandidates.length);
   return {
     candidates,
     occurrencesScanned,
-    candidatesDropped: Math.max(0, factCandidates.length - factGeneratorCandidates.length),
+    // Descartes por limite de caps + descartes por janela de cabeçalho de metadados.
+    candidatesDropped: droppedByLimit + droppedByHeader,
   };
 }
 
