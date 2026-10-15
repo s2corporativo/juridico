@@ -72,19 +72,29 @@ import { ejcIntegrationManifest, CITATION_PATTERNS } from "@juridico/shared";
 
 ## Integration bridges
 
-### 1. OIDC bridge — JuridIA is the Identity Provider (IdP)
+### 1. OIDC bridge — JuridIA as the Identity Provider
 
-`apps/juridia/src/app/api/auth/oidc/` exposes an OIDC-compatible IdP:
+JuridIA acts as the OIDC Identity Provider (IdP); Atlas Forense is a client.
+The current implementation uses **Authorization Code + PKCE (S256)**,
+**RS256** ID Tokens, and a public **RSA JWKS** for signature verification.
+It does **not** expose or share an HS256 signing key.
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/auth/oidc/.well-known/openid-configuration` | GET | OIDC discovery document |
-| `/api/auth/oidc/token` | POST | Issues an HS256 JWT (`sub`, `role`, `persona`, `exp`) |
-| `/api/auth/oidc/jwks` | GET | Returns the symmetric key descriptor (`kty: oct`, `alg: HS256`) |
-| `/api/auth/oidc/verify` | POST | Validates a JWT and returns its claims (used by Atlas) |
+| `/api/auth/oidc/authorize` | GET | Authorization Code + PKCE |
+| `/api/auth/oidc/token` | POST | Single-use code redemption and RS256 ID Token |
+| `/api/auth/oidc/jwks` | GET | Public RSA verification keys only |
+| `/api/auth/oidc/verify` | POST | Server-side token verification where enabled |
 
-Atlas Forense validates every issued JWT by calling JuridIA's `/api/auth/oidc/verify`.
-The shared secret is `JURIDIA_JWT_SECRET` (env var on JuridIA; mirrored on Atlas).
+Production requires correctly configured `JURIDIA_OIDC_ISSUER` (HTTPS),
+`EJC_OIDC_CLIENT_ID`, `EJC_OIDC_CLIENT_SECRET`, and
+`EJC_OIDC_REDIRECT_URIS`. Keep signing private keys and client secrets out of
+source control; verify issuer, audience (`atlas-forense`), signature, expiry,
+redirect URI, and single-use code redemption. A missing production
+configuration is a **deployment blocker**, not a reason to use dev fallbacks.
+See `apps/juridia/src/lib/oidc.ts` and the OIDC tests for the authoritative
+implementation; do not configure Atlas from older HS256 instructions.
 
 ### 2. REST API bridge — Atlas calls JuridIA's cognitive APIs
 
