@@ -5,7 +5,7 @@ import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
 import { requireAuth } from "@/lib/auth";
 import { ownsCase } from "@/lib/owned-case";
-import { canonicalHash } from "@/lib/evidence";
+import { canonicalHash, validateEvidenceIntegrity } from "@/lib/evidence";
 import { prepareBrainEjcContext, safeEvidencePrompt } from "@/lib/brain-ejc";
 import { validateBrainExtraction } from "@/lib/brain-ejc-evidence-gate";
 import {
@@ -113,6 +113,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível preparar os autos" }, { status: 400 });
   }
   const safeFacts = context.safeText;
+  // A reference ID is only usable when its case and stored quote hash are intact.
+  try {
+    await Promise.all(context.evidence.map((ref) => validateEvidenceIntegrity(caseId, ref.id)));
+  } catch {
+    return NextResponse.json({ error: "Evidência sem integridade ou de caso divergente." }, { status: 422 });
+  }
   const allowedEvidence = safeEvidencePrompt(context.evidence);
   const steps: BrainStep[] = STEPS.map((s) => ({ ...s, status: "pending" as const }));
   const r: Partial<BrainResult> = { steps };
@@ -261,9 +267,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     }
 
-    if (needsWebFallback) {
+    if (needsWebFallback && (r.legalIssues || []).length > 0) {
       r.atlas.fallback = true;
-      const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${safeFacts.slice(0, 100)}`;
+      // Only generic legal areas may be used in a public web fallback.
+      const legalAreaAllowlist = new Set([
+        "civil", "penal", "trabalhista", "tributario", "consumer", "family",
+        "previdenciario", "empresarial", "administrativo", "bancario", "ambiental",
+        "saude", "imobiliario", "internacional", "digital_lgpd", "transito",
+      ]);
+      const genericAreas = issues.slice(0, 2)
+        .map((issue) => legalAreaAllowlist.has(issue.area) ? issue.area : "")
+        .filter(Boolean).join(" ");
+      const searchQuery = `jurisprudência STJ ${genericAreas || "fundamentação jurídica geral"}`;
       const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
       r.jurisprudence = Array.isArray(raw) ? raw.slice(0, 8).map(webResultToBrainItem) : [];
     }
@@ -323,8 +338,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   } catch (e) { steps[7].status = "error"; steps[7].error = e instanceof Error ? e.message : "Erro"; r.strategy = { proceduralPath: "", immediateActions: [], documentsToCollect: [], risks: [], recommendation: "Análise indisponível" }; }
 
   // Gate jurídico do Cérebro EJC: não declarar completo o resultado degradado.
-  const mandatorySteps = ["extract", "issues", "viability", "strategy"];
-  const incomplete = steps.some((s) => mandatorySteps.includes(s.id) && s.status !== "done");
+  const mandatorySteps = ["classify", "extract", "issues", "viability", "strategy"];
+  const incomplete = steps.some((s) => mandatorySteps.includes(s.id) && s.status !== "done") ||
+    !r.ramoJuridico?.trim() || !Array.isArray(r.legalIssues) ||
+    !r.viability?.reasoning?.trim() ||
+    !r.strategy?.proceduralPath?.trim() || !r.strategy?.recommendation?.trim();
   if (incomplete) {
     await db.agentRun.update({
       where: { id: agentRun.id },

@@ -21,6 +21,14 @@ describe("Cérebro EJC integrado — rastreabilidade e privacidade", () => {
     expect(got.parties[0].evidenceRefIds).toEqual(["ref_caso_1"]);
     expect(got.parties[0].state).toBe("fato_extraido");
   });
+  test("referência válida misturada com outra inventada rejeita o item inteiro", () => {
+    const got = validateBrainExtraction({
+      ...empty(), values: [{ label: "Dano", amount: "R$ 500,00", state: "fato_extraido",
+        evidence_ref_ids: ["ref_caso_1", "ref_inventada"] }],
+    }, new Set(["ref_caso_1"]));
+    expect(got.values).toHaveLength(0);
+  });
+
   test("não aceita item textual sem evidência e reduz estado desconhecido a inferência", () => {
     const got = validateBrainExtraction({
       ...empty(), requests: [
