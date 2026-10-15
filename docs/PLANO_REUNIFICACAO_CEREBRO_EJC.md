@@ -85,3 +85,20 @@ originais deixaram de ser gravados em novas evidências.
 documentos sintéticos; comprovação de que prompts ao provedor são
 pseudonimizados; revisão humana de fontes Atlas; backups restauráveis;
 migrações comprovadamente não destrutivas; rollback e verificação de HTTPS.
+
+
+### Complemento da auditoria concorrente — 15/10/2026
+
+Sobre a integração EJC já incorporada em atlas-forense, a reconciliação acrescenta:
+verificação criptográfica das referências por caso antes do provedor; rejeição integral
+de itens com IDs de evidência mistos (autorizados e inventados); validação também
+da classificação e dos campos essenciais antes de concluir; consultas web apenas
+com áreas jurídicas genéricas; leitura dos documentos anexados diretamente pelo
+backend sem colar a extração duas vezes no formulário; permissão para analisar
+casos que já possuem autos prontos mesmo com narrativa manual vazia; e
+identificador do snapshot no contexto enviado ao gerador como rascunho.
+
+Os testes antigos brain-privacy.test.ts foram alinhados ao contrato vigente.
+Isto reforça validação de origem, não comprova apoio semântico da prova
+à afirmação nem substitui conferência do advogado. Os serviços da VPS e os
+bancos permanecem inalterados até a homologação operacional.

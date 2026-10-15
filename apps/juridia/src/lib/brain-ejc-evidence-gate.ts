@@ -19,10 +19,11 @@ function filterEvidenceItems(values: unknown[], allowedIds: ReadonlySet<string>)
     if (!isObject(value)) return [];
     const raw = value.evidence_ref_ids;
     // Um relato sem referência documental ou narrativa de origem não vira "fato".
-    if (!Array.isArray(raw)) return [];
-    const refs = Array.from(new Set(raw.filter(
-      (id): id is string => typeof id === "string" && allowedIds.has(id),
-    )));
+    // A mixed list with an invented or foreign-case reference invalidates
+    // the whole item; silently dropping the invalid ID would misstate support.
+    if (!Array.isArray(raw) || raw.length === 0 ||
+        !raw.every((id) => typeof id === "string" && allowedIds.has(id))) return [];
+    const refs = Array.from(new Set(raw as string[]));
     if (refs.length === 0) return [];
     const state: BrainExtractionState =
       value.state === "fato_extraido" || value.state === "alegacao_cliente" || value.state === "inferencia_ia"
