@@ -79,6 +79,7 @@ export function Generator() {
 
   const [templates, setTemplates] = useState<TemplateDTO[]>([]);
   const [skills, setSkills] = useState<SkillDTO[]>([]);
+  const [skillQuery, setSkillQuery] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
@@ -111,12 +112,17 @@ export function Generator() {
   // Filtra skills por categoria do template
   const templateCategory = current?.category || "civil";
   const suggestedSkills = skills.filter(
-    (s) =>
-      s.category === templateCategory ||
-      s.category === "civil" ||
-      s.slug === "cnj-615-2025" ||
-      s.slug === "lgpd-dados-sensiveis"
-  );
+    (s) => s.category === templateCategory || s.category === "civil"
+      || s.slug === "cnj-615-2025" || s.slug === "lgpd-dados-sensiveis"
+      || selectedSkillSlugs.includes(s.slug)
+  ).slice(0, 15);
+  // Atalho # por slug ou nome: somente versões elegíveis do catálogo.
+  const skillSearchTerm = skillQuery.trim().replace(/^#/, "").normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const searchSkills = skillSearchTerm
+    ? skills.filter((skill) => `${skill.slug} ${skill.name} ${skill.category}`
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(skillSearchTerm)).slice(0, 15)
+    : [];
 
   /** Lê a resposta SSE do servidor, evento a evento. */
   async function readSse(
@@ -289,7 +295,7 @@ export function Generator() {
           <h1 className="text-2xl font-bold tracking-tight">Gerar minuta</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Escolha o template, preencha os fatos e a IA gera a peça com
-            anonimização local.
+            pseudonimização antes do envio ao modelo de IA.
           </p>
         </div>
         {user && (
@@ -496,10 +502,11 @@ export function Generator() {
               <CardContent className="space-y-4">
                 <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3 text-xs text-muted-foreground">
                   <ShieldAlert className="mb-1 inline h-4 w-4 text-primary" />
-                  Dados sensíveis (CPF, nome, endereço, valores) são{" "}
-                  <strong>anonimizados localmente</strong> com marcadores{" "}
-                  <span className="marker-chip">[TIPO_0001]</span> antes de
-                  chegar à IA. O conteúdo real nunca sai da sua máquina.
+                  Dados pessoais podem ser enviados ao servidor e são
+                  <strong> pseudonimizados no servidor da JuridIA </strong> antes
+                  do envio ao modelo de IA, usando marcadores como
+                  <span className="marker-chip"> [TIPO_0001]</span>.
+                  Revise informações sensíveis antes de gerar.
                 </div>
                 <div className="space-y-3">
                   {current.fields.map((f) => (
@@ -578,6 +585,47 @@ export function Generator() {
                 Pacotes de conhecimento que orientam a geração. Clique para
                 ativar/desativar.
               </p>
+              <div className="mb-4 space-y-2">
+                <Label htmlFor="habilidade-atalho" className="text-xs font-medium">Selecionar habilidade com #</Label>
+                <Input
+                  id="habilidade-atalho"
+                  value={skillQuery}
+                  onChange={(event) => setSkillQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && searchSkills.length > 0) {
+                      event.preventDefault();
+                      const first = searchSkills[0];
+                      if (!selectedSkillSlugs.includes(first.slug)) toggleSkill(first.slug);
+                      setSkillQuery("");
+                    }
+                  }}
+                  placeholder="#prescricao ou nome da habilidade"
+                  aria-label="Buscar habilidades aprovadas por nome ou código"
+                  autoComplete="off"
+                />
+                {skillQuery.trim().length > 0 && (
+                  <div role="listbox" aria-label="Habilidades encontradas" className="max-h-48 overflow-y-auto rounded-lg border bg-background p-1">
+                    {searchSkills.length > 0 ? searchSkills.map((skill) => (
+                      <button key={skill.slug} role="option" type="button"
+                        aria-selected={selectedSkillSlugs.includes(skill.slug)}
+                        onClick={() => {
+                          if (!selectedSkillSlugs.includes(skill.slug)) toggleSkill(skill.slug);
+                          setSkillQuery("");
+                        }}
+                        className="w-full rounded-md px-2.5 py-2 text-left text-xs hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        <span className="block font-semibold">{skill.name}</span>
+                        <span className="block truncate text-muted-foreground">#{skill.slug} · {skill.category}</span>
+                      </button>
+                    )) : <p className="p-3 text-xs text-muted-foreground">Nenhuma habilidade aprovada corresponde à busca.</p>}
+                  </div>
+                )}
+                {selectedSkillSlugs.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedSkillSlugs.length} habilidade(s) selecionada(s). A seleção exige versão válida e aprovada.
+                  </p>
+                )}
+              </div>
               <div className="space-y-2">
                 {suggestedSkills.map((s) => {
                   const active = selectedSkillSlugs.includes(s.slug);
@@ -616,7 +664,9 @@ export function Generator() {
                       <SheetTitle>Catálogo de habilidades</SheetTitle>
                     </SheetHeader>
                     <div className="mt-4 space-y-2 overflow-y-auto scrollbar-juridia">
-                      {skills.map((s) => {
+                      {skills.filter((skill) => !skillSearchTerm ||
+                        skill.slug.toLowerCase().includes(skillSearchTerm) ||
+                        skill.name.toLowerCase().includes(skillSearchTerm)).slice(0, 60).map((s) => {
                         const active = selectedSkillSlugs.includes(s.slug);
                         return (
                           <button
