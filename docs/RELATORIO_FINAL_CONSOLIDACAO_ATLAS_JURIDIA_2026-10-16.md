@@ -101,3 +101,35 @@ Conclusão: o runtime público **não corresponde ao commit local validado**. N�
 6. Investigar os avisos de tracing dinâmico do `graph-agent.ts` antes de uma otimização de artefato de produção.
 
 **Não é correto declarar a plataforma publicada ou homologada em produção enquanto os itens 1–4 não forem resolvidos.**
+
+## Adendo — parecer técnico consolidado considerado
+
+O parecer técnico recebido é compatível com a arquitetura adotada e passa a ser tratado como orientação de evolução, não como autorização para uma reconstrução ampla.
+
+### Decisões incorporadas
+
+- **JuridIA** permanece como interface e plataforma central de trabalho.
+- **Atlas Forense** continua como autoridade de fontes públicas, precedentes e proveniência editorial.
+- **Cérebro EJC** permanece como núcleo de análise de fatos, evidências, lacunas e riscos.
+- **SQLite/Prisma, FTS5/BM25 e embeddings locais** continuam sendo a escolha da primeira implantação; PostgreSQL/pgvector fica condicionado a necessidade medida.
+- Habilidades continuam internas à JuridIA; não será criada uma aplicação independente.
+- O comando `#` continua sujeito a aprovação, integridade, compatibilidade e revisão humana; não é ordem absoluta ao modelo.
+- O catálogo não será ampliado para 2.000 habilidades como meta artificial. A expansão deve ser progressiva e baseada em curadoria e avaliação.
+
+### Confronto com o código atual
+
+- Já existem `SkillVersion`, seleção manual por `#`, `DocumentSkillUsage`, snapshot do conteúdo aplicado, IDs de versão, hashes, gates de aprovação e vínculo de revisor autenticado.
+- A integridade de manifesto já cobre campos estruturados além do texto; versões inelegíveis são bloqueadas fail-closed.
+- O roteador avançado/classificador existe, mas permanece atrás de modo configurável (`shadow`/`active`); o fallback corrente ainda usa gatilhos e ranking determinístico.
+- A busca híbrida atual é um reranqueamento local de candidatos BM25 com embeddings, não uma fusão RRF de duas recuperações independentes. Isso fica registrado como evolução futura, não como capacidade já homologada.
+- Painel de auditoria de habilidades e proveniência já existe no editor, mas personalizações institucionais, derivações imutáveis e merge em três vias ainda não estão implementados como workflow completo.
+
+### Próxima ordem de execução aprovada
+
+1. **F0:** recuperar acesso operacional, inventariar bancos/serviços, validar backup e restore.
+2. **F1:** consolidar identidade canônica, imutabilidade, fontes, permissões e integridade de versões.
+3. **F2:** montar conjunto de avaliação sintético/anonimizado revisado por advogado e comparar roteamento legado, modo shadow e recuperação híbrida.
+4. **F3:** concluir transparência no editor, seleção `#`, motivos de aplicabilidade, conflitos e abstenção.
+5. Só então avaliar personalização institucional, merge em três vias e expansão do acervo.
+
+Os critérios propostos no parecer — acerto de forma de peça, recall de matérias, taxa de abstenção e erros jurídicos críticos — são **metas de homologação futuras**, não resultados comprovados pela suíte atual.
