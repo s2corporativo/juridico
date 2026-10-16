@@ -24,7 +24,7 @@ export async function completeLocalCase(
     throw new Error("LOCAL_CASE_AI_MODEL_INVALID");
   }
 
-  const timeout = AbortSignal.timeout(90_000);
+  const timeout = AbortSignal.timeout(20_000);
   const response = await fetch("http://127.0.0.1:11434/api/chat", {
     method: "POST",
     signal: timeout,
