@@ -156,4 +156,4 @@ function mockFetch(handler: (url: URL, init: RequestInit) => { status?: number; 
 }
 
 console.log(`\n${passed} passaram, ${failed} falharam`);
-process.exit(failed === 0 ? 0 : 1);
+if (failed > 0) throw new Error(`ATLAS_CLIENT_TESTS_FAILED: ${failed}`);
