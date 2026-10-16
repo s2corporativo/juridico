@@ -164,3 +164,15 @@ export function deanonymizeCompat(text: string, markers: MarkerMap): string {
   }
   return rehydrate(text, { forward: new Map(), reverse });
 }
+
+
+/** Reconstitui valores locais em objetos JSON, sem manipular JSON serializado. */
+export function rehydrateStructured<T>(value: T, map: PseudonymMap): T {
+  if (typeof value === "string") return rehydrate(value, map) as T;
+  if (Array.isArray(value)) return value.map(item => rehydrateStructured(item, map)) as T;
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value)
+      .map(([key, item]) => [key, rehydrateStructured(item, map)])) as T;
+  }
+  return value;
+}
