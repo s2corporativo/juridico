@@ -1,13 +1,23 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
+import { canonicalSkillManifestHash } from "../src/lib/skill-manifest";
 import { inspectApprovedSkill, isEligibleSkillVersion, parseSkillKeywords, selectLatestApprovedSkills, summarizeApprovalAccountLinks } from "../src/lib/skill-governance";
 
 const content = "Orientação processual válida como instrução auxiliar, não como fonte.";
-const version = (approvedBy: string) => ({
-  slug: "cpc-peticao", version: 3, status: "approved", content,
-  contentHash: createHash("sha256").update(content).digest("hex"),
-  approvedBy, approvedAt: new Date(),
-});
+const version = (approvedBy: string) => {
+  const meta = {
+    slug: "cpc-peticao", version: 3, area: "civil", description: "Modelo de petição civil",
+    content, triggers: '{"keywords":["peticao"]}', requiredSources: '["CPC"]',
+    requiredEvidence: "[]", rules: "[]", exceptions: "[]", forbiddenClaims: "[]",
+    allowedTools: "[]", outputSchema: "{}",
+  };
+  return {
+    ...meta, status: "approved", contentHash: createHash("sha256").update(content).digest("hex"),
+    manifestHash: canonicalSkillManifestHash(meta),
+    authorUserId: "autor-juridico", reviewerUserId: approvedBy,
+    approvedBy, approvedAt: new Date(),
+  };
+};
 describe("Skill admission and provenance", () => {
   test("only approved hash-consistent content with individual approver is executable", () => {
     expect(isEligibleSkillVersion(version("usuario-revisor-real"))).toBe(true);
@@ -29,9 +39,10 @@ describe("Skill admission and provenance", () => {
 });
 
 describe("single canonical release per legal skill", () => {
-  const approved = (slug: string, number: number, approver = "advogado-123") => ({
-    ...version(approver), slug, version: number,
-  });
+  const approved = (slug: string, number: number, approver = "advogado-123") => {
+    const item = { ...version(approver), slug, version: number };
+    return { ...item, manifestHash: canonicalSkillManifestHash(item) };
+  };
 
   test("a tampered latest approved release blocks the slug instead of downgrading", () => {
     const older = approved("prescricao-intercorrente", 1);
@@ -86,5 +97,23 @@ describe("reviewer account linkage (observational only)", () => {
       linkedToAccount: 0,
       noAccountLink: 2,
     });
+  });
+});
+
+describe("juridical manifest integrity", () => {
+  test("approved version changes to triggers, sources or forbidden claims fail closed", () => {
+    const base = version("revisor-juridico");
+    expect(isEligibleSkillVersion(base)).toBe(true);
+    expect(inspectApprovedSkill({ ...base, triggers: '{"keywords":["outra"]}' })).toContain("manifest_hash_mismatch");
+    expect(inspectApprovedSkill({ ...base, requiredSources: '["fonte-nao-revisada"]' })).toContain("manifest_hash_mismatch");
+    expect(inspectApprovedSkill({ ...base, forbiddenClaims: '["promessa-de-resultado"]' })).toContain("manifest_hash_mismatch");
+  });
+  test("authors may not approve their own versions", () => {
+    const self = version("autor-juridico");
+    expect(inspectApprovedSkill(self)).toContain("authenticated_reviewer_missing");
+  });
+  test("historical approvals without verifiable manifests are not promoted silently", () => {
+    const legacy = { ...version("revisor-juridico"), manifestHash: null };
+    expect(isEligibleSkillVersion(legacy)).toBe(false);
   });
 });

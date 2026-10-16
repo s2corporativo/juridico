@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
+import { isLegalSkillDigestValid, type SkillManifest } from "./skill-manifest";
 
-export type VersionedSkill = {
+export type VersionedSkill = Partial<SkillManifest> & {
   slug: string;
   version: number;
   status: string;
@@ -8,7 +9,8 @@ export type VersionedSkill = {
   contentHash: string;
   approvedBy: string | null;
   approvedAt: Date | null;
-  triggers?: string;
+  reviewerUserId?: string | null;
+  authorUserId?: string | null;
 };
 
 const AUTOMATED_APPROVERS = new Set([
@@ -25,6 +27,11 @@ export function inspectApprovedSkill(skill: VersionedSkill): string[] {
   }
   if (typeof skill.content !== "string" || skill.content.trim().length < 20) issues.push("empty_content");
   if (createHash("sha256").update(skill.content || "", "utf8").digest("hex") !== skill.contentHash) issues.push("hash_mismatch");
+  // Conteúdo antigo aprovado por etiquetas não é evidência de revisão humana.
+  if (!skill.authorUserId || !skill.reviewerUserId ||
+      skill.authorUserId === skill.reviewerUserId || skill.approvedBy !== skill.reviewerUserId)
+    issues.push("authenticated_reviewer_missing");
+  if (!isLegalSkillDigestValid(skill as SkillManifest)) issues.push("manifest_hash_mismatch");
   return issues;
 }
 
