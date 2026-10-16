@@ -177,6 +177,7 @@ export async function GET(req: NextRequest) {
     items: items.map((item) => ({
       ...item, updatedAt: item.updatedAt.toISOString(),
       canSubmit: item.authorUserId === auth.user.uid && item.status === "draft",
+      canClaim: isReviewer && !item.authorUserId && item.status === "draft",
       canDecide: isReviewer && item.authorUserId !== auth.user.uid && item.status === "review",
     })),
     canReview: isReviewer,
