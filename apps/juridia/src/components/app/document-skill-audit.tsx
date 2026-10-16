@@ -14,8 +14,6 @@ export function DocumentSkillAudit({ documentId }: { documentId: string }) {
   const [error, setError] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    setUsage(null);
-    setError(false);
     fetch("/api/documents/skills?documentId=" + encodeURIComponent(documentId), {
       signal: controller.signal, cache: "no-store",
     }).then(async (response) => {
