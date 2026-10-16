@@ -96,3 +96,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, status: "review" });
     });
   }
+  if (current.role !== "admin") return bad("review_admin_required", 403);
+  if (!version.authorUserId || version.authorUserId === current.id) return bad("independent_reviewer_required", 403);
+  if (version.status !== "review") return bad("invalid_state", 409);
+  if (body.action === "return") {
+    return db.$transaction(async tx => {
+      const changed = await tx.skillVersion.updateMany({
+        where: { id: version.id, status: "review" }, data: { status: "draft" },
+      });
+      if (changed.count !== 1) return bad("concurrent_transition", 409);
+      await tx.skillReviewEvent.create({ data: {
+        skillVersionId: version.id, reviewerUserId: current.id, decision: "returned", reason,
+      } });
+      return NextResponse.json({ ok: true, status: "draft" });
+    });
+  }
