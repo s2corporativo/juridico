@@ -21,7 +21,7 @@ Os documentos legados não devem virar precedentes, legislação vigente ou skil
 - Os **dois slugs** presentes em `custom.db` mas ausentes em `juridia.db` correspondem aos **dois registros demonstrativos** excluídos desta última base; nenhum slug aparece na relação inversa. Preservar exclusão de demonstrações.
 - No legado `custom.db`: **692 ATIVO**, **20 REVISAO_HUMANA**, **2 DEMONSTRACAO**. Há **463/714 com URL de origem** e 714/714 com campo de data de verificação preenchido, cujo preenchimento não constitui verificação humana comprovada.
 - Na cópia `juridia.db`: **692 ATIVO** e **20 REVISAO_HUMANA**. **717 LegalSource** têm campos de URL, revisão e hash preenchidos; esses campos exigem validação individual do conteúdo, domínio, integridade criptográfica, vigência e identidade do revisor.
-- As **2.000 SkillVersion** antigas estão marcadas `approved`, com campos `approvedBy`, `approvedAt` e `contentHash` preenchidos. **Não** transferir essa aprovação automaticamente.
+- As **2.000 SkillVersion** antigas estão marcadas `approved`, com campos `approvedBy`, `approvedAt` e `contentHash` preenchidos. Uma segunda consulta mostrou **um único identificador de aprovador** para as 2.000, **zero marcadores `human:`** e **zero usuários na tabela `User`** desse banco. **Não** transferir essa aprovação automaticamente; o campo textual não comprova decisão humana.
 - Em homologação, há **90 SkillVersion** em `draft`, nenhuma aprovada, sem interseção de slug com as 2.000 antigas. As 90 propostas exigem revisão editorial.
 - A homologação atual não possui tabelas `KnowledgeDocument`/`KnowledgeChunk`. Isso **não prova perda** do acervo, que segue disponível nos bancos antigos e exige integração por fluxo controlado.
 
