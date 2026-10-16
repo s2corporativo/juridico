@@ -10,13 +10,13 @@ describe("Agent and skills integration guards", () => {
   });
   test("manual legal skills no longer bypass version approval", () => {
     const pipeline = read("../src/lib/minuta_run.ts");
-    expect(pipeline).toContain("isEligibleSkillVersion(version)");
+    expect(pipeline).toContain("selectLatestApprovedSkills(approvedManualVersions)");
     expect(pipeline).toContain("ownsCase(authUser.uid, body.caseId)");
     expect(pipeline).not.toContain("db.skill.findMany({ where: { slug:");
   });
   test("normal catalog only exposes reviewed versions and admin audit remains scoped", () => {
     const route = read("../src/app/api/skills/route.ts");
-    expect(route).toContain("isEligibleSkillVersion(skill)");
+    expect(route).toContain("selectLatestApprovedSkills(versioned)");
     expect(route).toContain('auth.user.role !== "admin"');
     expect(route).toContain("inspectApprovedSkill(skill)");
   });
