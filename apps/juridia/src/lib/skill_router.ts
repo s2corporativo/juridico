@@ -4,6 +4,7 @@
 
 import { db } from "@/lib/db";
 import { identifyIssues } from "@/lib/legal_brain";
+import { isEligibleSkillVersion, parseSkillKeywords } from "@/lib/skill-governance";
 
 export interface SkillMatch {
   slug: string;
@@ -42,6 +43,7 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   // Deduplica: pega apenas a versão mais recente de cada slug
   const bySlug = new Map<string, typeof allSkills[0]>();
   for (const s of allSkills) {
+    if (!isEligibleSkillVersion(s)) continue;
     if (!bySlug.has(s.slug) || s.version > bySlug.get(s.slug)!.version) {
       bySlug.set(s.slug, s);
     }
@@ -52,17 +54,11 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   const matches: SkillMatch[] = [];
 
   for (const skill of bySlug.values()) {
-    let triggers: string[] = [];
-    try {
-      const parsed = JSON.parse(skill.triggers);
-      triggers = parsed.keywords || parsed.triggers || [];
-    } catch {
-      triggers = [];
-    }
+    const triggers = parseSkillKeywords(skill.triggers);
 
     const matchedTriggers: string[] = [];
     for (const trigger of triggers) {
-      if (lowerFacts.includes(trigger.toLowerCase())) {
+      if (lowerFacts.includes(trigger)) {
         matchedTriggers.push(trigger);
       }
     }
