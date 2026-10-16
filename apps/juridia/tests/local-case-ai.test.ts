@@ -43,7 +43,7 @@ describe("local-only confidential case analysis", () => {
   });
 
   test("fails closed if local Ollama is unavailable", async () => {
-    globalThis.fetch = (async () => new Response("unavailable", { status: 503 })) as typeof fetch;
+    globalThis.fetch = (async () => new Response("unavailable", { status: 503 })) as unknown as typeof fetch;
     await expect(completeLocalCase(messages)).rejects.toThrow("LOCAL_CASE_AI_UNAVAILABLE");
   });
 
