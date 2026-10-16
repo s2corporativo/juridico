@@ -6,6 +6,7 @@ import { canonicalHash } from "@/lib/evidence";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
 import { ownsCase } from "@/lib/owned-case";
+import { pseudonymize, rehydrateStructured } from "@/lib/pseudonymizer";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let llmOutput: CaseMapperOutput | null = null;
   let tokensUsed = 0;
 
+  const externalPrompt = pseudonymize(`## Evidências autorizadas\n${JSON.stringify(evidenceRefs.map((e) => ({ id: e.id, quote: e.quote.slice(0, 200), source_kind: e.sourceKind })))}\n\n## Texto do caso\n${facts}\n\n## Rascunho determinístico\n${JSON.stringify(deterministicOutput)}`);
   try {
     const zai = await ZAI.create();
     const completion = await zai.chat.completions.create({
@@ -89,7 +91,7 @@ REGRAS:
         },
         {
           role: "user",
-          content: `## Evidências autorizadas\n${JSON.stringify(evidenceRefs.map((e) => ({ id: e.id, quote: e.quote.slice(0, 200), source_kind: e.sourceKind })))}\n\n## Texto do caso\n${facts}\n\n## Rascunho determinístico\n${JSON.stringify(deterministicOutput)}`,
+          content: externalPrompt.text,
         },
       ],
       thinking: { type: "disabled" },
@@ -102,7 +104,7 @@ REGRAS:
     if (match) {
       const parsed = JSON.parse(match[0]) as CaseMapperOutput;
       // Valida que todos os evidence_ref_ids existem (Princípio 7)
-      llmOutput = await validateMapperOutput(caseId, parsed, evidenceRefs);
+      llmOutput = await validateMapperOutput(caseId, rehydrateStructured(parsed, externalPrompt.map), evidenceRefs);
     }
 
     tokensUsed = (completion as unknown as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
