@@ -70,3 +70,23 @@ export function selectLatestApprovedSkills<T extends VersionedSkill>(
   }
   return usable;
 }
+
+/**
+ * Auditoria observacional de proveniência: identifica rótulos de aprovador
+ * sem conta interna correspondente. O vínculo à conta NÃO comprova revisão
+ * jurídica, habilitação profissional, assinatura ou aprovação individual.
+ * Não altera a elegibilidade nem substitui a revisão humana.
+ */
+export function summarizeApprovalAccountLinks(
+  skills: readonly Pick<VersionedSkill, "approvedBy">[],
+  accounts: readonly { id: string; email: string }[],
+): { linkedToAccount: number; noAccountLink: number } {
+  const ids = new Set(accounts.map((user) => user.id));
+  const emails = new Set(accounts.map((user) => user.email.trim().toLowerCase()));
+  let linkedToAccount = 0;
+  for (const skill of skills) {
+    const label = skill.approvedBy?.trim();
+    if (label && (ids.has(label) || emails.has(label.toLowerCase()))) linkedToAccount++;
+  }
+  return { linkedToAccount, noAccountLink: skills.length - linkedToAccount };
+}
