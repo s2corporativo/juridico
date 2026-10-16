@@ -30,6 +30,18 @@ export function SkillEditorialQueue() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [maturity, setMaturity] = useState<{
+    stats: { total:number; needsReview:number; needsEnrichment:number; readyForHumanValidation:number };
+    findings: {slug:string;version:number;maturity:number;signals:string[];suggestedActions:string[]}[];
+  } | null>(null);
+  async function scanMaturity() {
+    setError("");
+    try {
+      const result = await fetch("/api/skills/intelligence", { cache: "no-store" });
+      if (!result.ok) throw new Error("Não foi possível auditar o catálogo");
+      setMaturity(await result.json());
+    } catch (e) { setError(e instanceof Error ? e.message : "Diagnóstico indisponível"); }
+  }
   async function reload() {
     const result = await fetch("/api/skills/workflow", { cache: "no-store" });
     if (!result.ok) throw new Error("Fila editorial indisponível");
@@ -83,6 +95,37 @@ export function SkillEditorialQueue() {
           A aprovação exige revisor autenticado diferente do autor, justificativa e integridade do manifesto.
           Vínculo de conta e OAB informada não substituem verificação profissional ou revisão jurídica das fontes.
         </p>
+        {canReview && (
+          <details className="rounded-xl border border-border/70 p-4">
+            <summary className="cursor-pointer text-sm font-semibold">
+              Núcleo de inteligência e maturação · diagnóstico independente
+            </summary>
+            <div className="mt-3 space-y-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Analisa a completude técnica de fontes, gatilhos, texto e vedações.
+                Não aprova conteúdo, não verifica automaticamente jurisprudência e não envia dados de clientes ao Atlas.
+              </p>
+              <Button type="button" size="sm" variant="outline" onClick={() => void scanMaturity()}>
+                Auditar catálogo agora
+              </Button>
+              {maturity && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    {maturity.stats.total} habilidades examinadas · {maturity.stats.needsReview} com revisão prioritária ·
+                    {" "}{maturity.stats.needsEnrichment} para enriquecer ·
+                    {" "}{maturity.stats.readyForHumanValidation} prontas somente para avaliação humana.
+                  </p>
+                  {maturity.findings.slice(0, 8).map((item) => (
+                    <div key={item.slug} className="rounded-lg border border-border/70 p-3 text-xs">
+                      <p className="font-semibold">#{item.slug} · v{item.version} · índice {item.maturity}/100</p>
+                      <p className="mt-1 text-muted-foreground">{item.suggestedActions.join(" · ") || "Revisar juridicamente antes de publicar."}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
+        )}
         <details className="rounded-xl border border-border/70 p-4">
           <summary className="cursor-pointer text-sm font-medium">
             Criar uma nova versão para revisão
