@@ -41,7 +41,9 @@ export async function hybridKnowledgeSearch(
       const semantic = candidate ? Math.max(0, cosineSimilarity(vector, candidate)) : null;
       return { hit, index, semantic };
     });
-    if (!reranked.some(item => item.semantic !== null)) return lexical;
+    // Não misturar candidatos sem vetor com candidatos vetorizados: a pontuação
+    // semântica ausente não é evidência negativa. Degradar de modo uniforme.
+    if (reranked.some(item => item.semantic === null)) return lexical;
     reranked.sort((a, b) =>
       ((b.semantic ?? 0) * 0.4 + 0.6 / (1 + b.index))
       - ((a.semantic ?? 0) * 0.4 + 0.6 / (1 + a.index))
