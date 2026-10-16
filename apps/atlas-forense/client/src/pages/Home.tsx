@@ -376,6 +376,30 @@ export default function Home() {
           <div className="hero-art" aria-hidden="true"><img src="/manus-storage/atlas-forense-hero_a0688916.jpg" alt="" /></div>
         </section>
 
+        <section className="compendium-home-panel" aria-labelledby="portal-juridico-heading">
+          <div className="compendium-home-heading">
+            <div>
+              <span className="eyebrow">PAINEL ÚNICO · ATLAS JURÍDICO</span>
+              <h2 id="portal-juridico-heading">Pesquisar, analisar e produzir no mesmo portal.</h2>
+              <p>O Atlas organiza o conhecimento jurídico; a JuridIA produz documentos com revisão humana. O acesso à JuridIA exige autenticação própria até a ativação segura do SSO.</p>
+            </div>
+          </div>
+          <div className="compendium-reference-grid" aria-label="Ações principais do portal jurídico">
+            <a href="/compendio" className="atlas-portal-action">
+              <span>01 · PESQUISAR</span><strong>Compêndio e jurisprudência</strong>
+              <small>Consultar fichas, teses, julgados e suas fontes oficiais.</small>
+            </a>
+            <a href="/juridia" className="atlas-portal-action">
+              <span>02 · PRODUZIR</span><strong>JuridIA · minutas e autos</strong>
+              <small>Abrir o ambiente de trabalho, análise e redação jurídica.</small>
+            </a>
+            <a href="/fontes" className="atlas-portal-action">
+              <span>03 · VALIDAR</span><strong>Fontes e proveniência</strong>
+              <small>Conferir origem, atualização e limitações do acervo.</small>
+            </a>
+          </div>
+        </section>
+
         <CompendiumHomePanel />
         <EditorialUpdatesPanel />
         <ContentSuggestionsPanel />
