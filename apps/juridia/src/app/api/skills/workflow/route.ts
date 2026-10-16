@@ -53,3 +53,46 @@ export async function POST(req: NextRequest) {
   try { body = JSON.parse(raw) as Command; } catch { return bad("invalid_json"); }
   if (!body || !["create","submit","approve","return"].includes(body.action ?? "")) return bad("invalid_action");
   const reason = (body.reason ?? "").trim();
+
+  if (body.action === "create") {
+    if (!body.skill) return bad("skill_required");
+    let data: Record<string,string>;
+    try { data = legalPayload(body.skill); } catch { return bad("invalid_draft"); }
+    try {
+      const created = await db.$transaction(async (tx) => {
+        const last = await tx.skillVersion.findFirst({ where: { slug: data.slug },
+          orderBy: { version: "desc" }, select: { version: true } });
+        const version = (last?.version ?? 0) + 1;
+        return tx.skillVersion.create({ data: {
+          slug: data.slug, version, area: data.area, description: data.description,
+          content: data.content, triggers: data.triggers, outputSchema: data.outputSchema,
+          requiredSources: data.requiredSources, requiredEvidence: data.requiredEvidence,
+          rules: data.rules, exceptions: data.exceptions, forbiddenClaims: data.forbiddenClaims,
+          allowedTools: data.allowedTools, authorUserId: current.id, status: "draft",
+          contentHash: createHash("sha256").update(data.content).digest("hex"),
+        }, select: { id: true, slug: true, version: true, status: true } });
+      });
+      return NextResponse.json({ skill: created }, { status: 201 });
+    } catch { return bad("draft_conflict_or_database_error", 409); }
+  }
+
+  if (!body.id || body.id.length > 100) return bad("skill_version_id_required");
+  if (reason.length < 12 || reason.length > 1000) return bad("review_reason_required");
+  const version = await db.skillVersion.findUnique({ where: { id: body.id } });
+  if (!version) return bad("skill_version_not_found", 404);
+  if (body.action === "submit") {
+    if (version.authorUserId !== current.id) return bad("author_only", 403);
+    if (version.status !== "draft") return bad("invalid_state", 409);
+    return db.$transaction(async (tx) => {
+      const updated = await tx.skillVersion.updateMany({
+        where: { id: version.id, status: "draft", authorUserId: current.id },
+        data: { status: "review" },
+      });
+      if (updated.count !== 1) return bad("concurrent_transition", 409);
+      await tx.skillReviewEvent.create({ data: {
+        skillVersionId: version.id, reviewerUserId: current.id, decision: "submitted",
+        reason,
+      } });
+      return NextResponse.json({ ok: true, status: "review" });
+    });
+  }
