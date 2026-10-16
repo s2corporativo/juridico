@@ -37,7 +37,8 @@ const CONFIDENTIAL = [
   { m: "GET", p: "brain" }, { m: "GET", p: "cases" },
   { m: "GET", p: "clients" }, { m: "GET", p: "alertas" },
   { m: "GET", p: "prazos" }, { m: "GET", p: "audiencias" },
-  { m: "GET", p: "financeiro" }, { m: "GET", p: "intimacoes" },
+  // financeiro removido do produto (a1aff52, PR #20) — fora da matriz.
+  { m: "GET", p: "intimacoes" },
   { m: "GET", p: "stats" }, { m: "POST", p: "anonymize" },
   { m: "GET", p: "assistente" }, { m: "POST", p: "calculadora-juridica" },
   { m: "GET", p: "case-analysis" }, { m: "POST", p: "citations/verify" },
