@@ -8,7 +8,9 @@ import { reviewCatalogueMaturity } from "@/lib/skill-maturation";
 export const dynamic = "force-dynamic";
 const select = {
   id: true, slug: true, version: true, area: true, description: true, content: true,
-  triggers: true, requiredSources: true, forbiddenClaims: true,
+  triggers: true, requiredSources: true, requiredEvidence: true,
+  rules: true, exceptions: true, forbiddenClaims: true,
+  allowedTools: true, outputSchema: true,
   status: true, approvedAt: true, approvedBy: true,
   contentHash: true, manifestHash: true, authorUserId: true, reviewerUserId: true,
 } as const;
