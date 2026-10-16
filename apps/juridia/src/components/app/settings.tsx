@@ -65,6 +65,11 @@ const STYLES: { id: WritingStyle; label: string; desc: string; example: string }
 export function Settings() {
   const { profile, setProfile, writingStyle, setWritingStyle, defaultSkills, toggleDefaultSkill } = useAppStore();
   const [skills, setSkills] = useState<SkillDTO[]>([]);
+  const [approvalAudit, setApprovalAudit] = useState<{
+    usableCount: number;
+    approvalAccountLinks: { linkedToAccount: number; noAccountLink: number };
+    warning: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [styleProfile, setStyleProfile] = useState({ id: "", name: "Meu estilo", description: "", example: "", approved: false });
 
@@ -72,6 +77,12 @@ export function Settings() {
     fetch("/api/skills")
       .then((r) => r.json())
       .then((d) => setSkills(d.skills || []))
+      .catch(() => null);
+    fetch("/api/skills?audit=1", { cache: "no-store" })
+      .then(async (res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.approvalAccountLinks) setApprovalAudit(data);
+      })
       .catch(() => null);
     fetch("/api/style-profiles")
       .then((r) => r.json())
@@ -109,6 +120,34 @@ export function Settings() {
           ao gerar suas minutas.
         </p>
       </div>
+
+      {approvalAudit && (
+        <Card className="mb-6 border-border/80 shadow-none">
+          <CardHeader>
+            <CardTitle className="text-base">Governança do catálogo jurídico</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Versões tecnicamente elegíveis</p>
+                <p className="mt-1 text-xl font-semibold">{approvalAudit.usableCount}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Rótulos vinculados a contas</p>
+                <p className="mt-1 text-xl font-semibold">{approvalAudit.approvalAccountLinks.linkedToAccount}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Sem vínculo de conta comprovado</p>
+                <p className="mt-1 text-xl font-semibold">{approvalAudit.approvalAccountLinks.noAccountLink}</p>
+              </div>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Um vínculo cadastral não comprova revisão jurídica humana, autorização editorial,
+              autenticidade de precedentes ou vigência. Os totais são apenas diagnósticos do banco ativo.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Coluna principal */}
