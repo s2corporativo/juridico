@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { inspectApprovedSkill, isEligibleSkillVersion, parseSkillKeywords } from "../src/lib/skill-governance";
+import { inspectApprovedSkill, isEligibleSkillVersion, parseSkillKeywords, selectLatestApprovedSkills } from "../src/lib/skill-governance";
 
 const content = "Orientação processual válida como instrução auxiliar, não como fonte.";
 const version = (approvedBy: string) => ({
@@ -25,5 +25,42 @@ describe("Skill admission and provenance", () => {
     expect(parseSkillKeywords('{"keywords":"fraude"}')).toEqual([]);
     expect(parseSkillKeywords('{"keywords":["fraude",10,"x","documento"]}')).toEqual(["fraude","documento"]);
     expect(parseSkillKeywords(JSON.stringify({keywords:Array(100).fill("consumidor")}))).toHaveLength(64);
+  });
+});
+
+describe("single canonical release per legal skill", () => {
+  const approved = (slug: string, number: number, approver = "advogado-123") => ({
+    ...version(approver), slug, version: number,
+  });
+
+  test("a tampered latest approved release blocks the slug instead of downgrading", () => {
+    const older = approved("prescricao-intercorrente", 1);
+    const tampered = { ...approved("prescricao-intercorrente", 2), contentHash: "tampered" };
+    expect(selectLatestApprovedSkills([older, tampered])).toEqual([]);
+    expect(selectLatestApprovedSkills([tampered, older])).toEqual([]);
+  });
+
+  test("a newer draft does not revoke a valid published release", () => {
+    const published = approved("recurso-especial", 3);
+    const draft = { ...approved("recurso-especial", 4), status: "draft" };
+    expect(selectLatestApprovedSkills([draft, published])).toEqual([published]);
+  });
+
+  test("review, auto-approvals and mismatches are not valid releases", () => {
+    const auto = approved("consumidor", 1, "migration");
+    const valid = approved("tributario", 1);
+    const other = approved("ambiental", 1);
+    const newer = { ...approved("ambiental", 2), approvedBy: "curador-juridico" };
+    const selected = selectLatestApprovedSkills([auto, valid, other, newer]);
+    expect(selected.map((skill) => skill.slug)).toEqual(["tributario"]);
+  });
+
+  test("the original list remains unchanged and yields one release per slug", () => {
+    const a = approved("penal", 2);
+    const older = approved("penal", 1);
+    const list = [older, a];
+    const selected = selectLatestApprovedSkills(list);
+    expect(selected).toEqual([a]);
+    expect(list).toEqual([older, a]);
   });
 });
