@@ -111,3 +111,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, status: "draft" });
     });
   }
+  try {
+    const sources: unknown = JSON.parse(version.requiredSources);
+    if (!Array.isArray(sources) || sources.length === 0)
+      return bad("required_sources_missing", 409);
+    const digest = canonicalSkillManifestHash(version);
+    return await db.$transaction(async tx => {
+      const changed = await tx.skillVersion.updateMany({
+        where: { id: version.id, status: "review", authorUserId: version.authorUserId },
+        data: {
+          status: "approved", approvedBy: current.id, reviewerUserId: current.id,
+          approvedAt: new Date(), manifestHash: digest,
+          contentHash: createHash("sha256").update(version.content, "utf8").digest("hex"),
+        },
+      });
+      if (changed.count !== 1) return bad("concurrent_transition", 409);
+      await tx.skillReviewEvent.create({ data: {
+        skillVersionId: version.id, reviewerUserId: current.id,
+        decision: "approved", manifestHash: digest, reason,
+      } });
+      return NextResponse.json({ ok: true, status: "approved", manifestHash: digest });
+    });
+  } catch {
+    return bad("legal_metadata_invalid_or_concurrent_change", 409);
+  }
+}
