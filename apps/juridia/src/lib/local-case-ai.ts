@@ -55,3 +55,19 @@ export async function completeLocalCase(
     usage: { total_tokens: Math.max(0, (data.prompt_eval_count || 0) + (data.eval_count || 0)) },
   };
 }
+
+/** Compatibility with the existing completion-call shape, but strictly local. */
+export async function createLocalCaseClient() {
+  return {
+    chat: {
+      completions: {
+        create: (input: {
+          messages: ModelMessage[];
+          thinking?: { type: "disabled" | "enabled" };
+          temperature?: number;
+          max_tokens?: number;
+        }) => completeLocalCase(input.messages, input),
+      },
+    },
+  };
+}
