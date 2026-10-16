@@ -317,7 +317,7 @@ const groups = [
       ]
     ]
   }
-] as const;
+] as ReadonlyArray<{area:string;source:string;topics:ReadonlyArray<readonly [string,string,string]>}>;
 const proposals = groups.flatMap((group) => group.topics.map(([id,title,keys]) => {
   const slug = `proposta-${group.area}-${id}`;
   const content = `RASCUNHO METODOLÓGICO PARA REVISÃO JURÍDICA — ${title}.
