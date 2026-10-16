@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 import { requireAuth } from "@/lib/auth";
 import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 
@@ -85,7 +85,7 @@ ${instruction}`;
 
   const externalPrompt = pseudonymize(userPrompt);
   try {
-    const zai = await ZAI.create();
+    const zai = await createLocalCaseClient();
     const completion = await zai.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
