@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { identifyIssues } from "@/lib/legal_brain";
 import { selectLatestApprovedSkills, parseSkillKeywords } from "@/lib/skill-governance";
 import { matchingLegalTriggers, triggerEvidenceScore } from "@/lib/skill-matching";
+import { retrieveLegalSkills } from "@/lib/legal-intelligence-core";
 
 export interface SkillMatch {
   slug: string;
@@ -46,7 +47,30 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   // Deduplica: pega apenas a versão mais recente de cada slug
   const usableVersions = selectLatestApprovedSkills(allSkills);
 
-  // 3. Matching: compara gatilhos contra o texto
+  // v2 pode ser ensaiado sem substituir a seleção existente (shadow).
+  // Para liberar modo ativo usar variável somente do servidor após homologação.
+  const mode = process.env.JURIDIA_SKILL_INTELLIGENCE_MODE;
+  if (mode === "active" || mode === "shadow") {
+    const advanced = retrieveLegalSkills(facts, usableVersions, 10);
+    if (mode === "active") {
+      const selected = new Map(usableVersions.map((v) => [v.slug, v]));
+      return {
+        matches: advanced.suggestions.flatMap((suggestion) => {
+          const v = selected.get(suggestion.slug);
+          return v ? [{
+            slug: v.slug, name: v.description, area: v.area, version: v.version,
+            matchScore: suggestion.score, matchedTriggers: suggestion.evidence,
+            content: v.content, skillVersionId: v.id, contentHash: v.contentHash,
+          }] : [];
+        }),
+        issues: issues.map((i) => ({ key: i.key, title: i.title, area: i.area })),
+        area: advanced.intent.area ?? "nao_identificada",
+      };
+    }
+    // Shadow: nenhum fato, nome, resultado do caso ou fonte privada é registrado.
+    void advanced;
+  }
+  // 3. Matching legado para fallback seguro e modo shadow.
   const matches: SkillMatch[] = [];
 
   for (const skill of usableVersions) {
