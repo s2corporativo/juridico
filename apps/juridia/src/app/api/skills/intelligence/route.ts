@@ -4,16 +4,10 @@ import { requireAuth } from "@/lib/auth";
 import { selectLatestApprovedSkills } from "@/lib/skill-governance";
 import { retrieveLegalSkills, type LegalCandidate } from "@/lib/legal-intelligence-core";
 import { reviewCatalogueMaturity } from "@/lib/skill-maturation";
+import { SKILL_VERSION_INTEGRITY_SELECT } from "@/lib/skill-version-select";
 
 export const dynamic = "force-dynamic";
-const select = {
-  id: true, slug: true, version: true, area: true, description: true, content: true,
-  triggers: true, requiredSources: true, requiredEvidence: true,
-  rules: true, exceptions: true, forbiddenClaims: true,
-  allowedTools: true, outputSchema: true,
-  status: true, approvedAt: true, approvedBy: true,
-  contentHash: true, manifestHash: true, authorUserId: true, reviewerUserId: true,
-} as const;
+const select = SKILL_VERSION_INTEGRITY_SELECT;
 
 /** Admin-only, read-only maturity scan. No case facts are transmitted or saved. */
 export async function GET(req: NextRequest) {
