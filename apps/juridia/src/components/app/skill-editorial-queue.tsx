@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 type PendingSkill = {
   id: string; slug: string; version: number; area: string; description: string;
   content: string; status: string; requiredSources: string;
-  canSubmit: boolean; canDecide: boolean;
+  canSubmit: boolean; canDecide: boolean; canClaim: boolean;
 };
 type QueueReply = { items: PendingSkill[]; canReview: boolean };
 const blank = { slug: "", area: "civil", description: "", content: "", triggers: "", sources: "" };
@@ -45,7 +45,7 @@ export function SkillEditorialQueue() {
       .catch(() => null);
     return () => abort.abort();
   }, []);
-  async function send(action: "create" | "submit" | "approve" | "return", id?: string) {
+  async function send(action: "create" | "submit" | "approve" | "return" | "claim", id?: string) {
     setBusy(true); setError(""); setInfo("");
     try {
       const payload = action === "create" ? {
@@ -67,7 +67,7 @@ export function SkillEditorialQueue() {
       await reload();
       setInfo(action === "create" ? "Rascunho criado." :
         action === "submit" ? "Enviado para revisão independente." :
-        action === "approve" ? "Versão aprovada e registrada." : "Devolvido ao autor.");
+        action === "approve" ? "Versão aprovada e registrada." : action === "claim" ? "Rascunho assumido para revisão." : "Devolvido ao autor.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao executar a operação");
     } finally { setBusy(false); }
@@ -159,6 +159,10 @@ export function SkillEditorialQueue() {
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">{item.content}</p>
                 <p className="text-xs text-muted-foreground">Fontes declaradas: {readableSources(item.requiredSources)}</p>
                 <div className="flex flex-wrap gap-2">
+                  {item.canClaim && (
+                    <Button size="sm" variant="outline" disabled={busy || reason.trim().length < 12}
+                      onClick={() => void send("claim", item.id)}>Assumir proposta</Button>
+                  )}
                   {item.canSubmit && (
                     <Button size="sm" variant="outline" disabled={busy || reason.trim().length < 12}
                       onClick={() => void send("submit", item.id)}>Enviar para revisão</Button>
