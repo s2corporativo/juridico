@@ -156,7 +156,11 @@ export async function GET(req: NextRequest) {
     take: 50,
   });
   return NextResponse.json({
-    items: items.map((item) => ({ ...item, updatedAt: item.updatedAt.toISOString() })),
+    items: items.map((item) => ({
+      ...item, updatedAt: item.updatedAt.toISOString(),
+      canSubmit: item.authorUserId === auth.user.uid && item.status === "draft",
+      canDecide: isReviewer && item.authorUserId !== auth.user.uid && item.status === "review",
+    })),
     canReview: isReviewer,
   }, { headers: { "Cache-Control": "private, no-store" } });
 }
