@@ -14,6 +14,7 @@ export interface AnonymizeResult {
 
 // Padrões de detecção — dados sensíveis típicos de autos jurídicos brasileiros
 const PATTERNS: { type: string; regex: RegExp }[] = [
+  { type: "CNJ", regex: /\b(?:\d{7}-\d{2}\.\d{4}\.[1-9]\.\d{2}\.\d{4}|\d{20})\b/g },
   // CPF: 000.000.000-00 ou 00000000000
   { type: "CPF", regex: /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g },
   // CNPJ: 00.000.000/0000-00

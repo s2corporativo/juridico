@@ -5,8 +5,9 @@ import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
 import { requireAuth } from "@/lib/auth";
 import { ownsCase } from "@/lib/owned-case";
-import { canonicalHash } from "@/lib/evidence";
+import { canonicalHash, validateEvidenceIntegrity } from "@/lib/evidence";
 import { prepareBrainEjcContext, safeEvidencePrompt } from "@/lib/brain-ejc";
+import { validateBrainExtraction } from "@/lib/brain-ejc-evidence-gate";
 import {
   decisionToBrainItem,
   extractSearchTerms,
@@ -93,6 +94,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let body: { facts?: string; title?: string; caseId?: string } = {};
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
 
+  if (typeof body.caseId !== "string" ||
+      (body.facts !== undefined && typeof body.facts !== "string") ||
+      (body.title !== undefined && typeof body.title !== "string")) {
+    return NextResponse.json({ error: "Parâmetros de análise inválidos" }, { status: 400 });
+  }
   const caseId = body.caseId?.trim() || "";
   const title = body.title?.trim() || `Análise — ${new Date().toLocaleDateString("pt-BR")}`;
   if (!caseId || caseId === "default-case" || caseId === "cerebro-session") {
@@ -106,8 +112,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível preparar os autos" }, { status: 400 });
   }
-  const facts = context.rawText;
   const safeFacts = context.safeText;
+  // A reference ID is only usable when its case and stored quote hash are intact.
+  try {
+    await Promise.all(context.evidence.map((ref) => validateEvidenceIntegrity(caseId, ref.id)));
+  } catch {
+    return NextResponse.json({ error: "Evidência sem integridade ou de caso divergente." }, { status: 422 });
+  }
   const allowedEvidence = safeEvidencePrompt(context.evidence);
   const steps: BrainStep[] = STEPS.map((s) => ({ ...s, status: "pending" as const }));
   const r: Partial<BrainResult> = { steps };
@@ -119,7 +130,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       contractVersion: "legal_brain_ejc_v2", startedAt: new Date(),
     },
   });
-  const zai = await ZAI.create();
+  // Não registrar análise concluída se o provedor estiver indisponível.
+  let zai: Awaited<ReturnType<typeof ZAI.create>>;
+  try {
+    zai = await ZAI.create();
+  } catch {
+    await db.agentRun.update({
+      where: { id: agentRun.id },
+      data: { status: "failed", finishedAt: new Date() },
+    });
+    return NextResponse.json({
+      error: "Provedor indisponível. Nenhuma análise jurídica foi aprovada.",
+      status: "degraded",
+      deterministic: context.deterministic,
+    }, { status: 503 });
+  }
   const tok = (c: unknown) => tokens += (c as { usage?: { total_tokens?: number } }).usage?.total_tokens || 0;
 
   // ── ETAPA 0: Classificação do ramo jurídico ──────────────────────────────
@@ -150,14 +175,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       thinking: { type: "disabled" }, temperature: 0.3, max_tokens: 1000,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
-    if (m) {
+    if (!m) throw new Error("Extração EJC não retornou JSON válido");
+    {
       const p = JSON.parse(m[0]);
-      const allowed = new Set(context.evidence.map((e) => e.id));
-      const refs = (ids: unknown) => Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string" && allowed.has(id)) : [];
-      r.parties = (p.parties || []).map((x: { role: string; name?: string; type: string; state?: EpistemicState; evidence_ref_ids?: string[] }) => ({ role: x.role, name: x.name, type: x.type, state: x.state || "fato_extraido", evidenceRefIds: refs(x.evidence_ref_ids) }));
-      r.timeline = (p.timeline || []).map((x: { date: string; event: string; state?: EpistemicState; evidence_ref_ids?: string[] }) => ({ date: x.date, event: x.event, state: x.state || "fato_extraido", evidenceRefIds: refs(x.evidence_ref_ids) }));
-      r.requests = (p.requests || []).map((x: { text?: string; state?: EpistemicState; evidence_ref_ids?: string[] } | string) => typeof x === "string" ? { text: x, state: "alegacao_cliente" as EpistemicState, evidenceRefIds: [] } : { text: x.text || "", state: x.state || "alegacao_cliente" as EpistemicState, evidenceRefIds: refs(x.evidence_ref_ids) });
-      r.values = (p.values || []).map((x: { label: string; amount: string; state?: EpistemicState; evidence_ref_ids?: string[] }) => ({ label: x.label, amount: x.amount, state: x.state || "fato_extraido", evidenceRefIds: refs(x.evidence_ref_ids) }));
+      const extraction = validateBrainExtraction(p, new Set(context.evidence.map((e) => e.id)));
+      r.parties = extraction.parties.flatMap((item) =>
+        typeof item.role === "string" && typeof item.type === "string"
+          ? [{ role: item.role, type: item.type, name: typeof item.name === "string" ? item.name : undefined,
+               state: item.state, evidenceRefIds: item.evidenceRefIds }] : []);
+      r.timeline = extraction.timeline.flatMap((item) =>
+        typeof item.date === "string" && typeof item.event === "string"
+          ? [{ date: item.date, event: item.event, state: item.state,
+               evidenceRefIds: item.evidenceRefIds }] : []);
+      r.requests = extraction.requests.flatMap((item) =>
+        typeof item.text === "string"
+          ? [{ text: item.text, state: item.state, evidenceRefIds: item.evidenceRefIds }] : []);
+      r.values = extraction.values.flatMap((item) =>
+        typeof item.label === "string" && typeof item.amount === "string"
+          ? [{ label: item.label, amount: item.amount, state: item.state,
+               evidenceRefIds: item.evidenceRefIds }] : []);
     }
     tok(c); steps[1].status = "done"; steps[1].result = r.parties;
   } catch (e) { steps[1].status = "error"; steps[1].error = e instanceof Error ? e.message : "Erro"; r.parties = []; r.timeline = []; r.requests = []; r.values = []; }
@@ -173,7 +209,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       thinking: { type: "disabled" }, temperature: 0.4, max_tokens: 800,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
-    if (m) { const p = JSON.parse(m[0]); r.legalIssues = p.legalIssues || []; }
+    if (!m) throw new Error("Questões jurídicas não retornaram JSON válido");
+    const p = JSON.parse(m[0]);
+    if (!Array.isArray(p.legalIssues)) throw new Error("Questões jurídicas sem estrutura válida");
+    r.legalIssues = p.legalIssues;
     tok(c); steps[2].status = "done"; steps[2].result = r.legalIssues;
   } catch (e) { steps[2].status = "error"; steps[2].error = e instanceof Error ? e.message : "Erro"; r.legalIssues = []; }
 
@@ -228,9 +267,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     }
 
-    if (needsWebFallback) {
+    if (needsWebFallback && (r.legalIssues || []).length > 0) {
       r.atlas.fallback = true;
-      const searchQuery = issues.length > 0 ? `jurisprudência STJ ${issues.slice(0, 2).map((i) => i.question).join(" ")}` : `jurisprudência ${safeFacts.slice(0, 100)}`;
+      // Only generic legal areas may be used in a public web fallback.
+      const legalAreaAllowlist = new Set([
+        "civil", "penal", "trabalhista", "tributario", "consumer", "family",
+        "previdenciario", "empresarial", "administrativo", "bancario", "ambiental",
+        "saude", "imobiliario", "internacional", "digital_lgpd", "transito",
+      ]);
+      const genericAreas = issues.slice(0, 2)
+        .map((issue) => legalAreaAllowlist.has(issue.area) ? issue.area : "")
+        .filter(Boolean).join(" ");
+      const searchQuery = `jurisprudência STJ ${genericAreas || "fundamentação jurídica geral"}`;
       const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
       r.jurisprudence = Array.isArray(raw) ? raw.slice(0, 8).map(webResultToBrainItem) : [];
     }
@@ -253,7 +301,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       thinking: { type: "disabled" }, temperature: 0.4, max_tokens: 1500,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
-    if (m) { const p = JSON.parse(m[0]); r.viability = { hypothesis: p.hypothesis || "incerto", hypothesisNote: p.hypothesisNote || "Hipótese sem base estatística — requer validação jurisprudencial e revisão humana.", strengths: p.strengths || [], weaknesses: p.weaknesses || [], reasoning: p.reasoning || "", evidence: p.evidence || [] }; }
+    if (!m) throw new Error("Análise de viabilidade não retornou JSON válido");
+    { const p = JSON.parse(m[0]); if (!p || typeof p.reasoning !== "string" || !p.hypothesis) throw new Error("Análise de viabilidade incompleta"); r.viability = { hypothesis: p.hypothesis || "incerto", hypothesisNote: p.hypothesisNote || "Hipótese sem base estatística — requer validação jurisprudencial e revisão humana.", strengths: p.strengths || [], weaknesses: p.weaknesses || [], reasoning: p.reasoning || "", evidence: p.evidence || [] }; }
     tok(c); steps[5].status = "done"; steps[5].result = r.viability;
   } catch (e) { steps[5].status = "error"; steps[5].error = e instanceof Error ? e.message : "Erro"; r.viability = { hypothesis: "incerto", hypothesisNote: "Análise indisponível — requer revisão manual.", strengths: [], weaknesses: [], reasoning: "", evidence: [] }; }
 
@@ -283,9 +332,29 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       thinking: { type: "disabled" }, temperature: 0.5, max_tokens: 1000,
     });
     const m = (c.choices[0]?.message?.content || "").match(/\{[\s\S]*\}/);
-    if (m) { const p = JSON.parse(m[0]); r.strategy = p.strategy; }
+    if (!m) throw new Error("Estratégia não retornou JSON válido");
+    { const p = JSON.parse(m[0]); if (!p.strategy || typeof p.strategy.recommendation !== "string") throw new Error("Estratégia incompleta"); r.strategy = p.strategy; }
     tok(c); steps[7].status = "done"; steps[7].result = r.strategy;
   } catch (e) { steps[7].status = "error"; steps[7].error = e instanceof Error ? e.message : "Erro"; r.strategy = { proceduralPath: "", immediateActions: [], documentsToCollect: [], risks: [], recommendation: "Análise indisponível" }; }
+
+  // Gate jurídico do Cérebro EJC: não declarar completo o resultado degradado.
+  const mandatorySteps = ["classify", "extract", "issues", "viability", "strategy"];
+  const incomplete = steps.some((s) => mandatorySteps.includes(s.id) && s.status !== "done") ||
+    !r.ramoJuridico?.trim() || !Array.isArray(r.legalIssues) ||
+    !r.viability?.reasoning?.trim() ||
+    !r.strategy?.proceduralPath?.trim() || !r.strategy?.recommendation?.trim();
+  if (incomplete) {
+    await db.agentRun.update({
+      where: { id: agentRun.id },
+      data: { status: "failed", tokensOut: tokens, finishedAt: new Date() },
+    });
+    return NextResponse.json({
+      error: "Análise incompleta; nenhum parecer foi salvo como concluído.",
+      status: "degraded",
+      deterministic: context.deterministic,
+      steps,
+    }, { status: 503 });
+  }
 
   const brainResult = { ...r, steps, totalTokens: tokens };
   const lastSnapshot = await db.intelligenceSnapshot.findFirst({ where: { caseId }, orderBy: { version: "desc" } });

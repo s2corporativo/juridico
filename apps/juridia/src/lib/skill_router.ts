@@ -4,6 +4,9 @@
 
 import { db } from "@/lib/db";
 import { identifyIssues } from "@/lib/legal_brain";
+import { selectLatestApprovedSkills, parseSkillKeywords } from "@/lib/skill-governance";
+import { matchingLegalTriggers, triggerEvidenceScore } from "@/lib/skill-matching";
+import { retrieveLegalSkills } from "@/lib/legal-intelligence-core";
 
 export interface SkillMatch {
   slug: string;
@@ -13,6 +16,8 @@ export interface SkillMatch {
   matchScore: number; // 0-1
   matchedTriggers: string[];
   content: string; // texto legível da skill
+  skillVersionId: string;
+  contentHash: string;
 }
 
 export interface SkillRouterResult {
@@ -40,37 +45,42 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   });
 
   // Deduplica: pega apenas a versão mais recente de cada slug
-  const bySlug = new Map<string, typeof allSkills[0]>();
-  for (const s of allSkills) {
-    if (!bySlug.has(s.slug) || s.version > bySlug.get(s.slug)!.version) {
-      bySlug.set(s.slug, s);
-    }
-  }
+  const usableVersions = selectLatestApprovedSkills(allSkills);
 
-  // 3. Matching: compara gatilhos contra o texto
-  const lowerFacts = facts.toLowerCase();
+  // v2 pode ser ensaiado sem substituir a seleção existente (shadow).
+  // Para liberar modo ativo usar variável somente do servidor após homologação.
+  const mode = process.env.JURIDIA_SKILL_INTELLIGENCE_MODE;
+  if (mode === "active" || mode === "shadow") {
+    const advanced = retrieveLegalSkills(facts, usableVersions, 10);
+    if (mode === "active") {
+      const selected = new Map(usableVersions.map((v) => [v.slug, v]));
+      return {
+        matches: advanced.suggestions.flatMap((suggestion) => {
+          const v = selected.get(suggestion.slug);
+          return v ? [{
+            slug: v.slug, name: v.description, area: v.area, version: v.version,
+            matchScore: suggestion.score, matchedTriggers: suggestion.evidence,
+            content: v.content, skillVersionId: v.id, contentHash: v.contentHash,
+          }] : [];
+        }),
+        issues: issues.map((i) => ({ key: i.key, title: i.title, area: i.area })),
+        area: advanced.intent.area ?? "nao_identificada",
+      };
+    }
+    // Shadow: nenhum fato, nome, resultado do caso ou fonte privada é registrado.
+    void advanced;
+  }
+  // 3. Matching legado para fallback seguro e modo shadow.
   const matches: SkillMatch[] = [];
 
-  for (const skill of bySlug.values()) {
-    let triggers: string[] = [];
-    try {
-      const parsed = JSON.parse(skill.triggers);
-      triggers = parsed.keywords || parsed.triggers || [];
-    } catch {
-      triggers = [];
-    }
+  for (const skill of usableVersions) {
+    const triggers = parseSkillKeywords(skill.triggers);
 
-    const matchedTriggers: string[] = [];
-    for (const trigger of triggers) {
-      if (lowerFacts.includes(trigger.toLowerCase())) {
-        matchedTriggers.push(trigger);
-      }
-    }
-
-    // Score: número de gatilhos matched / total de gatilhos + bônus por área
-    const triggerScore = triggers.length > 0 ? matchedTriggers.length / triggers.length : 0;
+    const matchedTriggers = matchingLegalTriggers(facts, triggers);
+    // Área não pode criar candidato sem evidência textual de matéria.
+    if (matchedTriggers.length === 0) continue;
     const issueBonus = issues.some((i) => i.area === skill.area) ? 0.2 : 0;
-    const matchScore = Math.min(1, triggerScore + issueBonus);
+    const matchScore = Math.min(1, triggerEvidenceScore(matchedTriggers.length) + issueBonus);
 
     if (matchScore > 0) {
       matches.push({
@@ -81,6 +91,8 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
         matchScore,
         matchedTriggers,
         content: skill.content,
+        skillVersionId: skill.id,
+        contentHash: skill.contentHash,
       });
     }
   }
@@ -93,7 +105,7 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   for (const m of matches) {
     areaCount[m.area] = (areaCount[m.area] || 0) + m.matchScore;
   }
-  const area = Object.entries(areaCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "civil";
+  const area = Object.entries(areaCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "nao_identificada";
 
   return {
     matches: matches.slice(0, 10), // top 10

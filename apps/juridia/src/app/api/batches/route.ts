@@ -16,17 +16,34 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return auth.response;
   const body = (await req.json().catch(() => null)) as { templateSlug?: string; batchId?: string; moldDocumentId?: string; items?: Array<{ itemNo: number; title?: string; fields: Record<string, string> }> } | null;
   if (!body?.templateSlug || !Array.isArray(body.items)) return NextResponse.json({ error: "templateSlug e items obrigatórios" }, { status: 400 });
+  const items = body.items;
   const data = {
     userId: auth.user.uid,
     templateSlug: body.templateSlug,
     moldDocumentId: body.moldDocumentId,
     total: body.items.length,
-    items: { create: body.items.map((item) => ({ itemNo: item.itemNo, title: item.title, fields: JSON.stringify(item.fields) })) },
+    items: { create: items.map((item) => ({ itemNo: item.itemNo, title: item.title, fields: JSON.stringify(item.fields) })) },
   };
-  const batch = body.batchId
-    ? await db.batchJob.update({ where: { id: body.batchId }, data: { moldDocumentId: body.moldDocumentId, total: body.items.length } })
-    : await db.batchJob.create({ data });
-  return NextResponse.json({ batch }, { status: body.batchId ? 200 : 201 });
+  if (body.batchId) {
+    // A alteração é condicionada ao proprietário no próprio comando de escrita.
+    // Não modificar o total sem sincronizar os BatchItem persistidos.
+    const changed = await db.batchJob.updateMany({
+      where: { id: body.batchId, userId: auth.user.uid },
+      data: { moldDocumentId: body.moldDocumentId },
+    });
+    if (changed.count === 0) return NextResponse.json({ error: "batch_not_found" }, { status: 404 });
+    const batch = await db.batchJob.findFirst({ where: { id: body.batchId, userId: auth.user.uid } });
+    return NextResponse.json({ batch });
+  }
+  if (items.length < 1 || items.length > 10) {
+    return NextResponse.json({ error: "O lote deve conter de 1 a 10 casos" }, { status: 400 });
+  }
+  if (new Set(items.map(item => item.itemNo)).size !== items.length ||
+      items.some(item => !Number.isInteger(item.itemNo) || item.itemNo < 1 || item.itemNo > items.length)) {
+    return NextResponse.json({ error: "Numeração dos itens inválida" }, { status: 400 });
+  }
+  const batch = await db.batchJob.create({ data });
+  return NextResponse.json({ batch }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {

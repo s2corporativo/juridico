@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { routeSkills } from "@/lib/skill_router";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { ownsCase } from "@/lib/owned-case";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const facts = (body.facts || "").trim();
+  if (body.caseId !== undefined && (typeof body.caseId !== "string" || !await ownsCase(authUser.uid, body.caseId))) {
+    return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  }
+  if (typeof body.facts !== "string") return NextResponse.json({ error: "Texto de análise inválido" }, { status: 400 });
+  const facts = body.facts.trim();
   if (facts.length < 30) {
     return NextResponse.json({ error: "Texto insuficiente (mín. 30 caracteres)" }, { status: 400 });
   }

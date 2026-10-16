@@ -8,6 +8,7 @@
 // 4. Retorna top-k mais similares
 
 import { db } from "@/lib/db";
+import { isVerifiedOfficialSource } from "@/lib/citation_gate";
 
 // ── TF-IDF ───────────────────────────────────────────────────────────────────
 
@@ -44,8 +45,11 @@ let docCountCache = 0;
 
 async function ensureIdfCache() {
   if (idfCache) return;
-  const sources = await db.legalSource.findMany({ select: { textoTrecho: true } });
-  const N = sources.length || 1;
+  const sources = (await db.legalSource.findMany({
+    select: { textoTrecho: true, vigente: true, revisadoPor: true,
+      hashConteudo: true, dataConsulta: true, urlOficial: true },
+  })).filter(isVerifiedOfficialSource);
+  const N = sources.length;
   const df = new Map<string, number>(); // document frequency
 
   for (const s of sources) {
@@ -115,7 +119,55 @@ export interface RagResult {
  * Busca documentos na base LegalSource usando TF-IDF cosine similarity.
  * Retorna top-k mais similares à query.
  */
+/** Read-only FTS5/BM25 preferred, with TF-IDF fallback for unprepared environments.
+ * The ranking score is NOT a probability of legal success or source validity.
+ */
 export async function ragSearch(query: string, topK = 5): Promise<RagResult[]> {
+  const dbPath = process.env.JURIDIA_KNOWLEDGE_DB_PATH;
+  if (dbPath) {
+    try {
+      const { openKnowledgeDb } = await import("@/lib/knowledge-local-index");
+      const { hybridKnowledgeSearch } = await import("@/lib/knowledge-hybrid-search");
+      const local = openKnowledgeDb(dbPath, true);
+      let ids: string[] = [];
+      try {
+        const result = await hybridKnowledgeSearch(local, query, {
+          topK: Math.min(30, Math.max(topK * 3, 10)),
+          enabled: process.env.JURIDIA_USE_LOCAL_EMBEDDINGS === "true",
+        });
+        ids = result.hits
+          .filter(hit => hit.entityKind === "legal_source")
+          .map(hit => hit.id);
+      } finally { local.close(); }
+      if (ids.length) {
+        const sources = await db.legalSource.findMany({
+          where: { id: { in: ids }, vigente: true },
+          select: {
+            id: true, diploma: true, numero: true, tribunal: true,
+            textoTrecho: true, urlOficial: true, vigente: true,
+            revisadoPor: true, hashConteudo: true, dataConsulta: true,
+          },
+        });
+        const byId = new Map(sources.filter(isVerifiedOfficialSource).map(source => [source.id, source]));
+        return ids.map((id, rank): RagResult | null => {
+          const source = byId.get(id);
+          if (!source) return null;
+          return { source, score: Math.max(0.05, 0.45 - rank * 0.015), matchedTerms: [] };
+        }).filter((r): r is RagResult => r !== null).slice(0, topK);
+      }
+      // A properly configured FTS5 index with no hits should not switch to
+      // stale TF-IDF results. TF-IDF is exclusively a failure fallback.
+      return [];
+    } catch {
+      // If an explicit FTS5 database is configured, unavailable/invalid index
+      // must NOT silently downgrade to a less trustworthy knowledge source.
+      return [];
+    }
+  }
+  return ragSearchTfidf(query, topK);
+}
+
+async function ragSearchTfidf(query: string, topK = 5): Promise<RagResult[]> {
   await ensureIdfCache();
   if (!idfCache || docCountCache === 0) return [];
 
@@ -127,11 +179,12 @@ export async function ragSearch(query: string, topK = 5): Promise<RagResult[]> {
     select: {
       id: true, diploma: true, numero: true, tribunal: true,
       textoTrecho: true, urlOficial: true, vigente: true,
+      revisadoPor: true, hashConteudo: true, dataConsulta: true,
     },
   });
 
   const results: RagResult[] = [];
-  for (const s of sources) {
+  for (const s of sources.filter(isVerifiedOfficialSource)) {
     const docTokens = tokenize(s.textoTrecho);
     const docVec = tfidfVector(docTokens, idfCache!);
     const score = cosineSimilarity(queryVec, docVec);

@@ -80,3 +80,14 @@
 - A API forneceu **steps ausentes** e `logs_url=null`; tentativa de obter os logs retornou 404. Não é possível determinar por essa evidência se foi falha de runner/permissão/billing ou do projeto. **Não afirmar CI verde.**
 - Os testes e builds locais com dependências reproduzíveis foram aprovados, mas não substituem aprovação de runner remoto. Conferir a página do run no GitHub, configurações de Actions, permissão de runners e políticas/billing antes de retomar publicação.
 - Nenhum deploy foi disparado ou autorizado pelo workflow.
+
+## Atualização de consolidação — 15/10/2026
+
+- O clone isolado da branch padrão foi auditado no SHA `1b978de76ae8adac5d1c16edde779ca1fdf500f3`.
+- Inventário: 579 arquivos versionados; 65 `route.ts` sob a API JuridIA. A busca textual sinalizou 30 rotas sem chamada literal identificada; **não é prova de desuso** e nenhuma dessas rotas foi excluída.
+- Hash SHA-256 dos arquivos pequenos rastreados encontrou somente três `.gitkeep` vazios idênticos, mantidos por terem finalidades distintas; nenhuma duplicação significativa de arquivos de código foi confirmada.
+- Excluídos do checkout quatro fragmentos Python órfãos em `app/` e `alembic/`: importavam componentes FastAPI/EJC ausentes, não eram referenciados por nenhum outro arquivo versionado nem pertenciam aos dois runtimes Node. Seus conteúdos continuam recuperáveis no histórico Git. **Não houve exclusão de banco, migração aplicada, backup, conteúdo de produção ou logs.**
+- README alinhado ao OIDC real RS256/PKCE; a documentação anterior mencionava incorretamente HS256/JWT secret compartilhado.
+- As PRs #6–#11 e #27 foram encerradas sem merge e precisam ser reaproveitadas seletivamente, não por integração automática de branch antiga. PRs #2 e #5 também constam encerradas sem merge, porém seus refs remotos estão indisponíveis.
+- VPS auditada: Atlas legado em serviço; Atlas atualizado em homologação e JuridIA em homologação, em SHAs distintos e anteriores ao HEAD do GitHub. Publicação pública requer validação das duas aplicações, fontes jurídicas aprovadas, backup/restauração, autenticação e rollback; não confundir branch atualizada com deploy concluído.
+- A fase de limpeza elimina somente resíduos cuja ausência de uso foi demonstrada. As rotas operacionais e documentos históricos permanecem preservados quando o vínculo funcional ainda não pode ser descartado.

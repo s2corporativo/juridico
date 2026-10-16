@@ -1,0 +1,11 @@
+[Unit]
+Description=Atlas Forense, agendamento diario 04:15 America/Sao_Paulo
+
+[Timer]
+OnCalendar=*-*-* 04:15:00 America/Sao_Paulo
+Persistent=true
+RandomizedDelaySec=120
+Unit=atlas-editorial-daily.service
+
+[Install]
+WantedBy=timers.target

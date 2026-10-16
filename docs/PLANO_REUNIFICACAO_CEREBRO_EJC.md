@@ -64,3 +64,41 @@
 - inspeção de que `/api/brain` não contém envio de `facts` bruto ao provedor;
 - teste de que a versão do snapshot é incrementada;
 - `git diff --check`.
+
+## Consolidação técnica da integração na JuridIA — 15/10/2026
+
+O Cérebro EJC **não foi descartado**. Seu núcleo TypeScript vive em
+`apps/juridia/src/lib/brain-ejc.ts`, `legal_brain.ts`, `evidence.ts`,
+`pseudonymizer.ts` e `src/app/api/brain/route.ts`.
+A UI `src/components/app/cerebro.tsx` apresenta o Cérebro EJC.
+Os antigos quatro fragmentos Python FastAPI, removidos no PR #49, não compõem
+o runtime da JuridIA e seguem recuperáveis no histórico.
+
+O novo portão `brain-ejc-evidence-gate.ts` exige estrutura JSON reconhecida,
+elimina referências inexistentes/outro caso e **não transforma dados sem
+EvidenceRef autorizado em fatos comprovados**. Falhas do modelo/provedor
+impedem gravação de um parecer como concluído, preservando a extração
+determinística realizada localmente. Metadados redundantes com CPF/CNPJ
+originais deixaram de ser gravados em novas evidências.
+
+**Gates antes de produção:** teste autenticado com usuários distintos e
+documentos sintéticos; comprovação de que prompts ao provedor são
+pseudonimizados; revisão humana de fontes Atlas; backups restauráveis;
+migrações comprovadamente não destrutivas; rollback e verificação de HTTPS.
+
+
+### Complemento da auditoria concorrente — 15/10/2026
+
+Sobre a integração EJC já incorporada em atlas-forense, a reconciliação acrescenta:
+verificação criptográfica das referências por caso antes do provedor; rejeição integral
+de itens com IDs de evidência mistos (autorizados e inventados); validação também
+da classificação e dos campos essenciais antes de concluir; consultas web apenas
+com áreas jurídicas genéricas; leitura dos documentos anexados diretamente pelo
+backend sem colar a extração duas vezes no formulário; permissão para analisar
+casos que já possuem autos prontos mesmo com narrativa manual vazia; e
+identificador do snapshot no contexto enviado ao gerador como rascunho.
+
+Os testes antigos brain-privacy.test.ts foram alinhados ao contrato vigente.
+Isto reforça validação de origem, não comprova apoio semântico da prova
+à afirmação nem substitui conferência do advogado. Os serviços da VPS e os
+bancos permanecem inalterados até a homologação operacional.

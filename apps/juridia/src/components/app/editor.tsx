@@ -37,6 +37,7 @@ import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { MoldeMode } from "./molde-mode";
 import { CitationChecker } from "./citation-checker";
+import { DocumentSkillAudit } from "./document-skill-audit";
 import { PaginatedPreview, LetterheadDialog } from "./paginated-preview";
 
 export function Editor() {
@@ -459,6 +460,8 @@ export function Editor() {
           </Button>
         </div>
       </div>
+
+      <DocumentSkillAudit key={doc.id} documentId={doc.id} />
 
       <Tabs defaultValue="edit">
         <div className="flex items-center gap-1 border-b border-border">

@@ -18,6 +18,7 @@ import {
 import {
   ArrowDownToLine,
   ArrowUpRight,
+  Lightbulb,
   BookOpenCheck,
   CalendarClock,
   ChevronRight,
@@ -33,6 +34,7 @@ import { jecDashboardData } from "@/data/jecDashboardData";
 import { AdvancedEvidencePanel } from "@/components/AdvancedEvidencePanel";
 import CivilConsumerPanel from "@/components/CivilConsumerPanel";
 import EditorialUpdatesPanel from "@/components/EditorialUpdatesPanel";
+import ContentSuggestionsPanel from "@/components/ContentSuggestionsPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { SiteNav } from "@/components/SiteNav";
 import { trpc } from "@/lib/trpc";
@@ -360,7 +362,7 @@ export default function Home() {
       <main className="atlas-main">
         <header className="topbar">
           <div className="breadcrumb"><Landmark size={16} /> Ecossistema Jurídico Clovis <ChevronRight size={15} /> Compêndio Jurídico</div>
-          <div className="topbar-actions"><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Pesquisar acervo</a><a className="structure-link" href="/fontes"><Database size={16} /> Fontes</a><a className="structure-link" href="/rmbh"><Landmark size={16} /> RMBH</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
+          <div className="topbar-actions"><a className="compendium-link" href="#sugestoes-conteudo"><Lightbulb size={16} /> Sugerir conteúdos</a><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Pesquisar acervo</a><a className="structure-link" href="/fontes"><Database size={16} /> Fontes</a><a className="structure-link" href="/rmbh"><Landmark size={16} /> RMBH</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
         </header>
 
         <section className="hero-panel" id="visao">
@@ -376,6 +378,7 @@ export default function Home() {
 
         <CompendiumHomePanel />
         <EditorialUpdatesPanel />
+        <ContentSuggestionsPanel />
         <CivilConsumerPanel />
 
         <section className="filter-ribbon" aria-label="Filtros do painel">

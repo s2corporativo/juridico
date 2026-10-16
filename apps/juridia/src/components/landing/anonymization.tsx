@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { anonymize, detect } from "@/lib/anonymize";
 import { useState } from "react";
 import { Eye, EyeOff, Lock, ShieldAlert, Cpu, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,6 @@ const SAMPLE = `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 3ª VARA CÍVEL
 João Carlos da Silva, brasileiro, casado, advogado, CPF 123.456.789-09, OAB/SP 123.456, portador do RG 12.345.678-9, residente e domiciliado na Rua das Flores, 123, São Paulo - SP, CEP 01000-000, telefone (11) 99999-1234, e-mail joao.silva@email.com, por seu advogado, vem propor AÇÃO INDENIZATÓRIA em face de Maria Oliveira Santos, brasileira, solteira, CPF 987.654.321-00, residente na Rua dos Pinheiros, 456, pelos fatos a seguir, sendo o valor da causa R$ 50.000,00.`;
 
 interface AnonResult {
-  original: string;
   anonymized: string;
   markers: Record<string, string>;
   counts: Record<string, number>;
@@ -29,13 +29,8 @@ export function Anonymization() {
   async function run() {
     setLoading(true);
     try {
-      const res = await fetch("/api/anonymize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input }),
-      });
-      const data = await res.json();
-      setResult(data);
+      const data = anonymize(input);
+      setResult({ anonymized: data.text, markers: data.markers, counts: data.counts, total: data.total, detection: detect(input) });
     } catch {
       setResult(null);
     } finally {

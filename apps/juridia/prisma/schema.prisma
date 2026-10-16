@@ -468,8 +468,11 @@ model SkillVersion {
   allowedTools    String   @default("[]") // JSON: ferramentas permitidas
   outputSchema    String   @default("{}") // JSON: schema de saída
   status          String   @default("draft") // draft | review | approved | retired
-  contentHash     String   // SHA-256 do conteúdo (versionamento)
-  approvedBy      String?
+  contentHash     String   // SHA-256 do conteúdo (compatibilidade histórica)
+  manifestHash    String?  // SHA-256 canônico de conteúdo E metadados jurídicos
+  authorUserId    String?  // identidade de quem redigiu a versão
+  reviewerUserId  String?  // identidade do revisor autenticado (distinto do autor)
+  approvedBy      String?  // compatibilidade: deve ser igual a reviewerUserId
   approvedAt      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -478,6 +481,20 @@ model SkillVersion {
   @@index([slug])
   @@index([status])
   @@index([area])
+}
+
+// Diário de decisões editoriais; aprovações não podem ser atribuídas a scripts.
+model SkillReviewEvent {
+  id             String   @id @default(cuid())
+  skillVersionId String
+  reviewerUserId String
+  decision       String   // submitted | approved | returned
+  manifestHash   String?
+  reason         String
+  createdAt      DateTime @default(now())
+
+  @@index([skillVersionId, createdAt])
+  @@index([reviewerUserId, createdAt])
 }
 
 // BrainAnalysis — memória jurídica por processo: persiste análises do Cérebro vinculadas a um caso

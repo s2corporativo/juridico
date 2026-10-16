@@ -81,6 +81,8 @@ interface BrainResult {
   };
   steps: BrainStep[];
   totalTokens: number;
+  snapshotId?: string;
+  snapshotVersion?: number;
 }
 
 // ── Estados epistêmicos: cores e rótulos ──────────────────────────────────
@@ -142,6 +144,8 @@ export function Cerebro() {
   const [result, setResult] = useState<BrainResult | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [readyCaseFilesFor, setReadyCaseFilesFor] = useState<string | null>(null);
+  const hasReadyCaseFiles = readyCaseFilesFor === caseId;
   const [dragActive, setDragActive] = useState(false);
   const [history, setHistory] = useState<{ id: string; title: string; ramoJuridico: string | null; hypothesis: string | null; tokensUsed: number; createdAt: string }[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -166,6 +170,16 @@ export function Cerebro() {
   useEffect(() => {
     if (!caseId) return;
     const controller = new AbortController();
+    fetch("/api/case-files?caseId=" + encodeURIComponent(caseId), { signal: controller.signal })
+      .then(async (res) => res.ok ? res.json() : { files: [] })
+      .then((data) => setReadyCaseFilesFor((data.files || []).some((file: { status: string }) => file.status === "ready") ? caseId : null))
+      .catch(() => null);
+    return () => controller.abort();
+  }, [caseId]);
+
+  useEffect(() => {
+    if (!caseId) return;
+    const controller = new AbortController();
     fetch(`/api/brain?caseId=${encodeURIComponent(caseId)}`, { signal: controller.signal })
       .then(async (res) => res.ok ? res.json() : { analyses: [] })
       .then((data) => setHistory(data.analyses || []))
@@ -184,7 +198,7 @@ export function Cerebro() {
 
   // Atualiza histórico após nova análise
   async function analyze() {
-    if (facts.trim().length < 30) {
+    if (facts.trim().length < 30 && !hasReadyCaseFiles) {
       toast({ title: "Descreva os fatos (mín. 30 caracteres)", variant: "destructive" });
       return;
     }
@@ -242,14 +256,9 @@ export function Cerebro() {
       if (!res.ok || data.error) {
         toast({ title: data.error || "Falha na importação", variant: "destructive" });
       } else {
-        const extracted = data.text || "";
-        const existing = facts.trim();
-        const combined = existing ? `${existing}\n\n--- Documento: ${data.fileName} (${data.textLength} chars, ${data.totalEvidence} evidências) ---\n${extracted}` : extracted;
-        if (combined.length > 50000) {
-          toast({ title: "Texto acumulado excede 50 mil caracteres. Analise os documentos em partes.", variant: "destructive" });
-          return;
-        }
-        setFacts(combined);
+        // The uploaded pages already belong to this case on the server.
+        // They are read by the EJC Brain without duplicating them in facts.
+        setReadyCaseFilesFor(caseId);
         toast({
           title: `Documento importado: ${data.fileName}`,
           description: `${data.textLength} caracteres extraídos · ${data.totalEvidence} evidências criadas com hash SHA-256`,
@@ -277,9 +286,9 @@ export function Cerebro() {
             <Brain className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Cérebro</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Cérebro EJC</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              IA de entendimento profundo de casos jurídicos — raciocina em 7 etapas
+              Inteligência de casos integrada ao Atlas — evidências, análise e revisão humana
             </p>
           </div>
         </div>
@@ -372,7 +381,7 @@ export function Cerebro() {
                 Limpar
               </Button>
             </div>
-            <Button onClick={analyze} disabled={loading || uploading || !caseId || facts.trim().length < 30} className="w-full" size="lg">
+            <Button onClick={analyze} disabled={loading || uploading || !caseId || facts.trim().length < 30 && !hasReadyCaseFiles} className="w-full" size="lg">
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -843,6 +852,7 @@ export function Cerebro() {
                     onClick={() => {
                       // Passa o contexto da análise cerebral para o gerador
                       const ctx = [
+                        `SNAPSHOT EJC: ${result.snapshotId || "não informado"} (rascunho; revisão humana obrigatória)`,
                         `RAMO: ${result.ramoJuridico}`,
                         `PARTES: ${JSON.stringify(result.parties)}`,
                         `QUESTÕES: ${JSON.stringify(result.legalIssues?.map((q) => q.question))}`,

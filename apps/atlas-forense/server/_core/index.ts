@@ -109,7 +109,7 @@ async function startServer() {
   // servidor principal para que a porta 3003 já esteja reservada quando o app
   // procurar a própria porta. Falha aqui não derruba o aplicativo.
   let notificationPort: number | null = null;
-  try {
+  if (process.env.ATLAS_REALTIME_ENABLED !== "false") try {
     const notification = await startNotificationService();
     notificationPort = notification.port;
     console.log(
@@ -168,40 +168,42 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  const preferredPort = Number.parseInt(process.env.PORT || "3000", 10);
+  if (!Number.isSafeInteger(preferredPort) || preferredPort < 1024 || preferredPort > 65535) {
+    throw new Error("INVALID_ATLAS_LISTEN_PORT");
+  }
 
-  // Fail-fast em produção (plano de profissionalização, tarefa F0.3): a porta é
-  // contrato com o proxy reverso — o Caddy aponta para uma porta fixa. Buscar
-  // automaticamente a próxima porta livre esconderia um desvio silencioso: o
-  // serviço subia em outra porta, sem erro aparente, e o proxy passaria a
-  // apontar para lugar nenhum. Em desenvolvimento mantém-se a busca por
-  // conveniência local.
-  let port: number;
-  if (process.env.NODE_ENV === "production") {
-    if (!(await isPortAvailable(preferredPort))) {
-      throw new Error(
-        `[Startup] Porta ${preferredPort} indisponível em produção — fail-fast (sem busca automática de porta). Verifique colisão com outro serviço ou ajuste PORT no arquivo de ambiente.`
-      );
-    }
-    port = preferredPort;
-  } else {
-    port = await findAvailablePort(preferredPort);
-    if (port !== preferredPort) {
-      console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-    }
+  // Fail-fast em produção e quando ATLAS_STRICT_PORT=true (plano de
+  // profissionalização, tarefa F0.3): a porta é contrato com o proxy reverso —
+  // o Caddy aponta para uma porta fixa. Buscar automaticamente a próxima porta
+  // livre esconderia um desvio silencioso: o serviço subia em outra porta, sem
+  // erro aparente, e o proxy passaria a apontar para lugar nenhum. Em
+  // desenvolvimento mantém-se a busca por conveniência local.
+  const strictPort =
+    process.env.NODE_ENV === "production" || process.env.ATLAS_STRICT_PORT === "true";
+  if (strictPort && !(await isPortAvailable(preferredPort))) {
+    throw new Error(
+      `ATLAS_PORT_ALREADY_IN_USE: porta ${preferredPort} indisponível — fail-fast (sem busca automática de porta). Verifique colisão com outro serviço ou ajuste PORT no arquivo de ambiente.`
+    );
+  }
+  const port = strictPort ? preferredPort : await findAvailablePort(preferredPort);
+  if (port !== preferredPort) {
+    console.warn(`Atlas development port busy, using ${port}`);
   }
 
   server.listen(getServerListenOptions(port, process.env.HOST), () => {
     console.log(`Server running on http://localhost:${port}/`);
-    startDjenAutoSync();
-    startJurisprudenciaAutoSync();
+    if (process.env.ATLAS_BACKGROUND_SYNC_ENABLED !== "false") {
+      startDjenAutoSync();
+      startJurisprudenciaAutoSync();
+    }
   });
 }
 
 startServer().catch((error) => {
-  console.error(error);
-  // Fail-fast: falha de inicialização (inclusive porta indisponível em
-  // produção) encerra o processo com código de erro — o systemd deve registrar
-  // a falha em vez de deixar o serviço aparentemente ativo.
+  console.error("[Atlas] startup failed:", error instanceof Error ? error.message : "unexpected_error");
+  // Fail-fast (F0.3): falha de inicialização (inclusive porta indisponível em
+  // produção) encerra o processo com código de erro — o systemd registra a
+  // falha em vez de deixar o serviço aparentemente ativo.
   process.exit(1);
 });

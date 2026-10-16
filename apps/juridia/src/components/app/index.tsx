@@ -16,7 +16,9 @@ import {
   Sparkles,
   Shield,
   BookOpen,
+  ChevronDown,
 } from "lucide-react";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppStore } from "@/lib/store";
 import { Generator } from "./generator";
@@ -35,30 +37,27 @@ import { GrafoSistema } from "./grafo-sistema";
 import { BibliotecaJuridica } from "./biblioteca-juridica";
 import { AtlasWorkspace } from "./atlas-workspace";
 
-// ── Zona ÚNICA: Cérebro Jurídico (foco em conhecimento, sem ERP) ────────────
-// Antes: ERP (10 tabs) + IA (10 tabs) = 20 tabs (com componentes operacionais)
-// Agora: Apenas a zona cognitiva. Operacional (clientes/casos/documentos/prazos/
-// audiências/financeiro/produtividade) foi removido para focar no conhecimento.
-// APIs continuam disponíveis para a IA usar internamente.
-const TABS = [
-  { id: "assistente" as const, label: "Assistente", icon: Sparkles, key: "s" },
+// A navegação principal descreve o trabalho do advogado, não os motores internos.
+const PRIMARY_TABS = [
   { id: "dashboard" as const, label: "Início", icon: LayoutDashboard, key: "1" },
-  { id: "generator" as const, label: "Novo trabalho", icon: Wand2, key: "g" },
-  { id: "editor" as const, label: "Editor", icon: FileText, key: "m" },
-  { id: "atlas" as const, label: "Atlas Forense", icon: BookOpen, key: "a" },
+  { id: "assistente" as const, label: "Assistente", icon: Sparkles, key: "s" },
+  { id: "atlas" as const, label: "Pesquisa Atlas", icon: Search, key: "a" },
+  { id: "generator" as const, label: "Nova minuta", icon: Wand2, key: "g" },
+  { id: "editor" as const, label: "Documentos", icon: FileText, key: "m" },
   { id: "biblioteca" as const, label: "Biblioteca", icon: BookOpen, key: "b" },
-  { id: "cerebro" as const, label: "1. Cérebro", icon: Brain, key: "e" },
-  { id: "intelligence" as const, label: "2. Inteligência", icon: Network, key: "i" },
-  { id: "pipeline" as const, label: "3. Pipeline", icon: GitBranch, key: "p" },
-  { id: "homologacao" as const, label: "Homologação", icon: ClipboardCheck, key: "h" },
-  { id: "calculadora" as const, label: "Análise Jurídica", icon: Calculator, key: "l" },
+];
+const TOOL_TABS = [
+  { id: "cerebro" as const, label: "Análise do caso · Cérebro EJC", icon: Brain, key: "e" },
+  { id: "intelligence" as const, label: "Mapa e evidências", icon: Network, key: "i" },
+  { id: "pipeline" as const, label: "Etapas da produção", icon: GitBranch, key: "p" },
+  { id: "calculadora" as const, label: "Calculadora jurídica", icon: Calculator, key: "l" },
   { id: "visuallaw" as const, label: "Visual Law", icon: BarChart3, key: "v" },
   { id: "datajud" as const, label: "DataJud", icon: Search, key: "j" },
-  { id: "grafo" as const, label: "Grafo", icon: Network, key: "n" },
-  { id: "settings" as const, label: "6. Governança", icon: Shield, key: "," },
+  { id: "grafo" as const, label: "Grafo jurídico", icon: Network, key: "n" },
+  { id: "homologacao" as const, label: "Homologação", icon: ClipboardCheck, key: "h" },
+  { id: "settings" as const, label: "Governança e configurações", icon: Shield, key: "," },
 ];
-
-const ALL_TABS = TABS;
+const ALL_TABS = [...PRIMARY_TABS, ...TOOL_TABS];
 
 export function AppShell() {
   const { appTab, setAppTab } = useAppStore();
@@ -76,24 +75,43 @@ export function AppShell() {
     return () => window.removeEventListener("keydown", handler);
   }, [setAppTab]);
 
+  const activeTool = TOOL_TABS.find((tab) => tab.id === appTab);
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-secondary/20">
-      <div className="sticky top-16 z-40 border-b border-border bg-background/80 glass">
+    <div className="min-h-[calc(100vh-4rem)] bg-background">
+      <div className="sticky top-16 z-40 border-b border-border/70 bg-background/95 backdrop-blur">
         <div className="container-juridia">
-          <Tabs value={appTab} onValueChange={(v) => setAppTab(v as typeof appTab)}>
-            <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-0 bg-transparent p-2 scrollbar-juridia">
-              {/* ZONA ÚNICA — Cérebro Jurídico */}
-              <div className="flex items-center gap-2 pr-2">
-                <Brain className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Cérebro Jurídico</span>
-              </div>
-              {TABS.map((t) => (
-                <TabsTrigger key={t.id} value={t.id} className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary" title={`Atalho: ${t.key.toUpperCase()}`}>
-                  <t.icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t.label}</span>
-                  <kbd className="hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[9px] text-muted-foreground lg:inline-block">{t.key}</kbd>
+          <Tabs value={appTab} onValueChange={(v) => setAppTab(v)}>
+            <TabsList className="flex h-auto w-full items-center justify-start gap-1 overflow-x-auto rounded-none border-0 bg-transparent px-0 py-2 scrollbar-juridia">
+              {PRIMARY_TABS.map((tab) => (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  title={`Atalho: ${tab.key.toUpperCase()}`}
+                  className="h-9 shrink-0 gap-2 rounded-lg px-3 text-xs font-medium data-[state=active]:bg-primary/10 data-[state=active]:text-primary sm:text-sm"
+                >
+                  <tab.icon aria-hidden="true" className="h-4 w-4" />
+                  <span>{tab.label}</span>
                 </TabsTrigger>
               ))}
+              <details className="group relative ml-auto shrink-0">
+                <summary className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary sm:text-sm">
+                  {activeTool?.label ?? "Mais ferramentas"}
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </summary>
+                <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-border bg-background p-1.5 shadow-lg">
+                  {TOOL_TABS.map((tab) => (
+                    <button key={tab.id} type="button"
+                      onClick={(event) => {
+                        setAppTab(tab.id);
+                        event.currentTarget.closest("details")?.removeAttribute("open");
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary sm:text-sm">
+                      <tab.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </details>
             </TabsList>
           </Tabs>
         </div>
