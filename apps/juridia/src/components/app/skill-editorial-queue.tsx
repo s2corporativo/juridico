@@ -135,3 +135,46 @@ export function SkillEditorialQueue() {
                 onChange={(e) => setReason(e.target.value)} />
             </label>
           )}
+          {items.length === 0 && (
+            <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
+              Nenhuma versão aguardando edição ou revisão.
+            </p>
+          )}
+          {items.map((item) => (
+            <details key={item.id} className="rounded-lg border border-border/70 p-3">
+              <summary className="cursor-pointer text-sm font-medium">
+                {item.description}
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  #{item.slug} · v{item.version} · {item.area} · {item.status === "review" ? "Em revisão" : "Rascunho"}
+                </span>
+              </summary>
+              <div className="mt-3 space-y-3 border-t border-border pt-3">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{item.content}</p>
+                <p className="text-xs text-muted-foreground">Fontes declaradas: {item.requiredSources}</p>
+                <div className="flex flex-wrap gap-2">
+                  {item.canSubmit && (
+                    <Button size="sm" variant="outline" disabled={busy || reason.trim().length < 12}
+                      onClick={() => void send("submit", item.id)}>Enviar para revisão</Button>
+                  )}
+                  {item.canDecide && (
+                    <>
+                      <Button size="sm" disabled={busy || reason.trim().length < 12}
+                        onClick={() => void send("approve", item.id)}>Aprovar versão</Button>
+                      <Button size="sm" variant="outline" disabled={busy || reason.trim().length < 12}
+                        onClick={() => void send("return", item.id)}>Devolver ao autor</Button>
+                    </>
+                  )}
+                  {!item.canSubmit && !item.canDecide && (
+                    <span className="text-xs text-muted-foreground">Aguardando responsável habilitado para a próxima etapa.</span>
+                  )}
+                </div>
+              </div>
+            </details>
+          ))}
+        </div>
+        {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+        {info && <p role="status" className="text-xs text-muted-foreground">{info}</p>}
+      </CardContent>
+    </Card>
+  );
+}
