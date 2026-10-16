@@ -461,7 +461,7 @@ export function Editor() {
         </div>
       </div>
 
-      <DocumentSkillAudit documentId={doc.id} />
+      <DocumentSkillAudit key={doc.id} documentId={doc.id} />
 
       <Tabs defaultValue="edit">
         <div className="flex items-center gap-1 border-b border-border">
