@@ -12,6 +12,13 @@ type PendingSkill = {
 };
 type QueueReply = { items: PendingSkill[]; canReview: boolean };
 const blank = { slug: "", area: "civil", description: "", content: "", triggers: "", sources: "" };
+function readableSources(raw: string): string {
+  try {
+    const sources: unknown = JSON.parse(raw);
+    return Array.isArray(sources) && sources.every((x) => typeof x === "string")
+      ? sources.join(" · ") || "Não informadas" : "A conferir";
+  } catch { return "A conferir"; }
+}
 function splitList(value: string): string[] {
   return value.split(/[,\n]/).map((part) => part.trim()).filter(Boolean).slice(0, 30);
 }
@@ -128,7 +135,7 @@ export function SkillEditorialQueue() {
               Atualizar
             </Button>
           </div>
-          {canReview && (
+          {(canReview || items.some((item) => item.canSubmit)) && (
             <label className="block space-y-1 text-xs">
               <span>Justificativa para a decisão editorial</span>
               <Input value={reason} placeholder="Fundamentação da revisão (mínimo de 12 caracteres)"
@@ -150,7 +157,7 @@ export function SkillEditorialQueue() {
               </summary>
               <div className="mt-3 space-y-3 border-t border-border pt-3">
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">{item.content}</p>
-                <p className="text-xs text-muted-foreground">Fontes declaradas: {item.requiredSources}</p>
+                <p className="text-xs text-muted-foreground">Fontes declaradas: {readableSources(item.requiredSources)}</p>
                 <div className="flex flex-wrap gap-2">
                   {item.canSubmit && (
                     <Button size="sm" variant="outline" disabled={busy || reason.trim().length < 12}
