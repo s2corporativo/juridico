@@ -39,9 +39,10 @@ describe("Skill admission and provenance", () => {
 });
 
 describe("single canonical release per legal skill", () => {
-  const approved = (slug: string, number: number, approver = "advogado-123") => ({
-    ...version(approver), slug, version: number,
-  });
+  const approved = (slug: string, number: number, approver = "advogado-123") => {
+    const item = { ...version(approver), slug, version: number };
+    return { ...item, manifestHash: canonicalSkillManifestHash(item) };
+  };
 
   test("a tampered latest approved release blocks the slug instead of downgrading", () => {
     const older = approved("prescricao-intercorrente", 1);
