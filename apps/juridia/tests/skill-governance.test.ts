@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { inspectApprovedSkill, isEligibleSkillVersion, parseSkillKeywords, selectLatestApprovedSkills } from "../src/lib/skill-governance";
+import { inspectApprovedSkill, isEligibleSkillVersion, parseSkillKeywords, selectLatestApprovedSkills, summarizeApprovalAccountLinks } from "../src/lib/skill-governance";
 
 const content = "Orientação processual válida como instrução auxiliar, não como fonte.";
 const version = (approvedBy: string) => ({
@@ -62,5 +62,29 @@ describe("single canonical release per legal skill", () => {
     const selected = selectLatestApprovedSkills(list);
     expect(selected).toEqual([a]);
     expect(list).toEqual([older, a]);
+  });
+});
+
+describe("reviewer account linkage (observational only)", () => {
+  test("an approval label without a registered user account stays unverified", () => {
+    const result = summarizeApprovalAccountLinks([version("editor-juridico")], []);
+    expect(result).toEqual({ linkedToAccount: 0, noAccountLink: 1 });
+  });
+
+  test("matches account identifiers and email without revealing reviewer identities", () => {
+    const accounts = [{ id: "revisor-legal-1", email: "revisor@example.test" }];
+    const skills = [version("revisor-legal-1"), version("REVISOR@example.test"), version("external-label")];
+    expect(summarizeApprovalAccountLinks(skills, accounts)).toEqual({
+      linkedToAccount: 2,
+      noAccountLink: 1,
+    });
+  });
+
+  test("does not treat a missing approver as an authenticated reviewer", () => {
+    const skills = [{ ...version("reviewer"), approvedBy: null }, version("reviewer")];
+    expect(summarizeApprovalAccountLinks(skills, [])).toEqual({
+      linkedToAccount: 0,
+      noAccountLink: 2,
+    });
   });
 });
