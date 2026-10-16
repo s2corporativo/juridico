@@ -16,8 +16,10 @@ import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
+import { isEligibleSkillVersion } from "@/lib/skill-governance";
+import { ownsCase } from "@/lib/owned-case";
 import { ragSearch } from "@/lib/rag_lite";
-import { agentForStage, JURIDIA_AGENTS } from "@/lib/agent-registry";
+import { agentForStage, JURIDIA_AGENTS, buildAgentWorkflow } from "@/lib/agent-registry";
 import {
   buildSystemPrompt,
   buildOutlineUserPrompt,
@@ -216,6 +218,15 @@ export async function runMinutaPipeline(
 ): Promise<GenerateMinutaResponse> {
   const emit = onEvent ?? (() => {});
 
+  // Fail closed before reading any case files or creating a document.
+  if (body.caseId && !await ownsCase(authUser.uid, body.caseId)) {
+    throw new PipelineError("case_not_found", 404);
+  }
+  if (body.skillSlugs !== undefined &&
+      (!Array.isArray(body.skillSlugs) || body.skillSlugs.some((slug) => typeof slug !== "string"))) {
+    throw new PipelineError("Lista de skills inválida", 400);
+  }
+
   // 1) Template
   const tpl = await db.template.findUnique({ where: { slug: body.templateSlug } });
   if (!tpl) throw new PipelineError("Template não encontrado", 404);
@@ -238,11 +249,23 @@ export async function runMinutaPipeline(
   const factsOnlyPseudonymized = pseudonymize(factsBlock).text;
 
   // 3) Skills: escolhidas manualmente + roteadas automaticamente por relevância
-  const manualSkills: PipelineSkill[] = body.skillSlugs?.length
-    ? (
-        await db.skill.findMany({ where: { slug: { in: body.skillSlugs } } })
-      ).map((s) => ({ slug: s.slug, name: s.name, content: s.content, origin: "manual" as const }))
+  // Manual selection is NOT an approval: only verified, individually reviewed
+  // SkillVersions may enter prompts. Legacy Skill rows remain catalog history.
+  const approvedManualVersions = body.skillSlugs?.length
+    ? await db.skillVersion.findMany({
+        where: { slug: { in: body.skillSlugs }, status: "approved" },
+        orderBy: [{ slug: "asc" }, { version: "desc" }],
+      })
     : [];
+  const approvedManual = new Map<string, (typeof approvedManualVersions)[number]>();
+  for (const version of approvedManualVersions) {
+    if (!approvedManual.has(version.slug) && isEligibleSkillVersion(version)) {
+      approvedManual.set(version.slug, version);
+    }
+  }
+  const manualSkills: PipelineSkill[] = [...approvedManual.values()].map((version) => ({
+    slug: version.slug, name: version.description, content: version.content, origin: "manual" as const,
+  }));
 
   let autoRouted: PipelineSkill[] = [];
   let detectedIssues: { key: string; title: string; area: string }[] = [];
@@ -304,6 +327,7 @@ export async function runMinutaPipeline(
   const run = await db.agentRun.create({
     data: {
       agentSlug: "legal_draft",
+      caseId: body.caseId || "default-case",
       taskType: "draft",
       status: "running",
       inputHash,
@@ -313,10 +337,23 @@ export async function runMinutaPipeline(
         provider: "zai",
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
         agents: JURIDIA_AGENTS.map(({ slug, mode, requiresHumanReview }) => ({ slug, mode, requiresHumanReview })),
+        proposedWorkflow: buildAgentWorkflow("draft_document").agents.map(({ slug, requiresHumanReview }) => ({ slug, requiresHumanReview })),
       }),
     },
   });
-  let stepNo = 0;
+  // Coordinator is a bounded deterministic plan, not a free-running LLM.
+  // Agents that actually execute continue to record their stage separately.
+  const plan = buildAgentWorkflow("draft_document");
+  await db.agentRunStep.create({
+    data: {
+      runId: run.id, stepNo: 1, kind: "tool_call",
+      toolName: "workflow_coordinator:plan", status: "done",
+      output: JSON.stringify({ goal: plan.goal, stages: plan.agents.map((a) => a.slug),
+        externalActionsAllowed: false, finalApproval: plan.finalApproval }),
+      requiresHuman: false,
+    },
+  });
+  let stepNo = 1;
   let tokensTotal = 0;
   const stages: PipelineStageInfo[] = [];
 
@@ -597,12 +634,14 @@ export async function runMinutaPipeline(
     orderBy: [{ slug: "asc" }, { version: "desc" }],
   });
   const latestBySlug = new Map<string, (typeof skillVersions)[number]>();
-  for (const skill of skillVersions) if (!latestBySlug.has(skill.slug)) latestBySlug.set(skill.slug, skill);
+  for (const skill of skillVersions) {
+    if (isEligibleSkillVersion(skill) && !latestBySlug.has(skill.slug)) latestBySlug.set(skill.slug, skill);
+  }
   if (skills.length) {
     await db.documentSkillUsage.createMany({
       data: skills.map((skill) => {
         const approved = latestBySlug.get(skill.slug);
-        const content = approved?.content || skill.content;
+        const content = approved?.content || skill.content; // always from eligible approved versions
         return {
           documentId: doc.id,
           skillSlug: skill.slug,
@@ -632,6 +671,7 @@ export async function runMinutaPipeline(
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
         stages: stages.map((s) => ({ stage: s.stage, ok: s.ok, tokens: s.tokens })),
         agents: JURIDIA_AGENTS.map(({ slug, mode, requiresHumanReview }) => ({ slug, mode, requiresHumanReview })),
+        proposedWorkflow: buildAgentWorkflow("draft_document").agents.map(({ slug, requiresHumanReview }) => ({ slug, requiresHumanReview })),
       }),
     },
   });
