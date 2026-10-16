@@ -33,31 +33,31 @@ export interface SiteNavGroup {
 
 export const SITE_NAV_GROUPS: SiteNavGroup[] = [
   {
-    title: "Consultar",
+    title: "Pesquisa",
     items: [
-      { href: "/", label: "Painel JEC", icon: LayoutDashboard },
+      { href: "/", label: "Painel", icon: LayoutDashboard },
+      { href: "/compendio", label: "Compêndio jurídico", icon: BookOpenCheck },
+      { href: "/escritorio/jurisprudencia", label: "Jurisprudência", icon: Gavel },
       { href: "/causal", label: "Atlas Causal", icon: GitBranch },
-      { href: "/compendio", label: "Compêndio", icon: BookOpenCheck },
+    ],
+  },
+  {
+    title: "Trabalho jurídico e curadoria",
+    items: [
+      { href: "/juridia", label: "JuridIA", icon: FileSignature },
+      { href: "/fontes", label: "Fontes públicas", icon: Database },
+      { href: "/controle", label: "Revisão editorial", icon: ClipboardCheck },
+    ],
+  },
+  {
+    title: "Recursos complementares",
+    items: [
       { href: "/rmbh", label: "Cobertura RMBH", icon: MapPinned },
       { href: "/nacional", label: "Censo nacional", icon: Globe2 },
-    ],
-  },
-  {
-    title: "Operar",
-    items: [
-      { href: "/escritorio/clientes", label: "Clientes", icon: Users },
-      { href: "/escritorio/comunicacoes", label: "Comunicações", icon: Inbox },
-      { href: "/escritorio/jurisprudencia", label: "Jurisprudência", icon: Gavel },
-      { href: "/escritorio/treinamento", label: "Treinamento", icon: GraduationCap },
-      { href: "/juridia", label: "JuridIA", icon: FileSignature },
-    ],
-  },
-  {
-    title: "Governar",
-    items: [
       { href: "/estrutura", label: "Estrutura", icon: Boxes },
-      { href: "/fontes", label: "Fontes públicas", icon: Database },
-      { href: "/controle", label: "Controle editorial", icon: ClipboardCheck },
+      { href: "/escritorio/clientes", label: "Clientes do Atlas", icon: Users },
+      { href: "/escritorio/comunicacoes", label: "Comunicações", icon: Inbox },
+      { href: "/escritorio/treinamento", label: "Treinamento", icon: GraduationCap },
     ],
   },
 ];
@@ -70,21 +70,30 @@ export function SiteNav({ heading = "Navegação principal" }: { heading?: strin
   return (
     <nav className="site-nav" aria-label="Navegação do Atlas Forense">
       <span className="site-nav-heading">{heading}</span>
-      {SITE_NAV_GROUPS.map((group) => (
+      {SITE_NAV_GROUPS.slice(0, 2).map((group) => (
         <div key={group.title} className="site-nav-group">
           <span className="site-nav-group-title">{group.title}</span>
           {group.items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={isActive(item.href) ? "site-nav-link active" : "site-nav-link"}
-            >
+            <Link key={item.href} href={item.href}
+              className={isActive(item.href) ? "site-nav-link active" : "site-nav-link"}>
               <item.icon size={15} aria-hidden="true" />
               <span>{item.label}</span>
             </Link>
           ))}
         </div>
       ))}
+      <details className="site-nav-group">
+        <summary className="site-nav-group-title cursor-pointer rounded-md py-2 focus-visible:outline-2">
+          Recursos complementares
+        </summary>
+        {SITE_NAV_GROUPS[2].items.map((item) => (
+          <Link key={item.href} href={item.href}
+            className={isActive(item.href) ? "site-nav-link active" : "site-nav-link"}>
+            <item.icon size={15} aria-hidden="true" />
+            <span>{item.label}</span>
+          </Link>
+        ))}
+      </details>
     </nav>
   );
 }

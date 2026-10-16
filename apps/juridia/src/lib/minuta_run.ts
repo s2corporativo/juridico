@@ -258,13 +258,23 @@ export async function runMinutaPipeline(
       })
     : [];
   const approvedManual = new Map<string, (typeof approvedManualVersions)[number]>();
+  const blockedManualSlugs = new Set<string>();
   for (const version of approvedManualVersions) {
-    if (!approvedManual.has(version.slug) && isEligibleSkillVersion(version)) {
-      approvedManual.set(version.slug, version);
+    // A versão aprovada mais recente é a única candidata; não recuar em hash inválido.
+    if (approvedManual.has(version.slug) || blockedManualSlugs.has(version.slug)) continue;
+    if (!isEligibleSkillVersion(version)) {
+      blockedManualSlugs.add(version.slug);
+      continue;
     }
+    approvedManual.set(version.slug, version);
+  }
+  const unavailableManualSlugs = body.skillSlugs?.filter((slug) => !approvedManual.has(slug)) ?? [];
+  if (unavailableManualSlugs.length > 0) {
+    throw new PipelineError("Habilidade selecionada sem versão válida e aprovada; solicite revisão do catálogo.", 409);
   }
   const manualSkills: PipelineSkill[] = [...approvedManual.values()].map((version) => ({
     slug: version.slug, name: version.description, content: version.content, origin: "manual" as const,
+    version: version.version, skillVersionId: version.id, fullContentHash: version.contentHash,
   }));
 
   let autoRouted: PipelineSkill[] = [];
@@ -278,12 +288,17 @@ export async function runMinutaPipeline(
       content: m.content,
       origin: "auto" as const,
       matchScore: m.matchScore,
+      version: m.version, skillVersionId: m.skillVersionId, fullContentHash: m.contentHash,
     }));
   } catch {
     // skill_router depende da base SkillVersion; sem base, segue só com manuais
   }
 
   const { selected: skills, dropped: skillsDropped } = mergeSkills(manualSkills, autoRouted);
+  // Uma habilidade sem ID de versão não pode compor uma minuta auditável.
+  if (skills.some((skill) => !skill.skillVersionId || !skill.version || !skill.fullContentHash)) {
+    throw new PipelineError("Identidade da habilidade incompleta; geração suspensa para auditoria.", 409);
+  }
   const skillsBlock = skills.length
     ? `\n\n## Habilidades (skills) aplicadas — o texto abaixo é o que foi enviado à IA (auditável)\n${skills
         .map((s) => `### ${s.name} (${s.origin === "manual" ? "escolhida" : "roteada"}, #${s.slug})\n${s.content}`)
@@ -318,7 +333,7 @@ export async function runMinutaPipeline(
   // 5) Agente registrável (custo/orçamento por geração)
   const inputHash = createHash("sha256")
     .update(
-      `${tpl.slug}|${factsBlock}|${skills.map((s) => s.slug).join(",")}|${
+      `${tpl.slug}|${factsBlock}|${skills.map((s) => `${s.skillVersionId}:${s.version}:${createHash("sha256").update(s.content).digest("hex")}`).join(",")}|${
         body.moldContent ? "mold:" + createHash("sha256").update(body.moldContent).digest("hex").slice(0, 16) : "nomold"
       }`
     )
@@ -613,7 +628,11 @@ export async function runMinutaPipeline(
   //    O mapa marcador→valor NUNCA é persistido (LGPD): vive só em memória;
   //    a reidratação acontece ponta a ponta na mesma requisição.
   const title = body.title?.trim() || `${tpl.name} — ${new Date().toLocaleDateString("pt-BR")}`;
-  const doc = await db.document.create({
+  // Documento e snapshot aplicado são uma única unidade atômica.
+  // Não consultar SkillVersion novamente após invocar o LLM: uma publicação
+  // concorrente não pode reescrever a história da geração.
+  const doc = await db.$transaction(async (tx) => {
+    const created = await tx.document.create({
     data: {
       userId: authUser.uid,
       title,
@@ -627,36 +646,24 @@ export async function runMinutaPipeline(
       status: degraded ? "draft" : "generated",
       batchId: body.batchId || null,
     },
-  });
-
-  const skillVersions = await db.skillVersion.findMany({
-    where: { slug: { in: skills.map((s) => s.slug) }, status: "approved" },
-    orderBy: [{ slug: "asc" }, { version: "desc" }],
-  });
-  const latestBySlug = new Map<string, (typeof skillVersions)[number]>();
-  for (const skill of skillVersions) {
-    if (isEligibleSkillVersion(skill) && !latestBySlug.has(skill.slug)) latestBySlug.set(skill.slug, skill);
-  }
-  if (skills.length) {
-    await db.documentSkillUsage.createMany({
-      data: skills.map((skill) => {
-        const approved = latestBySlug.get(skill.slug);
-        const content = approved?.content || skill.content; // always from eligible approved versions
-        return {
-          documentId: doc.id,
-          skillSlug: skill.slug,
-          skillVersion: approved?.version || 1,
-          contentHash: createHash("sha256").update(content).digest("hex"),
-          contentSnapshot: content,
-        };
-      }),
     });
-  }
-
-  // Cota do usuário autenticado (antes nunca era checada)
-  await db.user.update({
-    where: { id: authUser.uid },
-    data: { minutasUsed: { increment: 1 } },
+    if (skills.length > 0) {
+      await tx.documentSkillUsage.createMany({
+        data: skills.map((skill) => ({
+          documentId: created.id,
+          skillSlug: skill.slug,
+          skillVersion: skill.version!,
+          // Snapshot literal do segmento de orientação que entrou no prompt.
+          contentHash: createHash("sha256").update(skill.content, "utf8").digest("hex"),
+          contentSnapshot: skill.content,
+        })),
+      });
+    }
+    await tx.user.update({
+      where: { id: authUser.uid },
+      data: { minutasUsed: { increment: 1 } },
+    });
+    return created;
   });
 
   // 8) Agente fechado + auditoria + ledger

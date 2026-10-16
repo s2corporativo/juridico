@@ -1,134 +1,60 @@
 "use client";
 
-import { useState } from "react";
-import { Menu, Scale, X, FileText, Home } from "lucide-react";
+import { Home, Scale, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAppStore } from "@/lib/store";
 
-const NAV = [
-  { label: "Início", tab: "dashboard" as const },
-  { label: "Atlas Forense", tab: "atlas" as const },
-  { label: "Pesquisa", tab: "biblioteca" as const },
-  { label: "Análise", tab: "cerebro" as const },
-  { label: "Minutas IA", tab: "generator" as const },
-  { label: "Editor", tab: "editor" as const },
-  { label: "Governança", tab: "settings" as const },
-];
-
+/**
+ * Cabeçalho institucional único. As seis áreas operacionais aparecem apenas
+ * em AppShell, evitando duas barras de navegação e opções repetidas no mobile.
+ */
 export function SiteHeader() {
-  const [open, setOpen] = useState(false);
   const { view, setView, setAppTab, user } = useAppStore();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border glass">
+    <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/95 backdrop-blur">
       <div className="container-juridia flex h-16 items-center justify-between gap-4">
         <button
-          onClick={() => {
-            setView("app");
-            setAppTab("dashboard");
-          }}
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
-          aria-label="JuridIA — Início"
+          type="button"
+          onClick={() => { setView("app"); setAppTab("dashboard"); }}
+          className="flex min-w-0 items-center gap-2.5 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-primary"
+          aria-label="Atlas Forense e JuridIA — Início"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <Scale className="h-5 w-5" />
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="text-lg font-bold tracking-tight">Atlas Forense</span>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              JuridIA integrado
-            </span>
-          </div>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Scale className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate text-sm font-semibold tracking-tight sm:text-base">Atlas Forense</span>
+            <span className="text-[10px] tracking-wide text-muted-foreground">JuridIA · Cérebro EJC</span>
+          </span>
         </button>
 
-        {view === "app" && (
-          <nav className="hidden items-center gap-1 md:flex">
-            {NAV.map((item) => (
-              <Button
-                key={item.tab}
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-                onClick={() => setAppTab(item.tab)}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </nav>
-        )}
-
         <div className="flex items-center gap-2">
+          {view === "app" && (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }))}
+              className="hidden h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-muted md:inline-flex"
+              aria-label="Abrir busca de comandos"
+              title="Buscar comandos (Ctrl/⌘+K)"
+            >
+              <Search className="h-4 w-4" aria-hidden="true" /> Buscar <kbd className="ml-1 rounded border px-1.5 py-0.5 font-mono">⌘K</kbd>
+            </button>
+          )}
           <ThemeToggle />
-          <button
-            onClick={() => {
-              window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }));
-            }}
-            className="hidden md:flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label="Abrir command palette (Ctrl+K)"
-            title="Abrir command palette (Ctrl+K)"
-          >
-            <kbd className="font-mono text-[10px]">⌘K</kbd>
-            <span>Comandos</span>
-          </button>
           {view === "app" ? (
             <>
-              <span className="hidden text-sm text-muted-foreground sm:inline">
+              <span className="hidden max-w-40 truncate text-xs text-muted-foreground lg:inline" title={user?.email ?? undefined}>
                 {user?.name || user?.email}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setView("landing")}
-                title="Ver página institucional"
-              >
-                <Home className="mr-1.5 h-4 w-4" />
-                Site
+              <Button variant="ghost" size="sm" onClick={() => setView("landing")} title="Página institucional">
+                <Home className="h-4 w-4 sm:mr-1.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Site</span>
               </Button>
-              <Sheet open={open} onOpenChange={setOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="md:hidden"
-                    aria-label="Menu"
-                  >
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[280px]">
-                  <SheetHeader>
-                    <SheetTitle>Escritório</SheetTitle>
-                  </SheetHeader>
-                  <nav className="mt-4 flex flex-col gap-1">
-                    {NAV.map((item) => (
-                      <button
-                        key={item.tab}
-                        onClick={() => {
-                          setAppTab(item.tab);
-                          setOpen(false);
-                        }}
-                        className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium hover:bg-accent"
-                      >
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        {item.label}
-                      </button>
-                    ))}
-                  </nav>
-                </SheetContent>
-              </Sheet>
             </>
           ) : (
-            <Button size="sm" onClick={() => setView("app")}>
-              Entrar no escritório
-            </Button>
+            <Button size="sm" onClick={() => setView("app")}>Acessar plataforma</Button>
           )}
         </div>
       </div>

@@ -36,6 +36,11 @@ export interface PipelineSkill {
   content: string;
   origin: "manual" | "auto";
   matchScore?: number;
+  // A identidade jurídica acompanha o texto mesmo após o corte por orçamento.
+  skillVersionId?: string;
+  version?: number;
+  fullContentHash?: string;
+  truncated?: boolean;
 }
 
 export interface SkillBudget {
@@ -83,7 +88,7 @@ export function mergeSkills(
       dropped++;
       continue;
     }
-    selected.push({ ...s, content });
+    selected.push({ ...s, content, truncated: content.length !== s.content.length });
     totalChars += content.length;
   }
   return { selected, dropped };
