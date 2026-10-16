@@ -18,7 +18,7 @@ import {
   BookOpen,
   ChevronDown,
 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppStore } from "@/lib/store";
 import { Generator } from "./generator";
@@ -93,22 +93,25 @@ export function AppShell() {
                   <span>{tab.label}</span>
                 </TabsTrigger>
               ))}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button type="button" className="ml-auto flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary sm:text-sm" aria-label="Abrir ferramentas complementares">
-                    {activeTool?.label ?? "Mais ferramentas"}
-                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
+              <details className="group relative ml-auto shrink-0">
+                <summary className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary sm:text-sm">
+                  {activeTool?.label ?? "Mais ferramentas"}
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </summary>
+                <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-border bg-background p-1.5 shadow-lg">
                   {TOOL_TABS.map((tab) => (
-                    <DropdownMenuItem key={tab.id} onSelect={() => setAppTab(tab.id)} className="gap-2">
-                      <tab.icon className="h-4 w-4" aria-hidden="true" />
+                    <button key={tab.id} type="button"
+                      onClick={(event) => {
+                        setAppTab(tab.id);
+                        event.currentTarget.closest("details")?.removeAttribute("open");
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary sm:text-sm">
+                      <tab.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                       {tab.label}
-                    </DropdownMenuItem>
+                    </button>
                   ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </div>
+              </details>
             </TabsList>
           </Tabs>
         </div>
