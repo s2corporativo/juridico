@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { pseudonymize, rehydrateStructured } from "@/lib/pseudonymizer";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -74,15 +75,17 @@ Regras:
 - Resposta em português brasileiro.`;
 
   const userPrompt = `## Fatos do caso\n${facts}`;
+  // Pseudonimização antes de transmitir texto ao modelo externo.
+  const externalPrompt = pseudonymize(userPrompt);
 
   let result: CaseAnalysisResult = { ...EMPTY };
 
   try {
-    const zai = await ZAI.create();
+    const zai = await createLocalCaseClient();
     const completion = await zai.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: externalPrompt.text },
       ],
       thinking: { type: "disabled" },
       temperature: 0.3,
@@ -115,6 +118,9 @@ Regras:
   } catch {
     result = fallbackAnalysis(facts);
   }
+
+  // Restauração no servidor, após o retorno do provedor.
+  result = rehydrateStructured(result, externalPrompt.map);
 
   // Persiste a análise
   const userId = authUser.uid;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 import { requireAuth } from "@/lib/auth";
+import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -82,12 +83,13 @@ ${baseDocument.slice(0, 8000)}
 ## Instrução do advogado
 ${instruction}`;
 
+  const externalPrompt = pseudonymize(userPrompt);
   try {
-    const zai = await ZAI.create();
+    const zai = await createLocalCaseClient();
     const completion = await zai.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: externalPrompt.text },
       ],
       thinking: { type: "disabled" },
       temperature: 0.4,
@@ -113,9 +115,9 @@ ${instruction}`;
             .slice(0, 10)
             .map((c: MoldeChange) => ({
               operation: c.operation,
-              anchor: c.anchor.slice(0, 300),
-              replacement: c.replacement || null,
-              reason: c.reason || "",
+              anchor: rehydrate(c.anchor.slice(0, 300), externalPrompt.map),
+              replacement: c.replacement ? rehydrate(c.replacement, externalPrompt.map) : null,
+              reason: rehydrate(c.reason || "", externalPrompt.map),
             }));
         }
       } catch {
@@ -130,8 +132,8 @@ ${instruction}`;
     });
 
     return NextResponse.json({
-      changes: validated.length > 0 ? validated : changes,
-      total: validated.length > 0 ? validated.length : changes.length,
+      changes: validated,
+      total: validated.length,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Erro no Modo Molde";
