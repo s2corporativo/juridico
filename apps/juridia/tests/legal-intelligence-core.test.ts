@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { identifyLegalIntent, retrieveLegalSkills, type LegalCandidate } from "../src/lib/legal-intelligence-core";
 import { assessSkillMaturity, reviewCatalogueMaturity } from "../src/lib/skill-maturation";
+import { SKILL_VERSION_INTEGRITY_SELECT } from "../src/lib/skill-version-select";
 const source="https://planalto.gov.br/ccivil_03/leis/l8078compilado.htm";
 const base:LegalCandidate={
   id:"fixture", slug:"fraude-pix",version:1,area:"consumidor",
@@ -44,4 +45,14 @@ describe("nucleo de inteligencia juridica",()=>{
     expect(report.stats.total).toBe(2);
     expect(report.warning).toContain("Nenhum conteúdo foi validado");
   });
+});
+
+test("projection of all legal integrity metadata cannot be partial", () => {
+  const fields = [
+    "slug","version","area","description","content","triggers","requiredSources",
+    "requiredEvidence","rules","exceptions","forbiddenClaims","allowedTools",
+    "outputSchema","manifestHash","authorUserId","reviewerUserId",
+    "status","approvedAt","approvedBy","contentHash",
+  ];
+  for (const name of fields) expect(Object.hasOwn(SKILL_VERSION_INTEGRITY_SELECT,name)).toBe(true);
 });
