@@ -136,3 +136,31 @@ export async function POST(req: NextRequest) {
     return bad("legal_metadata_invalid_or_concurrent_change", 409);
   }
 }
+
+/** Fila compacta, restrita aos autores e administradores autenticados. */
+export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth.response;
+  const isReviewer = auth.user.role === "admin";
+  const items = await db.skillVersion.findMany({
+    where: {
+      status: { in: ["draft", "review"] },
+      ...(isReviewer ? {} : { authorUserId: auth.user.uid }),
+    },
+    select: {
+      id: true, slug: true, version: true, area: true, description: true,
+      content: true, requiredSources: true, forbiddenClaims: true,
+      triggers: true, authorUserId: true, status: true, updatedAt: true,
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 50,
+  });
+  return NextResponse.json({
+    items: items.map((item) => ({
+      ...item, updatedAt: item.updatedAt.toISOString(),
+      canSubmit: item.authorUserId === auth.user.uid && item.status === "draft",
+      canDecide: isReviewer && item.authorUserId !== auth.user.uid && item.status === "review",
+    })),
+    canReview: isReviewer,
+  }, { headers: { "Cache-Control": "private, no-store" } });
+}

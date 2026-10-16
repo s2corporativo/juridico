@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { useAppStore, type WritingStyle } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
+import { SkillEditorialQueue } from "./skill-editorial-queue";
 import type { SkillDTO } from "@/lib/types";
 
 const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
@@ -404,6 +405,13 @@ export function Settings() {
           </Card>
         </div>
       </div>
+      <details className="mt-6 rounded-xl border border-border/80 bg-background">
+        <summary className="cursor-pointer px-5 py-4 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-primary">
+          Curadoria jurídica e revisão de habilidades
+          <span className="ml-2 text-xs font-normal text-muted-foreground">Acesso supervisionado</span>
+        </summary>
+        <div className="p-3 sm:p-5"><SkillEditorialQueue /></div>
+      </details>
     </div>
   );
 }
