@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Scale, Search } from "lucide-react";
+import { ArrowLeft, Home, Scale, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAppStore } from "@/lib/store";
@@ -31,6 +31,16 @@ export function SiteHeader() {
         </button>
 
         <div className="flex items-center gap-2">
+          <a
+            href={process.env.NEXT_PUBLIC_ATLAS_URL || "https://atlas.depaulateixeira.adv.br/"}
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
+            aria-label="Voltar ao painel único do Atlas Jurídico"
+            title="Painel único Atlas Jurídico"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">Painel Atlas</span>
+            <span className="sm:hidden">Atlas</span>
+          </a>
           {view === "app" && (
             <button
               type="button"
