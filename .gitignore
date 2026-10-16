@@ -9,3 +9,6 @@ db/*.db-*
 .turbo/
 .cache/
 .DS_Store
+
+# artefatos locais de homologação
+data/
