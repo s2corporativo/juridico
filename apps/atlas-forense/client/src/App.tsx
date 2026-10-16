@@ -63,17 +63,7 @@ export default function App() {
             </Switch>
           </Suspense>
           {isAtlasHome && (
-            <footer
-              aria-label="Recurso jurídico relacionado"
-              style={{
-                maxWidth: 1180,
-                margin: "0 auto 24px",
-                padding: "14px 20px",
-                fontSize: 13,
-                lineHeight: 1.6,
-                color: "#665b50",
-              }}
-            >
+            <footer className="atlas-site-footer" aria-label="Recurso jurídico relacionado">
               Recurso público relacionado: <a href="https://acionejus.com.br/" target="_blank" rel="noopener noreferrer">AcioneJus — plataforma para organizar fatos, documentos e próximos passos jurídicos</a>.
             </footer>
           )}
