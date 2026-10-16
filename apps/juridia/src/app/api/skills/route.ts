@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
-import { isEligibleSkillVersion, inspectApprovedSkill } from "@/lib/skill-governance";
+import { selectLatestApprovedSkills, inspectApprovedSkill } from "@/lib/skill-governance";
 import type { SkillDTO } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
   const versioned = await db.skillVersion.findMany({
     orderBy: [{ slug: "asc" }, { version: "desc" }],
   });
+  const eligibleVersions = selectLatestApprovedSkills(versioned);
   if (query.get("audit") === "1") {
     if (auth.user.role !== "admin") {
       return NextResponse.json({ error: "Permissão administrativa necessária" }, { status: 403 });
@@ -25,16 +26,11 @@ export async function GET(req: NextRequest) {
     const legacyCount = await db.skill.count();
     const stateCounts: Record<string, number> = {};
     const flagged: { slug: string; version: number; area: string; issues: string[] }[] = [];
-    const seen = new Set<string>();
-    const eligible: { slug: string; version: number; area: string }[] = [];
+    const eligible = eligibleVersions.map((skill) => ({ slug: skill.slug, version: skill.version, area: skill.area }));
     for (const skill of versioned) {
       stateCounts[skill.status] = (stateCounts[skill.status] || 0) + 1;
       const issues = inspectApprovedSkill(skill);
       if (issues.length) flagged.push({ slug: skill.slug, version: skill.version, area: skill.area, issues });
-      if (!seen.has(skill.slug) && isEligibleSkillVersion(skill)) {
-        seen.add(skill.slug);
-        eligible.push({ slug: skill.slug, version: skill.version, area: skill.area });
-      }
     }
     return NextResponse.json({
       legacyCount,
@@ -46,11 +42,7 @@ export async function GET(req: NextRequest) {
       warning: "Aprovação atribuída por scripts ou hash inválido não habilita uma skill. Aprovação jurídica individual é necessária.",
     });
   }
-  const latest = new Map<string, (typeof versioned)[number]>();
-  for (const skill of versioned) {
-    if (isEligibleSkillVersion(skill) && !latest.has(skill.slug)) latest.set(skill.slug, skill);
-  }
-  const skills: SkillDTO[] = [...latest.values()].map((skill) => ({
+  const skills: SkillDTO[] = eligibleVersions.map((skill) => ({
     id: skill.id,
     slug: skill.slug,
     name: skill.description,

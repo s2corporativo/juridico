@@ -16,7 +16,7 @@ import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { routeSkills } from "@/lib/skill_router";
-import { isEligibleSkillVersion } from "@/lib/skill-governance";
+import { selectLatestApprovedSkills } from "@/lib/skill-governance";
 import { ownsCase } from "@/lib/owned-case";
 import { ragSearch } from "@/lib/rag_lite";
 import { agentForStage, JURIDIA_AGENTS, buildAgentWorkflow } from "@/lib/agent-registry";
@@ -257,17 +257,9 @@ export async function runMinutaPipeline(
         orderBy: [{ slug: "asc" }, { version: "desc" }],
       })
     : [];
-  const approvedManual = new Map<string, (typeof approvedManualVersions)[number]>();
-  const blockedManualSlugs = new Set<string>();
-  for (const version of approvedManualVersions) {
-    // A versão aprovada mais recente é a única candidata; não recuar em hash inválido.
-    if (approvedManual.has(version.slug) || blockedManualSlugs.has(version.slug)) continue;
-    if (!isEligibleSkillVersion(version)) {
-      blockedManualSlugs.add(version.slug);
-      continue;
-    }
-    approvedManual.set(version.slug, version);
-  }
+  const approvedManual = new Map(
+    selectLatestApprovedSkills(approvedManualVersions).map((version) => [version.slug, version] as const),
+  );
   const unavailableManualSlugs = body.skillSlugs?.filter((slug) => !approvedManual.has(slug)) ?? [];
   if (unavailableManualSlugs.length > 0) {
     throw new PipelineError("Habilidade selecionada sem versão válida e aprovada; solicite revisão do catálogo.", 409);
