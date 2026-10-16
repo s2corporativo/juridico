@@ -39,7 +39,7 @@ Os documentos legados não devem virar precedentes, legislação vigente ou skil
 - **Sem seed ou aprovações automáticas:** identificar candidato pelo `slug`, hash de conteúdo, origem e versão; conflituosos seguem `pending` com decisão de revisor jurídico autorizado.
 - **Quarentena antes de citação:** não servir registros `DEMONSTRACAO`/`REVISAO_HUMANA`, não classificar `ATIVO` como sinônimo de validado, não expor dados do cliente ao Atlas público.
 - **Sem migração destrutiva:** preservar o acervo intacto, backups, provas de restauração, histórico e audit trails. Não executar `db:push`, `db:reset` ou scripts de preview em produção.
-- **Privacidade:** correções propostas nesta branch pseudonimizam os prompts de quatro rotas diretas à Z.ai e evitam fallback com alegações jurídicas inventadas. É mitigação **parcial**: o pseudonimizador atual usa regex/heurísticas e não garante remoção de toda informação sensível em narrativas livres. Antes de liberar dados reais, submeter a avaliação de cobertura/red team e aplicar política fail-closed ao provedor externo.
+- **Privacidade:** as quatro rotas alteradas (case-analysis, intelligence/map, molde, suggest) usam exclusivamente o adaptador de inferência **Ollama localhost**, com pseudonimização e fallback seguro, e não enviam texto à Z.ai. A revisão permanece **parcial**: outras rotas ainda usam SDK externo e precisam de inventário e política de saída. Os dois testes sintéticos de inferência real no Ollama excederam 50s/22s sem resposta; esse aspecto **não foi homologado** e impede a promoção da release.
 
 ## Bloqueios de publicação definitiva
 
