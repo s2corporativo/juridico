@@ -26,4 +26,24 @@ describe("curated draft starter pack", () => {
     expect(check.signals).toContain("fontes_ausentes");
     expect(check.level).not.toBe("ready_for_human_validation");
   });
+  test("generic imported methodology remains prioritized for human review", () => {
+    const row = CURATION_STARTER_PACK[0];
+    const c = assessSkillMaturity({
+      id: row.slug, slug: row.slug, version: 1, area: row.area,
+      description: row.title,
+      content: [
+        "PROTOCOLO DE ANÁLISE SUPERVISIONADA — NÃO PUBLICADO.",
+        row.focus,
+        "Investigar provas, hipóteses, jurisprudência atual, exceções e riscos sem presumir conclusão.",
+      ].join("\n"),
+      triggers: JSON.stringify({ keywords: row.keywords }),
+      requiredSources: "[]",
+      forbiddenClaims: JSON.stringify(["Promessa de resultado"]),
+    });
+    expect(c.signals).toContain("roteiro_generico_sem_densidade_juridica");
+    expect(c.signals).toContain("fontes_ausentes");
+    expect(c.level).toBe("needs_review");
+    expect(c.maturity).toBeLessThan(55);
+  });
+
 });
