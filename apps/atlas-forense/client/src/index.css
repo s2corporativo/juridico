@@ -428,7 +428,7 @@ body { background:#f8fafb; color:var(--ink); }
 @media (max-width:640px){.decision-related-toolbar{align-items:flex-start;flex-direction:column}.decision-related-toolbar button{width:100%;justify-content:center}.decision-comparison{padding:.8rem}}
 
 /* ============================================================
-   Módulos do Escritório (Painel JEC BH e Betim)
+   Módulos do Escritório do Atlas
    ============================================================ */
 .office-page { max-width: 1180px; margin: 0 auto; padding: 24px 20px 64px; display: grid; gap: 20px; }
 .office-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding-bottom: 14px; }

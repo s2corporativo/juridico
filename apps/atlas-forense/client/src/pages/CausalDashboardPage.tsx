@@ -85,7 +85,7 @@ export default function CausalDashboardPage() {
       <header className="topbar">
         <div className="breadcrumb">Atlas Forense <span>/</span> Atlas Causal</div>
         <div className="topbar-actions">
-          <a className="structure-link" href="/"><ArrowLeft size={15} /> Painel JEC</a>
+          <a className="structure-link" href="/"><ArrowLeft size={15} /> Dashboard Atlas</a>
           <button className="export-button" onClick={atualizarTudo} disabled={dashboard.isFetching}><RefreshCw size={15} className={dashboard.isFetching ? "causal-spin" : ""} /> Atualizar</button>
         </div>
       </header>

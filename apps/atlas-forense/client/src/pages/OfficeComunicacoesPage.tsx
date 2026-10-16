@@ -164,7 +164,7 @@ export default function OfficeComunicacoesPage() {
           <Landmark size={20} />
           <div>
             <h1>Comunicações do Escritório</h1>
-            <p>Painel JEC BH e Betim · conector DJEN automático (Comunica CNJ)</p>
+            <p>Atlas · Escritório — conector DJEN automático (Comunica CNJ)</p>
           </div>
         </div>
         <nav className="office-nav">

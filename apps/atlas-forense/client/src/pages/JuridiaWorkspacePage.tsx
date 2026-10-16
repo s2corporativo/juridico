@@ -34,7 +34,7 @@ export default function JuridiaWorkspacePage() {
       <main className="atlas-main juridia-main">
         <header className="topbar">
           <div className="breadcrumb"><Landmark size={16} /> Atlas Forense <span>/</span> JuridIA</div>
-          <div className="topbar-actions"><a className="structure-link" href="/"><ArrowLeft size={15} /> Painel JEC</a></div>
+          <div className="topbar-actions"><a className="structure-link" href="/"><ArrowLeft size={15} /> Dashboard Atlas</a></div>
         </header>
 
         <section className="juridia-hero">

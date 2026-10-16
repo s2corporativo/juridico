@@ -24,7 +24,7 @@ export default function OfficeClientesPage() {
           <Landmark size={20} />
           <div>
             <h1>Clientes do Escritório</h1>
-            <p>Painel JEC BH e Betim · cadastro e dossiês</p>
+            <p>Atlas · Escritório — cadastro e dossiês</p>
           </div>
         </div>
         <nav className="office-nav">
