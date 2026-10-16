@@ -4,7 +4,7 @@
 
 import { db } from "@/lib/db";
 import { identifyIssues } from "@/lib/legal_brain";
-import { isEligibleSkillVersion, parseSkillKeywords } from "@/lib/skill-governance";
+import { selectLatestApprovedSkills, parseSkillKeywords } from "@/lib/skill-governance";
 import { matchingLegalTriggers, triggerEvidenceScore } from "@/lib/skill-matching";
 
 export interface SkillMatch {
@@ -44,19 +44,12 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   });
 
   // Deduplica: pega apenas a versão mais recente de cada slug
-  const bySlug = new Map<string, typeof allSkills[0]>();
-  const blockedSlugs = new Set<string>();
-  for (const s of allSkills) {
-    // Uma versão approved inválida bloqueia o slug: jamais recuar silenciosamente.
-    if (bySlug.has(s.slug) || blockedSlugs.has(s.slug)) continue;
-    if (!isEligibleSkillVersion(s)) { blockedSlugs.add(s.slug); continue; }
-    bySlug.set(s.slug, s);
-  }
+  const usableVersions = selectLatestApprovedSkills(allSkills);
 
   // 3. Matching: compara gatilhos contra o texto
   const matches: SkillMatch[] = [];
 
-  for (const skill of bySlug.values()) {
+  for (const skill of usableVersions) {
     const triggers = parseSkillKeywords(skill.triggers);
 
     const matchedTriggers = matchingLegalTriggers(facts, triggers);
