@@ -20,7 +20,7 @@ export async function completeLocalCase(
   }
 
   const model = process.env.JURIDIA_LOCAL_CASE_MODEL?.trim() || "qwen3:4b-instruct";
-  if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,90}$/.test(model)) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,90}$/.test(model)) {
     throw new Error("LOCAL_CASE_AI_MODEL_INVALID");
   }
 
