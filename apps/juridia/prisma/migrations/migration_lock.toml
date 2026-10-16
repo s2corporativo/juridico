@@ -1,0 +1,2 @@
+# Provider lock generated for Prisma Migrate
+provider = "sqlite"
