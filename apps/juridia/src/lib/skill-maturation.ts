@@ -26,6 +26,13 @@ export function assessSkillMaturity(skill:LegalCandidate):MaturationFinding {
   const signals:string[]=[];
   const suggestedActions:string[]=[];
   let score=100;
+  // Um formulário preenchido não é uma habilidade juridicamente madura.
+  // Roteiros importados para curadoria devem permanecer em revisão prioritária.
+  if (normalizeLegalText(skill.content).startsWith("rascunho metodologico para revisao juridica")) {
+    score -= 60;
+    signals.push("roteiro_generico_sem_densidade_juridica");
+    suggestedActions.push("Substituir o roteiro por análise normativa específica, hipóteses, exceções e evidências verificadas por advogado.");
+  }
   const src=sources(skill.requiredSources);
   const keys=triggers(skill.triggers);
   if(src.length===0) {

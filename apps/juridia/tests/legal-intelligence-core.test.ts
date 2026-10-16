@@ -56,3 +56,13 @@ test("projection of all legal integrity metadata cannot be partial", () => {
   ];
   for (const name of fields) expect(Object.hasOwn(SKILL_VERSION_INTEGRITY_SELECT,name)).toBe(true);
 });
+
+test("boilerplate legal proposals cannot receive mature catalogue score", () => {
+  const proposal = {
+    ...base, slug: "proposta-consumidor-test",
+    content: "RASCUNHO METODOLÓGICO PARA REVISÃO JURÍDICA — Cobrança indevida. Completar fontes e tese legal.",
+  };
+  const quality = assessSkillMaturity(proposal);
+  expect(quality.level).toBe("needs_review");
+  expect(quality.signals).toContain("roteiro_generico_sem_densidade_juridica");
+});
