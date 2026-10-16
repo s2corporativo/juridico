@@ -6,7 +6,7 @@ import { canonicalSkillManifestHash } from "@/lib/skill-manifest";
 
 export const dynamic = "force-dynamic";
 type Command = {
-  action?: "create" | "submit" | "approve" | "return";
+  action?: "create" | "submit" | "approve" | "return" | "claim";
   id?: string; reason?: string; skill?: Record<string, unknown>;
 };
 const arrays = ["requiredSources","requiredEvidence","rules","exceptions","forbiddenClaims","allowedTools"] as const;
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   if (raw.length > 25000) return bad("payload_too_large",413);
   let body: Command;
   try { body = JSON.parse(raw) as Command; } catch { return bad("invalid_json"); }
-  if (!body || !["create","submit","approve","return"].includes(body.action ?? "")) return bad("invalid_action");
+  if (!body || !["create","submit","approve","return","claim"].includes(body.action ?? "")) return bad("invalid_action");
   const reason = (body.reason ?? "").trim();
 
   if (body.action === "create") {
@@ -80,6 +80,24 @@ export async function POST(req: NextRequest) {
   if (reason.length < 12 || reason.length > 1000) return bad("review_reason_required");
   const version = await db.skillVersion.findUnique({ where: { id: body.id } });
   if (!version) return bad("skill_version_not_found", 404);
+  // A proposta importada não possui autor humano. Um profissional assume a
+  // responsabilidade pela revisão inicial, sem atribuir aprovação automática.
+  if (body.action === "claim") {
+    if (current.role !== "admin" || version.status !== "draft" || version.authorUserId)
+      return bad("claim_not_allowed", 403);
+    return db.$transaction(async (tx) => {
+      const moved = await tx.skillVersion.updateMany({
+        where: { id: version.id, status: "draft", authorUserId: null, updatedAt: version.updatedAt },
+        data: { authorUserId: current.id },
+      });
+      if (moved.count !== 1) return bad("concurrent_transition", 409);
+      await tx.skillReviewEvent.create({ data: {
+        skillVersionId: version.id, reviewerUserId: current.id,
+        decision: "claimed", reason,
+      } });
+      return NextResponse.json({ ok: true, status: "draft", authorAssigned: true });
+    });
+  }
   if (body.action === "submit") {
     if (version.authorUserId !== current.id) return bad("author_only", 403);
     if (version.status !== "draft") return bad("invalid_state", 409);
@@ -159,6 +177,7 @@ export async function GET(req: NextRequest) {
     items: items.map((item) => ({
       ...item, updatedAt: item.updatedAt.toISOString(),
       canSubmit: item.authorUserId === auth.user.uid && item.status === "draft",
+      canClaim: isReviewer && !item.authorUserId && item.status === "draft",
       canDecide: isReviewer && item.authorUserId !== auth.user.uid && item.status === "review",
     })),
     canReview: isReviewer,

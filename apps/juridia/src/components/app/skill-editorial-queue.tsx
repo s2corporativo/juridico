@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 type PendingSkill = {
   id: string; slug: string; version: number; area: string; description: string;
   content: string; status: string; requiredSources: string;
-  canSubmit: boolean; canDecide: boolean;
+  canSubmit: boolean; canDecide: boolean; canClaim: boolean;
 };
 type QueueReply = { items: PendingSkill[]; canReview: boolean };
 const blank = { slug: "", area: "civil", description: "", content: "", triggers: "", sources: "" };
@@ -30,6 +30,18 @@ export function SkillEditorialQueue() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [maturity, setMaturity] = useState<{
+    stats: { total:number; needsReview:number; needsEnrichment:number; readyForHumanValidation:number };
+    findings: {slug:string;version:number;maturity:number;signals:string[];suggestedActions:string[]}[];
+  } | null>(null);
+  async function scanMaturity() {
+    setError("");
+    try {
+      const result = await fetch("/api/skills/intelligence", { cache: "no-store" });
+      if (!result.ok) throw new Error("Não foi possível auditar o catálogo");
+      setMaturity(await result.json());
+    } catch (e) { setError(e instanceof Error ? e.message : "Diagnóstico indisponível"); }
+  }
   async function reload() {
     const result = await fetch("/api/skills/workflow", { cache: "no-store" });
     if (!result.ok) throw new Error("Fila editorial indisponível");
@@ -45,7 +57,7 @@ export function SkillEditorialQueue() {
       .catch(() => null);
     return () => abort.abort();
   }, []);
-  async function send(action: "create" | "submit" | "approve" | "return", id?: string) {
+  async function send(action: "create" | "submit" | "approve" | "return" | "claim", id?: string) {
     setBusy(true); setError(""); setInfo("");
     try {
       const payload = action === "create" ? {
@@ -67,7 +79,7 @@ export function SkillEditorialQueue() {
       await reload();
       setInfo(action === "create" ? "Rascunho criado." :
         action === "submit" ? "Enviado para revisão independente." :
-        action === "approve" ? "Versão aprovada e registrada." : "Devolvido ao autor.");
+        action === "approve" ? "Versão aprovada e registrada." : action === "claim" ? "Rascunho assumido para revisão." : "Devolvido ao autor.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao executar a operação");
     } finally { setBusy(false); }
@@ -83,6 +95,37 @@ export function SkillEditorialQueue() {
           A aprovação exige revisor autenticado diferente do autor, justificativa e integridade do manifesto.
           Vínculo de conta e OAB informada não substituem verificação profissional ou revisão jurídica das fontes.
         </p>
+        {canReview && (
+          <details className="rounded-xl border border-border/70 p-4">
+            <summary className="cursor-pointer text-sm font-semibold">
+              Núcleo de inteligência e maturação · diagnóstico independente
+            </summary>
+            <div className="mt-3 space-y-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Analisa a completude técnica de fontes, gatilhos, texto e vedações.
+                Não aprova conteúdo, não verifica automaticamente jurisprudência e não envia dados de clientes ao Atlas.
+              </p>
+              <Button type="button" size="sm" variant="outline" onClick={() => void scanMaturity()}>
+                Auditar catálogo agora
+              </Button>
+              {maturity && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    {maturity.stats.total} habilidades examinadas · {maturity.stats.needsReview} com revisão prioritária ·
+                    {" "}{maturity.stats.needsEnrichment} para enriquecer ·
+                    {" "}{maturity.stats.readyForHumanValidation} prontas somente para avaliação humana.
+                  </p>
+                  {maturity.findings.slice(0, 8).map((item) => (
+                    <div key={item.slug} className="rounded-lg border border-border/70 p-3 text-xs">
+                      <p className="font-semibold">#{item.slug} · v{item.version} · índice {item.maturity}/100</p>
+                      <p className="mt-1 text-muted-foreground">{item.suggestedActions.join(" · ") || "Revisar juridicamente antes de publicar."}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
+        )}
         <details className="rounded-xl border border-border/70 p-4">
           <summary className="cursor-pointer text-sm font-medium">
             Criar uma nova versão para revisão
@@ -159,6 +202,10 @@ export function SkillEditorialQueue() {
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">{item.content}</p>
                 <p className="text-xs text-muted-foreground">Fontes declaradas: {readableSources(item.requiredSources)}</p>
                 <div className="flex flex-wrap gap-2">
+                  {item.canClaim && (
+                    <Button size="sm" variant="outline" disabled={busy || reason.trim().length < 12}
+                      onClick={() => void send("claim", item.id)}>Assumir proposta</Button>
+                  )}
                   {item.canSubmit && (
                     <Button size="sm" variant="outline" disabled={busy || reason.trim().length < 12}
                       onClick={() => void send("submit", item.id)}>Enviar para revisão</Button>
