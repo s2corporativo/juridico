@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { requireAuth } from "@/lib/auth";
+import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -59,19 +60,20 @@ ${instruction}
 ## Resposta
 Gere apenas o trecho solicitado, em português jurídico brasileiro, pronto para ser inserido no documento. Não use marcadores [TIPO_0001] — escreva o texto completo com dados genéricos onde necessário (____ para campos a preencher).`;
 
+  const externalPrompt = pseudonymize(userPrompt);
   try {
     const zai = await ZAI.create();
     const completion = await zai.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: externalPrompt.text },
       ],
       thinking: { type: "disabled" },
       temperature: 0.5,
       max_tokens: 1200,
     });
 
-    const suggestion = completion.choices[0]?.message?.content || "";
+    const suggestion = rehydrate(completion.choices[0]?.message?.content || "", externalPrompt.map);
     return NextResponse.json({
       suggestion,
       tokensUsed:
@@ -81,7 +83,7 @@ Gere apenas o trecho solicitado, em português jurídico brasileiro, pronto para
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Erro ao gerar sugestão";
     // Fallback offline com trechos pré-formatados
-    const fallback = generateFallback(instruction, templateName);
+    const fallback = generateFallback();
     return NextResponse.json({
       suggestion: fallback,
       offline: true,
@@ -90,43 +92,7 @@ Gere apenas o trecho solicitado, em português jurídico brasileiro, pronto para
   }
 }
 
-function generateFallback(instruction: string, templateName: string): string {
-  const lower = instruction.toLowerCase();
-
-  if (lower.includes("fundament")) {
-    return `### Fundamentação
-
-O art. 927 do Código Civil estabelece que aquele que, por ato ilícito (arts. 186 e 187), causar dano a outrem, fica obrigado a repará-lo. Tratando-se de responsabilidade objetiva (art. 927, parágrafo único), basta a demonstração da conduta, do dano e do nexo causal.
-
-A jurisprudência do STJ consolidou entendimento no sentido de que a inscrição indevida em cadastros de proteção ao crédito, quando decorrente de conduta ilícita do fornecedor, gera dano moral in re ipsa, prescindindo a comprovação de prejuízo concreto.
-
-No caso em tela, restam caracterizados os pressupostos da responsabilidade civil, impondo-se a condenação do réu ao pagamento de indenização por danos morais, em valor razoável e proporcional à gravidade da conduta.`;
-  }
-  if (lower.includes("pedido")) {
-    return `### Pedidos
-
-1. A procedência integral da ação para condenar o réu ao pagamento de indenização por danos morais;
-2. A condenação do réu em honorários advocatícios de 20% sobre o valor da condenação (art. 85, §2º, CPC);
-3. A condenação do réu nas custas processuais;
-4. A concessão dos benefícios da Justiça Gratuita ao autor, por ser pessoa pobre na acepção jurídica do termo;
-5. A produção de todas as provas em direito admitidas, em especial documental e testemunhal.
-
-Dá-se à causa o valor de R$ ____.`;
-  }
-  if (lower.includes("relat") || lower.includes("fato")) {
-    return `### I. Dos Fatos
-
-O autor, devidamente qualificado, manteve relação jurídica com o réu. No entanto, o réu, em conduta contrária ao direito, promoveu ____ que resultou em prejuízos ao autor.
-
-Diante da conduta ilícita, restou configurado o dano, bem como o nexo de causalidade entre a conduta do réu e o prejuízo experimentado pelo autor.
-
-Frustradas as tentativas de resolução amigável, restou ao autor valer-se da via judicial para ver reparado o dano sofrido.`;
-  }
-  return `### ${templateName}
-
-Trecho sugerido para: ${instruction}
-
-Conforme a legislação aplicável e a jurisprudência dos tribunais superiores, cumpre destacar que ____ (complementar com a fundamentação específica do caso).
-
-Assim, requer-se o que de direito.`;
+function generateFallback(): string {
+  // Sem fatos e fontes verificadas não se fabrica fundamento jurídico offline.
+  return "Sugestão não gerada. Confira os fatos e as fontes oficiais antes de redigir o trecho.";
 }
