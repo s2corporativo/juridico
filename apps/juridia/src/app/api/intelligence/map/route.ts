@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 import { db } from "@/lib/db";
 import { mapCaseDeterministic, validateMapperOutput, identifyIssues, type CaseMapperOutput } from "@/lib/legal_brain";
 import { canonicalHash } from "@/lib/evidence";
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const externalPrompt = pseudonymize(`## Evidências autorizadas\n${JSON.stringify(evidenceRefs.map((e) => ({ id: e.id, quote: e.quote.slice(0, 200), source_kind: e.sourceKind })))}\n\n## Texto do caso\n${facts}\n\n## Rascunho determinístico\n${JSON.stringify(deterministicOutput)}`);
   try {
-    const zai = await ZAI.create();
+    const zai = await createLocalCaseClient();
     const completion = await zai.chat.completions.create({
       messages: [
         {
