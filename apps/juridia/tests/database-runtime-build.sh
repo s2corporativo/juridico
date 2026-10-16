@@ -12,7 +12,7 @@ cat >"$FAKE_BIN/bun" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 
-if [ "$#" -ne 2 ] || [ "$1" != "run" ] || [ "$2" != "db:push" ]; then
+if [ "$#" -ne 2 ] || [ "$1" != "run" ] || [ "$2" != "db:migrate" ]; then
     echo "unexpected bun invocation: $*" >&2
     exit 1
 fi
@@ -37,12 +37,12 @@ mkdir -p "$(dirname "$db_path")"
 if [ ! -f "$db_path" ]; then
     printf 'initialized\n' >"$db_path"
 fi
-printf '%s\n' "$DATABASE_URL" >>"${DB_PUSH_CALLS:?}"
+printf '%s\n' "$DATABASE_URL" >>"${DB_MIGRATE_CALLS:?}"
 EOF
 chmod +x "$FAKE_BIN/bun"
 
 export PATH="$FAKE_BIN:$PATH"
-export DB_PUSH_CALLS="$TEST_ROOT/db-push-calls"
+export DB_MIGRATE_CALLS="$TEST_ROOT/db-migrate-calls"
 
 # 没有 Preview 数据库时，应只在部署产物中初始化空库，不修改项目目录。
 EMPTY_PROJECT="$TEST_ROOT/empty-project"
@@ -68,8 +68,8 @@ PROJECT_DIR="$EXISTING_PROJECT" BUILD_DIR="$EXISTING_BUILD" \
 
 test "$(cat "$EXISTING_BUILD/db/custom.db")" = "preview-data"
 test "$(cat "$EXISTING_BUILD/db/README.txt")" = "sidecar"
-test "$(wc -l <"$DB_PUSH_CALLS" | tr -d ' ')" = "2"
-grep -Fx "file:$EMPTY_BUILD/db/custom.db" "$DB_PUSH_CALLS"
-grep -Fx "file:$EXISTING_BUILD/db/custom.db" "$DB_PUSH_CALLS"
+test "$(wc -l <"$DB_MIGRATE_CALLS" | tr -d ' ')" = "2"
+grep -Fx "file:$EMPTY_BUILD/db/custom.db" "$DB_MIGRATE_CALLS"
+grep -Fx "file:$EXISTING_BUILD/db/custom.db" "$DB_MIGRATE_CALLS"
 
 echo "database runtime build tests passed"

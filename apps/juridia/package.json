@@ -7,11 +7,9 @@
     "build": "next build && mkdir -p .next/standalone/apps/juridia/.next/static .next/standalone/apps/juridia/public && cp -a .next/static/. .next/standalone/apps/juridia/.next/static/ && cp -a public/. .next/standalone/apps/juridia/public/",
     "start": "NODE_ENV=production node .next/standalone/apps/juridia/server.js",
     "lint": "eslint .",
-    "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
-    "db:reset": "prisma migrate reset",
     "maturity:audit": "bun run scripts/audit-legal-maturation.ts",
     "curation:import-drafts": "bun run scripts/import-curation-starter.ts"
   },

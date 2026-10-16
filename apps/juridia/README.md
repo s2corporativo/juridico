@@ -74,8 +74,11 @@ bun install
 # Configurar .env
 echo "DATABASE_URL=file:./db/custom.db" > .env
 
-# Push schema para o banco
-bun run db:push
+# Aplicar somente migrations versionadas
+bun run db:migrate
+
+# Em desenvolvimento, criar uma migration após revisar o diff
+# bun run db:migrate:dev
 
 # Em desenvolvimento, popular base de conhecimento (OPCIONAL — só dev):
 bun run scripts/seed.ts
