@@ -11,7 +11,7 @@ const ACTIONS: { title: string; description: string; tab: AppTab; icon: typeof S
   { title: "Começar uma minuta", description: "Escolha a peça e descreva o caso.", tab: "generator", icon: Wand2 },
   { title: "Conversar com a JuridIA", description: "Organize suas dúvidas e tarefas jurídicas.", tab: "assistente", icon: Sparkles },
   { title: "Pesquisar no Atlas", description: "Consulte fontes e precedentes verificados.", tab: "atlas", icon: Search },
-  { title: "Abrir biblioteca", description: "Consulte modelos e habilidades aprovadas.", tab: "biblioteca", icon: BookOpen },
+  { title: "Abrir biblioteca", description: "Consulte modelos e o catálogo de habilidades.", tab: "biblioteca", icon: BookOpen },
 ];
 
 export function Dashboard() {
@@ -90,9 +90,9 @@ export function Dashboard() {
         </Card>
         <Card className="border-border/80 shadow-none">
           <CardContent className="p-5">
-            <p className="text-xs font-medium text-muted-foreground">Habilidades elegíveis para uso</p>
+            <p className="text-xs font-medium text-muted-foreground">Habilidades no catálogo técnico</p>
             <p className="mt-2 text-2xl font-semibold">{skillsCount ?? "Indisponível"}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Somente versões que passaram pelo controle de aprovação.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Verificação técnica não substitui revisão jurídica individual.</p>
           </CardContent>
         </Card>
       </section>
