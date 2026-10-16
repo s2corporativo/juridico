@@ -5,6 +5,7 @@
 import { db } from "@/lib/db";
 import { identifyIssues } from "@/lib/legal_brain";
 import { isEligibleSkillVersion, parseSkillKeywords } from "@/lib/skill-governance";
+import { matchingLegalTriggers, triggerEvidenceScore } from "@/lib/skill-matching";
 
 export interface SkillMatch {
   slug: string;
@@ -14,6 +15,8 @@ export interface SkillMatch {
   matchScore: number; // 0-1
   matchedTriggers: string[];
   content: string; // texto legível da skill
+  skillVersionId: string;
+  contentHash: string;
 }
 
 export interface SkillRouterResult {
@@ -42,31 +45,25 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
 
   // Deduplica: pega apenas a versão mais recente de cada slug
   const bySlug = new Map<string, typeof allSkills[0]>();
+  const blockedSlugs = new Set<string>();
   for (const s of allSkills) {
-    if (!isEligibleSkillVersion(s)) continue;
-    if (!bySlug.has(s.slug) || s.version > bySlug.get(s.slug)!.version) {
-      bySlug.set(s.slug, s);
-    }
+    // Uma versão approved inválida bloqueia o slug: jamais recuar silenciosamente.
+    if (bySlug.has(s.slug) || blockedSlugs.has(s.slug)) continue;
+    if (!isEligibleSkillVersion(s)) { blockedSlugs.add(s.slug); continue; }
+    bySlug.set(s.slug, s);
   }
 
   // 3. Matching: compara gatilhos contra o texto
-  const lowerFacts = facts.toLowerCase();
   const matches: SkillMatch[] = [];
 
   for (const skill of bySlug.values()) {
     const triggers = parseSkillKeywords(skill.triggers);
 
-    const matchedTriggers: string[] = [];
-    for (const trigger of triggers) {
-      if (lowerFacts.includes(trigger)) {
-        matchedTriggers.push(trigger);
-      }
-    }
-
-    // Score: número de gatilhos matched / total de gatilhos + bônus por área
-    const triggerScore = triggers.length > 0 ? matchedTriggers.length / triggers.length : 0;
+    const matchedTriggers = matchingLegalTriggers(facts, triggers);
+    // Área não pode criar candidato sem evidência textual de matéria.
+    if (matchedTriggers.length === 0) continue;
     const issueBonus = issues.some((i) => i.area === skill.area) ? 0.2 : 0;
-    const matchScore = Math.min(1, triggerScore + issueBonus);
+    const matchScore = Math.min(1, triggerEvidenceScore(matchedTriggers.length) + issueBonus);
 
     if (matchScore > 0) {
       matches.push({
@@ -77,6 +74,8 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
         matchScore,
         matchedTriggers,
         content: skill.content,
+        skillVersionId: skill.id,
+        contentHash: skill.contentHash,
       });
     }
   }
@@ -89,7 +88,7 @@ export async function routeSkills(facts: string): Promise<SkillRouterResult> {
   for (const m of matches) {
     areaCount[m.area] = (areaCount[m.area] || 0) + m.matchScore;
   }
-  const area = Object.entries(areaCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "civil";
+  const area = Object.entries(areaCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "nao_identificada";
 
   return {
     matches: matches.slice(0, 10), // top 10
