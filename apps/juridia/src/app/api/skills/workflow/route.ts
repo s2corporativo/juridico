@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     if (version.status !== "draft") return bad("invalid_state", 409);
     return db.$transaction(async (tx) => {
       const updated = await tx.skillVersion.updateMany({
-        where: { id: version.id, status: "draft", authorUserId: current.id },
+        where: { id: version.id, status: "draft", authorUserId: current.id, updatedAt: version.updatedAt },
         data: { status: "review" },
       });
       if (updated.count !== 1) return bad("concurrent_transition", 409);
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
   if (body.action === "return") {
     return db.$transaction(async tx => {
       const changed = await tx.skillVersion.updateMany({
-        where: { id: version.id, status: "review" }, data: { status: "draft" },
+        where: { id: version.id, status: "review", updatedAt: version.updatedAt }, data: { status: "draft" },
       });
       if (changed.count !== 1) return bad("concurrent_transition", 409);
       await tx.skillReviewEvent.create({ data: {
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     const digest = canonicalSkillManifestHash(version);
     return await db.$transaction(async tx => {
       const changed = await tx.skillVersion.updateMany({
-        where: { id: version.id, status: "review", authorUserId: version.authorUserId },
+        where: { id: version.id, status: "review", authorUserId: version.authorUserId, updatedAt: version.updatedAt },
         data: {
           status: "approved", approvedBy: current.id, reviewerUserId: current.id,
           approvedAt: new Date(), manifestHash: digest,
