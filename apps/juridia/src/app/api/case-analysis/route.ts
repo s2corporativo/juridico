@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { pseudonymize, rehydrateStructured } from "@/lib/pseudonymizer";
@@ -81,7 +81,7 @@ Regras:
   let result: CaseAnalysisResult = { ...EMPTY };
 
   try {
-    const zai = await ZAI.create();
+    const zai = await createLocalCaseClient();
     const completion = await zai.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
