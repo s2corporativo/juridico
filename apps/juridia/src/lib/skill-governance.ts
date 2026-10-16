@@ -47,3 +47,26 @@ export function parseSkillKeywords(raw: string): string[] {
     return [];
   }
 }
+
+/**
+ * Resolve uma única versão aprovada por slug, sem recuo silencioso:
+ * versão aprovada mais recente inválida bloqueia o slug, mesmo se uma
+ * versão aprovada anterior ainda possuir hash correto.
+ * Rascunhos/revisões posteriores não retiram automaticamente a última
+ * versão publicada válida; revogação precisa de procedimento próprio.
+ */
+export function selectLatestApprovedSkills<T extends VersionedSkill>(
+  versions: readonly T[],
+): T[] {
+  const sorted = versions.filter(v => v.status === "approved").sort((a, b) =>
+    a.slug.localeCompare(b.slug) || b.version - a.version
+  );
+  const seen = new Set<string>();
+  const usable: T[] = [];
+  for (const version of sorted) {
+    if (seen.has(version.slug)) continue;
+    seen.add(version.slug);
+    if (isEligibleSkillVersion(version)) usable.push(version);
+  }
+  return usable;
+}
