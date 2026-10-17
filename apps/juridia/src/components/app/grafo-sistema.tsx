@@ -173,7 +173,7 @@ export function GrafoSistema() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/cases")
+    fetch("/juridia/api/cases")
       .then((r) => r.json())
       .then((d) => {
         const list: CaseItem[] = [{ id: "default-case", title: "Caso padrão (default-case)" }, ...(d.cases || []).map((c: { id: string; title: string }) => ({ id: c.id, title: c.title }))];
@@ -184,7 +184,7 @@ export function GrafoSistema() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/intelligence/graph?caseId=${encodeURIComponent(selectedCaseId)}`)
+    fetch(`/juridia/api/intelligence/graph?caseId=${encodeURIComponent(selectedCaseId)}`)
       .then((r) => r.json())
       .then((d: GraphData) => { if (!cancelled) setData(d); })
       .catch(() => { if (!cancelled) setData(null); })

@@ -74,11 +74,19 @@ export function SiteNav({ heading = "Navegação principal" }: { heading?: strin
         <div key={group.title} className="site-nav-group">
           <span className="site-nav-group-title">{group.title}</span>
           {group.items.map((item) => (
-            <Link key={item.href} href={item.href}
-              className={isActive(item.href) ? "site-nav-link active" : "site-nav-link"}>
+            item.href === "/juridia" ? (
+              <a key={item.href} href="/juridia"
+                className={isActive(item.href) ? "site-nav-link active" : "site-nav-link"}>
+                <item.icon size={15} aria-hidden="true" />
+                <span>{item.label}</span>
+              </a>
+            ) : (
+              <Link key={item.href} href={item.href}
+                className={isActive(item.href) ? "site-nav-link active" : "site-nav-link"}>
               <item.icon size={15} aria-hidden="true" />
               <span>{item.label}</span>
-            </Link>
+              </Link>
+            )
           ))}
         </div>
       ))}

@@ -113,7 +113,7 @@ export function Pipeline() {
     }, 200);
 
     try {
-      const res = await fetch("/api/lexvalida/pipeline", {
+      const res = await fetch("/juridia/api/lexvalida/pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pedido: form.pedido, tipoPeca: form.tipoPeca, autos: form.autos }),

@@ -52,7 +52,7 @@ export function MoldeMode({ baseContent, templateName, onApply }: MoldeProps) {
     setLoading(true);
     setChanges([]);
     try {
-      const res = await fetch("/api/molde", {
+      const res = await fetch("/juridia/api/molde", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

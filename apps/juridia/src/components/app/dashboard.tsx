@@ -24,12 +24,12 @@ export function Dashboard() {
   useEffect(() => {
     const controller = new AbortController();
     Promise.allSettled([
-      fetch("/api/documents", { signal: controller.signal, cache: "no-store" }).then(async (response) => {
+      fetch("/juridia/api/documents", { signal: controller.signal, cache: "no-store" }).then(async (response) => {
         if (!response.ok) throw new Error("documentos indisponíveis");
         const data = await response.json() as { documents?: DocumentDTO[] };
         if (!controller.signal.aborted) setDocs(Array.isArray(data.documents) ? data.documents : []);
       }),
-      fetch("/api/skills", { signal: controller.signal, cache: "no-store" }).then(async (response) => {
+      fetch("/juridia/api/skills", { signal: controller.signal, cache: "no-store" }).then(async (response) => {
         if (!response.ok) throw new Error("catálogo indisponível");
         const data = await response.json() as { skills?: unknown[] };
         if (!controller.signal.aborted) setSkillsCount(Array.isArray(data.skills) ? data.skills.length : null);

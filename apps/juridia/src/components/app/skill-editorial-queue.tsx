@@ -37,13 +37,13 @@ export function SkillEditorialQueue() {
   async function scanMaturity() {
     setError("");
     try {
-      const result = await fetch("/api/skills/intelligence", { cache: "no-store" });
+      const result = await fetch("/juridia/api/skills/intelligence", { cache: "no-store" });
       if (!result.ok) throw new Error("Não foi possível auditar o catálogo");
       setMaturity(await result.json());
     } catch (e) { setError(e instanceof Error ? e.message : "Diagnóstico indisponível"); }
   }
   async function reload() {
-    const result = await fetch("/api/skills/workflow", { cache: "no-store" });
+    const result = await fetch("/juridia/api/skills/workflow", { cache: "no-store" });
     if (!result.ok) throw new Error("Fila editorial indisponível");
     const payload = await result.json() as QueueReply;
     setItems(payload.items ?? []);
@@ -51,7 +51,7 @@ export function SkillEditorialQueue() {
   }
   useEffect(() => {
     const abort = new AbortController();
-    fetch("/api/skills/workflow", { cache: "no-store", signal: abort.signal })
+    fetch("/juridia/api/skills/workflow", { cache: "no-store", signal: abort.signal })
       .then(async (r) => r.ok ? r.json() as Promise<QueueReply> : null)
       .then((r) => { if (!abort.signal.aborted && r) { setItems(r.items ?? []); setCanReview(r.canReview); } })
       .catch(() => null);
@@ -67,7 +67,7 @@ export function SkillEditorialQueue() {
           requiredSources: splitList(form.sources),
         },
       } : { action, id, reason };
-      const response = await fetch("/api/skills/workflow", {
+      const response = await fetch("/juridia/api/skills/workflow", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       });
       if (!response.ok) {

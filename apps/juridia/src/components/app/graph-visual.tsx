@@ -55,7 +55,7 @@ export function GraphVisual({ caseId = "default-case" }: { caseId?: string }) {
     let active = true;
     async function loadGraph() {
       try {
-        const res = await fetch(`/api/intelligence/graph?caseId=${encodeURIComponent(caseId)}`);
+        const res = await fetch(`/juridia/api/intelligence/graph?caseId=${encodeURIComponent(caseId)}`);
         if (!res.ok) throw new Error("Falha ao carregar grafo");
         const data = await res.json();
         if (!active) return;

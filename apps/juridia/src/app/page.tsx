@@ -17,7 +17,7 @@ export default function Home() {
     let active = true;
     async function verifySession() {
       try {
-        const response = await fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" });
+        const response = await fetch("/juridia/api/auth/me", { credentials: "same-origin", cache: "no-store" });
         if (!active) return;
         if (!response.ok) throw new Error("unauthorized");
         const payload = await response.json() as { user?: { email?: string; name?: string | null } };

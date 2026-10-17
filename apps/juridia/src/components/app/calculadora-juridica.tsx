@@ -96,7 +96,7 @@ export function CalculadoraJuridica() {
     try {
       if (activeTool === "prazo") {
         if (!prazoForm.marcoInicial || !prazoForm.prazoDias) throw new Error("Marco inicial e prazo em dias obrigatórios");
-        const res = await fetch("/api/superior/calculate", {
+        const res = await fetch("/juridia/api/superior/calculate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: "deadline", marcoInicial: prazoForm.marcoInicial, prazoDias: Number(prazoForm.prazoDias), tipoContagem: prazoForm.tipoContagem }),
@@ -108,7 +108,7 @@ export function CalculadoraJuridica() {
         const v = Number(correcaoForm.valorOriginal);
         const f = Number(correcaoForm.fatorAcumulado);
         if (!v || !f) throw new Error("Valor original e fator obrigatórios");
-        const res = await fetch("/api/superior/calculate", {
+        const res = await fetch("/juridia/api/superior/calculate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: "correction", valorOriginal: v, fatorAcumulado: f, indice: correcaoForm.indice }),
@@ -120,7 +120,7 @@ export function CalculadoraJuridica() {
         const v = Number(jurosForm.valorPrincipal);
         const m = Number(jurosForm.meses);
         if (!v || !m) throw new Error("Valor principal e meses obrigatórios");
-        const res = await fetch("/api/superior/calculate", {
+        const res = await fetch("/juridia/api/superior/calculate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: "interest", valorPrincipal: v, meses: m, taxaMensal: Number(jurosForm.taxaMensal), base: jurosForm.base }),
@@ -130,7 +130,7 @@ export function CalculadoraJuridica() {
         setResult({ tool: "juros", payload: data });
       } else if (activeTool === "prescricao") {
         if (!prescForm.dataFato || !prescForm.dataAjuizamento) throw new Error("Datas obrigatórias");
-        const res = await fetch("/api/superior/calculate", {
+        const res = await fetch("/juridia/api/superior/calculate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: "prescription", dataFato: prescForm.dataFato, dataajuizamento: prescForm.dataAjuizamento, area: prescForm.area }),

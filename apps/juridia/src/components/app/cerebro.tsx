@@ -155,7 +155,7 @@ export function Cerebro() {
   // Lista somente os casos pertencentes ao advogado autenticado.
   useEffect(() => {
     let mounted = true;
-    fetch("/api/cases").then(async (res) => {
+    fetch("/juridia/api/cases").then(async (res) => {
       if (!res.ok) throw new Error("Falha ao listar casos");
       const data = await res.json();
       if (!mounted) return;
@@ -170,7 +170,7 @@ export function Cerebro() {
   useEffect(() => {
     if (!caseId) return;
     const controller = new AbortController();
-    fetch("/api/case-files?caseId=" + encodeURIComponent(caseId), { signal: controller.signal })
+    fetch("/juridia/api/case-files?caseId=" + encodeURIComponent(caseId), { signal: controller.signal })
       .then(async (res) => res.ok ? res.json() : { files: [] })
       .then((data) => setReadyCaseFilesFor((data.files || []).some((file: { status: string }) => file.status === "ready") ? caseId : null))
       .catch(() => null);
@@ -180,7 +180,7 @@ export function Cerebro() {
   useEffect(() => {
     if (!caseId) return;
     const controller = new AbortController();
-    fetch(`/api/brain?caseId=${encodeURIComponent(caseId)}`, { signal: controller.signal })
+    fetch(`/juridia/api/brain?caseId=${encodeURIComponent(caseId)}`, { signal: controller.signal })
       .then(async (res) => res.ok ? res.json() : { analyses: [] })
       .then((data) => setHistory(data.analyses || []))
       .catch(() => null);
@@ -189,7 +189,7 @@ export function Cerebro() {
 
   async function loadHistory(selectedCaseId: string) {
     try {
-      const res = await fetch(`/api/brain?caseId=${encodeURIComponent(selectedCaseId)}`);
+      const res = await fetch(`/juridia/api/brain?caseId=${encodeURIComponent(selectedCaseId)}`);
       if (!res.ok) return;
       const data = await res.json();
       setHistory(data.analyses || []);
@@ -215,7 +215,7 @@ export function Cerebro() {
     }, 5000);
 
     try {
-      const res = await fetch("/api/brain", {
+      const res = await fetch("/juridia/api/brain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facts, title: title || undefined, caseId }),
@@ -251,7 +251,7 @@ export function Cerebro() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("caseId", caseId);
-      const res = await fetch("/api/case-files", { method: "POST", body: formData });
+      const res = await fetch("/juridia/api/case-files", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok || data.error) {
         toast({ title: data.error || "Falha na importação", variant: "destructive" });

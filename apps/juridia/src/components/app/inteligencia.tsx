@@ -93,7 +93,7 @@ const NODE_TYPE_CONFIG: Record<string, { label: string; icon: React.ComponentTyp
 };
 
 async function fetchStoredData(): Promise<StoredData> {
-  const res = await fetch("/api/intelligence/map");
+  const res = await fetch("/juridia/api/intelligence/map");
   if (!res.ok) throw new Error("Falha ao carregar dados");
   return res.json();
 }
@@ -129,7 +129,7 @@ export function Inteligencia() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch("/api/intelligence/map", {
+      const res = await fetch("/juridia/api/intelligence/map", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facts, caseId: "default-case" }),
@@ -154,7 +154,7 @@ export function Inteligencia() {
 
   async function review(type: "assertion" | "node", id: string, action: "confirm" | "correct" | "reject") {
     try {
-      const res = await fetch("/api/intelligence/review", {
+      const res = await fetch("/juridia/api/intelligence/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, id, action, caseId: "default-case" }),

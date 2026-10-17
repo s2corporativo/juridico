@@ -75,17 +75,17 @@ export function Settings() {
   const [styleProfile, setStyleProfile] = useState({ id: "", name: "Meu estilo", description: "", example: "", approved: false });
 
   useEffect(() => {
-    fetch("/api/skills")
+    fetch("/juridia/api/skills")
       .then((r) => r.json())
       .then((d) => setSkills(d.skills || []))
       .catch(() => null);
-    fetch("/api/skills?audit=1", { cache: "no-store" })
+    fetch("/juridia/api/skills?audit=1", { cache: "no-store" })
       .then(async (res) => res.ok ? res.json() : null)
       .then((data) => {
         if (data?.approvalAccountLinks) setApprovalAudit(data);
       })
       .catch(() => null);
-    fetch("/api/style-profiles")
+    fetch("/juridia/api/style-profiles")
       .then((r) => r.json())
       .then((d) => {
         const current = d.profiles?.[0];
@@ -97,7 +97,7 @@ export function Settings() {
   async function save() {
     setSaving(true);
     try {
-      const res = await fetch("/api/style-profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: styleProfile.id || undefined, name: styleProfile.name, description: styleProfile.description, examples: styleProfile.example ? [styleProfile.example] : [], approved: styleProfile.approved }) });
+      const res = await fetch("/juridia/api/style-profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: styleProfile.id || undefined, name: styleProfile.name, description: styleProfile.description, examples: styleProfile.example ? [styleProfile.example] : [], approved: styleProfile.approved }) });
       if (!res.ok) throw new Error("falha ao persistir perfil");
       const data = await res.json();
       setStyleProfile((current) => ({ ...current, id: data.profile?.id || current.id }));

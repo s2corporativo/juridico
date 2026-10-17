@@ -142,7 +142,7 @@ export function BatchPanel({
   const overflow = parsed.cases.length - cases.length;
 
   async function callGenerate(payload: Record<string, unknown>): Promise<GenerateMinutaResponse> {
-    const res = await fetch("/api/generate-minuta", {
+    const res = await fetch("/juridia/api/generate-minuta", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -160,7 +160,7 @@ export function BatchPanel({
     setBusy(true);
     setResults([]);
     try {
-      const batchResponse = await fetch("/api/batches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ templateSlug: template.slug, items: cases.map((item, index) => ({ itemNo: index + 1, title: item.title, fields: item.fields })) }) });
+      const batchResponse = await fetch("/juridia/api/batches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ templateSlug: template.slug, items: cases.map((item, index) => ({ itemNo: index + 1, title: item.title, fields: item.fields })) }) });
       const batchData = await batchResponse.json();
       if (!batchResponse.ok) throw new Error(batchData.error || "falha ao criar lote");
       const persistedBatchId = batchData.batch.id as string;
@@ -177,7 +177,7 @@ export function BatchPanel({
       });
       setMoldContent(data.document.generatedContent);
       setMoldTitle(data.document.title);
-      await fetch("/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId: persistedBatchId, itemNo: 1, status: "completed", documentId: data.document.id }) });
+      await fetch("/juridia/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId: persistedBatchId, itemNo: 1, status: "completed", documentId: data.document.id }) });
       setPhase("approving");
       setCurrentDocId(data.document.id);
       toast({
@@ -228,14 +228,14 @@ export function BatchPanel({
           violations: data.validation?.violations?.length ?? 0,
           degraded: data.pipeline?.degraded,
         });
-        await fetch("/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId, itemNo: c.index + 1, status: "completed", documentId: data.document.id }) });
+        await fetch("/juridia/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId, itemNo: c.index + 1, status: "completed", documentId: data.document.id }) });
       } catch (e) {
         acc.push({
           label: c.title || `Caso ${c.index + 2}`,
           ok: false,
           error: e instanceof Error ? e.message : "falha",
         });
-        await fetch("/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId, itemNo: c.index + 1, status: "failed", error: e instanceof Error ? e.message : "falha" }) });
+        await fetch("/juridia/api/batches", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId, itemNo: c.index + 1, status: "failed", error: e instanceof Error ? e.message : "falha" }) });
       }
       setResults([...acc]);
       setProgress({ current: i + 1, total: rest.length });

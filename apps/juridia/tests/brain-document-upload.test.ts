@@ -15,8 +15,8 @@ describe("Document analysis connection", () => {
     const brain = source("../src/components/app/cerebro.tsx");
     expect(brain).not.toContain("cerebro-session");
     expect(brain).not.toContain('"/api/upload"');
-    expect(brain).toContain('fetch("/api/case-files"');
-    expect(brain).toContain('fetch("/api/cases")');
+    expect(brain).toContain('fetch("/juridia/api/case-files"');
+    expect(brain).toContain('fetch("/juridia/api/cases")');
     expect(brain).toContain("body: JSON.stringify({ facts, title: title || undefined, caseId })");
   });
   test("case-files endpoint rejects cross-case access before reading bytes", () => {

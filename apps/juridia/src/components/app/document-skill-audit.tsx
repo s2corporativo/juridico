@@ -14,7 +14,7 @@ export function DocumentSkillAudit({ documentId }: { documentId: string }) {
   const [error, setError] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/documents/skills?documentId=" + encodeURIComponent(documentId), {
+    fetch("/juridia/api/documents/skills?documentId=" + encodeURIComponent(documentId), {
       signal: controller.signal, cache: "no-store",
     }).then(async (response) => {
       if (!response.ok) throw new Error("auditoria indisponível");
