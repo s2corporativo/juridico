@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import type { DocumentDTO } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
+import { beforeLegalCursor, encodeLegalCursor, parseLegalPageParams } from "@/lib/legal-list-cursor";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +13,22 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!__auth.ok) return __auth.response;
   const authUser = __auth.user;
 
-  const docs = await db.document.findMany({
-    where: { userId: authUser.uid },
-    orderBy: { updatedAt: "desc" },
-    take: 100,
+  const params = new URL(req.url).searchParams;
+  const page = parseLegalPageParams(params);
+  if (!page.ok) return NextResponse.json({ error: page.error }, { status: 400 });
+  const includeArchived = params.get("includeArchived") === "1";
+  const rows = await db.document.findMany({
+    where: {
+      userId: authUser.uid,
+      ...(!includeArchived && { status: { not: "archived" } }),
+      ...(page.cursor && beforeLegalCursor(page.cursor)),
+    },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: page.limit + 1,
   });
+  const hasMore = rows.length > page.limit;
+  const docs = rows.slice(0, page.limit);
+  const nextCursor = hasMore ? encodeLegalCursor(docs[docs.length - 1]) : null;
   const dtos: DocumentDTO[] = docs.map((d) => ({
     id: d.id,
     title: d.title,
@@ -30,7 +42,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     createdAt: d.createdAt.toISOString(),
     updatedAt: d.updatedAt.toISOString(),
   }));
-  return NextResponse.json({ documents: dtos });
+  return NextResponse.json({ documents: dtos, nextCursor, hasMore });
 }
 
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
