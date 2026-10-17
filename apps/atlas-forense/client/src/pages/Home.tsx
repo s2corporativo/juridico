@@ -361,15 +361,26 @@ export default function Home() {
 
       <main className="atlas-main">
         <header className="topbar">
-          <div className="breadcrumb"><Landmark size={16} /> Ecossistema Jurídico Clovis <ChevronRight size={15} /> Compêndio Jurídico</div>
-          <div className="topbar-actions"><a className="compendium-link" href="#sugestoes-conteudo"><Lightbulb size={16} /> Sugerir conteúdos</a><a className="compendium-link" href="/compendio"><BookOpenCheck size={16} /> Pesquisar acervo</a><a className="structure-link" href="/fontes"><Database size={16} /> Fontes</a><a className="structure-link" href="/rmbh"><Landmark size={16} /> RMBH</a><button className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} /> Baixar recorte</button></div>
+          <div className="breadcrumb"><Landmark size={16} aria-hidden="true" /> Atlas Forense <ChevronRight size={15} aria-hidden="true" /> Painel de pesquisa</div>
+          <div className="topbar-actions atlas-toolbar">
+            <a className="compendium-link" href="/compendio"><BookOpenCheck size={16} aria-hidden="true" /> Pesquisar acervo</a>
+            <details className="atlas-quick-menu">
+              <summary className="structure-link">Mais recursos <ChevronRight size={15} aria-hidden="true" /></summary>
+              <div className="atlas-quick-menu-panel">
+                <a href="/fontes"><Database size={16} aria-hidden="true" /> Fontes públicas</a>
+                <a href="/rmbh"><Landmark size={16} aria-hidden="true" /> Cobertura RMBH</a>
+                <a href="#sugestoes-conteudo"><Lightbulb size={16} aria-hidden="true" /> Sugestões de conteúdo</a>
+              </div>
+            </details>
+            <button type="button" className="export-button" onClick={downloadFiltered}><ArrowDownToLine size={16} aria-hidden="true" /> Baixar recorte</button>
+          </div>
         </header>
 
         <section className="hero-panel" id="visao">
           <div className="hero-text">
             <span className="eyebrow">COMPÊNDIO JURÍDICO · EVIDÊNCIA RASTREÁVEL</span>
-            <h1>Direito para <em>consultar</em>,<br />não para supor.</h1>
-            <p>Um compêndio jurídico público para navegar por temas, teses, fontes e julgados catalogados, mantendo os recortes jurimétricos em uma camada própria e explícita.</p>
+            <h1>Pesquisa jurídica com <em>origem verificável.</em></h1>
+            <p>Consulte temas, teses e julgados em fichas estruturadas. Confira proveniência, limites e atualidade das fontes antes de utilizar qualquer referência.</p>
             <div className="hero-tags"><Pill tone="city">Fichas com proveniência</Pill><Pill>Temas · teses · julgados</Pill><Pill tone="alert">Uso condicionado à fonte</Pill></div>
             <PartialRuler />
           </div>
