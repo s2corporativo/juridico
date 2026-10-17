@@ -63,7 +63,7 @@ export function VisualLaw() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
   useEffect(() => {
-    fetch("/api/cases")
+    fetch("/juridia/api/cases")
       .then((r) => r.json())
       .then((d) => {
         const list: CaseItem[] = (d.cases || []).map((c: CaseItem) => ({ id: c.id, title: c.title, number: c.number, area: c.area, notes: c.notes }));
@@ -85,7 +85,7 @@ export function VisualLaw() {
     setAnalysis(null);
     try {
       const facts = selectedCase.notes || `${selectedCase.title} — ${selectedCase.area} — ${selectedCase.number || "sem número"}`;
-      const res = await fetch("/api/case-analysis", {
+      const res = await fetch("/juridia/api/case-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facts, title: selectedCase.title }),

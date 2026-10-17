@@ -26,6 +26,6 @@ describe("Agent team safety and composition", () => {
     expect(plan.finalApproval).toBe("advogado_responsavel");
     expect(plan.agents[0].slug).toBe("workflow_coordinator");
     expect(plan.agents.some((a) => a.slug === "legal_brain")).toBe(true);
-    expect(plan.agents.every((a) => a.operationalRoute.startsWith("/api/"))).toBe(true);
+    expect(plan.agents.every((a) => a.operationalRoute.startsWith("/juridia/api/"))).toBe(true);
   });
 });

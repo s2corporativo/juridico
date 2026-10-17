@@ -57,9 +57,9 @@ async function fetchData<T>(path: string): Promise<T> {
 
 async function loadOverview() {
   const [snapshot, health, legacy] = await Promise.all([
-    fetchData<Snapshot>("/api/atlas/knowledge?view=snapshot"),
-    fetchData<Health>("/api/atlas/knowledge?view=health"),
-    fetchData<LegacyReviewHealth>("/api/atlas/knowledge?view=legacy-review-health"),
+    fetchData<Snapshot>("/juridia/api/atlas/knowledge?view=snapshot"),
+    fetchData<Health>("/juridia/api/atlas/knowledge?view=health"),
+    fetchData<LegacyReviewHealth>("/juridia/api/atlas/knowledge?view=legacy-review-health"),
   ]);
   if (!snapshot.ok || !health.ok || !legacy.ok) throw new Error("Resposta do Atlas inválida.");
   return { snapshot, health, legacy };
@@ -113,7 +113,7 @@ export function AtlasWorkspace() {
     setSearching(true);
     try {
       const query = new URLSearchParams({ view: "compendium", q: topic.trim() });
-      const response = await fetchData<CompendiumResults>(`/api/atlas/knowledge?${query}`);
+      const response = await fetchData<CompendiumResults>(`/juridia/api/atlas/knowledge?${query}`);
       setDecisions(response);
       setSearchError(null);
     } catch (reason) {
@@ -130,7 +130,7 @@ export function AtlasWorkspace() {
     try {
       // Versão obrigatória para paginação: impede mistura de snapshots diferentes.
       const query = new URLSearchParams({ view: "snapshot", page: String(page), version: snapshot.snapshotVersion });
-      const updated = await fetchData<Snapshot>(`/api/atlas/knowledge?${query}`);
+      const updated = await fetchData<Snapshot>(`/juridia/api/atlas/knowledge?${query}`);
       if (updated.snapshotVersion !== snapshot.snapshotVersion) throw new Error("A base foi atualizada. Recarregue a pesquisa.");
       setSnapshot(updated);
       setError(null);

@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { COOKIE_NAME, UNAUTHED_ERR_MSG } from '@shared/const';
+import { analyticsConfig } from '@shared/analytics-config';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
@@ -7,6 +8,19 @@ import superjson from "superjson";
 import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
+
+// Analytics opcional: não gerar tags inválidas quando não estiver configurado.
+const analytics = analyticsConfig(
+  import.meta.env.VITE_ANALYTICS_ENDPOINT,
+  import.meta.env.VITE_ANALYTICS_WEBSITE_ID,
+);
+if (analytics && typeof document !== 'undefined') {
+  const script = document.createElement('script');
+  script.defer = true;
+  script.src = analytics.src;
+  script.dataset.websiteId = analytics.websiteId;
+  document.head.appendChild(script);
+}
 
 const queryClient = new QueryClient();
 

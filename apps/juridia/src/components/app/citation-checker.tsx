@@ -73,7 +73,7 @@ export function CitationChecker({ content, documentId }: CitationCheckerProps) {
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch("/api/citations/verify", {
+      const res = await fetch("/juridia/api/citations/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: content, documentId }),

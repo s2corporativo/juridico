@@ -114,7 +114,7 @@ export function Editor() {
       loadDoc(currentDocId);
     } else {
       // se não há doc atual, carrega o mais recente
-      fetch("/api/documents")
+      fetch("/juridia/api/documents")
         .then((r) => r.json())
         .then((d) => {
           if (d.documents?.length) {
@@ -127,7 +127,7 @@ export function Editor() {
   async function loadDoc(id: string) {
     setLoading(true);
     try {
-      const res = await fetch("/api/documents");
+      const res = await fetch("/juridia/api/documents");
       const data = await res.json();
       const found = (data.documents as DocumentDTO[]).find((d) => d.id === id);
       if (found) {
@@ -147,7 +147,7 @@ export function Editor() {
     if (!doc) return;
     setSaving(true);
     try {
-      const response = await fetch("/api/documents", {
+      const response = await fetch("/juridia/api/documents", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: doc.id, content, title }),
@@ -175,7 +175,7 @@ export function Editor() {
 
   async function downloadDocument(format: "docx" | "pdf") {
     if (!doc) return;
-    const response = await fetch("/api/documents/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documentId: doc.id, format }) });
+    const response = await fetch("/juridia/api/documents/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documentId: doc.id, format }) });
     if (!response.ok) { toast({ title: "Falha na exportação", variant: "destructive" }); return; }
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
@@ -230,7 +230,7 @@ export function Editor() {
     setSuggLoading(true);
     setSuggestion(null);
     try {
-      const res = await fetch("/api/suggest", {
+      const res = await fetch("/juridia/api/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

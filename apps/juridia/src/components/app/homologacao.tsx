@@ -135,7 +135,7 @@ export function Homologacao() {
       setResults((s) => ({ ...s, [c.id]: { ...s[c.id], status: "running" } }));
       const start = Date.now();
       try {
-        const res = await fetch("/api/lexvalida/pipeline", {
+        const res = await fetch("/juridia/api/lexvalida/pipeline", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pedido: c.pedido, tipoPeca: c.tipoPeca, autos: c.autos, caseId: c.id }),

@@ -119,7 +119,7 @@ export function sessionCookieOptions(req: NextRequest) {
     httpOnly: true,
     sameSite: "lax" as const,
     secure: isHttps,
-    path: "/",
+    path: "/juridia",
     maxAge: SESSION_TTL_SECONDS,
   };
 }

@@ -92,7 +92,7 @@ export function Generator() {
   const liveRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
-    fetch("/api/templates")
+    fetch("/juridia/api/templates")
       .then((r) => r.json())
       .then((d) => {
         setTemplates(d.templates || []);
@@ -101,7 +101,7 @@ export function Generator() {
         }
       })
       .catch(() => null);
-    fetch("/api/skills")
+    fetch("/juridia/api/skills")
       .then((r) => r.json())
       .then((d) => setSkills(d.skills || []))
       .catch(() => null);
@@ -216,7 +216,7 @@ export function Generator() {
         brainContext: brainContext || undefined,
         writingStyle: writingStyle || undefined,
       };
-      const res = await fetch("/api/generate-minuta/stream", {
+      const res = await fetch("/juridia/api/generate-minuta/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -240,7 +240,7 @@ export function Generator() {
         if (failure) throw new Error(failure);
       } else {
         // Rota de streaming indisponível (404 em deploy antigo) → clássica.
-        const classic = await fetch("/api/generate-minuta", {
+        const classic = await fetch("/juridia/api/generate-minuta", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

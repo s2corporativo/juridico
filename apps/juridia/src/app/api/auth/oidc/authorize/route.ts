@@ -51,14 +51,14 @@ export async function GET(req: NextRequest) {
   // Sessão obrigatória: sem identidade autenticada não há authorization code.
   const session = readSessionCookie(req);
   if (!session) {
-    const loginUrl = new URL("/login", url.origin);
+    const loginUrl = new URL("/juridia/login", url.origin);
     loginUrl.searchParams.set("next", url.toString());
     return NextResponse.redirect(loginUrl);
   }
 
   const dbUser = await db.user.findUnique({ where: { id: session.uid } });
   if (!dbUser || dbUser.email !== session.email) {
-    const loginUrl = new URL("/login", url.origin);
+    const loginUrl = new URL("/juridia/login", url.origin);
     loginUrl.searchParams.set("next", url.toString());
     return NextResponse.redirect(loginUrl);
   }

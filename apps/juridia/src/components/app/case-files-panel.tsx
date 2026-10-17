@@ -22,7 +22,7 @@ export function CaseFilesPanel() {
       const form = new FormData();
       form.append("file", file);
       form.append("caseId", caseId);
-      const res = await fetch("/api/case-files", { method: "POST", body: form });
+      const res = await fetch("/juridia/api/case-files", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "falha no processamento");
       setCount((value) => value + 1);

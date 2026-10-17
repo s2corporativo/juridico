@@ -1,0 +1,19 @@
+# Caddy staging — aplicar somente após Next com basePath=/juridia homologado.
+# Não usar handle_path: removeria o prefixo de que o Next depende.
+{
+  admin off
+}
+
+:8443 {
+  encode zstd gzip
+  @juridia path /juridia /juridia/*
+  handle @juridia {
+    reverse_proxy 127.0.0.1:3005
+  }
+  handle /socket.io/* {
+    reverse_proxy 127.0.0.1:3003
+  }
+  handle {
+    reverse_proxy 127.0.0.1:3114
+  }
+}

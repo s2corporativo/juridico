@@ -47,8 +47,8 @@ interface JurisprudenceResult {
 
 async function fetchBiblioteca(): Promise<{ skills: Skill[]; sources: LegalSource[] }> {
   const [skillsRes, sourcesRes] = await Promise.all([
-    fetch("/api/skills"),
-    fetch("/api/legal-sources"),
+    fetch("/juridia/api/skills"),
+    fetch("/juridia/api/legal-sources"),
   ]);
   if (!skillsRes.ok || !sourcesRes.ok) throw new Error("Biblioteca indisponível");
   const skillsData = await skillsRes.json();
@@ -103,7 +103,7 @@ export function BibliotecaJuridica() {
     }
     setJurisprudenceLoading(true);
     try {
-      const res = await fetch("/api/jurisprudence", {
+      const res = await fetch("/juridia/api/jurisprudence", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: searchJurisprudence }),

@@ -6,11 +6,10 @@
 // - Autenticação real via POST /api/auth/login (scrypt + cookie assinado).
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Scale } from "lucide-react";
 
 function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/";
   const [email, setEmail] = useState("");
@@ -23,7 +22,7 @@ function LoginForm() {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/juridia/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -40,15 +39,19 @@ function LoginForm() {
       }
       // Anti open-redirect: aceita apenas caminhos relativos ou URLs da MESMA
       // origem (o fluxo SSO volta para /api/auth/oidc/authorize, URL absoluta).
-      let safeNext = "/";
+      let safeNext = "/juridia";
       try {
         const u = new URL(next, window.location.origin);
-        if (u.origin === window.location.origin) safeNext = u.pathname + u.search + u.hash;
+        if (u.origin === window.location.origin &&
+          (u.pathname === "/juridia" || u.pathname.startsWith("/juridia/"))) {
+          safeNext = u.pathname + u.search + u.hash;
+        }
       } catch {
-        safeNext = "/";
+        safeNext = "/juridia";
       }
-      router.push(safeNext);
-      router.refresh();
+      // Navegação absoluta para o caminho público já prefixado /juridia.
+      // O roteador do Next poderia aplicar basePath duas vezes.
+      window.location.assign(safeNext);
     } finally {
       setLoading(false);
     }
