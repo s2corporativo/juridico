@@ -11,12 +11,13 @@ describe("Atlas redesign and analytics hygiene", () => {
     expect(home).toContain("compendium-reference-grid");
     expect(home).toContain("atlas-quick-menu");
   });
-  it("loads analytics only through optional configured runtime bootstrap", () => {
+  it("does not inject third-party tracking on public/private SPA routes", () => {
     const html = read("../client/index.html");
     const main = read("../client/src/main.tsx");
     expect(html).not.toContain("%VITE_ANALYTICS_ENDPOINT%");
-    expect(main).toContain("analyticsWebsiteId");
-    expect(main).toContain('base.protocol === "https:"');
+    expect(html).not.toContain("data-website-id");
+    expect(main).not.toContain("analyticsWebsiteId");
+    expect(main).not.toContain("document.createElement(\"script\")");
   });
   it("provides keyboard focus and motion reduction", () => {
     const css = read("../client/src/index.css");
