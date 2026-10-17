@@ -23,3 +23,8 @@
 ## Rollback
 
 Guardar configuração original do proxy, release Next anterior e path de serviço. Nunca migrar o banco real por edição de frontend. Nenhuma modificação no certificado A1 do DPT.
+
+## Gate OIDC de origem pública
+- O Next.js atrás do proxy pode apresentar `req.nextUrl.origin=http://localhost:3005` e remover `basePath`. No fluxo `/juridia/api/auth/oidc/authorize`, o login e o parâmetro `next` devem ser derivados do `JURIDIA_OIDC_ISSUER` HTTPS, jamais dos headers de origem interna.
+- Após configurar SSO na homologação, executar `python3 ops/juridia-in-atlas/preflight-oidc-origin.py https://atlas.13.140.167.153.sslip.io`. O teste precisa confirmar HTTPS, `/juridia/login`, retorno `/juridia/api/auth/oidc/authorize` e manutenção do desafio PKCE.
+- Não compartilhar cookies de sessão entre Atlas e Juridiá: IdP mantém cookie HttpOnly `Path=/juridia` e o Atlas valida o código único e cria sua própria sessão com privilégios mínimos.

@@ -34,7 +34,7 @@ describe('Atlas e Juridiá — um domínio, isolamento de APIs e cookie',()=>{
   const oidc=readFileSync(resolve(app,'src/app/api/auth/oidc/authorize/route.ts'),'utf8')
   expect(auth).toContain('path: "/juridia"')
   expect(logout).toContain('path: "/juridia"')
-  expect(oidc).toContain('new URL("/juridia/login", url.origin)')
+  expect(oidc).toContain('oidcLoginRedirect(cfg.issuer, url.searchParams)')
   const login=readFileSync(resolve(app,'src/app/login/page.tsx'),'utf8')
   expect(login).toContain('window.location.assign(safeNext)')
   expect(login).not.toContain('router.push(safeNext)')
