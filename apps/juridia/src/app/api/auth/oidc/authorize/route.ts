@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { readSessionCookie } from "@/lib/auth";
+import { oidcLoginRedirect } from "@/lib/oidc-login-redirect";
 import {
   getIssuerConfig,
   isRegisteredRedirectUri,
@@ -51,16 +52,16 @@ export async function GET(req: NextRequest) {
   // Sessão obrigatória: sem identidade autenticada não há authorization code.
   const session = readSessionCookie(req);
   if (!session) {
-    const loginUrl = new URL("/juridia/login", url.origin);
-    loginUrl.searchParams.set("next", url.toString());
-    return NextResponse.redirect(loginUrl);
+    // Next.js atrás do proxy pode interpretar req.nextUrl como localhost:3005
+    // e remover basePath. O issuer público confiável define a origem correta.
+    return NextResponse.redirect(oidcLoginRedirect(cfg.issuer, url.searchParams));
   }
 
   const dbUser = await db.user.findUnique({ where: { id: session.uid } });
   if (!dbUser || dbUser.email !== session.email) {
-    const loginUrl = new URL("/juridia/login", url.origin);
-    loginUrl.searchParams.set("next", url.toString());
-    return NextResponse.redirect(loginUrl);
+    // Next.js atrás do proxy pode interpretar req.nextUrl como localhost:3005
+    // e remover basePath. O issuer público confiável define a origem correta.
+    return NextResponse.redirect(oidcLoginRedirect(cfg.issuer, url.searchParams));
   }
 
   const code = generateAuthCode();
