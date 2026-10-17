@@ -365,7 +365,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
   await db.agentRun.update({
     where: { id: agentRun.id },
-    data: { status: "completed", tokensOut: tokens, resultSnapshotId: snapshot.id, providerSnapshot: JSON.stringify({ provider: "zai", tokens }), finishedAt: new Date() },
+    data: { status: "completed", tokensOut: tokens, resultSnapshotId: snapshot.id, providerSnapshot: JSON.stringify({ provider: "ollama-local", tokens }), finishedAt: new Date() },
   });
   await db.brainAnalysis.create({
     data: { caseId, title, factsInput: safeFacts, result: JSON.stringify(brainResult), ramoJuridico: r.ramoJuridico || null, hypothesis: r.viability?.hypothesis || null, tokensUsed: tokens },
