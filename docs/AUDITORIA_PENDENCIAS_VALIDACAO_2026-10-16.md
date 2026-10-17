@@ -40,7 +40,7 @@
 3. Confirmar base de quarentena do Atlas stage e registrar decisão humana individual para importação. Não considerar 2.000 skills legadas como aprovadas apenas pelos campos textuais antigos.
 4. Testar latência e qualidade do modelo local Ollama: o único modelo generativo local listado nesta inspeção foi `qwen3:4b-instruct`, anteriormente reportado com timeout. A privacidade agora é maior; a disponibilidade funcional continua não demonstrada.
 5. Auditar outras rotas e bibliotecas que ainda usam o SDK externo (incluindo `judge_simulator.ts`, `thesis_checker.ts`, `lexvalida_pipeline.ts` e `minuta_run.ts`) e estabelecer política de saída/consentimento por fluxo.
-6. Reexecutar pipeline CI; a falha anterior de GitHub Actions foi reportada como anterior ao início dos passos. O resultado desse CI não foi inferido como aprovado.
+6. Corrigir CI: a execução da PR #67 ([run 38991006766](https://github.com/s2corporativo/juridico/actions/runs/38991006766)) **falhou em ambos os jobs sem executar nenhuma etapa**. O GitHub não disponibilizou os logs dos jobs (404 BlobNotFound). A causa do executor/configuração permanece não demonstrada. Os testes na VPS não substituem o gate de CI.
 7. Homologar o app em navegador com usuário real, casos, documentos, habilidades, editor, mobile, dashboard, API, SSO, restauração de dados e rollback.
 8. Só promover mediante SHA fixo de release, teste autenticado pós-corte e prova de reversão. Não promover a branch desta auditoria diretamente a produção.
 
