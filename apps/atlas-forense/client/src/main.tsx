@@ -79,3 +79,24 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </trpc.Provider>
 );
+
+
+/** Analytics opcionais somente no Atlas público: sem IDs configurados, não há requisição.
+ * Nunca enviar conteúdo do caso, documentos, prompts ou dados pessoais como eventos.
+ */
+const analyticsEndpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT?.trim();
+const analyticsWebsiteId = import.meta.env.VITE_ANALYTICS_WEBSITE_ID?.trim();
+if (analyticsEndpoint && analyticsWebsiteId) {
+  try {
+    const base = new URL(analyticsEndpoint);
+    if (base.protocol === "https:" && /^[A-Za-z0-9-]{8,64}$/.test(analyticsWebsiteId)) {
+      const script = document.createElement("script");
+      script.defer = true;
+      script.src = new URL("/umami", base).toString();
+      script.dataset.websiteId = analyticsWebsiteId;
+      document.head.appendChild(script);
+    }
+  } catch {
+    // Integração opcional: configuração inválida não pode impedir o Atlas.
+  }
+}
