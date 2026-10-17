@@ -1,0 +1,20 @@
+[Unit]
+Description=Atlas/Juridiá staging single-origin proxy (loopback app ports)
+After=network-online.target atlas-forense-stage.service juridia-stage.service
+Wants=network-online.target atlas-forense-stage.service juridia-stage.service
+[Service]
+Type=simple
+User=sentinelx
+Group=sentinelx
+WorkingDirectory=/opt/atlas-juridico/staging/unified
+ExecStart=/usr/bin/caddy run --config /opt/atlas-juridico/staging/unified/Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=10
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+[Install]
+WantedBy=multi-user.target
