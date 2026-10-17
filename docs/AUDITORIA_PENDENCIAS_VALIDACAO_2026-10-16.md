@@ -57,3 +57,10 @@
 - Modelo Ollama `qwen3:4b-instruct` instalado, mas um prompt **inteiramente sintético**, `num_predict=75`, excedeu 28 s sem resposta (`curl` timeout). Logo, IA local **não homologada funcionalmente**.
 - CI GitHub Actions da própria branch: run [38991641823](https://github.com/s2corporativo/juridico/actions/runs/38991641823) falhou com **ambos jobs com 0 etapas executadas e nenhum runner atribuído**; causa externa do provisionamento/conta ainda não comprovada.
 - Nenhum backup de produção foi restaurado, nenhum login real foi homologado, nenhum banco operacional foi migrado. PR deve permanecer draft e **não** deve ser considerado liberação de produção.
+
+## Verificações complementares
+
+- A checagem de integridade do SQLite **de homologação** foi concluída via API `sqlite3.backup`, sem mutação do original: `PRAGMA integrity_check=ok` na origem e cópia; **42 tabelas** conferidas com contagens idênticas; arquivo `0600` e diretório restrito em `/opt/atlas-juridico/staging/unified/releases/qa-integrity-20261017/juridia-stage-audit.sqlite`. SHA-256 `ece50e29837ea0a08a5190ab30fb793ae232cce5c0e0c37fff4bdfc7c7931b73`.
+- Este backup **não** equivale a backup/restore de SQLite produção, MariaDB, documentos nem configurações. Não reduz o bloqueio desses gates.
+- O servidor efêmero de QA na porta 3922 foi encerrado, confirmado por `curl` (HTTP `000`, conexão recusada).
+- Verificação final `bun run lint` na cópia isolada: saída 0.
