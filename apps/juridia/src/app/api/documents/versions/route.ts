@@ -49,10 +49,32 @@ export async function PATCH(req: NextRequest) {
   if (!auth.ok) return auth.response;
   if (!doc) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
   if (body.suggestionId && body.status) {
-    return NextResponse.json({ suggestion: await db.documentSuggestion.update({ where: { id: body.suggestionId }, data: { status: body.status, decidedAt: new Date() } }) });
+    if (!["accepted", "rejected"].includes(body.status)) {
+      return NextResponse.json({ error: "invalid_status" }, { status: 400 });
+    }
+    const result = await db.documentSuggestion.updateMany({
+      where: { id: body.suggestionId, documentId: body.documentId },
+      data: { status: body.status, decidedAt: new Date() },
+    });
+    if (result.count !== 1) return NextResponse.json({ error: "suggestion_not_found" }, { status: 404 });
+    const suggestion = await db.documentSuggestion.findFirst({
+      where: { id: body.suggestionId, documentId: body.documentId },
+    });
+    return NextResponse.json({ suggestion });
   }
   if (body.commentId && body.commentStatus) {
-    return NextResponse.json({ comment: await db.documentComment.update({ where: { id: body.commentId }, data: { status: body.commentStatus } }) });
+    if (!["open", "resolved"].includes(body.commentStatus)) {
+      return NextResponse.json({ error: "invalid_status" }, { status: 400 });
+    }
+    const result = await db.documentComment.updateMany({
+      where: { id: body.commentId, documentId: body.documentId },
+      data: { status: body.commentStatus },
+    });
+    if (result.count !== 1) return NextResponse.json({ error: "comment_not_found" }, { status: 404 });
+    const comment = await db.documentComment.findFirst({
+      where: { id: body.commentId, documentId: body.documentId },
+    });
+    return NextResponse.json({ comment });
   }
   return NextResponse.json({ error: "alteração incompleta" }, { status: 400 });
 }

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import type { DocumentDTO } from "@/lib/types";
 import { requireAuth } from "@/lib/auth";
+import { beforeLegalCursor, encodeLegalCursor, parseLegalPageParams } from "@/lib/legal-list-cursor";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +13,22 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!__auth.ok) return __auth.response;
   const authUser = __auth.user;
 
-  const docs = await db.document.findMany({
-    where: { userId: authUser.uid },
-    orderBy: { updatedAt: "desc" },
-    take: 100,
+  const params = new URL(req.url).searchParams;
+  const page = parseLegalPageParams(params);
+  if (!page.ok) return NextResponse.json({ error: page.error }, { status: 400 });
+  const includeArchived = params.get("includeArchived") === "1";
+  const rows = await db.document.findMany({
+    where: {
+      userId: authUser.uid,
+      ...(!includeArchived && { status: { not: "archived" } }),
+      ...(page.cursor && beforeLegalCursor(page.cursor)),
+    },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: page.limit + 1,
   });
+  const hasMore = rows.length > page.limit;
+  const docs = rows.slice(0, page.limit);
+  const nextCursor = hasMore ? encodeLegalCursor(docs[docs.length - 1]) : null;
   const dtos: DocumentDTO[] = docs.map((d) => ({
     id: d.id,
     title: d.title,
@@ -30,7 +42,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     createdAt: d.createdAt.toISOString(),
     updatedAt: d.updatedAt.toISOString(),
   }));
-  return NextResponse.json({ documents: dtos });
+  return NextResponse.json({ documents: dtos, nextCursor, hasMore });
 }
 
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
@@ -48,17 +60,22 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     select: { title: true, templateName: true },
   });
   if (!doc) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
-  const deleted = await db.document.deleteMany({ where: { id, userId: authUser.uid } });
-  if (deleted.count !== 1) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
+  // Exclusão pelo usuário significa arquivamento reversível, não perda de prova/documento.
+  const archived = await db.document.updateMany({
+    where: { id, userId: authUser.uid },
+    data: { status: "archived" },
+  });
+  if (archived.count !== 1) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
 
   await logAuditEvent({
-    action: "delete_document",
+    action: "archive_document",
     resource: "document",
     resourceId: id,
-    metadata: { title: doc?.title, templateName: doc?.templateName },
+    metadata: { title: doc.title, templateName: doc.templateName },
+    userId: authUser.uid,
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, archived: true });
 }
 
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
@@ -67,9 +84,13 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (!__auth.ok) return __auth.response;
   const authUser = __auth.user;
 
-  const body = (await req.json().catch(() => null)) as { id?: string; content?: string; title?: string } | null;
+  const body = (await req.json().catch(() => null)) as { id?: string; content?: string; title?: string; status?: string } | null;
   if (!body?.id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
-  const data: { generatedContent?: string; title?: string } = {};
+  const data: { generatedContent?: string; title?: string; status?: string } = {};
+  if (body.status !== undefined && !["draft", "generated", "archived"].includes(body.status)) {
+    return NextResponse.json({ error: "invalid_status" }, { status: 400 });
+  }
+  if (body.status !== undefined) data.status = body.status;
   if (typeof body.content === "string") data.generatedContent = body.content;
   if (typeof body.title === "string") data.title = body.title;
   const updated = await db.document.updateMany({

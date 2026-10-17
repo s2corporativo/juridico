@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { beforeLegalCursor, encodeLegalCursor, parseLegalPageParams } from "@/lib/legal-list-cursor";
 
 export const dynamic = "force-dynamic";
 
@@ -16,24 +17,34 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const clientId = url.searchParams.get("clientId");
   const status = url.searchParams.get("status");
   const area = url.searchParams.get("area");
+  const page = parseLegalPageParams(url.searchParams);
+  if (!page.ok) return NextResponse.json({ error: page.error }, { status: 400 });
 
   const where: import("@prisma/client").Prisma.CaseWhereInput = {
     client: { is: { userId: authUser.uid } },
   };
   if (clientId) where.clientId = clientId;
   if (status) where.status = status;
+  else where.status = { not: "arquivado" };
   if (area) where.area = area;
+  if (page.cursor) where.AND = [beforeLegalCursor(page.cursor)];
 
-  const cases = await db.case.findMany({
+  const rows = await db.case.findMany({
     where,
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: page.limit + 1,
     include: {
       client: { select: { id: true, name: true, color: true } },
       _count: { select: { documents: true, movimentos: true, audiencias: true } },
     },
   });
 
+  const hasMore = rows.length > page.limit;
+  const cases = rows.slice(0, page.limit);
+  const nextCursor = hasMore ? encodeLegalCursor(cases[cases.length - 1]) : null;
   return NextResponse.json({
+    nextCursor,
+    hasMore,
     cases: cases.map((c) => ({
       id: c.id,
       title: c.title,
@@ -200,17 +211,20 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     select: { title: true },
   });
   if (!c) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
-  const deleted = await db.case.deleteMany({
+  // Preserva autos, eventos e documentos; PATCH status="ativo" restaura o caso.
+  const archived = await db.case.updateMany({
     where: { id, client: { is: { userId: authUser.uid } } },
+    data: { status: "arquivado" },
   });
-  if (deleted.count !== 1) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  if (archived.count !== 1) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   await logAuditEvent({
-    action: "delete_case",
+    action: "archive_case",
     resource: "case",
     resourceId: id,
-    metadata: { title: c?.title },
+    metadata: { title: c.title },
+    userId: authUser.uid,
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, archived: true });
 }

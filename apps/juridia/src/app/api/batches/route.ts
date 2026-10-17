@@ -16,6 +16,13 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return auth.response;
   const body = (await req.json().catch(() => null)) as { templateSlug?: string; batchId?: string; moldDocumentId?: string; items?: Array<{ itemNo: number; title?: string; fields: Record<string, string> }> } | null;
   if (!body?.templateSlug || !Array.isArray(body.items)) return NextResponse.json({ error: "templateSlug e items obrigatórios" }, { status: 400 });
+  if (body.moldDocumentId) {
+    const ownMold = await db.document.findFirst({
+      where: { id: body.moldDocumentId, userId: auth.user.uid },
+      select: { id: true },
+    });
+    if (!ownMold) return NextResponse.json({ error: "mold_document_not_found" }, { status: 404 });
+  }
   const items = body.items;
   const data = {
     userId: auth.user.uid,
@@ -53,6 +60,13 @@ export async function PATCH(req: NextRequest) {
   if (!body?.batchId) return NextResponse.json({ error: "batchId obrigatório" }, { status: 400 });
   const owned = await db.batchJob.findFirst({ where: { id: body.batchId, userId: auth.user.uid }, include: { items: true } });
   if (!owned) return NextResponse.json({ error: "batch_not_found" }, { status: 404 });
+  if (body.documentId) {
+    const ownDocument = await db.document.findFirst({
+      where: { id: body.documentId, userId: auth.user.uid },
+      select: { id: true },
+    });
+    if (!ownDocument) return NextResponse.json({ error: "document_not_found" }, { status: 404 });
+  }
   if (body.itemId || typeof body.itemNo === "number") {
     const item = body.itemId ? await db.batchItem.findFirst({ where: { id: body.itemId, batchId: body.batchId } }) : await db.batchItem.findFirst({ where: { batchId: body.batchId, itemNo: body.itemNo } });
     if (!item) return NextResponse.json({ error: "batch_item_not_found" }, { status: 404 });

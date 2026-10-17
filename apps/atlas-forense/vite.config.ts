@@ -150,7 +150,15 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+// Agent debugging and browser recording are strictly development-only.
+// Production builds must not embed the Manus runtime or ship its recorder.
+const plugins = [
+  react(),
+  tailwindcss(),
+  ...(process.env.NODE_ENV === "production"
+    ? []
+    : [vitePluginManusRuntime(), vitePluginManusDebugCollector()]),
+];
 
 export default defineConfig({
   plugins,
@@ -163,7 +171,7 @@ export default defineConfig({
   },
   envDir: path.resolve(import.meta.dirname),
   root: path.resolve(import.meta.dirname, "client"),
-  publicDir: path.resolve(import.meta.dirname, "client", "public"),
+  publicDir: process.env.NODE_ENV === "production" ? false : path.resolve(import.meta.dirname, "client", "public"),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,

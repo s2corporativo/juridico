@@ -26,7 +26,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const plan = url.searchParams.get("plan");
   const uf = url.searchParams.get("uf")?.toUpperCase();
 
-  const where: { plan?: string; oabEstado?: string } = {};
+  // Usuários comuns visualizam somente o próprio cadastro. Diretório geral é administrativo.
+  const where: { plan?: string; oabEstado?: string; id?: string } = {};
+  if (authUser.role !== "admin") where.id = authUser.uid;
   if (plan && VALID_PLANS.has(plan)) where.plan = plan;
   if (uf && VALID_UFS.has(uf)) where.oabEstado = uf;
 
