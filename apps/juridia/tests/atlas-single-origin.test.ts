@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const app=resolve(import.meta.dir,'..')
@@ -13,10 +13,9 @@ describe('Atlas e Juridiá — um domínio, isolamento de APIs e cookie',()=>{
   expect(nav).toContain('<a key={item.href} href="/juridia"')
  })
  test('API fetch não vaza para namespace raiz do Atlas',()=>{
-  const fs=require('node:fs')
   let count=0
   function walk(folder:string){
-   for(const entry of fs.readdirSync(folder,{withFileTypes:true})){
+   for(const entry of readdirSync(folder,{withFileTypes:true})){
     const path=resolve(folder,entry.name)
     if(entry.isDirectory()){ if(entry.name!=='api')walk(path); continue }
     if(!/\.(tsx?|jsx?)$/.test(path)||path.endsWith('lib/atlas_client.ts'))continue
