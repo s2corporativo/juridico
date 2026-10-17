@@ -2,7 +2,7 @@
 // PLANEJAR → ROTEIRO → REDIGIR_SECAO → ADERENCIA → CONTRARIA → DISTINGUISHING → AUDITORIA
 // Mais: RATIO_DECIDENDI, MOLDE, ESTILO, REFORMULAR
 
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 import { db } from "@/lib/db";
 import { ragSearch } from "@/lib/rag_lite";
 import {
@@ -65,7 +65,7 @@ export async function runPipeline(params: {
 
   // Inicialização por requisição: o SDK não pode exigir segredos durante
   // o build/SSR do Next.js e tokens de um caso não podem vazar para outro.
-  const zai = await ZAI.create();
+  const zai = await createLocalCaseClient();
   let totalTokens = 0;
   async function llmCall(system: string, user: string, maxTokens = 1000): Promise<string> {
     const c = await zai.chat.completions.create({
@@ -143,18 +143,9 @@ export async function runPipeline(params: {
       }
     }
 
-    // web_search para jurisprudência
-    for (const q of (queries.jurisprudencia || [pedido]).slice(0, 2)) {
-      try {
-        const raw = (await zai.functions.invoke("web_search", { query: `jurisprudência ${q}`, num: 5 })) as unknown as { url: string; name: string; snippet: string }[];
-        if (Array.isArray(raw)) {
-          for (const r of raw.slice(0, 5)) {
-            jurisprudencia.push({ id: r.url, rotulo: r.name.slice(0, 100), ementa: r.snippet.slice(0, 200) });
-          }
-        }
-      } catch { /* web_search pode falhar */ }
-    }
-
+    // Sem consulta pública não verificada: a pesquisa legislativa local
+    // pode continuar; jurisprudência exige fonte Atlas verificada.
+    // Não converter busca genérica ou saída de LLM em precedente.
     result.pesquisa = { jurisprudencia, legislacao };
     steps[2].status = "done";
     steps[2].result = { jurisprudenciaCount: jurisprudencia.length, legislacaoCount: legislacao.length };

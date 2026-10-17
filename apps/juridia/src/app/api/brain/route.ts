@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 import { db } from "@/lib/db";
 import { logAuditEvent, logUsageEntry } from "@/lib/audit";
 import { ragSearch } from "@/lib/rag_lite";
@@ -14,7 +14,6 @@ import {
   fetchAtlasJurimetry,
   isAtlasConfigured,
   searchAtlasCompendium,
-  webResultToBrainItem,
   type AtlasJurimetry,
   type BrainJurisprudenceItem,
 } from "@/lib/atlas_client";
@@ -131,16 +130,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     },
   });
   // Não registrar análise concluída se o provedor estiver indisponível.
-  let zai: Awaited<ReturnType<typeof ZAI.create>>;
+  let zai: Awaited<ReturnType<typeof createLocalCaseClient>>;
   try {
-    zai = await ZAI.create();
+    zai = await createLocalCaseClient();
   } catch {
     await db.agentRun.update({
       where: { id: agentRun.id },
       data: { status: "failed", finishedAt: new Date() },
     });
     return NextResponse.json({
-      error: "Provedor indisponível. Nenhuma análise jurídica foi aprovada.",
+      error: "Motor local indisponível. Nenhuma análise jurídica foi aprovada.",
       status: "degraded",
       deterministic: context.deterministic,
     }, { status: 503 });
@@ -267,20 +266,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     }
 
-    if (needsWebFallback && (r.legalIssues || []).length > 0) {
-      r.atlas.fallback = true;
-      // Only generic legal areas may be used in a public web fallback.
-      const legalAreaAllowlist = new Set([
-        "civil", "penal", "trabalhista", "tributario", "consumer", "family",
-        "previdenciario", "empresarial", "administrativo", "bancario", "ambiental",
-        "saude", "imobiliario", "internacional", "digital_lgpd", "transito",
-      ]);
-      const genericAreas = issues.slice(0, 2)
-        .map((issue) => legalAreaAllowlist.has(issue.area) ? issue.area : "")
-        .filter(Boolean).join(" ");
-      const searchQuery = `jurisprudência STJ ${genericAreas || "fundamentação jurídica geral"}`;
-      const raw = (await zai.functions.invoke("web_search", { query: searchQuery, num: 8 })) as unknown as { url: string; name: string; snippet: string; host_name: string }[];
-      r.jurisprudence = Array.isArray(raw) ? raw.slice(0, 8).map(webResultToBrainItem) : [];
+    // Sem fallback de busca pública quando o Atlas não consegue autenticar
+    // fontes. O contexto do cliente não sai da instância privada.
+    if (needsWebFallback) {
+      r.atlas.status = "unavailable";
+      r.atlas.fallback = false;
+      r.jurisprudence = [];
     }
     steps[4].status = "done"; steps[4].result = r.jurisprudence?.length ?? 0;
   } catch (e) { steps[4].status = "error"; steps[4].error = e instanceof Error ? e.message : "Erro"; r.jurisprudence = r.jurisprudence || []; }

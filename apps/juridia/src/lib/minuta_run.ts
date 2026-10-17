@@ -10,7 +10,7 @@
 // Este módulo NÃO conhece HTTP: as rotas são wrappers finos (auth + serialização).
 
 import { createHash } from "node:crypto";
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 import { db } from "@/lib/db";
 import { pseudonymize, rehydrate } from "@/lib/pseudonymizer";
 import { validateResponse, ensureDraftMarker } from "@/lib/ai_governance";
@@ -70,7 +70,7 @@ interface LlmResult {
   tokens: number;
 }
 
-type ZaiClient = NonNullable<Awaited<ReturnType<typeof ZAI.create>>>;
+type ZaiClient = Awaited<ReturnType<typeof createLocalCaseClient>>;
 
 async function callLlm(
   zai: ZaiClient,
@@ -341,7 +341,7 @@ export async function runMinutaPipeline(
       userId: authUser.uid,
       tokensBudget: 30000,
       providerSnapshot: JSON.stringify({
-        provider: "zai",
+        provider: "ollama-local",
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
         agents: JURIDIA_AGENTS.map(({ slug, mode, requiresHumanReview }) => ({ slug, mode, requiresHumanReview })),
         proposedWorkflow: buildAgentWorkflow("draft_document").agents.map(({ slug, requiresHumanReview }) => ({ slug, requiresHumanReview })),
@@ -385,7 +385,7 @@ export async function runMinutaPipeline(
         inputHash: null,
         outputHash: hashOf(JSON.stringify(output)),
         output: JSON.stringify(output).slice(0, 4000),
-        provider: "zai",
+        provider: "ollama-local",
         model: "juridia-default",
         tokensIn,
         tokensOut,
@@ -396,7 +396,7 @@ export async function runMinutaPipeline(
 
   let zai: ZaiClient | null = null;
   try {
-    zai = await ZAI.create();
+    zai = await createLocalCaseClient();
   } catch {
     zai = null;
   }
@@ -666,7 +666,7 @@ export async function runMinutaPipeline(
       tokensIn: 0,
       tokensOut: tokensTotal,
       providerSnapshot: JSON.stringify({
-        provider: "zai",
+        provider: "ollama-local",
         pipeline: onEvent ? "multi-stage-v3-stream" : "multi-stage-v2",
         stages: stages.map((s) => ({ stage: s.stage, ok: s.ok, tokens: s.tokens })),
         agents: JURIDIA_AGENTS.map(({ slug, mode, requiresHumanReview }) => ({ slug, mode, requiresHumanReview })),

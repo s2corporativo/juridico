@@ -66,6 +66,9 @@ export async function createLocalCaseClient() {
           thinking?: { type: "disabled" | "enabled" };
           temperature?: number;
           max_tokens?: number;
+          // API de compatibilidade: o consumidor recebe o texto integral e
+          // emite um delta único, sem abrir uma conexão de streaming externa.
+          stream?: boolean;
         }) => completeLocalCase(input.messages, input),
       },
     },
