@@ -5,15 +5,25 @@
 }
 
 :8443 {
+  bind 127.0.0.1
   encode zstd gzip
   @juridia path /juridia /juridia/*
   handle @juridia {
-    reverse_proxy 127.0.0.1:3005
+    reverse_proxy 127.0.0.1:3005 {
+      # TLS foi encerrado pelo Nginx localhost.
+      header_up X-Forwarded-Proto https
+    }
   }
   handle /socket.io/* {
-    reverse_proxy 127.0.0.1:3003
+    reverse_proxy 127.0.0.1:3003 {
+      # TLS foi encerrado pelo Nginx localhost.
+      header_up X-Forwarded-Proto https
+    }
   }
   handle {
-    reverse_proxy 127.0.0.1:3114
+    reverse_proxy 127.0.0.1:3114 {
+      # TLS foi encerrado pelo Nginx localhost.
+      header_up X-Forwarded-Proto https
+    }
   }
 }

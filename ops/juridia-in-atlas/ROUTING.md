@@ -28,3 +28,11 @@ Guardar configuração original do proxy, release Next anterior e path de servi�
 - O Next.js atrás do proxy pode apresentar `req.nextUrl.origin=http://localhost:3005` e remover `basePath`. No fluxo `/juridia/api/auth/oidc/authorize`, o login e o parâmetro `next` devem ser derivados do `JURIDIA_OIDC_ISSUER` HTTPS, jamais dos headers de origem interna.
 - Após configurar SSO na homologação, executar `python3 ops/juridia-in-atlas/preflight-oidc-origin.py https://atlas.13.140.167.153.sslip.io`. O teste precisa confirmar HTTPS, `/juridia/login`, retorno `/juridia/api/auth/oidc/authorize` e manutenção do desafio PKCE.
 - Não compartilhar cookies de sessão entre Atlas e Juridiá: IdP mantém cookie HttpOnly `Path=/juridia` e o Atlas valida o código único e cria sua própria sessão com privilégios mínimos.
+
+
+## Transporte seguro entre Nginx → Caddy → Atlas/Juridiá
+- O Nginx do host de homologação termina HTTPS e encaminha para Caddy em `127.0.0.1:8443`. O Caddy permanece em `:8443` com `bind 127.0.0.1` **dentro da diretiva**, preservando o reconhecimento de qualquer `Host` autorizado.
+- Nos upstreams 3005 (Juridiá), 3003 (WebSocket) e 3114 (Atlas), o Caddy deve encaminhar `X-Forwarded-Proto: https`. Caso contrário, os cookies podem perder `Secure` ou ser rejeitados pelo navegador.
+- Não substituir `:8443` por `http://127.0.0.1:8443`: isso altera a correspondência de hostname e bloqueia os acessos externos.
+- A configuração é gerenciada pelo `atlas-caddy-stage.service` (systemd), em vez de processo manual abandonado. Antes do restart: `caddy validate --config ... --adapter caddyfile`, backup do Caddyfile, testes de `/`, `/juridia`, `/juridia/api/auth/me`, descoberta OIDC, 302 do SSO e rollback verificável.
+- O header HTTPS forçado só é aceitável porque essa porta escuta **exclusivamente em loopback** e o único ingresso autorizado é o Nginx TLS local; não aplicar essa configuração em proxy com HTTP externo direto.
