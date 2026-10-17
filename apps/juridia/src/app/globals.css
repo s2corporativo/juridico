@@ -215,3 +215,137 @@
   font-weight: 600;
   border: 1px solid color-mix(in oklch, var(--accent-foreground) 20%, transparent);
 }
+
+
+/* ──────────────────────────────────────────────────────────────────────
+   JuridIA / Atlas — apresentação premium e operação acessível.
+   Único escopo de design; componentes operacionais usam tokens semânticos.
+   ────────────────────────────────────────────────────────────────────── */
+:root {
+  --juridia-ink: #152f2a;
+  --juridia-green: #123b2c;
+  --juridia-gold: #bb985e;
+  --juridia-line: #e0e7e2;
+  --juridia-soft: #f5f8f5;
+  --juridia-focus: #bb985e;
+}
+html { scroll-padding-top: 6rem; }
+body { text-rendering: optimizeLegibility; }
+:focus-visible { outline: 3px solid var(--juridia-focus); outline-offset: 3px; }
+button, a, input, textarea, select { touch-action: manipulation; }
+button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
+.juridia-dashboard { max-width: 1180px; padding-block: 38px 88px; }
+.juridia-workspace-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(240px, .75fr);
+  align-items: center; gap: clamp(20px,4vw,54px);
+  position: relative; isolation: isolate; overflow: hidden;
+  min-height: 355px; padding: clamp(28px,4.6vw,56px);
+  border-radius: 22px;
+  background: linear-gradient(122deg,#102e27 0%,#164538 63%,#23604f 100%);
+  color: #f9faf5;
+  box-shadow: 0 18px 54px rgba(16,47,39,.13);
+}
+.juridia-workspace-hero::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle at 92% 8%,rgba(210,184,125,.19),transparent 37%);
+}
+.juridia-eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 11px; font-weight: 700; letter-spacing: .15em;
+  color: #d6e9dc;
+}
+.juridia-eyebrow-dot { width: 7px; height: 7px; flex: none; border-radius: 50%; background: #d8b67b; }
+.juridia-hero-copy h1 {
+  margin: 22px 0 16px; font-size: clamp(30px,3.3vw,49px);
+  font-weight: 650; letter-spacing: -.045em; line-height: 1.11;
+}
+.juridia-hero-copy h1 span { color: #d9c191; }
+.juridia-hero-copy > p {
+  max-width: 630px; color: #e0ede5; font-size: 15px; line-height: 1.76;
+}
+.juridia-hero-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; margin-top: 27px; }
+.juridia-hero-buttons button:first-child {
+  background: #f8faf6; color: #153b2e; font-weight: 700;
+}
+.juridia-hero-buttons button:first-child:hover { background: #e8ebdf; }
+.juridia-hero-assurance { display: flex; align-items: center; gap: 7px; color: #d6e5dc; font-size: 11px; line-height: 1.5; margin-top: 19px; }
+.juridia-hero-illustration {
+  width: 100%; max-width: 352px; justify-self: center;
+  transform: rotate(-2deg);
+  border: 1px solid rgba(255,255,255,.3); border-radius: 16px;
+  padding: 18px; color: #243b31; background: #f7f8f2;
+  box-shadow: 0 30px 65px rgba(1,13,10,.3);
+}
+.juridia-illustration-header { display: flex; gap: 5px; padding-bottom: 13px; border-bottom: 1px solid #e2e7df; }
+.juridia-illustration-header span { height: 7px; width: 7px; background: #d2dbd0; border-radius: 50%; }
+.juridia-illustration-header span:first-child { background: #c0a16d; }
+.juridia-illustration-row { display: flex; gap: 11px; align-items: center; font-size: 12px; font-weight: 650; padding-block: 14px; }
+.juridia-illustration-row svg { color: #376e57; flex: none; }
+.juridia-illustration-check { margin-left: auto; color: #8b9b8d; font-size: 11px; font-variant-numeric: tabular-nums; }
+.juridia-illustration-divider { border-top: 1px solid #e5eae2; }
+.juridia-dashboard-section { margin-top: 49px; }
+.juridia-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 20px; }
+.juridia-section-heading h2 { font-size: clamp(22px,2.25vw,29px); letter-spacing: -.035em; font-weight: 700; line-height: 1.2; color: var(--foreground); }
+.juridia-section-heading > p { max-width: 330px; font-size: 12px; line-height: 1.6; color: var(--muted-foreground); }
+.juridia-section-kicker { display: block; margin-bottom: 7px; letter-spacing: .16em; color: #8b7049; font-size: 10px; font-weight: 800; }
+.juridia-action-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; }
+.juridia-action-card {
+  display: flex; flex-direction: column; align-items: flex-start; position: relative;
+  min-height: 230px; padding: 23px 22px 20px;
+  text-align: left; border: 1px solid var(--border); border-radius: 16px;
+  background: var(--card); color: var(--foreground);
+  box-shadow: 0 6px 24px rgba(23,50,37,.025);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.juridia-action-card:hover { border-color: #acbea9; box-shadow: 0 16px 33px rgba(23,50,37,.08); transform: translateY(-2px); }
+.juridia-action-icon { display: inline-flex; justify-content: center; align-items: center; border-radius: 12px; height: 46px; width: 46px; background: #e9f2eb; color: #1d5540; }
+.juridia-action-number { position: absolute; right: 21px; top: 25px; color: #8b9d91; font-size: 11px; font-weight: 700; }
+.juridia-action-title { margin-top: 20px; font-size: 15px; font-weight: 750; letter-spacing: -.012em; }
+.juridia-action-description { display: block; margin-top: 8px; font-size: 12px; color: var(--muted-foreground); line-height: 1.6; }
+.juridia-action-footer { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 18px; color: #266044; font-size: 11px; font-weight: 750; }
+.juridia-metric-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+.juridia-metric { padding: 23px 26px; min-width: 0; border-radius: 16px; border: 1px solid var(--border); background: var(--card); }
+.juridia-metric-label { display: flex; align-items: center; justify-content: space-between; color: var(--muted-foreground); font-size: 12px; gap: 12px; }
+.juridia-metric-label svg { flex: none; color: #648376; }
+.juridia-metric-value { display: block; margin-top: 16px; color: var(--foreground); font-size: clamp(26px,3vw,37px); font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.juridia-metric p { margin-top: 5px; color: var(--muted-foreground); font-size: 11px; }
+.juridia-recent-list { overflow: hidden; border: 1px solid var(--border); background: var(--card); border-radius: 16px; }
+.juridia-recent-item { display: flex; width: 100%; align-items: center; gap: 15px; padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); transition: background .18s ease; }
+.juridia-recent-item:last-child { border-bottom: 0; }
+.juridia-recent-item:hover { background: var(--muted); }
+.juridia-recent-icon { display: flex; align-items: center; justify-content: center; height: 35px; width: 35px; border-radius: 9px; background: var(--secondary); color: var(--primary); flex: none; }
+.juridia-recent-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.juridia-recent-date { color: var(--muted-foreground); white-space: nowrap; font-size: 11px; }
+.juridia-recent-item > svg { color: var(--muted-foreground); flex: none; }
+.juridia-empty { padding: 32px 24px; color: var(--muted-foreground); font-size: 13px; line-height: 1.7; }
+.juridia-primary-nav { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.juridia-primary-nav [data-state="active"] { box-shadow: inset 0 -2px 0 var(--primary); }
+.juridia-tool-menu { background: var(--card); box-shadow: 0 14px 36px rgba(23,50,37,.12); }
+@media (max-width: 1100px) {
+  .juridia-action-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .juridia-hero-illustration { max-width: 292px; }
+}
+@media (max-width: 700px) {
+  .juridia-dashboard { padding-block: 20px 58px; }
+  .juridia-workspace-hero { display: block; padding: 28px 22px; min-height: auto; border-radius: 15px; }
+  .juridia-hero-copy h1 { margin-block: 17px 13px; font-size: clamp(29px,8vw,38px); }
+  .juridia-hero-illustration { display: none; }
+  .juridia-hero-buttons { display: grid; grid-template-columns: minmax(0,1fr); }
+  .juridia-hero-buttons button { width: 100%; }
+  .juridia-dashboard-section { margin-top: 36px; }
+  .juridia-section-heading { display: block; }
+  .juridia-section-heading > p { margin-top: 7px; }
+  .juridia-section-heading button { margin-top: 14px; }
+  .juridia-action-grid { grid-template-columns: minmax(0,1fr); gap: 10px; }
+  .juridia-action-card { min-height: 166px; padding: 18px; }
+  .juridia-action-title { margin-top: 10px; }
+  .juridia-action-footer { padding-top: 12px; }
+  .juridia-metric-grid { grid-template-columns: minmax(0,1fr); }
+  .juridia-recent-date { display: none; }
+  .doc-page { padding: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .juridia-action-card:hover { transform: none; }
+}
