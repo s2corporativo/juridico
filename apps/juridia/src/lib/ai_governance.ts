@@ -22,14 +22,14 @@ export const PROVIDERS: Record<string, ProviderSpec> = {
   "zai": {
     name: "zai",
     external: true,      // z-ai-web-dev-sdk é externo (API cloud)
-    enabled: true,        // habilitado por padrão
+    enabled: false,       // desabilitado: conteúdo de casos nunca sai da VPS por padrão
     supportsJsonSchema: true,
     supportsTools: false,
   },
   "ollama": {
     name: "ollama",
     external: false,      // local (se disponível)
-    enabled: false,       // não configurado neste ambiente
+    enabled: true,        // elegível somente para o adaptador local com destino fixo
     supportsJsonSchema: true,
     supportsTools: false,
   },
@@ -60,7 +60,7 @@ export const PROVIDERS: Record<string, ProviderSpec> = {
 export const AI_ENABLED = true;
 
 /** Kill-switch de providers externos. Se false, só providers locais são elegíveis. */
-export const AI_EXTERNAL_PROVIDERS_ALLOWED = true;
+export const AI_EXTERNAL_PROVIDERS_ALLOWED = false;
 
 /**
  * Verifica se um provider é elegível considerando kill-switches.
@@ -117,16 +117,16 @@ export enum SanitizationMode {
  */
 const TASK_SANITIZATION_MAP: Record<string, SanitizationMode> = {
   // Análise e minuta → pseudonimizado reversível (padrão)
-  "analise_caso": SanitizationMode.EXTERNO_PSEUDONIMIZADO,
-  "minuta": SanitizationMode.EXTERNO_PSEUDONIMIZADO,
-  "dossie": SanitizationMode.EXTERNO_PSEUDONIMIZADO,
-  "pesquisa": SanitizationMode.EXTERNO_PSEUDONIMIZADO,
-  "resumo": SanitizationMode.EXTERNO_PSEUDONIMIZADO,
+  "analise_caso": SanitizationMode.LOCAL_COMPLETO,
+  "minuta": SanitizationMode.LOCAL_COMPLETO,
+  "dossie": SanitizationMode.LOCAL_COMPLETO,
+  "pesquisa": SanitizationMode.LOCAL_COMPLETO,
+  "resumo": SanitizationMode.LOCAL_COMPLETO,
   // Áreas sensíveis → local completo (fail-closed sem IA local)
   "criminal": SanitizationMode.LOCAL_COMPLETO,
   "menores": SanitizationMode.LOCAL_COMPLETO,
   // Padrão para tarefas não mapeadas
-  "default": SanitizationMode.EXTERNO_PSEUDONIMIZADO,
+  "default": SanitizationMode.LOCAL_COMPLETO,
 };
 
 /**
