@@ -16,6 +16,7 @@
 - SHA `61f5a37` antes das mudanças: JuridIA **156 testes / 0 falhas**; Atlas **254 testes / 0 falhas**.
 - Branch `fix/brain-private-inference-health-20261016`: JuridIA **157 testes / 0 falhas**.
 - TypeScript `bun x tsc --noEmit` e `bun run lint` aprovados na branch de correção.
+- Build `NEXT_TELEMETRY_DISABLED=1 bun run build` concluído com código de saída **0** (Next.js 16.4.2). Mantém advertência não bloqueante sobre tracing dinâmico em `src/lib/graph-agent.ts`; exige correção/revisão antes da otimização de produção.
 - Nenhuma das execuções listadas acima homologa SSO real, restauração de backup, modelo Ollama real, renderização mobile, nem corte de produção.
 
 ## Correções implementadas nesta branch
