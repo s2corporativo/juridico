@@ -9,7 +9,7 @@
 // Base normativa: art. 489, §1º, V e VI, do CPC (fundamentação deve demonstrar
 // o ajuste do precedente ao caso ou a sua distinção)
 
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 
 export type ThesisAdherence =
   | "apoia"
@@ -49,7 +49,7 @@ export async function checkThesisAdherence(input: ThesisCheckInput): Promise<The
   }
 
   try {
-    const zai = await ZAI.create();
+    const zai = await createLocalCaseClient();
     const completion = await zai.chat.completions.create({
       messages: [
         {
