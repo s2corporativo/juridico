@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { requireAuth } from "@/lib/auth";
+import { beforeLegalCursor, encodeLegalCursor, parseLegalPageParams } from "@/lib/legal-list-cursor";
 
 export const dynamic = "force-dynamic";
 
@@ -16,24 +17,34 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const clientId = url.searchParams.get("clientId");
   const status = url.searchParams.get("status");
   const area = url.searchParams.get("area");
+  const page = parseLegalPageParams(url.searchParams);
+  if (!page.ok) return NextResponse.json({ error: page.error }, { status: 400 });
 
   const where: import("@prisma/client").Prisma.CaseWhereInput = {
     client: { is: { userId: authUser.uid } },
   };
   if (clientId) where.clientId = clientId;
   if (status) where.status = status;
+  else where.status = { not: "arquivado" };
   if (area) where.area = area;
+  if (page.cursor) where.AND = [beforeLegalCursor(page.cursor)];
 
-  const cases = await db.case.findMany({
+  const rows = await db.case.findMany({
     where,
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: page.limit + 1,
     include: {
       client: { select: { id: true, name: true, color: true } },
       _count: { select: { documents: true, movimentos: true, audiencias: true } },
     },
   });
 
+  const hasMore = rows.length > page.limit;
+  const cases = rows.slice(0, page.limit);
+  const nextCursor = hasMore ? encodeLegalCursor(cases[cases.length - 1]) : null;
   return NextResponse.json({
+    nextCursor,
+    hasMore,
     cases: cases.map((c) => ({
       id: c.id,
       title: c.title,
