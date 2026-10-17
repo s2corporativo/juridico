@@ -45,3 +45,15 @@
 8. Só promover mediante SHA fixo de release, teste autenticado pós-corte e prova de reversão. Não promover a branch desta auditoria diretamente a produção.
 
 **Conclusão:** o trabalho deste PR corrige duas lacunas concretas e audita o estado, mas a solicitação de concluir todas as pendências do ecossistema **não está integralmente homologada**.
+
+## Complemento de execução e homologação (17/10/2026, horário UTC no host)
+
+- Migrados `judge_simulator.ts`, `thesis_checker.ts`, `lexvalida_pipeline.ts` e `minuta_run.ts` para `createLocalCaseClient`. O fluxo de minutas suporta **delta único**, não streaming token a token com o adaptador atual.
+- LexValida não usa mais `web_search` para improvisar jurisprudência; fontes não verificadas permanecem ausentes, nunca "aprovadas".
+- Teste de regressão específico bloqueia reintrodução de SDK externo nos cinco fluxos confidenciais.
+- JuridIA após as alterações: **163 testes / 0 falhas** e **build Next.js aprovado** em checkout QA; persistem avisos de `graph-agent.ts`.
+- Novo `ops/release-readiness.mjs` com quatro testes `node --test ops/release-readiness.test.mjs`: **4/4 aprovados**. O preflight real na VPS retornou **blocked**, com Atlas `/healthz` HTTP 200 JSON, JuridIA antiga `/api/health` HTTP 404, OIDC discovery HTTP 503, SSO start HTTP 503 e rota anônima /auth/me HTTP 401 (correto).
+- Smoke da **nova build isolada** em porta temporária 3922: `/api/health` HTTP 200 JSON e `/api/auth/me` HTTP 401. O processo temporário foi encerrado após o teste.
+- Modelo Ollama `qwen3:4b-instruct` instalado, mas um prompt **inteiramente sintético**, `num_predict=75`, excedeu 28 s sem resposta (`curl` timeout). Logo, IA local **não homologada funcionalmente**.
+- CI GitHub Actions da própria branch: run [38991641823](https://github.com/s2corporativo/juridico/actions/runs/38991641823) falhou com **ambos jobs com 0 etapas executadas e nenhum runner atribuído**; causa externa do provisionamento/conta ainda não comprovada.
+- Nenhum backup de produção foi restaurado, nenhum login real foi homologado, nenhum banco operacional foi migrado. PR deve permanecer draft e **não** deve ser considerado liberação de produção.
