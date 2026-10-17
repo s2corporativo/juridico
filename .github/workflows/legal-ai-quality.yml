@@ -1,10 +1,10 @@
 name: Atlas e JuridIA — qualidade e segurança
 
+# Execução automática desligada para evitar consumo/cobranças do Actions.
+# Gate principal: serviço local legal-ai-ci.timer na VPS, sem dados de produção.
+# Permanece opção de execução manual extraordinária.
 on:
-  pull_request:
-    branches: [atlas-forense]
-  push:
-    branches: [atlas-forense]
+  workflow_dispatch:
 
 permissions:
   contents: read
