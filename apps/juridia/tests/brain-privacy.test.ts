@@ -15,8 +15,8 @@ describe("EJC Brain confidentiality and completion", () => {
     expect(rehydrate(prepared.text, prepared.map)).toBe(original);
   });
   test("ownership and evidence integrity are checked before any provider initialization", () => {
-    expect(route.indexOf("ownsCase(authUser.uid, caseId)")).toBeLessThan(route.indexOf("ZAI.create()"));
-    expect(route.indexOf("validateEvidenceIntegrity(caseId, ref.id)")).toBeLessThan(route.indexOf("ZAI.create()"));
+    expect(route.indexOf("ownsCase(authUser.uid, caseId)")).toBeLessThan(route.indexOf("createLocalCaseClient()"));
+    expect(route.indexOf("validateEvidenceIntegrity(caseId, ref.id)")).toBeLessThan(route.indexOf("createLocalCaseClient()"));
     expect(route).toContain("const safeFacts = context.safeText");
     expect(context).toContain("pseudonymize(rawText)");
     expect(route).not.toContain("content: context.rawText");
@@ -26,8 +26,12 @@ describe("EJC Brain confidentiality and completion", () => {
     expect(route).toContain("Análise incompleta; nenhum parecer foi salvo como concluído.");
     expect(route.indexOf("const mandatorySteps")).toBeLessThan(route.indexOf("db.intelligenceSnapshot.create"));
   });
-  test("web fallback cannot send narrative facts or identifiers to a public search", () => {
-    expect(route).toContain("const genericAreas =");
-    expect(route).not.toContain("jurisprudência" + " " + String.fromCharCode(36) + "{safeFacts.slice");
+  test("EJC Brain uses only local inference without public-search fallback", () => {
+    expect(route).toContain('import { createLocalCaseClient } from "@/lib/local-case-ai"');
+    expect(route).toContain("const safeFacts = context.safeText");
+    expect(route).not.toContain("z-ai-web-dev-sdk");
+    expect(route).not.toContain("ZAI.create()");
+    expect(route).not.toContain('functions.invoke("web_search"');
+    expect(route).toContain("r.atlas.fallback = false");
   });
 });
