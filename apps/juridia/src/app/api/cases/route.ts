@@ -211,17 +211,20 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     select: { title: true },
   });
   if (!c) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
-  const deleted = await db.case.deleteMany({
+  // Preserva autos, eventos e documentos; PATCH status="ativo" restaura o caso.
+  const archived = await db.case.updateMany({
     where: { id, client: { is: { userId: authUser.uid } } },
+    data: { status: "arquivado" },
   });
-  if (deleted.count !== 1) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
+  if (archived.count !== 1) return NextResponse.json({ error: "case_not_found" }, { status: 404 });
 
   await logAuditEvent({
-    action: "delete_case",
+    action: "archive_case",
     resource: "case",
     resourceId: id,
-    metadata: { title: c?.title },
+    metadata: { title: c.title },
+    userId: authUser.uid,
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, archived: true });
 }
