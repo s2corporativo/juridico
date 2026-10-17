@@ -6,13 +6,12 @@
 /* ── Paleta canônica Atlas (única fonte de verdade — não duplicar :root) ───── */
 :root {
   /* Superfícies */
-  --paper:      #f8fafb;
+  --paper:      #f7f9f6;
   --paper-deep: #eef3f2;
   --ink:        #172322;
-  --muted:      #5f6f6d;   /* texto terciário — preservado para ~50 usos em CSS */
   --surface:    #eef3f2;   /* superfície neutra (shadcn bg-muted) */
-  --petrol:     #0d4b49;
-  --petrol-soft:#dceceb;
+  --petrol:     #123b2c;
+  --petrol-soft:#e5f0e8;
   --copper:     #a8612d;
   --clay:       #a64f35;
   --line:       #dbe4e2;
@@ -739,4 +738,78 @@ th { font-weight: 700; }
   color: var(--muted-foreground);
   font-size: 12px;
   border-radius: var(--radius);
+}
+
+
+/* ── Sistema visual comum Atlas/JuridIA · navegação e estados acessíveis ── */
+.atlas-shell { background: var(--paper); }
+.atlas-sidebar {
+  background-color: #123b2c;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.22) transparent;
+}
+.atlas-sidebar:before { background: linear-gradient(160deg,rgba(14,48,36,.97),rgba(17,59,44,.96)); }
+.site-nav-link {
+  min-height: 36px;
+  border-radius: 9px;
+  padding-inline: 11px;
+  line-height: 1.4;
+}
+.site-nav-link.active {
+  background: rgba(255,255,255,.14);
+  box-shadow: inset 3px 0 0 #dbbf8d;
+}
+.site-nav-link:focus-visible {
+  outline-color: #e5cc9f;
+  outline-offset: 2px;
+}
+.atlas-main { min-width: 0; }
+.atlas-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.atlas-quick-menu { position: relative; z-index: 20; }
+.atlas-quick-menu summary {
+  cursor: pointer; list-style: none; user-select: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 36px; border-radius: 8px;
+}
+.atlas-quick-menu summary::-webkit-details-marker { display: none; }
+.atlas-quick-menu[open] summary svg { transform: rotate(90deg); }
+.atlas-quick-menu-panel {
+  position: absolute; right: 0; top: calc(100% + 7px);
+  min-width: 238px; display: grid; gap: 4px; padding: 8px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: white; box-shadow: 0 18px 40px rgba(14,43,34,.14);
+}
+.atlas-quick-menu-panel a {
+  color: var(--ink); display: flex; gap: 9px; align-items: center;
+  border-radius: 7px; padding: 10px 12px;
+  text-decoration: none; font-size: 13px; font-weight: 600; line-height: 1.4;
+}
+.atlas-quick-menu-panel a:hover, .atlas-quick-menu-panel a:focus-visible { background: var(--petrol-soft); color: var(--petrol); }
+.hero-panel {
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 18px 44px rgba(21,60,42,.06);
+}
+.hero-panel h1 { letter-spacing: -.045em; }
+.compendium-reference-grid .atlas-portal-action {
+  border: 1px solid #d9e6dd; border-top: 3px solid #245b46;
+  border-radius: 14px; background: #ffffff;
+  box-shadow: 0 8px 28px rgba(21,60,42,.04);
+  min-height: 138px; padding: 22px;
+}
+.compendium-reference-grid .atlas-portal-action:hover { border-color: #88b09b; box-shadow: 0 16px 34px rgba(21,60,42,.1); }
+.compendium-reference-grid .atlas-portal-action span { color: #235e44; }
+.atlas-site-footer { padding-block: 24px; }
+@media (max-width: 760px) {
+  .atlas-toolbar { width: 100%; justify-content: flex-start; }
+  .atlas-quick-menu-panel { left: 0; right: auto; max-width: calc(100vw - 24px); }
+  .atlas-toolbar .compendium-link, .atlas-toolbar .export-button, .atlas-toolbar .structure-link { min-height: 42px; }
+  .hero-panel { border-radius: 14px; }
+  .compendium-reference-grid .atlas-portal-action { min-height: 114px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .compendium-reference-grid .atlas-portal-action:hover,
+  .juridia-launch-button:hover { transform: none; }
 }
