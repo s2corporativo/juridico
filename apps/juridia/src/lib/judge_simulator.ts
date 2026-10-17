@@ -14,7 +14,7 @@
 // - Indeferimento da inicial: art. 330 do CPC
 // - Conclusão/sentença: art. 489 do CPC
 
-import ZAI from "z-ai-web-dev-sdk";
+import { createLocalCaseClient } from "@/lib/local-case-ai";
 
 export interface JudgeSimulationResult {
   admissibilidade: {
@@ -63,7 +63,7 @@ export async function simulateJudge(params: {
 
   // ── Análise de mérito via LLM ──────────────────────────────────────────
   try {
-    const zai = await ZAI.create();
+    const zai = await createLocalCaseClient();
     const completion = await zai.chat.completions.create({
       messages: [
         {
